@@ -22,7 +22,6 @@ FLAGS = tf.app.flags.FLAGS
 #   Data Parameters
 # ===========================
 tf.app.flags.DEFINE_string("dataset", "small","pick the dataset in data_root from which your movies can be found.")
-tf.app.flags.DEFINE_integer("batch_size", 32, "The size of the minibatch used for training.")
 tf.app.flags.DEFINE_string("data_root", "~/pilot_data", "Define the root folder of the different datasets.")
 tf.app.flags.DEFINE_integer("num_threads", 4, "The number of threads for loading one minibatch.")
 
@@ -231,6 +230,7 @@ if __name__ == '__main__':
   FLAGS.n_fc = False
   FLAGS.n_frames = 3
   FLAGS.random_seed = 123
+  FLAGS.batch_size = 32
 
   prepare_data((240,320,3))
 

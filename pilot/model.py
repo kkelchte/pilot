@@ -2,7 +2,7 @@
 import tensorflow as tf
 import os
 import tensorflow.contrib.slim as slim
-import mobile_net
+import models.mobile_net as mobile_net
 
 from tensorflow.contrib.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
@@ -40,7 +40,7 @@ Build basic NN model
 """
 class Model(object):
  
-  def __init__(self,  session, input_size, output_size, prefix='model', device='/gpu:0', bound=1, depth_input_size=(55,74)):
+  def __init__(self,  session, output_size, prefix='model', device='/gpu:0', bound=1, depth_input_size=(55,74)):
     '''initialize model
     '''
     # np.random.seed(FLAGS.random_seed)
@@ -49,13 +49,18 @@ class Model(object):
     self.sess = session
     self.output_size = output_size
     self.bound=bound
-    self.input_size = input_size
-    self.input_size[0] = None
     self.prefix = prefix
     self.device = device
 
     self.lr = FLAGS.learning_rate
     self.global_step = tf.Variable(0, name='global_step', trainable=False)
+
+    #define the input size of the network input
+    if FLAGS.network =='mobile':
+      self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
+          mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 3]  
+    else:
+      raise NameError( 'Network is unknown: ', FLAGS.network)
     self.define_network()
     
     
