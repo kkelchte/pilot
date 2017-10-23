@@ -1,0 +1,10 @@
+pyyaml
+rospy
+rospkg
+scipy
+pillow
+scikit-image
+matplotlib
+pyinotify
+lxml
+sklearn
