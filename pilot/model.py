@@ -43,11 +43,9 @@ class Model(object):
   def __init__(self,  session, output_size, prefix='model', device='/gpu:0', bound=1, depth_input_size=(55,74)):
     '''initialize model
     '''
-    # np.random.seed(FLAGS.random_seed)
-    # tf.set_random_seed(FLAGS.random_seed)
-    
     self.sess = session
     self.output_size = output_size
+    self.depth_input_size = depth_input_size
     self.bound=bound
     self.prefix = prefix
     self.device = device
@@ -170,7 +168,7 @@ class Model(object):
     targets = supervised target control
     target_depth = supervised target depth
     '''
-    tensors = [] 
+    tensors = [self.controls]
     feed_dict={self.inputs: inputs}
     if auxdepth: # predict auxiliary depth
       tensors.append(self.pred_depth)
@@ -186,11 +184,12 @@ class Model(object):
       if len(targets) != 0: tensors.append(self.total_loss)
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
+    control=results.pop(0)
     losses = {}
-    aux_results = []
+    aux_results = {}
     
     if auxdepth: 
-      aux_results.append(results.pop(0))
+      aux_results['d']=results.pop(0)
     
     if len(targets) != 0:
       losses['c']=results.pop(0) # control loss
@@ -201,7 +200,7 @@ class Model(object):
         losses['d']=results.pop(0) # depth loss
         if len(targets) != 0: losses['t']=results.pop(0)
 
-    return losses, aux_results
+    return control, losses, aux_results
 
   def backward(self, inputs, targets=[], depth_targets=[]):
     '''run forward pass and return action prediction
@@ -235,16 +234,17 @@ class Model(object):
   def build_summaries(self): 
     self.summary_vars = {}
     self.summary_ops = {}
-    self.add_summary_var("loss_train_total")
-    self.add_summary_var("loss_train_control")
-    self.add_summary_var("loss_train_depth")
-    self.add_summary_var("loss_val_total")
-    self.add_summary_var("loss_val_control")
-    self.add_summary_var("loss_val_depth")
-    self.add_summary_var("loss_test_total")
-    self.add_summary_var("loss_test_control")
-    self.add_summary_var("loss_test_depth")
-    
+    for t in ['train', 'test', 'val']:
+      for l in ['total', 'control', 'depth']:
+        name='Loss_{0}_{1}'.format(t,l)
+        self.add_summary_var(name)
+    for d in ['current','furthest']:
+      for t in ['train', 'test']:
+        for w in ['','sandbox','forest','canyon','esat_corridor_v1', 'esat_corridor_v2']:
+          name = 'Distance_{0}_{1}'.format(d,t)
+          if len(w)!=0: name='{0}_{1}'.format(name,w)
+          self.add_summary_var(name)
+      
     if FLAGS.auxiliary_depth and FLAGS.plot_depth:
       name="depth_predictions"
       dep_images = tf.placeholder(tf.float32, [None, 500, 500, 3])

@@ -43,15 +43,10 @@ tf.app.flags.DEFINE_boolean("offline", True, "Training from an offline dataset."
 # Print output of ros verbose or not
 tf.app.flags.DEFINE_boolean("load_config", False, "Load flags from the configuration file found in the checkpoint path.")
 tf.app.flags.DEFINE_boolean("verbose", True, "Print output of ros verbose or not.")
-# Directory for storing tensorboard summary results
 tf.app.flags.DEFINE_string("summary_dir", 'tensorflow/log/', "Choose the directory to which tensorflow should save the summaries.")
-# Add log_tag to overcome overwriting other log files
 tf.app.flags.DEFINE_string("log_tag", 'testing', "Add log_tag to overcome overwriting of other log files.")
-# Choose to run on gpu or cpu
 tf.app.flags.DEFINE_string("device", '/gpu:0', "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
-# Set the random seed to get similar examples
 tf.app.flags.DEFINE_integer("random_seed", 123, "Set the random seed to get similar examples.")
-# Overwrite existing logfolder
 tf.app.flags.DEFINE_boolean("owr", True, "Overwrite existing logfolder when it is not testing.")
 tf.app.flags.DEFINE_float("action_bound", 1.0, "Define between what bounds the actions can go. Default: [-1:1].")
 tf.app.flags.DEFINE_boolean("real", False, "Define settings in case of interacting with the real (bebop) drone.")
@@ -95,9 +90,8 @@ def load_config(modelfolder, file_name = "configuration"):
   """
   print("Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['concatenate_depth','concatenate_odom','lstm','auxiliary_odom',
-  'n_fc','feed_previous_action','auxiliary_depth','depth_input','extra_control_layer']
-  intlist=['odom_hidden_units','n_frames','lstm_hiddensize']
+  boollist=['n_fc','auxiliary_depth']
+  intlist=['n_frames']
   floatlist=[]
   stringlist=['network']
   for child in tree.getroot().find('flags'):
@@ -166,8 +160,11 @@ def main(_):
   print('------------Press Ctrl+C to end the learning') 
   
   if FLAGS.offline:
+    print('Offline training.')
     offline.run(model)
   else: # online training/evaluating
+    print('Online training.')
+    rosnode = rosinterface.PilotNode(model, FLAGS.summary_dir+FLAGS.log_tag)
     while True:
         try:
           sys.stdout.flush()

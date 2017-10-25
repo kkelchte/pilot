@@ -43,7 +43,7 @@ def run_episode(data_type, sumvar, model):
       if data_type=='train':
         losses = model.backward(inputs, targets, depth_targets=target_depth)
       elif data_type=='val' or data_type=='test':
-        losses, aux_results = model.forward(inputs, auxdepth=False, targets=targets, target_depth=target_depth)
+        _, losses, aux_results = model.forward(inputs, auxdepth=False, targets=targets, target_depth=target_depth)
       try:
         ctr_loss.append(losses['c'])
         if FLAGS.auxiliary_depth: dep_loss.append(losses['d'])
