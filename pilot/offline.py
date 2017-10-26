@@ -43,27 +43,27 @@ def run_episode(data_type, sumvar, model):
       if data_type=='train':
         losses = model.backward(inputs, targets, depth_targets=target_depth)
       elif data_type=='val' or data_type=='test':
-        _, losses, aux_results = model.forward(inputs, auxdepth=False, targets=targets, target_depth=target_depth)
+        _, losses, aux_results = model.forward(inputs, auxdepth=False, targets=targets, depth_targets=target_depth)
       try:
         ctr_loss.append(losses['c'])
         if FLAGS.auxiliary_depth: dep_loss.append(losses['d'])
         tot_loss.append(losses['t'])
       except KeyError:
         pass
-      if index == 1 and data_type=='val' and FLAGS.plot_depth: # TO TEST
+      if index == 1 and data_type=='val' and FLAGS.plot_depth: 
           depth_predictions = tools.plot_depth(inputs, target_depth, model)
     else:
       print('Failed to run {}.'.format(data_type))
     calculation_time+=(time.time()-start_calc_time)
     start_data_time = time.time()
-  if len(tot_loss)!=0: sumvar['loss_'+data_type+'_total']=np.mean(tot_loss) 
-  if len(ctr_loss)!=0: sumvar['loss_'+data_type+'_control']=np.mean(ctr_loss)   
-  if len(tot_loss)!=0 and FLAGS.auxiliary_depth: sumvar['loss_'+data_type+'_depth']=np.mean(dep_loss)   
+  if len(tot_loss)!=0: sumvar['Loss_'+data_type+'_total']=np.mean(tot_loss) 
+  if len(ctr_loss)!=0: sumvar['Loss_'+data_type+'_control']=np.mean(ctr_loss)   
+  if len(tot_loss)!=0 and FLAGS.auxiliary_depth: sumvar['Loss_'+data_type+'_depth']=np.mean(dep_loss)   
   if len(depth_predictions) != 0: sumvar['depth_predictions']=depth_predictions
   print('>>{0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(data_type.upper(),tuple(time.localtime()[0:5]),
     tools.print_dur(data_loading_time),tools.print_dur(calculation_time)))
   if data_type == 'val' or data_type == 'test':
-    print('{}'.format(str(sumvar)))
+    print('{}'.format(str([sumvar[k] for k in sumvar if k != 'depth_predictions'])))
   sys.stdout.flush()
   return sumvar
 
@@ -80,6 +80,7 @@ def run(model):
     # ----------- validate episode
     # sumvar = run_episode('val', {}, model)
     sumvar = run_episode('val', sumvar, model)
+
     # ----------- write summary
     try:
       model.summarize(sumvar)

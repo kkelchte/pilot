@@ -21,18 +21,14 @@ usage() {
 		echo "Testing and installation script. Options: 
 		-i true or false for interaction." 1>&2; exit 1; }
 while getopts ":i:h:t:" o; do
-    case "${o}" in
-        i)
-            INTERACTIVE=${OPTARG}
-						echo "INTERACTIVE = $INTERACTIVE"
-						;;
-				h)
-						usage
-						;;
-        *)
-						usage
-            ;;
-    esac
+	case "${o}" in
+		i)
+			INTERACTIVE=${OPTARG} ;;
+		h)
+			usage ;;
+		*)
+			usage ;;
+	esac
 done
 shift $((OPTIND-1))
 
@@ -108,16 +104,18 @@ echo "export GAZEBO_MODEL_PATH=$HOME/simsup_ws/src/simulation_supervised/simulat
 echo
 echo "$(tput setaf 3)--------: Create an entrypoint besides the .bashrc for when scripts are executed directly :--------$(tput sgr 0)"
 echo
-
-touch $HOME/.entrypoint
-chmod 700 $HOME/.entrypoint
-echo '#!/bin/bash' >> $HOME/.entrypoint
-echo 'set -e' >> $HOME/.entrypoint 
-cat $HOME/.bashrc >> $HOME/.entrypoint
-echo "exec \"\$@\"" >> $HOME/.entrypoint
+if [ ! -e $HOME/.entrypoint ] ; then
+	touch $HOME/.entrypoint
+	chmod 700 $HOME/.entrypoint
+	echo '#!/bin/bash' >> $HOME/.entrypoint
+	echo 'set -e' >> $HOME/.entrypoint 
+	cat $HOME/.bashrc >> $HOME/.entrypoint
+	echo "exec \"\$@\"" >> $HOME/.entrypoint
+fi
 echo
-echo "$(tput setaf 3) Finished installation step_two."
-echo "Please check your installation with the test script in $HOME/tensorflow/pilot/scripts/test_script.sh"
+echo "$(tput setaf 2)Finished installation step_two."
+echo "Please test your installation with the test script. (outside a docker container)"
+echo "$(tput setaf 3) $HOME_HOST/tensorflow/pilot/scripts/test_script.sh$(tput setaf 2)"
 echo "Goodluck!"
 
 tput sgr 0

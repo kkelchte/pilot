@@ -7,20 +7,15 @@ import models.mobile_net as mobile_net
 from tensorflow.contrib.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
 
-import matplotlib.pyplot as plt
-
-from sklearn.manifold import TSNE
-
 import numpy as np
-import math
 
 
 
 FLAGS = tf.app.flags.FLAGS
 
 # INITIALIZATION
-tf.app.flags.DEFINE_string("checkpoint_path", 'mobilenet_025', "Specify the directory of the checkpoint of the earlier trained model.")
-tf.app.flags.DEFINE_boolean("continue_training", False, "Continue training of the prediction layers. If false, initialize the prediction layers randomly.")
+tf.app.flags.DEFINE_string("checkpoint_path", 'auxd', "Specify the directory of the checkpoint of the earlier trained model.")
+tf.app.flags.DEFINE_boolean("continue_training", True, "Continue training of the prediction layers. If false, initialize the prediction layers randomly. The default value should remain True.")
 tf.app.flags.DEFINE_boolean("scratch", False, "Initialize full network randomly.")
 
 # TRAINING
@@ -161,12 +156,12 @@ class Model(object):
       for v in mobile_variables: gradient_multipliers[v.name]=FLAGS.grad_mul_weight
       self.train_op = slim.learning.create_train_op(self.total_loss, self.optimizer, global_step=self.global_step, gradient_multipliers=gradient_multipliers, clip_gradient_norm=FLAGS.clip_grad)
 
-  def forward(self, inputs, auxdepth=False, targets=[], target_depth=[]):
+  def forward(self, inputs, auxdepth=False, targets=[], depth_targets=[]):
     '''run forward pass and return action prediction
     inputs=batch of RGB iamges
     auxdepth = variable defining wether auxiliary depth should be predicted
     targets = supervised target control
-    target_depth = supervised target depth
+    depth_targets = supervised target depth
     '''
     tensors = [self.controls]
     feed_dict={self.inputs: inputs}
@@ -178,9 +173,9 @@ class Model(object):
       feed_dict[self.targets] = targets
       if not FLAGS.auxiliary_depth: tensors.append(self.total_loss)
     
-    if len(target_depth) != 0 and FLAGS.auxiliary_depth:# if target depth is available, calculate loss
+    if len(depth_targets) != 0 and FLAGS.auxiliary_depth:# if target depth is available, calculate loss
       tensors.append(self.depth_loss)
-      feed_dict[self.depth_targets] = target_depth
+      feed_dict[self.depth_targets] = depth_targets
       if len(targets) != 0: tensors.append(self.total_loss)
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
@@ -195,7 +190,7 @@ class Model(object):
       losses['c']=results.pop(0) # control loss
       if not FLAGS.auxiliary_depth: losses['t']=results.pop(0)
     
-    if len(target_depth) != 0:
+    if len(depth_targets) != 0:
       if FLAGS.auxiliary_depth: 
         losses['d']=results.pop(0) # depth loss
         if len(targets) != 0: losses['t']=results.pop(0)
@@ -247,9 +242,10 @@ class Model(object):
       
     if FLAGS.auxiliary_depth and FLAGS.plot_depth:
       name="depth_predictions"
-      dep_images = tf.placeholder(tf.float32, [None, 500, 500, 3])
+      dep_images = tf.placeholder(tf.uint8, [1, 400, 400, 3])
+      # dep_images = tf.placeholder(tf.float32, [1, 400, 400, 3])
       self.summary_vars[name]=dep_images
-      self.summary_ops[name]=tf.summary.image(name, dep_images, max_outputs=4)
+      self.summary_ops[name]=tf.summary.image(name, dep_images)
     
   def summarize(self, sumvars):
     '''write summary vars with ops'''

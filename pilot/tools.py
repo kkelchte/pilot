@@ -1,5 +1,10 @@
 #!/usr/bin/python
 import model
+import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
+
+FLAGS = tf.app.flags.FLAGS
 
 """ 
 Practical tools used by main, data and model
@@ -33,9 +38,8 @@ def fig2buf(fig):
   
   # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
   buf = np.roll(buf, 3, axis = 2 )
-  # buf = buf[0::1,0::1] #slice to make image 4x smaller and use only the R channel of RGBA
+  buf = buf[0::1,0::1] #slice to make image 4x smaller and use only the R channel of RGBA
   buf = buf[0::1,0::1, 0:3] #slice to make image 4x smaller and use only the R channel of RGBA
-  #buf = np.resize(buf,(500,500,1))
   return buf
 
 def plot_depth(inputs, depth_targets, model):
@@ -53,8 +57,9 @@ def plot_depth(inputs, depth_targets, model):
     plt.subplot(n, 3, 2+3*i)
     plt.imshow(depths[i]*1/5.)
     plt.axis('off') 
-    plt.subplot(n, 3, 3+3*i)
-    plt.imshow(depth_targets[i]*1/5.)
-    plt.axis('off')
+    if len(depth_targets)!=0:
+      plt.subplot(n, 3, 3+3*i)
+      plt.imshow(depth_targets[i]*1/5.)
+      plt.axis('off')
   buf=fig2buf(fig)
-  return np.asarray(buf).reshape((1,500,500,3))
+  return np.asarray([buf])

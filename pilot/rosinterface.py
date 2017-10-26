@@ -12,6 +12,7 @@ bridge = CvBridge()
 from replay_buffer import ReplayBuffer
 from model import Model
 from ou_noise import OUNoise
+import tools
 
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
@@ -185,7 +186,7 @@ class PilotNode(object):
     if FLAGS.evaluate: ### EVALUATE
       trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
       trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and FLAGS.auxiliary_depth else []
-      control, losses, aux_results = self.model.forward([im], auxdepth=FLAGS.show_depth,targets=trgt, target_depth=trgt_depth)
+      control, losses, aux_results = self.model.forward([im], auxdepth=FLAGS.show_depth,targets=trgt, depth_targets=trgt_depth)
       for k in ['c', 't', 'd']: 
         if k in losses.keys(): 
           try:
@@ -211,12 +212,12 @@ class PilotNode(object):
         else: 
           trgt_depth = copy.deepcopy(self.target_depth)
       control, losses, aux_results = self.model.forward([im], auxdepth=FLAGS.show_depth)
-      if FLAGS.show_depth and FLAGS.auxiliary_depth: aux_depth = aux_results['depth']
+      if FLAGS.show_depth and FLAGS.auxiliary_depth: aux_depth = aux_results['d']
     
     ### SEND CONTROL
     noise = self.exploration_noise.noise()
     if trgt != -100 and not FLAGS.evaluate: # policy mixing with FLAGS.alpha
-      action = trgt if np.random.binomial(1,FLAGS.alpha**self.runs['train']) else control[0,0]
+      action = trgt if np.random.binomial(1, FLAGS.alpha**(self.runs['train']+1)) else control[0,0]
     else:
       action = control[0,0]
     msg = Twist()
@@ -267,20 +268,18 @@ class PilotNode(object):
       self.finished=True
       # Train model from experience replay:
       # Train the model with batchnormalization out of the image callback loop
-      activation_images = []
       depth_predictions = []
-      endpoint_activations = []
       losses_train = {}
       if self.replay_buffer.size()>FLAGS.batch_size and not FLAGS.evaluate:
         for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 10)):
           inputs, targets, aux_info = self.replay_buffer.sample_batch(FLAGS.batch_size)
           if b==0:
             if FLAGS.plot_depth and FLAGS.auxiliary_depth:
-              depth_predictions = self.model.plot_depth(inputs, aux_info['target_depth'].reshape(-1,55,74))
+              depth_predictions = tools.plot_depth(inputs, aux_info['target_depth'].reshape(-1,55,74))
           depth_targets=[]
           if FLAGS.auxiliary_depth: 
             depth_targets=aux_info['target_depth'].reshape(-1,55,74)
-          controls, losses = self.model.backward(inputs,targets[:].reshape(-1,1),depth_targets)
+          losses = self.model.backward(inputs,targets[:].reshape(-1,1),depth_targets)
           for k in losses.keys(): 
             try:
               losses_train[k].append(losses[k])
@@ -315,7 +314,7 @@ class PilotNode(object):
         pass
       else:
         print(result_string)
-        f=open(os.path.join(logfolder,'tf_log'),'a')
+        f=open(os.path.join(self.logfolder,'tf_log'),'a')
         f.write(result_string)
         f.close()
       self.accumlosses = {}

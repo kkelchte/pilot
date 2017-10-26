@@ -18,7 +18,6 @@ from model import Model
 import tools
 import rosinterface
 import offline
-import online
 import models.mobile_net as mobile_net
 import sys, os, os.path
 import subprocess
