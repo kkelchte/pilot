@@ -40,7 +40,7 @@ tf.app.flags.DEFINE_string("summary_dir", 'tensorflow/log/', "Choose the directo
 tf.app.flags.DEFINE_string("log_tag", 'testing', "Add log_tag to overcome overwriting of other log files.")
 tf.app.flags.DEFINE_string("device", '/gpu:0', "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
 tf.app.flags.DEFINE_integer("random_seed", 123, "Set the random seed to get similar examples.")
-tf.app.flags.DEFINE_boolean("owr", True, "Overwrite existing logfolder when it is not testing.")
+tf.app.flags.DEFINE_boolean("owr", False, "Overwrite existing logfolder when it is not testing.")
 tf.app.flags.DEFINE_float("action_bound", 1.0, "Define between what bounds the actions can go. Default: [-1:1].")
 tf.app.flags.DEFINE_boolean("real", False, "Define settings in case of interacting with the real (bebop) drone.")
 tf.app.flags.DEFINE_boolean("evaluate", False, "Just evaluate the network without training.")
