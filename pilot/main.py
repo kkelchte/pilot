@@ -11,14 +11,8 @@ import tensorflow.contrib.slim as slim
 from tensorflow.contrib.slim.python.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
 from tensorflow.python.ops import random_ops
-import rospy
-from std_msgs.msg import Empty
+
 import numpy as np
-from model import Model
-import tools
-import rosinterface
-import offline
-import models.mobile_net as mobile_net
 import sys, os, os.path
 import subprocess
 import shutil
@@ -61,6 +55,15 @@ tf.app.flags.DEFINE_boolean("plot_depth", False, "Specify whether the depth pred
 tf.app.flags.DEFINE_boolean("n_fc", True, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
 tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
 tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
+
+from model import Model
+import tools
+if not FLAGS.offline: import rosinterface
+import offline
+import models.mobile_net as mobile_net
+
+if not FLAGS.offline: from std_msgs.msg import Empty
+
 
 # ===========================
 #   Save settings

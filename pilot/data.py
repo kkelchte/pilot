@@ -243,7 +243,7 @@ if __name__ == '__main__':
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
-    print ('rgb value: {0:0.1f}, depth value: {1:0.2f}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0]))
+    print ('rgb value: {0:0.1f}, depth value: {1:0.4f}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0]))
     # break
 
   print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))

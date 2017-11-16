@@ -94,7 +94,9 @@ class Model(object):
     self.sess.run([init_all])
     if not FLAGS.scratch:
       self.sess.run([init_assign_op], init_feed_dict)
-    print('Successfully loaded model from:{}'.format(FLAGS.checkpoint_path))
+      print('Successfully loaded model from:{}'.format(FLAGS.checkpoint_path))
+    else:
+      print('Training model from scratch so no initialization.')
   
   def define_network(self):
     '''build the network and set the tensors
@@ -134,7 +136,7 @@ class Model(object):
       self.loss = tf.losses.mean_squared_error(self.outputs, self.targets, weights=FLAGS.control_weight)
       if FLAGS.auxiliary_depth:
         self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
-        weights = FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative.        
+        weights = FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
         self.depth_loss = tf.losses.huber_loss(self.aux_depth,self.depth_targets,weights=weights)
       self.total_loss = tf.losses.get_total_loss()
       
