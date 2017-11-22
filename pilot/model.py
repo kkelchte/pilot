@@ -75,7 +75,7 @@ class Model(object):
     if not os.path.isfile(FLAGS.checkpoint_path+'/checkpoint'):
       FLAGS.checkpoint_path = FLAGS.checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(FLAGS.checkpoint_path)) if os.path.isdir(FLAGS.checkpoint_path+'/'+mpath) and not mpath[-3:]=='val' and os.path.isfile(FLAGS.checkpoint_path+'/'+mpath+'/checkpoint')][-1]
     
-    print('checkpoint: {}'.format(FLAGS.checkpoint_path))
+    if not FLAGS.scratch: print('checkpoint: {}'.format(FLAGS.checkpoint_path))
     init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(FLAGS.checkpoint_path), variables_to_restore)
     
     # create saver for checkpoints

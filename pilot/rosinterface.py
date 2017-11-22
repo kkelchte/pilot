@@ -3,7 +3,6 @@ import numpy as np
 import scipy.misc as sm
 import sys, time, re, copy, cv2, os
 from os import path
-import time
 from cv_bridge import CvBridge, CvBridgeError
 import tensorflow as tf
 
@@ -51,6 +50,10 @@ class PilotNode(object):
     
     # Initialize fields
     self.logfolder = logfolder
+    f=open(os.path.join(self.logfolder,'tf_log'),'a')
+    f.write(FLAGS.log_tag)
+    f.write('\n')
+    f.close()
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
     self.accumlosses = {} # gather losses and info over the run in a dictionary
@@ -78,11 +81,16 @@ class PilotNode(object):
     if rospy.has_param('rgb_image'): rospy.Subscriber(rospy.get_param('rgb_image'), Image, self.image_callback)
     if rospy.has_param('depth_image') and FLAGS.auxiliary_depth:
         rospy.Subscriber(rospy.get_param('depth_image'), Image, self.depth_callback)
-      
     if not FLAGS.real: # initialize the replay buffer
       self.replay_buffer = ReplayBuffer(FLAGS.buffer_size, FLAGS.random_seed)
       self.accumloss = 0
       rospy.Subscriber('/ground_truth/state', Odometry, self.gt_callback)
+
+    # Add some lines to debug delays:
+    self.time_im_received=[]
+    self.time_ctr_send=[]
+    self.time_delay=[]  
+    
        
   def ready_callback(self,msg):
     """ callback function that makes DNN policy starts the ready flag is set on 1 (for 3s)"""
@@ -159,6 +167,10 @@ class PilotNode(object):
     
   def image_callback(self, msg):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
+    rec=time.time()
+    print 'received {0}: {1}'.format(len(time_im_received),rec)
+    self.time_im_received.append(rec)
+
     im = self.process_rgb(msg)
     if len(im)!=0: 
       if FLAGS.n_fc: # when features are concatenated, multiple images should be kept.
@@ -235,6 +247,13 @@ class PilotNode(object):
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(FLAGS.type_of_noise))
     self.action_pub.publish(msg)
+    rec=time.time()
+    print 'control {0}: {1}'.format(len(self.time_ctr_send),rec)
+    self.time_ctr_send.append(rec)
+    time_ind = len(self.time_ctr_send)
+    self.time_delay.append(self.time_ctr_send[time_ind]-self.time_im_received[time_ind])  
+    self.time_im_received.append(time.time())
+    
     if FLAGS.show_depth and len(aux_depth) != 0 and not self.finished:
       aux_depth = aux_depth.flatten()
       self.depth_pub.publish(aux_depth)
@@ -307,6 +326,7 @@ class PilotNode(object):
         result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
       if FLAGS.plot_depth and FLAGS.auxiliary_depth:
         sumvar["depth_predictions"]=depth_predictions
+      result_string='{0}, delay max: {1}, delay min: {2}, delay avg: {3}'.format(result_string, np.max(self.time_delay), np.min(self.time_delay), np.mean(self.time_delay))
       try:
         self.model.summarize(sumvar)
       except Exception as e:
@@ -329,5 +349,9 @@ class PilotNode(object):
       if self.runs['train']%20==0 and not FLAGS.evaluate:
         # Save a checkpoint every 20 runs.
         self.model.save(self.logfolder)
+      self.time_im_received=[]
+      self.time_ctr_send=[]
+      self.time_delay=[]
+    
       
 
