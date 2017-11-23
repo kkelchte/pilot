@@ -67,7 +67,6 @@ class PilotNode(object):
     self.target_control = [] # field to keep the latest supervised control
     self.target_depth = [] # field to keep the latest supervised depth
     self.nfc_images =[] #used by n_fc networks for building up concatenated frames
-    rospy.init_node('pilot', anonymous=True)
     self.exploration_noise = OUNoise(4, 0, FLAGS.ou_theta,1)
     if FLAGS.show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
     if FLAGS.real or FLAGS.off_policy: # publish on pilot_vel so it can be used by control_mapping when flying in the real world
@@ -89,7 +88,9 @@ class PilotNode(object):
     # Add some lines to debug delays:
     self.time_im_received=[]
     self.time_ctr_send=[]
-    self.time_delay=[]  
+    self.time_delay=[]
+
+    rospy.init_node('pilot', anonymous=True)  
     
        
   def ready_callback(self,msg):
@@ -168,8 +169,8 @@ class PilotNode(object):
   def image_callback(self, msg):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
     rec=time.time()
-    print 'received {0}: {1}'.format(len(time_im_received),rec)
-    self.time_im_received.append(rec)
+    print 'time: {0}, len im: {1}, len ctr: {2}, act: received image.'.format(rec, len(self.time_im_received),len(self.time_ctr_send))
+    if self.ready and not self.finished: self.time_im_received.append(rec)
 
     im = self.process_rgb(msg)
     if len(im)!=0: 
@@ -247,12 +248,13 @@ class PilotNode(object):
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(FLAGS.type_of_noise))
     self.action_pub.publish(msg)
+    
     rec=time.time()
-    print 'control {0}: {1}'.format(len(self.time_ctr_send),rec)
     self.time_ctr_send.append(rec)
     time_ind = len(self.time_ctr_send)
-    self.time_delay.append(self.time_ctr_send[time_ind]-self.time_im_received[time_ind])  
-    self.time_im_received.append(time.time())
+    delay=self.time_ctr_send[time_ind-1]-self.time_im_received[time_ind-1]
+    self.time_delay.append(delay)  
+    print 'time: {0}, len im: {1}, len ctr: {2}, act: control, delay: {3}'.format(rec, len(self.time_im_received),len(self.time_ctr_send),delay)
     
     if FLAGS.show_depth and len(aux_depth) != 0 and not self.finished:
       aux_depth = aux_depth.flatten()
