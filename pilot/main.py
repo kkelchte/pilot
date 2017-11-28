@@ -56,6 +56,8 @@ tf.app.flags.DEFINE_boolean("n_fc", True, "In case of True, prelogit features ar
 tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
 tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
 
+tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (way data is saved), though NCHW is faster on GPU.")
+
 from model import Model
 import tools
 if not FLAGS.offline: import rosinterface
@@ -143,9 +145,9 @@ def main(_):
   save_config(FLAGS.summary_dir+FLAGS.log_tag)
 
   action_dim = 1 #only turn in yaw from -1:1
-    
+  
   config=tf.ConfigProto(allow_soft_placement=True)
-  config.gpu_options.allow_growth = True
+  config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
   model = Model(sess, action_dim, bound=FLAGS.action_bound)
   writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)

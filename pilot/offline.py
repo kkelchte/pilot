@@ -28,12 +28,13 @@ def run_episode(data_type, sumvar, model):
   tot_loss=[]
   ctr_loss=[]
   dep_loss=[]
-
   for index, ok, batch in data.generate_batch(data_type):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
     if ok:
       inputs = np.array([_['img'] for _ in batch])
+      if FLAGS.data_format == "NCHW": 
+        inputs = np.swapaxes(np.swapaxes(inputs,2,3),1,2)
       targets = np.array([[_['ctr']] for _ in batch])
       try:
         target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
@@ -68,7 +69,11 @@ def run_episode(data_type, sumvar, model):
   return sumvar
 
 def run(model):
-  data.prepare_data((model.input_size[1], model.input_size[2], model.input_size[3]))
+  if FLAGS.data_format=="NCHW":
+    data.prepare_data((model.input_size[2], model.input_size[3], model.input_size[1]))
+  else:
+    data.prepare_data((model.input_size[1], model.input_size[2], model.input_size[3]))
+  
   ep=0
   while ep<FLAGS.max_episodes-1 and not FLAGS.testing:
     ep+=1

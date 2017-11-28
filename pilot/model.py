@@ -50,8 +50,15 @@ class Model(object):
 
     #define the input size of the network input
     if FLAGS.network =='mobile':
-      self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
-          mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 3]  
+      # Use NCHW instead of NHWC data input because this is faster on GPU.    
+      if FLAGS.data_format=="NCHW":
+        self.input_size = [None, 3, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
+          mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier]] 
+      else:
+        self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
+          mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 3]
+      print "data_format: {}".format(FLAGS.data_format)
+      
     else:
       raise NameError( 'Network is unknown: ', FLAGS.network)
     self.define_network()
@@ -68,15 +75,16 @@ class Model(object):
     else: #If continue training
       list_to_exclude = []
     variables_to_restore = slim.get_variables_to_restore(exclude=list_to_exclude)
-      
+    
     # get latest folder out of training directory if there is no checkpoint file
     if FLAGS.checkpoint_path[0]!='/':
       FLAGS.checkpoint_path = os.path.join(os.getenv('HOME'),'tensorflow/log',FLAGS.checkpoint_path)
     if not os.path.isfile(FLAGS.checkpoint_path+'/checkpoint'):
       FLAGS.checkpoint_path = FLAGS.checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(FLAGS.checkpoint_path)) if os.path.isdir(FLAGS.checkpoint_path+'/'+mpath) and not mpath[-3:]=='val' and os.path.isfile(FLAGS.checkpoint_path+'/'+mpath+'/checkpoint')][-1]
     
-    if not FLAGS.scratch: print('checkpoint: {}'.format(FLAGS.checkpoint_path))
-    init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(FLAGS.checkpoint_path), variables_to_restore)
+    if not FLAGS.scratch: 
+      print('checkpoint: {}'.format(FLAGS.checkpoint_path))
+      init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(FLAGS.checkpoint_path), variables_to_restore)
     
     # create saver for checkpoints
     self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=1, max_to_keep=5)
@@ -105,21 +113,24 @@ class Model(object):
       self.inputs = tf.placeholder(tf.float32, shape = self.input_size)
       if FLAGS.network=='mobile': 
         if FLAGS.n_fc: # concatenate consecutive features from a shared feature extracting CNN network
-          self.inputs = tf.placeholder(tf.float32, shape = (self.input_size[0],self.input_size[1],self.input_size[2],FLAGS.n_frames*self.input_size[3]))
+          if FLAGS.data_format=='NCHW':
+            self.inputs = tf.placeholder(tf.float32, shape = (self.input_size[0],FLAGS.n_frames*self.input_size[1],self.input_size[2],self.input_size[3]))
+          else:
+            self.inputs = tf.placeholder(tf.float32, shape = (self.input_size[0],self.input_size[1],self.input_size[2],FLAGS.n_frames*self.input_size[3]))
           with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= True, weight_decay=FLAGS.weight_decay,
-                               stddev=FLAGS.init_scale)):
+                               stddev=FLAGS.init_scale, data_format=FLAGS.data_format)):
             self.outputs, self.aux_depth, self.endpoints = mobile_net.mobilenet_n(self.inputs, num_classes=self.output_size, is_training=True)
           with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= False, weight_decay=FLAGS.weight_decay,
-                               stddev=FLAGS.init_scale)):
+                               stddev=FLAGS.init_scale, data_format=FLAGS.data_format)):
             self.controls, self.pred_depth, _ = mobile_net.mobilenet_n(self.inputs, num_classes=self.output_size, is_training=False)
         else: # Use only 1 frame to create a feature
           with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=True, weight_decay=FLAGS.weight_decay,
-                           stddev=FLAGS.init_scale)):
+                           stddev=FLAGS.init_scale, data_format=FLAGS.data_format)):
             self.outputs, self.endpoints = mobile_net.mobilenet_v1(self.inputs, num_classes=self.output_size, 
               is_training=True, dropout_keep_prob=FLAGS.dropout_keep_prob, depth_multiplier=FLAGS.depth_multiplier)
             self.aux_depth = self.endpoints['aux_depth_reshaped']
           with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=False, weight_decay=FLAGS.weight_decay,
-                           stddev=FLAGS.init_scale)):
+                           stddev=FLAGS.init_scale, data_format=FLAGS.data_format)):
             self.controls, _ = mobile_net.mobilenet_v1(self.inputs, num_classes=self.output_size, 
               is_training=False, reuse = True, depth_multiplier=FLAGS.depth_multiplier)
             self.pred_depth = _['aux_depth_reshaped']

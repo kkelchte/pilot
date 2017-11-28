@@ -225,7 +225,7 @@ def mobilenet_v1_base(inputs,
           end_point = end_point_base + '_depthwise'
 
           # By passing filters=None
-          # separable_conv2d produces only a depthwise convolution layer
+          # separable_conv2d produces only a depthwise convolution layer          
           net = slim.separable_conv2d(net, None, conv_def.kernel,
                                       depth_multiplier=1,
                                       stride=layer_stride,
@@ -340,7 +340,10 @@ def mobilenet_v1(inputs,
         # logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=tf.tanh,
                              normalizer_fn=None, scope='Conv2d_1c_1x1')
         if spatial_squeeze:
-          logits = tf.squeeze(logits, [1, 2], name='SpatialSqueeze')
+          if FLAGS.data_format=='NCHW':
+            logits = tf.squeeze(logits, [2,3], name='SpatialSqueeze')
+          else:
+            logits = tf.squeeze(logits, [1,2], name='SpatialSqueeze')
         end_points['Logits'] = logits
       
 
@@ -355,7 +358,11 @@ def mobilenet_n(inputs,
   for i in range(FLAGS.n_frames):
     _, endpoints = mobilenet_v1(inputs[:,:,:,i*3:(i+1)*3], num_classes=num_classes, 
       is_training=is_training, reuse=(i!=0 and is_training) or not is_training, depth_multiplier=FLAGS.depth_multiplier)
-    features.append(tf.squeeze(endpoints['AvgPool_1a'],[1,2]))
+    if FLAGS.data_format == 'NCHW':
+      net = tf.squeeze(endpoints['AvgPool_1a'], [2,3])
+    else :
+      net = tf.squeeze(endpoints['AvgPool_1a'], [1,2])
+    features.append(net)
   with tf.variable_scope('concatenated_feature', reuse=not is_training): 
     control_input=tf.concat(features, axis=1)
     if is_training:
@@ -388,7 +395,11 @@ def _reduced_kernel_size_for_small_input(input_tensor, kernel_size):
   if shape[1] is None or shape[2] is None:
     kernel_size_out = kernel_size
   else:
-    kernel_size_out = [min(shape[1], kernel_size[0]),
+    if FLAGS.data_format == 'NCHW':
+      kernel_size_out = [min(shape[2], kernel_size[0]),
+                       min(shape[3], kernel_size[1])]
+    else:
+      kernel_size_out = [min(shape[1], kernel_size[0]),
                        min(shape[2], kernel_size[1])]
   return kernel_size_out
 
@@ -396,7 +407,8 @@ def _reduced_kernel_size_for_small_input(input_tensor, kernel_size):
 def mobilenet_v1_arg_scope(is_training=True,
                            weight_decay=0.00004,
                            stddev=0.09,
-                           regularize_depthwise=False):
+                           regularize_depthwise=False,
+                           data_format='NHWC'):
   """Defines the default MobilenetV1 arg scope.
   Args:
     is_training: Whether or not we're training the model.
@@ -411,7 +423,7 @@ def mobilenet_v1_arg_scope(is_training=True,
       'center': True,
       'scale': True,
       'decay': 0.9997,
-      'epsilon': 0.001,
+      'epsilon': 0.001
   }
 
   # Set weight_decay for weights in Conv and DepthSepConv layers.
@@ -430,5 +442,6 @@ def mobilenet_v1_arg_scope(is_training=True,
     with slim.arg_scope([slim.batch_norm], **batch_norm_params):
       with slim.arg_scope([slim.conv2d], weights_regularizer=regularizer):
         with slim.arg_scope([slim.separable_conv2d],
-                            weights_regularizer=depthwise_regularizer) as sc:
-          return sc
+                            weights_regularizer=depthwise_regularizer):
+          with slim.arg_scope([slim.conv2d, slim.batch_norm,slim.avg_pool2d, slim.separable_conv2d], data_format=data_format) as sc:
+            return sc

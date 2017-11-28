@@ -46,8 +46,7 @@ class PilotNode(object):
   """
   
   def __init__(self, model, logfolder):
-    print('initialize pilot node')
-    
+    print('initialize pilot node')  
     # Initialize fields
     self.logfolder = logfolder
     f=open(os.path.join(self.logfolder,'tf_log'),'a')
@@ -169,7 +168,7 @@ class PilotNode(object):
   def image_callback(self, msg):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
     rec=time.time()
-    print 'time: {0}, len im: {1}, len ctr: {2}, act: received image.'.format(rec, len(self.time_im_received),len(self.time_ctr_send))
+    # print 'time: {0}, len im: {1}, len ctr: {2}, act: received image.'.format(rec, len(self.time_im_received),len(self.time_ctr_send))
     if self.ready and not self.finished: self.time_im_received.append(rec)
 
     im = self.process_rgb(msg)
@@ -196,6 +195,7 @@ class PilotNode(object):
     """
     aux_depth=[] # variable to keep predicted depth 
     trgt = -100.
+    if FLAGS.data_format == 'NCHW': im=np.swapaxes(np.swapaxes(im,1,2),0,1)
     if FLAGS.evaluate: ### EVALUATE
       trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
       trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and FLAGS.auxiliary_depth else []
@@ -228,13 +228,13 @@ class PilotNode(object):
       if FLAGS.show_depth and FLAGS.auxiliary_depth: aux_depth = aux_results['d']
     
     ### SEND CONTROL
-    noise = self.exploration_noise.noise()
     if trgt != -100 and not FLAGS.evaluate: # policy mixing with FLAGS.alpha
       action = trgt if np.random.binomial(1, FLAGS.alpha**(self.runs['train']+1)) else control[0,0]
     else:
       action = control[0,0]
     msg = Twist()
     if FLAGS.type_of_noise == 'ou':
+      noise = self.exploration_noise.noise()
       msg.linear.x = FLAGS.speed 
       msg.linear.y = (not FLAGS.evaluate)*noise[1]*FLAGS.sigma_y
       msg.linear.z = (not FLAGS.evaluate)*noise[2]*FLAGS.sigma_z
@@ -294,6 +294,7 @@ class PilotNode(object):
       if self.replay_buffer.size()>FLAGS.batch_size and not FLAGS.evaluate:
         for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 10)):
           inputs, targets, aux_info = self.replay_buffer.sample_batch(FLAGS.batch_size)
+          if FLAGS.data_format=="NCHW": inputs = np.swapaxes(np.swapaxes(inputs,2,3),1,2) #make data NCHW instead of NHWC
           if b==0:
             if FLAGS.plot_depth and FLAGS.auxiliary_depth:
               depth_predictions = tools.plot_depth(inputs, aux_info['target_depth'].reshape(-1,55,74))
@@ -328,7 +329,7 @@ class PilotNode(object):
         result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
       if FLAGS.plot_depth and FLAGS.auxiliary_depth:
         sumvar["depth_predictions"]=depth_predictions
-      result_string='{0}, delay max: {1}, delay min: {2}, delay avg: {3}'.format(result_string, np.max(self.time_delay), np.min(self.time_delay), np.mean(self.time_delay))
+      result_string='{0}, delay min: {1}, delay avg: {2}, delay max: {3}'.format(result_string, np.min(self.time_delay), np.mean(self.time_delay), np.max(self.time_delay))
       try:
         self.model.summarize(sumvar)
       except Exception as e:
