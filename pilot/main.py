@@ -56,7 +56,7 @@ tf.app.flags.DEFINE_boolean("n_fc", True, "In case of True, prelogit features ar
 tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
 tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
 
-tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (way data is saved), though NCHW is faster on GPU.")
+tf.app.flags.DEFINE_string("data_format", 'NCHW', "NHWC is the most convenient (way data is saved), though NCHW is faster on GPU.")
 
 from model import Model
 import tools

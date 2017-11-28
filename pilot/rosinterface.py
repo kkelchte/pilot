@@ -137,7 +137,7 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
-      size = self.model.input_size[1:]
+      size = [self.model.input_size[2],self.model.input_size[3],self.model.input_size[1]] if FLAGS.data_format=='NCHW' else self.model.input_size[1:]
       im = sm.imresize(im,tuple(size),'nearest')
       return im
 
@@ -195,11 +195,14 @@ class PilotNode(object):
     """
     aux_depth=[] # variable to keep predicted depth 
     trgt = -100.
-    if FLAGS.data_format == 'NCHW': im=np.swapaxes(np.swapaxes(im,1,2),0,1)
+    if FLAGS.data_format == 'NCHW': 
+      inpt=np.swapaxes(np.swapaxes(im,1,2),0,1) 
+    else :
+      inpt=im
     if FLAGS.evaluate: ### EVALUATE
       trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
       trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and FLAGS.auxiliary_depth else []
-      control, losses, aux_results = self.model.forward([im], auxdepth=FLAGS.show_depth,targets=trgt, depth_targets=trgt_depth)
+      control, losses, aux_results = self.model.forward([inpt], auxdepth=FLAGS.show_depth,targets=trgt, depth_targets=trgt_depth)
       for k in ['c', 't', 'd']: 
         if k in losses.keys(): 
           try:
@@ -224,7 +227,7 @@ class PilotNode(object):
           return
         else: 
           trgt_depth = copy.deepcopy(self.target_depth)
-      control, losses, aux_results = self.model.forward([im], auxdepth=FLAGS.show_depth)
+      control, losses, aux_results = self.model.forward([inpt], auxdepth=FLAGS.show_depth)
       if FLAGS.show_depth and FLAGS.auxiliary_depth: aux_depth = aux_results['d']
     
     ### SEND CONTROL
@@ -251,8 +254,9 @@ class PilotNode(object):
     
     rec=time.time()
     self.time_ctr_send.append(rec)
-    time_ind = len(self.time_ctr_send)
-    delay=self.time_ctr_send[time_ind-1]-self.time_im_received[time_ind-1]
+    # time_ind = len(self.time_ctr_send)
+    delay=self.time_ctr_send[-1]-self.time_im_received[-1]
+    # delay=self.time_ctr_send[time_ind-1]-self.time_im_received[time_ind-1]
     self.time_delay.append(delay)  
     print 'time: {0}, len im: {1}, len ctr: {2}, act: control, delay: {3}'.format(rec, len(self.time_im_received),len(self.time_ctr_send),delay)
     
@@ -329,7 +333,7 @@ class PilotNode(object):
         result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
       if FLAGS.plot_depth and FLAGS.auxiliary_depth:
         sumvar["depth_predictions"]=depth_predictions
-      result_string='{0}, delay min: {1}, delay avg: {2}, delay max: {3}'.format(result_string, np.min(self.time_delay), np.mean(self.time_delay), np.max(self.time_delay))
+      result_string='{0}, {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       try:
         self.model.summarize(sumvar)
       except Exception as e:

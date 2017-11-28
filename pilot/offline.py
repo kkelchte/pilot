@@ -65,6 +65,7 @@ def run_episode(data_type, sumvar, model):
     tools.print_dur(data_loading_time),tools.print_dur(calculation_time)))
   if data_type == 'val' or data_type == 'test':
     print('{}'.format(str([sumvar[k] for k in sumvar if k != 'depth_predictions'])))
+
   sys.stdout.flush()
   return sumvar
 
