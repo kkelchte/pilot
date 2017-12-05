@@ -118,7 +118,8 @@ def load_config(modelfolder, file_name = "configuration"):
 
 # Use the main method for starting the training procedure and closing it in the end.
 def main(_):
-  print 'package paths: {}'.format(sys.path)
+  for p in sys.path:
+    print 'path: {}'.format(p)
   np.random.seed(FLAGS.random_seed)
   tf.set_random_seed(FLAGS.random_seed)
   
