@@ -3,6 +3,9 @@ import numpy as np
 import scipy.misc as sm
 import sys, time, re, copy, cv2, os
 from os import path
+
+from tf import transformations
+
 from cv_bridge import CvBridge, CvBridgeError
 import tensorflow as tf
 
@@ -20,7 +23,7 @@ from rospy.numpy_msg import numpy_msg
 from rospy_tutorials.msg import Floats
 from nav_msgs.msg import Odometry
 
-from tf import transformations
+
 
 #from PIL import Image
 
@@ -258,7 +261,7 @@ class PilotNode(object):
     delay=self.time_ctr_send[-1]-self.time_im_received[-1]
     # delay=self.time_ctr_send[time_ind-1]-self.time_im_received[time_ind-1]
     self.time_delay.append(delay)  
-    print 'time: {0}, len im: {1}, len ctr: {2}, act: control, delay: {3}'.format(rec, len(self.time_im_received),len(self.time_ctr_send),delay)
+    # print 'time: {0}, len im: {1}, len ctr: {2}, act: control, delay: {3}'.format(rec, len(self.time_im_received),len(self.time_ctr_send),delay)
     
     if FLAGS.show_depth and len(aux_depth) != 0 and not self.finished:
       aux_depth = aux_depth.flatten()
@@ -333,7 +336,7 @@ class PilotNode(object):
         result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
       if FLAGS.plot_depth and FLAGS.auxiliary_depth:
         sumvar["depth_predictions"]=depth_predictions
-      result_string='{0}, {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
+      result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       try:
         self.model.summarize(sumvar)
       except Exception as e:
