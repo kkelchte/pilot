@@ -20,7 +20,7 @@ import time
 import signal
 
 # Block all the ugly printing...
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -118,8 +118,8 @@ def load_config(modelfolder, file_name = "configuration"):
 
 # Use the main method for starting the training procedure and closing it in the end.
 def main(_):
-  for p in sys.path:
-    print 'path: {}'.format(p)
+  # for p in sys.path:
+  #   print 'path: {}'.format(p)
   np.random.seed(FLAGS.random_seed)
   tf.set_random_seed(FLAGS.random_seed)
   
@@ -149,7 +149,9 @@ def main(_):
   action_dim = 1 #only turn in yaw from -1:1
   
   config=tf.ConfigProto(allow_soft_placement=True)
-  config.gpu_options.allow_growth = False
+  # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
+  config.gpu_options.allow_growth = True
+  # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
   model = Model(sess, action_dim, bound=FLAGS.action_bound)
   writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
