@@ -255,13 +255,11 @@ class PilotNode(object):
       raise IOError( 'Type of noise is unknown: {}'.format(FLAGS.type_of_noise))
     self.action_pub.publish(msg)
     
-    rec=time.time()
-    self.time_ctr_send.append(rec)
-    # time_ind = len(self.time_ctr_send)
-    delay=self.time_ctr_send[-1]-self.time_im_received[-1]
-    # delay=self.time_ctr_send[time_ind-1]-self.time_im_received[time_ind-1]
-    self.time_delay.append(delay)  
-    # print 'time: {0}, len im: {1}, len ctr: {2}, act: control, delay: {3}'.format(rec, len(self.time_im_received),len(self.time_ctr_send),delay)
+    if not self.finished:
+      rec=time.time()
+      self.time_ctr_send.append(rec)
+      delay=self.time_ctr_send[-1]-self.time_im_received[-1]
+      self.time_delay.append(delay)  
     
     if FLAGS.show_depth and len(aux_depth) != 0 and not self.finished:
       aux_depth = aux_depth.flatten()
