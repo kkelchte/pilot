@@ -97,7 +97,7 @@ def load_config(modelfolder, file_name = "configuration"):
   boollist=['n_fc','auxiliary_depth']
   intlist=['n_frames']
   floatlist=[]
-  stringlist=['network']
+  stringlist=['network', 'data_format']
   for child in tree.getroot().find('flags'):
     try :
       if child.attrib['name'] in boollist:

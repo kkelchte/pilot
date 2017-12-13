@@ -344,10 +344,19 @@ class PilotNode(object):
         print(result_string)
       # ! Note: tf_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts
       # Script starts next run once this file is updated.
-      f=open(os.path.join(self.logfolder,'tf_log'),'a')
-      f.write(result_string)
-      f.write('\n')
-      f.close()
+      try:
+        f=open(os.path.join(self.logfolder,'tf_log'),'a')
+        f.write(result_string)
+        f.write('\n')
+        f.close()
+      except Exception as e:
+        print('failed to write txt tf_log {}'.format(e))
+        print('retry after sleep 60')
+        time.sleep(60)
+        f=open(os.path.join(self.logfolder,'tf_log'),'a')
+        f.write(result_string)
+        f.write('\n')
+        f.close()
       self.accumlosses = {}
       self.current_distance = 0
       self.last_pose = []
