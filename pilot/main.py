@@ -47,12 +47,12 @@ tf.app.flags.DEFINE_boolean("evaluate", False, "Just evaluate the network withou
 tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network.")
 tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
 
-tf.app.flags.DEFINE_boolean("auxiliary_depth", True, "Specify whether a depth map is predicted.")
+tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
 tf.app.flags.DEFINE_float("learning_rate", 0.5, "Start learning rate.")
 tf.app.flags.DEFINE_boolean("random_learning_rate", False, "Use sampled learning rate from UL(10**-2, 1)")
 
 tf.app.flags.DEFINE_boolean("plot_depth", False, "Specify whether the depth predictions is saved as images.")
-tf.app.flags.DEFINE_boolean("n_fc", True, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
+tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
 tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
 tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
 
@@ -94,8 +94,8 @@ def load_config(modelfolder, file_name = "configuration"):
   """
   print("Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['n_fc','auxiliary_depth']
-  intlist=['n_frames']
+  boollist=['n_fc','auxiliary_depth', 'discrete']
+  intlist=['n_frames', 'num_outputs']
   floatlist=[]
   stringlist=['network', 'data_format']
   for child in tree.getroot().find('flags'):

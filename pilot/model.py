@@ -16,7 +16,7 @@ FLAGS = tf.app.flags.FLAGS
 # INITIALIZATION
 tf.app.flags.DEFINE_string("checkpoint_path", 'auxd', "Specify the directory of the checkpoint of the earlier trained model.")
 tf.app.flags.DEFINE_boolean("continue_training", True, "Continue training of the prediction layers. If false, initialize the prediction layers randomly. The default value should remain True.")
-tf.app.flags.DEFINE_boolean("scratch", False, "Initialize full network randomly.")
+tf.app.flags.DEFINE_boolean("scratch", True, "Initialize full network randomly.")
 
 # TRAINING
 tf.app.flags.DEFINE_float("weight_decay", 0.00004, "Weight decay of inception network")
@@ -29,17 +29,19 @@ tf.app.flags.DEFINE_integer("clip_grad", 0, "Specify the max gradient norm: defa
 tf.app.flags.DEFINE_string("optimizer", 'adadelta', "Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
 # tf.app.flags.DEFINE_string("no_batchnorm_learning", True, "In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
 # tf.app.flags.DEFINE_boolean("grad_mul", True, "Specify whether the weights of the prediction layers should be learned faster.")
+tf.app.flags.DEFINE_boolean("discrete", False, "Define the output of the network as discrete control values or continuous.")
+tf.app.flags.DEFINE_integer("num_outputs", 9, "Specify the number of discrete outputs.")
 
 """
 Build basic NN model
 """
 class Model(object):
  
-  def __init__(self,  session, output_size, prefix='model', device='/gpu:0', bound=1, depth_input_size=(55,74)):
+  def __init__(self,  session, action_dim, prefix='model', device='/gpu:0', bound=1, depth_input_size=(55,74)):
     '''initialize model
     '''
     self.sess = session
-    self.output_size = output_size
+    self.action_dim = action_dim
     self.depth_input_size = depth_input_size
     self.bound=bound
     self.prefix = prefix
@@ -48,6 +50,20 @@ class Model(object):
     self.lr = FLAGS.learning_rate
     self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
+    # Calculate the boundaries of the different bins for discretizing the targets.
+    # Define a list form [-bound, +bound] with num_outputs steps and keep the boundaries in a field.
+    if FLAGS.discrete:
+      bin_width=2*self.bound/(FLAGS.num_outputs-1.)
+      # Define the corresponding float values for each index [0:num_outputs]
+      self.bin_vals=[-self.bound+n*bin_width for n in range(FLAGS.num_outputs)]
+      b=round(-self.bound+bin_width/2,4)
+      self.boundaries=[]
+      while b < self.bound:
+        # print b
+        self.boundaries.append(b)
+        b=round(b+bin_width,4)
+      assert len(self.boundaries) == FLAGS.num_outputs-1
+      
     #define the input size of the network input
     if FLAGS.network =='mobile':
       # Use NCHW instead of NHWC data input because this is faster on GPU.    
@@ -111,40 +127,49 @@ class Model(object):
     '''
     with tf.device(self.device):
       self.inputs = tf.placeholder(tf.float32, shape = self.input_size)
-      if FLAGS.network=='mobile': 
+      args_for_scope={'weight_decay': FLAGS.weight_decay,
+      'stddev':FLAGS.init_scale, 
+      'data_format':FLAGS.data_format}
+      if FLAGS.network=='mobile':
         if FLAGS.n_fc: # concatenate consecutive features from a shared feature extracting CNN network
           if FLAGS.data_format=='NCHW':
             self.inputs = tf.placeholder(tf.float32, shape = (self.input_size[0],FLAGS.n_frames*self.input_size[1],self.input_size[2],self.input_size[3]))
           else:
             self.inputs = tf.placeholder(tf.float32, shape = (self.input_size[0],self.input_size[1],self.input_size[2],FLAGS.n_frames*self.input_size[3]))
-          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= True, weight_decay=FLAGS.weight_decay,
-                               stddev=FLAGS.init_scale, data_format=FLAGS.data_format)):
-            self.outputs, self.aux_depth, self.endpoints = mobile_net.mobilenet_n(self.inputs, num_classes=self.output_size, is_training=True)
-          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= False, weight_decay=FLAGS.weight_decay,
-                               stddev=FLAGS.init_scale, data_format=FLAGS.data_format)):
-            self.controls, self.pred_depth, _ = mobile_net.mobilenet_n(self.inputs, num_classes=self.output_size, is_training=False)
+          args_for_model={'inputs':self.inputs, 
+                        'num_classes':self.action_dim if not FLAGS.discrete else self.action_dim * FLAGS.num_outputs} 
+          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= True, **args_for_scope)):
+            self.outputs, self.aux_depth, self.endpoints = mobile_net.mobilenet_n(is_training=True, **args_for_model)
+          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= False, **args_for_scope)):
+            self.controls, self.pred_depth, _ = mobile_net.mobilenet_n(is_training=False, **args_for_model)
         else: # Use only 1 frame to create a feature
-          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=True, weight_decay=FLAGS.weight_decay,
-                           stddev=FLAGS.init_scale, data_format=FLAGS.data_format)):
-            self.outputs, self.endpoints = mobile_net.mobilenet_v1(self.inputs, num_classes=self.output_size, 
-              is_training=True, dropout_keep_prob=FLAGS.dropout_keep_prob, depth_multiplier=FLAGS.depth_multiplier)
+          args_for_model={'inputs':self.inputs, 
+                        'num_classes':self.action_dim if not FLAGS.discrete else self.action_dim * FLAGS.num_outputs} 
+          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=True,**args_for_scope)):
+            self.outputs, self.endpoints = mobile_net.mobilenet_v1(is_training=True,**args_for_model)
             self.aux_depth = self.endpoints['aux_depth_reshaped']
-          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=False, weight_decay=FLAGS.weight_decay,
-                           stddev=FLAGS.init_scale, data_format=FLAGS.data_format)):
-            self.controls, _ = mobile_net.mobilenet_v1(self.inputs, num_classes=self.output_size, 
-              is_training=False, reuse = True, depth_multiplier=FLAGS.depth_multiplier)
+          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=False, **args_for_scope)):
+            self.controls, _ = mobile_net.mobilenet_v1(is_training=False, reuse = True,**args_for_model)
             self.pred_depth = _['aux_depth_reshaped']
       else:
         raise NameError( '[model] Network is unknown: ', FLAGS.network)
-      if(self.bound!=1 or self.bound!=0):
+      if self.bound!=1 and self.bound!=0:
         self.outputs = tf.multiply(self.outputs, self.bound) # Scale output to -bound to bound
 
   def define_loss(self):
     '''tensor for calculating the loss
     '''
     with tf.device(self.device):
-      self.targets = tf.placeholder(tf.float32, [None, self.output_size])
-      self.loss = tf.losses.mean_squared_error(self.outputs, self.targets, weights=FLAGS.control_weight)
+      if not FLAGS.discrete:
+        self.targets = tf.placeholder(tf.float32, [None, self.action_dim])
+        self.loss = tf.losses.mean_squared_error(self.outputs, self.targets, weights=FLAGS.control_weight)
+      else:
+        # outputs expects to be real numbers (logits) not probabilities as it computes a softmax internally for efficiency
+        self.targets = tf.placeholder(tf.int32, [None, self.action_dim])
+        one_hot=tf.squeeze(tf.one_hot(self.targets, FLAGS.num_outputs),[1])
+        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=self.outputs, weights=FLAGS.control_weight)
+        #loss = tf loss (discretized(self.targets), self.outputs)
+
       if FLAGS.auxiliary_depth:
         self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
         weights = FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
@@ -169,6 +194,22 @@ class Model(object):
       for v in mobile_variables: gradient_multipliers[v.name]=FLAGS.grad_mul_weight
       self.train_op = slim.learning.create_train_op(self.total_loss, self.optimizer, global_step=self.global_step, gradient_multipliers=gradient_multipliers, clip_gradient_norm=FLAGS.clip_grad)
 
+  def discretized(self, targets):
+    '''discretize targets from a float value like 0.3 to an integer index
+    according to the calculated bins between [-bound:bound] indicated in self.boundaries
+    returns: discretized labels.
+    '''
+    dis_targets=[]
+    for t in targets:
+      res_bin=0
+      for b in self.boundaries:
+          if b<t:
+              res_bin+=1
+          else:
+              break
+      dis_targets.append(res_bin)
+    return dis_targets
+
   def forward(self, inputs, auxdepth=False, targets=[], depth_targets=[]):
     '''run forward pass and return action prediction
     inputs=batch of RGB iamges
@@ -183,7 +224,7 @@ class Model(object):
     
     if len(targets) != 0: # if target control is available, calculate loss
       tensors.append(self.loss)
-      feed_dict[self.targets] = targets
+      feed_dict[self.targets]=targets if not FLAGS.discrete else np.expand_dims(self.discretized(targets),axis=1)
       if not FLAGS.auxiliary_depth: tensors.append(self.total_loss)
     
     if len(depth_targets) != 0 and FLAGS.auxiliary_depth:# if target depth is available, calculate loss
@@ -192,10 +233,11 @@ class Model(object):
       if len(targets) != 0: tensors.append(self.total_loss)
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
+
     control=results.pop(0)
     losses = {}
-    aux_results = {}
-    
+    aux_results = {}   
+
     if auxdepth: 
       aux_results['d']=results.pop(0)
     
@@ -211,12 +253,12 @@ class Model(object):
     return control, losses, aux_results
 
   def backward(self, inputs, targets=[], depth_targets=[]):
-    '''run forward pass and return action prediction
+    '''run backward pass and return losses
     '''
     tensors = [self.train_op]
     feed_dict = {self.inputs: inputs}
     tensors.append(self.loss)
-    feed_dict[self.targets]=targets
+    feed_dict[self.targets]=targets if not FLAGS.discrete else np.expand_dims(self.discretized(targets),axis=1)
     if FLAGS.auxiliary_depth:
       feed_dict[self.depth_targets] = depth_targets
       tensors.append(self.depth_loss)

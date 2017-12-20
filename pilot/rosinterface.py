@@ -238,6 +238,8 @@ class PilotNode(object):
       action = trgt if np.random.binomial(1, FLAGS.alpha**(self.runs['train']+1)) else control[0,0]
     else:
       action = control[0,0]
+    if FLAGS.discrete:
+      control = self.model.bin_vals[np.argmax(control)]
     msg = Twist()
     if FLAGS.type_of_noise == 'ou':
       noise = self.exploration_noise.noise()

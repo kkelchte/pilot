@@ -255,10 +255,8 @@ def mobilenet_v1_base(inputs,
 
 def mobilenet_v1(inputs,
                  num_classes=1000,
-                 dropout_keep_prob=0.999,
                  is_training=True,
                  min_depth=8,
-                 depth_multiplier=1.0,
                  conv_defs=None,
                  prediction_fn=tf.contrib.layers.softmax,
                  spatial_squeeze=True,
@@ -268,15 +266,10 @@ def mobilenet_v1(inputs,
   Args:
     inputs: a tensor of shape [batch_size, height, width, channels].
     num_classes: number of predicted classes.
-    dropout_keep_prob: the percentage of activation values that are retained.
     is_training: whether is training or not.
     min_depth: Minimum depth value (number of channels) for all convolution ops.
       Enforced when depth_multiplier < 1, and not an active constraint when
       depth_multiplier >= 1.
-    depth_multiplier: Float multiplier for the depth (number of channels)
-      for all convolution ops. The value must be greater than zero. Typical
-      usage will be to set this value in (0, 1) to reduce the number of
-      parameters or computation cost of the model.
     conv_defs: A list of ConvDef namedtuples specifying the net architecture.
     prediction_fn: a function to get predictions out of logits.
     spatial_squeeze: if True, logits is of shape is [B, C], if false logits is
@@ -303,18 +296,18 @@ def mobilenet_v1(inputs,
                         is_training=is_training):
       net, end_points = mobilenet_v1_base(inputs, scope=scope,
                                           min_depth=min_depth,
-                                          depth_multiplier=depth_multiplier,
+                                          depth_multiplier=FLAGS.depth_multiplier,
                                           conv_defs=conv_defs)
       kernel_size = _reduced_kernel_size_for_small_input(net, [7, 7])
       net = slim.avg_pool2d(net, kernel_size, padding='VALID',
                             scope='AvgPool_1a')
       end_points['AvgPool_1a'] = net
       if is_training:
-        net = slim.dropout(net, keep_prob=dropout_keep_prob, scope='Dropout_1b')
+        net = slim.dropout(net, keep_prob=FLAGS.dropout_keep_prob, scope='Dropout_1b')
       # print( str(net))
       with tf.variable_scope('aux_depth'):
         end_point = 'aux_depth_fc'
-        depth_aux_feat = tf.reshape(net,[-1, int(depth_multiplier*1024)])
+        depth_aux_feat = tf.reshape(net,[-1, int(FLAGS.depth_multiplier*1024)])
         aux_logits=slim.fully_connected(depth_aux_feat, 4096, tf.nn.relu)
         end_points[end_point] = aux_logits
         
@@ -357,7 +350,7 @@ def mobilenet_n(inputs,
   features = []
   for i in range(FLAGS.n_frames):
     _, endpoints = mobilenet_v1(inputs[:,:,:,i*3:(i+1)*3], num_classes=num_classes, 
-      is_training=is_training, reuse=(i!=0 and is_training) or not is_training, depth_multiplier=FLAGS.depth_multiplier)
+      is_training=is_training, reuse=(i!=0 and is_training) or not is_training)
     if FLAGS.data_format == 'NCHW':
       net = tf.squeeze(endpoints['AvgPool_1a'], [2,3])
     else :

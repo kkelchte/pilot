@@ -84,8 +84,10 @@ def run(model):
     sumvar = run_episode('train', {}, model)
     
     # ----------- validate episode
-    # sumvar = run_episode('val', {}, model)
+    #sumvar = run_episode('val', {}, model)
     sumvar = run_episode('val', sumvar, model)
+    
+    #import pdb; pdb.set_trace()
 
     # ----------- write summary
     try:
