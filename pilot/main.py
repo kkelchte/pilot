@@ -44,7 +44,7 @@ tf.app.flags.DEFINE_boolean("owr", False, "Overwrite existing logfolder when it 
 tf.app.flags.DEFINE_float("action_bound", 1.0, "Define between what bounds the actions can go. Default: [-1:1].")
 tf.app.flags.DEFINE_boolean("real", False, "Define settings in case of interacting with the real (bebop) drone.")
 tf.app.flags.DEFINE_boolean("evaluate", False, "Just evaluate the network without training.")
-tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network.")
+tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze.")
 tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
 
 tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
@@ -96,7 +96,7 @@ def load_config(modelfolder, file_name = "configuration"):
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
   boollist=['n_fc','auxiliary_depth', 'discrete']
   intlist=['n_frames', 'num_outputs']
-  floatlist=[]
+  floatlist=['depth_multiplier']
   stringlist=['network', 'data_format']
   for child in tree.getroot().find('flags'):
     try :

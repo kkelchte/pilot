@@ -63,7 +63,9 @@ class Model(object):
         self.boundaries.append(b)
         b=round(b+bin_width,4)
       assert len(self.boundaries) == FLAGS.num_outputs-1
-      
+
+    print "data_format: {}".format(FLAGS.data_format)
+  
     #define the input size of the network input
     if FLAGS.network =='mobile':
       # Use NCHW instead of NHWC data input because this is faster on GPU.    
@@ -73,12 +75,17 @@ class Model(object):
       else:
         self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
           mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 3]
-      print "data_format: {}".format(FLAGS.data_format)
-      
+    # elif FLAGS.network =='squeeze':
+    #   if FLAGS.data_format=="NCHW":
+    #     self.input_size = [None, 3, squeezenet.squeezenet.default_image_size, 
+    #       squeezenet.squeezenet.default_image_size] 
+    #   else:
+    #     self.input_size = [None, squeezenet.squeezenet.default_image_size, 
+    #       squeezenet.squeezenet.default_image_size, 3]
     else:
       raise NameError( 'Network is unknown: ', FLAGS.network)
     self.define_network()
-    
+        
     
     # Only feature extracting part is initialized from pretrained model
     if not FLAGS.continue_training:
