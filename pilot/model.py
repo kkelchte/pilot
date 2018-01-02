@@ -16,7 +16,7 @@ FLAGS = tf.app.flags.FLAGS
 # INITIALIZATION
 tf.app.flags.DEFINE_string("checkpoint_path", 'auxd', "Specify the directory of the checkpoint of the earlier trained model.")
 tf.app.flags.DEFINE_boolean("continue_training", True, "Continue training of the prediction layers. If false, initialize the prediction layers randomly. The default value should remain True.")
-tf.app.flags.DEFINE_boolean("scratch", True, "Initialize full network randomly.")
+tf.app.flags.DEFINE_boolean("scratch", False, "Initialize full network randomly.")
 
 # TRAINING
 tf.app.flags.DEFINE_float("weight_decay", 0.00004, "Weight decay of inception network")

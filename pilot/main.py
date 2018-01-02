@@ -142,7 +142,12 @@ def main(_):
       shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
   else :
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
-      raise NameError( 'Logfolder already exists, overwriting alert: '+ FLAGS.summary_dir+FLAGS.log_tag ) 
+      checkpoints=[fs for fs in os.listdir(FLAGS.summary_dir+FLAGS.log_tag) if fs.endswith('.meta')]
+      if len(checkpoints) != 0:
+        # if a checkpoint is found in current folder it raises an overwrite alert.
+        raise NameError( 'Logfolder already exists, overwriting alert: '+ FLAGS.summary_dir+FLAGS.log_tag )
+      else:
+        shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
   os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
   save_config(FLAGS.summary_dir+FLAGS.log_tag)
 
