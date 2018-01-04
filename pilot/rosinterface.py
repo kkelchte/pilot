@@ -239,6 +239,7 @@ class PilotNode(object):
     else:
       action = control[0,0]
     if FLAGS.discrete:
+      # print control
       control = self.model.bin_vals[np.argmax(control)]
     msg = Twist()
     if FLAGS.type_of_noise == 'ou':
@@ -257,6 +258,11 @@ class PilotNode(object):
       raise IOError( 'Type of noise is unknown: {}'.format(FLAGS.type_of_noise))
     self.action_pub.publish(msg)
     
+    # write control to log
+    f=open(self.logfolder+'/ctr_log','a')
+    f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
+    f.close()
+
     if not self.finished:
       rec=time.time()
       self.time_ctr_send.append(rec)

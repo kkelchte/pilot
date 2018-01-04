@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_float("weight_decay", 0.00004, "Weight decay of inception ne
 tf.app.flags.DEFINE_float("init_scale", 0.0005, "Std of uniform initialization")
 tf.app.flags.DEFINE_float("depth_weight", 1, "Define the weight applied to the depth values in the loss relative to the control loss.")
 tf.app.flags.DEFINE_float("control_weight", 1, "Define the weight applied to the control loss.")
-tf.app.flags.DEFINE_float("grad_mul_weight", 0.001, "Specify the amount the gradients of prediction layers.")
+tf.app.flags.DEFINE_float("grad_mul_weight", 1, "Specify the amount the gradients of prediction layers.")
 tf.app.flags.DEFINE_float("dropout_keep_prob", 0.5, "Specify the probability of dropout to keep the activation.")
 tf.app.flags.DEFINE_integer("clip_grad", 0, "Specify the max gradient norm: default 0 is no clipping, recommended 4.")
 tf.app.flags.DEFINE_string("optimizer", 'adadelta', "Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
@@ -101,7 +101,7 @@ class Model(object):
     
     # get latest folder out of training directory if there is no checkpoint file
     if FLAGS.checkpoint_path[0]!='/':
-      FLAGS.checkpoint_path = os.path.join(os.getenv('HOME'),'tensorflow/log',FLAGS.checkpoint_path)
+      FLAGS.checkpoint_path = FLAGS.summary_dir+FLAGS.checkpoint_path
     if not os.path.isfile(FLAGS.checkpoint_path+'/checkpoint'):
       FLAGS.checkpoint_path = FLAGS.checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(FLAGS.checkpoint_path)) if os.path.isdir(FLAGS.checkpoint_path+'/'+mpath) and not mpath[-3:]=='val' and os.path.isfile(FLAGS.checkpoint_path+'/'+mpath+'/checkpoint')][-1]
     
@@ -110,7 +110,7 @@ class Model(object):
       init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(FLAGS.checkpoint_path), variables_to_restore)
     
     # create saver for checkpoints
-    self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=1, max_to_keep=5)
+    self.saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=1)
     
     # Add the loss function to the graph.
     self.define_loss()

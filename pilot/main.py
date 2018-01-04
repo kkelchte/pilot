@@ -20,7 +20,7 @@ import time
 import signal
 
 # Block all the ugly printing...
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -136,6 +136,8 @@ def main(_):
   FLAGS.summary_dir = os.path.join(os.getenv('HOME'),FLAGS.summary_dir)
   print("summary dir: {}".format(FLAGS.summary_dir))
   
+  start_ep=0 # used in case a model is found with same log_tag meaning that a job disconnected on condor and model can continue training.
+  
   #Check log folders and if necessary remove:
   if FLAGS.log_tag == 'testing' or FLAGS.owr:
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
@@ -144,18 +146,28 @@ def main(_):
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
       checkpoints=[fs for fs in os.listdir(FLAGS.summary_dir+FLAGS.log_tag) if fs.endswith('.meta')]
       if len(checkpoints) != 0:
-        # if a checkpoint is found in current folder it raises an overwrite alert.
-        raise NameError( 'Logfolder already exists, overwriting alert: '+ FLAGS.summary_dir+FLAGS.log_tag )
+        # if a checkpoint is found in current folder, use this folder as checkpoint path.
+        #raise NameError( 'Logfolder already exists, overwriting alert: '+ FLAGS.summary_dir+FLAGS.log_tag )
+        FLAGS.scratch = False
+        FLAGS.continue_training = True
+        FLAGS.checkpoint_path = FLAGS.log_tag
+        checkpoint_model=open(FLAGS.summary_dir+FLAGS.log_tag+'/checkpoint').readlines()[0]
+        start_ep=int(int(checkpoint_model.split('-')[-1][:-2])/100)
+        print("Found model: {0} trained for {1} episodes".format(FLAGS.log_tag,start_ep))
       else:
         shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
-  os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
+  if not os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag): 
+    os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
   save_config(FLAGS.summary_dir+FLAGS.log_tag)
 
   action_dim = 1 #only turn in yaw from -1:1
   
   config=tf.ConfigProto(allow_soft_placement=True)
+  # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
   config.gpu_options.allow_growth = True
+  # config.gpu_options.per_process_gpu_memory_fraction = 0.4
+
   # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
   model = Model(sess, action_dim, bound=FLAGS.action_bound)
@@ -174,7 +186,7 @@ def main(_):
   
   if FLAGS.offline:
     print('Offline training.')
-    offline.run(model)
+    offline.run(model,start_ep)
   else: # online training/evaluating
     print('Online training.')
     rosnode = rosinterface.PilotNode(model, FLAGS.summary_dir+FLAGS.log_tag)

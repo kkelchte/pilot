@@ -64,18 +64,22 @@ def run_episode(data_type, sumvar, model):
   print('>>{0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(data_type.upper(),tuple(time.localtime()[0:5]),
     tools.print_dur(data_loading_time),tools.print_dur(calculation_time)))
   if data_type == 'val' or data_type == 'test':
-    print('{}'.format(str([sumvar[k] for k in sumvar if k != 'depth_predictions'])))
-
+    # print('{}'.format(str([k+" : "+sumvar[k] for k in sumvar if k != 'depth_predictions'])))
+    msg=str(["{0} : {1}".format(k,sumvar[k]) for k in sumvar.keys() if k != 'depth_predictions'])
+    print(msg)
+    f=open(FLAGS.summary_dir+FLAGS.log_tag+"/tf_log",'a')
+    f.write(msg+'\n')
+    f.close()
   sys.stdout.flush()
   return sumvar
 
-def run(model):
+def run(model, start_ep=0):
   if FLAGS.data_format=="NCHW":
     data.prepare_data((model.input_size[2], model.input_size[3], model.input_size[1]))
   else:
     data.prepare_data((model.input_size[1], model.input_size[2], model.input_size[3]))
   
-  ep=0
+  ep=start_ep
   while ep<FLAGS.max_episodes-1 and not FLAGS.testing:
     ep+=1
 
@@ -105,7 +109,4 @@ def run(model):
     model.summarize(sumvar)
   except Exception as e:
     print('failed to summarize {}'.format(e))
-  # write checkpoint every x episodes
-  if ((ep%20==0 and ep!=0) or ep==(FLAGS.max_episodes-1)) and not FLAGS.testing:
-    print('saved checkpoint')
-    model.save(FLAGS.summary_dir+FLAGS.log_tag)
+  model.save(FLAGS.summary_dir+FLAGS.log_tag)
