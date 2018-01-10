@@ -1,0 +1,37 @@
+{
+	"build_systems":
+	[
+		{
+			"name": "List",
+			"shell_cmd": "ls -l"
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "/users/visics/kkelchte/tensorflow/examples/naive_q_learning/pilot",
+			"name":"naive_q"
+		},
+		{
+			"path": "/users/visics/kkelchte/blogs"
+		},
+		{
+			"path": "/users/visics/kkelchte/condor"
+		},
+		{
+			"folder_exclude_patterns":
+			[
+				".*"
+			],
+			"path": "/esat/qayd/kkelchte/docker_home"
+		},
+		{
+			"path": "/users/visics/kkelchte/tensorflow/examples/pilot/pilot",
+			"name":"master"
+		}
+	],
+	"settings":
+	{
+		"tab_size": 2
+	}
+}
