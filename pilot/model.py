@@ -4,6 +4,7 @@ import os
 import tensorflow.contrib.slim as slim
 import models.mobile_net as mobile_net
 import models.depth_q_net as depth_q_net
+import models.naive_q_net as naive_q_net
 
 from tensorflow.contrib.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
@@ -69,20 +70,16 @@ class Model(object):
     print "data_format: {}".format(FLAGS.data_format)
   
     #define the input size of the network input
-    if FLAGS.network =='mobile':
+    if FLAGS.network in ['mobile','depth_q_net','naive_q_net']:
       # Use NCHW instead of NHWC data input because this is faster on GPU.    
       if FLAGS.data_format=="NCHW":
         self.input_size = [None, 3, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
-          mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier]] 
+          mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier]]
+        if FLAGS.network in ['depth_q_net','naive_q_net']:
+          raise NotImplementedError( 'dataformat NCHW is not implemented for network : '+FLAGS.network)
       else:
         self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
           mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 3]
-    elif FLAGS.network =='depth_q_net':
-      self.input_size = [None, depth_q_net.depth_q_net.default_image_size[FLAGS.depth_multiplier], 
-          depth_q_net.depth_q_net.default_image_size[FLAGS.depth_multiplier], 3] 
-      if FLAGS.data_format=="NCHW":
-        raise NotImplementedError( 'dataformat NCHW is not implemented for network : '+FLAGS.network)
-         
     # elif FLAGS.network =='squeeze':
     #   if FLAGS.data_format=="NCHW":
     #     self.input_size = [None, 3, squeezenet.squeezenet.default_image_size, 
@@ -174,6 +171,12 @@ class Model(object):
           self.depth_predictions_train, self.endpoints = depth_q_net.depth_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=False, **args_for_scope)):
           self.depth_predictions_eval, _ = depth_q_net.depth_q_net(is_training=False, reuse = True,**args_for_model)
+      elif FLAGS.network=='naive_q_net':
+        args_for_model={'inputs':self.inputs} 
+        with slim.arg_scope(naive_q_net.depth_q_net_arg_scope(is_training=True,**args_for_scope)):
+          self.depth_predictions_train, self.endpoints = naive_q_net.depth_q_net(is_training=True,**args_for_model)
+        with slim.arg_scope(naive_q_net.depth_q_net_arg_scope(is_training=False, **args_for_scope)):
+          self.depth_predictions_eval, _ = naive_q_net.depth_q_net(is_training=False, reuse = True,**args_for_model)
       else:
         raise NameError( '[model] Network is unknown: ', FLAGS.network)
       if self.bound!=1 and self.bound!=0:
@@ -183,7 +186,7 @@ class Model(object):
     '''tensor for calculating the loss
     '''
     with tf.device(self.device):
-      if FLAGS.depth_q_learning:
+      if FLAGS.depth_q_learning or FLAGS.naive_q_learning:
         self.targets = tf.placeholder(tf.float32, [None,55,74])
         weights = FLAGS.depth_weight*tf.cast(tf.greater(self.targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
         self.loss = tf.losses.huber_loss(self.depth_predictions_train,self.targets,weights=weights)
@@ -248,6 +251,7 @@ class Model(object):
     if FLAGS.depth_q_learning:
       assert len(actions) != 0, 'Applied action is required for q-prediction'
       feed_dict[self.actions]=actions
+    if FLAGS.depth_q_learning or FLAGS.naive_q_learning:
       tensors = [self.depth_predictions_eval]
     else:
       tensors = [self.controls]

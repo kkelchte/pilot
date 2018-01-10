@@ -37,7 +37,7 @@ def run_episode(data_type, sumvar, model):
       actions = np.array([[_['ctr']] for _ in batch]) if FLAGS.depth_q_learning else []
       if FLAGS.data_format == "NCHW": 
         inputs = np.swapaxes(np.swapaxes(inputs,2,3),1,2)
-      targets = np.array([[_['ctr']] for _ in batch] if not FLAGS.depth_q_learning else np.array([_['depth'] for _ in batch]).reshape((-1,55,74)))
+      targets = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.depth_q_learning or FLAGS.naive_q_learning else np.array([[_['ctr']] for _ in batch])
       try:
         target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
         if len(target_depth) == 0 : raise ValueError('No depth in batch.')

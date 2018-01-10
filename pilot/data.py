@@ -74,7 +74,7 @@ def load_set(data_type):
     
     # Add depth links if files exist
     depth_list = [] 
-    if FLAGS.auxiliary_depth or FLAGS.depth_q_learning:
+    if FLAGS.auxiliary_depth or FLAGS.depth_q_learning or FLAGS.naive_q_learning:
       try:
         depths_jpg=listdir(join(run_dir,'Depth'))
         if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
@@ -161,7 +161,7 @@ def generate_batch(data_type):
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
       # choose random index over image numbers:
-      frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs']) if not FLAGS.depth_q_learning else len(data_set[run_ind]['num_imgs'])-1))
+      frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1 if FLAGS.depth_q_learning or FLAGS.naive_q_learning else len(data_set[run_ind]['num_imgs'])))
       if FLAGS.n_fc:
         frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
       batch_indices.append((batch_num, run_ind, frame_ind))
@@ -178,9 +178,9 @@ def generate_batch(data_type):
             img = sm.imresize(img,im_size,'nearest').astype(float) #.astype(np.float32)
             assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
             de = []
-            if FLAGS.auxiliary_depth or FLAGS.depth_q_learning:
+            if FLAGS.auxiliary_depth or FLAGS.depth_q_learning or FLAGS.naive_q_learning:
               try:
-                depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind] if not FLAGS.depth_q_learning else data_set[run_ind]['depths'][frame_ind+1]))
+                depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind+1] if FLAGS.depth_q_learning or FLAGS.naive_q_learning else data_set[run_ind]['depths'][frame_ind]))
               except:
                 pass
               else:
