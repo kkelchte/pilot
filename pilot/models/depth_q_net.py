@@ -252,33 +252,30 @@ def mobilenet_v1_base(inputs,
   raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
 
-def mobilenet_v1(inputs,
-                 num_classes=1000,
-                 is_training=True,
-                 min_depth=8,
-                 conv_defs=None,
-                 prediction_fn=tf.contrib.layers.softmax,
-                 spatial_squeeze=True,
-                 reuse=None,
-                 scope='MobilenetV1'):
-  """Mobilenet v1 model for classification.
+def depth_q_net(inputs,
+                actions, 
+                is_training=True,
+                min_depth=8,
+                conv_defs=None,
+                spatial_squeeze=True,
+                reuse=None,
+                scope='MobilenetV1'):
+  """depth_q_net model for regression of depth as q value.
   Args:
     inputs: a tensor of shape [batch_size, height, width, channels].
-    num_classes: number of predicted classes.
+    actions: a tensor of shape [action_dim].
     is_training: whether is training or not.
     min_depth: Minimum depth value (number of channels) for all convolution ops.
       Enforced when depth_multiplier < 1, and not an active constraint when
       depth_multiplier >= 1.
     conv_defs: A list of ConvDef namedtuples specifying the net architecture.
-    prediction_fn: a function to get predictions out of logits.
     spatial_squeeze: if True, logits is of shape is [B, C], if false logits is
         of shape [B, 1, 1, C], where B is batch_size and C is number of classes.
     reuse: whether or not the network and its variables should be reused. To be
       able to reuse 'scope' must be given.
     scope: Optional variable_scope.
   Returns:
-    logits: the pre-softmax activations, a tensor of size
-      [batch_size, num_classes]
+    depth predictions: tensor of shape [batch_size, 55, 74]
     end_points: a dictionary from components of the network to the corresponding
       activation.
   Raises:
@@ -289,8 +286,7 @@ def mobilenet_v1(inputs,
     raise ValueError('Invalid input tensor rank, expected 4, was: %d' %
                      len(input_shape))
 
-  with tf.variable_scope(scope, 'MobilenetV1', [inputs, num_classes],
-                         reuse=reuse) as scope:
+  with tf.variable_scope(scope, 'DepthQnet', reuse=reuse) as scope:
     with slim.arg_scope([slim.batch_norm, slim.dropout],
                         is_training=is_training):
       net, end_points = mobilenet_v1_base(inputs, scope=scope,
@@ -303,74 +299,31 @@ def mobilenet_v1(inputs,
       end_points['AvgPool_1a'] = net
       if is_training:
         net = slim.dropout(net, keep_prob=FLAGS.dropout_keep_prob, scope='Dropout_1b')
-      # print( str(net))
-      with tf.variable_scope('aux_depth'):
-        end_point = 'aux_depth_fc'
-        depth_aux_feat = tf.reshape(net,[-1, int(FLAGS.depth_multiplier*1024)])
-        aux_logits=slim.fully_connected(depth_aux_feat, 4096, tf.nn.relu)
-        end_points[end_point] = aux_logits
-        
-        end_point = 'aux_depth_fc_1'
-        aux_logits=slim.fully_connected(aux_logits, 55*74, tf.nn.relu)
-        end_points[end_point] = aux_logits
 
-        # encode 4070 feat back to 256 representation
-        end_point = 'aux_depth_enc'
-        aux_enc_logits = slim.fully_connected(aux_logits, 200, None)
-        end_points[end_point] = aux_enc_logits
+      # print( str(net))
+      with tf.variable_scope('q_depth'):
+        end_point = 'depth_fc_0'
+        depth_feat = tf.concat([tf.reshape(net,[-1, int(FLAGS.depth_multiplier*1024)]),actions],axis=1)
+        depth_feat=slim.fully_connected(depth_feat, 4096, tf.nn.relu)
+        end_points[end_point] = depth_feat
+        # print("depth feat size: {}".format(depth_feat.get_shape().as_list()))
+
+        
+        end_point = 'depth_fc_1'
+        depth_feat=slim.fully_connected(depth_feat, 55*74, tf.nn.relu)
+        end_points[end_point] = depth_feat
 
         # output height 55 width 74
-        end_point = 'aux_depth_reshaped'
-        aux_logits=tf.reshape(aux_logits, [-1, 55, 74])
-        end_points[end_point] = aux_logits
+        end_point = 'depth_reshaped'
+        depth_predictions=tf.reshape(depth_feat, [-1, 55, 74])
+        end_points[end_point] = depth_predictions
 
+  return depth_predictions, end_points
 
-
-      with tf.variable_scope('control'): 
-        # 1 x 1 x 1024
-        logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
-        # logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=tf.tanh,
-                             normalizer_fn=None, scope='Conv2d_1c_1x1')
-        if spatial_squeeze:
-          if FLAGS.data_format=='NCHW':
-            logits = tf.squeeze(logits, [2,3], name='SpatialSqueeze')
-          else:
-            logits = tf.squeeze(logits, [1,2], name='SpatialSqueeze')
-        end_points['Logits'] = logits
-      
-
-      # if prediction_fn:
-      #   end_points['Predictions'] = prediction_fn(logits, scope='Predictions')
-  return logits, end_points
-
-def mobilenet_n(inputs,
-                 num_classes=1000,
-                 is_training=True):
-  features = []
-  for i in range(FLAGS.n_frames):
-    _, endpoints = mobilenet_v1(inputs[:,:,:,i*3:(i+1)*3], num_classes=num_classes, 
-      is_training=is_training, reuse=(i!=0 and is_training) or not is_training)
-    if FLAGS.data_format == 'NCHW':
-      net = tf.squeeze(endpoints['AvgPool_1a'], [2,3])
-    else :
-      net = tf.squeeze(endpoints['AvgPool_1a'], [1,2])
-    features.append(net)
-  with tf.variable_scope('concatenated_feature', reuse=not is_training): 
-    control_input=tf.concat(features, axis=1)
-    if is_training:
-      control_input = slim.dropout(control_input, keep_prob=FLAGS.dropout_keep_prob, scope='Dropout_1b')  
-  with tf.variable_scope('control', reuse=not is_training):
-    control_input = slim.fully_connected(control_input, 50, tf.nn.relu, normalizer_fn=None, scope='H_fc_control')
-    outputs = slim.fully_connected(control_input, 1, None, normalizer_fn=None, scope='Fc_control')
-  aux_depth = endpoints['aux_depth_reshaped']
-  return outputs, aux_depth, endpoints
-
-
-
-mobilenet_v1.default_image_size={}
-mobilenet_v1.default_image_size[1] = 224
-mobilenet_v1.default_image_size[0.5] = 160
-mobilenet_v1.default_image_size[0.25] = 128
+depth_q_net.default_image_size={}
+depth_q_net.default_image_size[1] = 224
+depth_q_net.default_image_size[0.5] = 160
+depth_q_net.default_image_size[0.25] = 128
 
 
 def _reduced_kernel_size_for_small_input(input_tensor, kernel_size):
@@ -396,7 +349,7 @@ def _reduced_kernel_size_for_small_input(input_tensor, kernel_size):
   return kernel_size_out
 
 
-def mobilenet_v1_arg_scope(is_training=True,
+def depth_q_net_arg_scope(is_training=True,
                            weight_decay=0.00004,
                            stddev=0.09,
                            regularize_depthwise=False,

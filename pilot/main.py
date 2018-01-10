@@ -30,6 +30,20 @@ FLAGS = tf.app.flags.FLAGS
 # ==========================
 tf.app.flags.DEFINE_boolean("testing", False, "In case we're only testing, the model is tested on the test.txt files and not trained.")
 tf.app.flags.DEFINE_boolean("offline", True, "Training from an offline dataset.")
+tf.app.flags.DEFINE_float("learning_rate", 0.5, "Start learning rate.")
+tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
+tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (way data is saved), though NCHW is faster on GPU.")
+
+# ===========================
+#   Model Parameters
+# ===========================
+tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
+tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze, depth_q_net.")
+tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
+tf.app.flags.DEFINE_boolean("depth_q_learning", False, "In case of True, train a depth prediction network as Q-value predictor in an RL setting.")
+tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
+tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
+
 # ===========================
 #   Utility Parameters
 # ===========================
@@ -44,25 +58,16 @@ tf.app.flags.DEFINE_boolean("owr", False, "Overwrite existing logfolder when it 
 tf.app.flags.DEFINE_float("action_bound", 1.0, "Define between what bounds the actions can go. Default: [-1:1].")
 tf.app.flags.DEFINE_boolean("real", False, "Define settings in case of interacting with the real (bebop) drone.")
 tf.app.flags.DEFINE_boolean("evaluate", False, "Just evaluate the network without training.")
-tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze.")
-tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
-
-tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
-tf.app.flags.DEFINE_float("learning_rate", 0.5, "Start learning rate.")
 tf.app.flags.DEFINE_boolean("random_learning_rate", False, "Use sampled learning rate from UL(10**-2, 1)")
-
 tf.app.flags.DEFINE_boolean("plot_depth", False, "Specify whether the depth predictions is saved as images.")
-tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
-tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
-tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
 
-tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (way data is saved), though NCHW is faster on GPU.")
 
 from model import Model
 import tools
 if not FLAGS.offline: import rosinterface
 import offline
 import models.mobile_net as mobile_net
+import models.depth_q_net as depth_q_net
 
 if not FLAGS.offline: from std_msgs.msg import Empty
 

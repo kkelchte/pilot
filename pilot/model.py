@@ -3,6 +3,7 @@ import tensorflow as tf
 import os
 import tensorflow.contrib.slim as slim
 import models.mobile_net as mobile_net
+import models.depth_q_net as depth_q_net
 
 from tensorflow.contrib.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
@@ -31,6 +32,7 @@ tf.app.flags.DEFINE_string("optimizer", 'adadelta', "Specify optimizer, options:
 # tf.app.flags.DEFINE_boolean("grad_mul", True, "Specify whether the weights of the prediction layers should be learned faster.")
 tf.app.flags.DEFINE_boolean("discrete", False, "Define the output of the network as discrete control values or continuous.")
 tf.app.flags.DEFINE_integer("num_outputs", 9, "Specify the number of discrete outputs.")
+tf.app.flags.DEFINE_string("initializer", 'xavier', "Define the initializer: xavier or uniform [-init_scale, init_scale]")
 
 """
 Build basic NN model
@@ -75,6 +77,12 @@ class Model(object):
       else:
         self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
           mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 3]
+    elif FLAGS.network =='depth_q_net':
+      self.input_size = [None, depth_q_net.depth_q_net.default_image_size[FLAGS.depth_multiplier], 
+          depth_q_net.depth_q_net.default_image_size[FLAGS.depth_multiplier], 3] 
+      if FLAGS.data_format=="NCHW":
+        raise NotImplementedError( 'dataformat NCHW is not implemented for network : '+FLAGS.network)
+         
     # elif FLAGS.network =='squeeze':
     #   if FLAGS.data_format=="NCHW":
     #     self.input_size = [None, 3, squeezenet.squeezenet.default_image_size, 
@@ -83,10 +91,9 @@ class Model(object):
     #     self.input_size = [None, squeezenet.squeezenet.default_image_size, 
     #       squeezenet.squeezenet.default_image_size, 3]
     else:
-      raise NameError( 'Network is unknown: ', FLAGS.network)
+      raise NotImplementedError( 'Network is unknown: ', FLAGS.network)
     self.define_network()
         
-    
     # Only feature extracting part is initialized from pretrained model
     if not FLAGS.continue_training:
       # make sure you exclude the prediction layers of the model
@@ -95,6 +102,7 @@ class Model(object):
       list_to_exclude.append("MobilenetV1/aux_depth")
       list_to_exclude.append("concatenated_feature")
       list_to_exclude.append("control")
+      list_to_exclude.append("MobilenetV1/q_depth")
     else: #If continue training
       list_to_exclude = []
     variables_to_restore = slim.get_variables_to_restore(exclude=list_to_exclude)
@@ -158,6 +166,14 @@ class Model(object):
           with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=False, **args_for_scope)):
             self.controls, _ = mobile_net.mobilenet_v1(is_training=False, reuse = True,**args_for_model)
             self.pred_depth = _['aux_depth_reshaped']
+      elif FLAGS.network=='depth_q_net':
+        self.actions = tf.placeholder(tf.float32, shape = [None, self.action_dim])
+        args_for_model={'inputs':self.inputs,
+                        'actions':self.actions} 
+        with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=True,**args_for_scope)):
+          self.depth_predictions_train, self.endpoints = depth_q_net.depth_q_net(is_training=True,**args_for_model)
+        with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=False, **args_for_scope)):
+          self.depth_predictions_eval, _ = depth_q_net.depth_q_net(is_training=False, reuse = True,**args_for_model)
       else:
         raise NameError( '[model] Network is unknown: ', FLAGS.network)
       if self.bound!=1 and self.bound!=0:
@@ -167,20 +183,24 @@ class Model(object):
     '''tensor for calculating the loss
     '''
     with tf.device(self.device):
-      if not FLAGS.discrete:
-        self.targets = tf.placeholder(tf.float32, [None, self.action_dim])
-        self.loss = tf.losses.mean_squared_error(self.outputs, self.targets, weights=FLAGS.control_weight)
+      if FLAGS.depth_q_learning:
+        self.targets = tf.placeholder(tf.float32, [None,55,74])
+        weights = FLAGS.depth_weight*tf.cast(tf.greater(self.targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
+        self.loss = tf.losses.huber_loss(self.depth_predictions_train,self.targets,weights=weights)
       else:
-        # outputs expects to be real numbers (logits) not probabilities as it computes a softmax internally for efficiency
-        self.targets = tf.placeholder(tf.int32, [None, self.action_dim])
-        one_hot=tf.squeeze(tf.one_hot(self.targets, FLAGS.num_outputs),[1])
-        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=self.outputs, weights=FLAGS.control_weight)
-        #loss = tf loss (discretized(self.targets), self.outputs)
-
-      if FLAGS.auxiliary_depth:
-        self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
-        weights = FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
-        self.depth_loss = tf.losses.huber_loss(self.aux_depth,self.depth_targets,weights=weights)
+        if not FLAGS.discrete:
+          self.targets = tf.placeholder(tf.float32, [None, self.action_dim])
+          self.loss = tf.losses.mean_squared_error(self.outputs, self.targets, weights=FLAGS.control_weight)
+        else:
+          # outputs expects to be real numbers (logits) not probabilities as it computes a softmax internally for efficiency
+          self.targets = tf.placeholder(tf.int32, [None, self.action_dim])
+          one_hot=tf.squeeze(tf.one_hot(self.targets, FLAGS.num_outputs),[1])
+          self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=self.outputs, weights=FLAGS.control_weight)
+          #loss = tf loss (discretized(self.targets), self.outputs)
+        if FLAGS.auxiliary_depth:
+          self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
+          weights = FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
+          self.depth_loss = tf.losses.huber_loss(self.aux_depth,self.depth_targets,weights=weights)
       self.total_loss = tf.losses.get_total_loss()
       
   def define_train(self):
@@ -217,17 +237,22 @@ class Model(object):
       dis_targets.append(res_bin)
     return dis_targets
 
-  def forward(self, inputs, auxdepth=False, targets=[], depth_targets=[]):
+  def forward(self, inputs, actions=[], auxdepth=False, targets=[], depth_targets=[]):
     '''run forward pass and return action prediction
     inputs=batch of RGB iamges
     auxdepth = variable defining wether auxiliary depth should be predicted
     targets = supervised target control
     depth_targets = supervised target depth
     '''
-    tensors = [self.controls]
-    feed_dict={self.inputs: inputs}
-    if auxdepth: # predict auxiliary depth
-      tensors.append(self.pred_depth)
+    feed_dict={self.inputs: inputs}  
+    if FLAGS.depth_q_learning:
+      assert len(actions) != 0, 'Applied action is required for q-prediction'
+      feed_dict[self.actions]=actions
+      tensors = [self.depth_predictions_eval]
+    else:
+      tensors = [self.controls]
+      if auxdepth: # predict auxiliary depth
+        tensors.append(self.pred_depth)
     
     if len(targets) != 0: # if target control is available, calculate loss
       tensors.append(self.loss)
@@ -241,7 +266,7 @@ class Model(object):
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
-    control=results.pop(0)
+    output=results.pop(0)
     losses = {}
     aux_results = {}   
 
@@ -249,7 +274,7 @@ class Model(object):
       aux_results['d']=results.pop(0)
     
     if len(targets) != 0:
-      losses['c']=results.pop(0) # control loss
+      losses['c']=results.pop(0) # output loss
       if not FLAGS.auxiliary_depth: losses['t']=results.pop(0)
     
     if len(depth_targets) != 0:
@@ -257,13 +282,16 @@ class Model(object):
         losses['d']=results.pop(0) # depth loss
         if len(targets) != 0: losses['t']=results.pop(0)
 
-    return control, losses, aux_results
+    return output, losses, aux_results
 
-  def backward(self, inputs, targets=[], depth_targets=[]):
+  def backward(self, inputs, actions=[], targets=[], depth_targets=[]):
     '''run backward pass and return losses
     '''
     tensors = [self.train_op]
     feed_dict = {self.inputs: inputs}
+    if FLAGS.depth_q_learning: 
+      assert len(actions) != 0, 'Applied action is required for q-learning'
+      feed_dict[self.actions]=actions
     tensors.append(self.loss)
     feed_dict[self.targets]=targets if not FLAGS.discrete else np.expand_dims(self.discretized(targets),axis=1)
     if FLAGS.auxiliary_depth:
@@ -274,7 +302,7 @@ class Model(object):
     results = self.sess.run(tensors, feed_dict=feed_dict)
     losses={}
     _ = results.pop(0) # train_op
-    losses['c']=results.pop(0) # control loss
+    losses['c']=results.pop(0) # control loss or Q-loss 
     if FLAGS.auxiliary_depth: losses['d']=results.pop(0)
     losses['t'] = results.pop(0) # total loss
     return losses

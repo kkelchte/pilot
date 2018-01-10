@@ -32,19 +32,21 @@ def run_episode(data_type, sumvar, model):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
     if ok:
+
       inputs = np.array([_['img'] for _ in batch])
+      actions = np.array([[_['ctr']] for _ in batch]) if FLAGS.depth_q_learning else []
       if FLAGS.data_format == "NCHW": 
         inputs = np.swapaxes(np.swapaxes(inputs,2,3),1,2)
-      targets = np.array([[_['ctr']] for _ in batch])
+      targets = np.array([[_['ctr']] for _ in batch] if not FLAGS.depth_q_learning else np.array([_['depth'] for _ in batch]).reshape((-1,55,74)))
       try:
         target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
         if len(target_depth) == 0 : raise ValueError('No depth in batch.')
       except ValueError: 
         target_depth = [] # In case there is no depth targets available
       if data_type=='train':
-        losses = model.backward(inputs, targets, depth_targets=target_depth)
+        losses = model.backward(inputs, actions=actions, targets=targets, depth_targets=target_depth)
       elif data_type=='val' or data_type=='test':
-        _, losses, aux_results = model.forward(inputs, auxdepth=False, targets=targets, depth_targets=target_depth)
+        _, losses, aux_results = model.forward(inputs, actions=actions, auxdepth=False, targets=targets, depth_targets=target_depth)
       try:
         ctr_loss.append(losses['c'])
         if FLAGS.auxiliary_depth: dep_loss.append(losses['d'])
