@@ -38,13 +38,13 @@ tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (
 #   Model Parameters
 # ===========================
 tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
-tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze, depth_q_net, naive_q_net, three_q_net.")
+tf.app.flags.DEFINE_string("network", 'three_q_net', "Define the type of network: mobile, squeeze, depth_q_net, naive_q_net, three_q_net.")
 tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
 tf.app.flags.DEFINE_boolean("naive_q_learning", False, "In case of True, train a depth prediction network as V-value predictor in an RL setting.")
-tf.app.flags.DEFINE_boolean("depth_q_learning", False, "In case of True, train a depth prediction network as Q-value predictor in an RL setting.")
+tf.app.flags.DEFINE_boolean("depth_q_learning", True, "In case of True, train a depth prediction network as Q-value predictor in an RL setting.")
 tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
 tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
-tf.app.flags.DEFINE_integer("subsample", 1, "Specify the amount the predicted depth is subsampled to speed up training (55/factor,74/factor).")
+tf.app.flags.DEFINE_integer("subsample", 4, "Specify the amount the predicted depth is subsampled to speed up training (55/factor,74/factor).")
 
 # ===========================
 #   Utility Parameters
