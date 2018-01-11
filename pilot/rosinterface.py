@@ -196,89 +196,39 @@ class PilotNode(object):
       Plot auxiliary predictions.
       Fill replay buffer.
     """
-    aux_depth=[] # variable to keep predicted depth 
     trgt = -100.
-    if FLAGS.data_format == 'NCHW': 
-      inpt=np.swapaxes(np.swapaxes(im,1,2),0,1) 
-    else :
-      inpt=im
-    if FLAGS.evaluate: ### EVALUATE
-      trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
-      trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and FLAGS.auxiliary_depth else []
-      control, losses, aux_results = self.model.forward([inpt], auxdepth=FLAGS.show_depth,targets=trgt, depth_targets=trgt_depth)
-      for k in ['c', 't', 'd']: 
-        if k in losses.keys(): 
-          try:
-            self.accumlosses[k] += losses[k]
-          except KeyError:
-            self.accumlosses[k] = losses[k]
-      if FLAGS.show_depth and FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
-    else: ###TRAINING
-      # Get necessary labels, if label is missing wait...
-      def check_field(target_name):
-        if len (target_name) == 0:
-          print('Waiting for {}'.format(target_name))
-          return False
-        else:
-          return True
-      if not check_field(self.target_control): 
-        return
-      else: 
-        trgt = self.target_control[5]
-      if FLAGS.auxiliary_depth:
-        if not check_field(self.target_depth): 
-          return
-        else: 
-          trgt_depth = copy.deepcopy(self.target_depth)
-      control, losses, aux_results = self.model.forward([inpt], auxdepth=FLAGS.show_depth)
-      if FLAGS.show_depth and FLAGS.auxiliary_depth: aux_depth = aux_results['d']
-    
+    inpt=im
+    output, losses, aux_results = self.model.forward([inpt])
+
+    im=output[0][::8,::8]
+    left=sum(sum(im[:,:im.shape[1]/2]))
+    right=sum(sum(im[:,im.shape[1]/2:]))
+    # straight=sum(sum(im[:,im.shape[1]/4:im.shape[1]*3/4]))
+    # action=np.argmax([right,straight,left])-1
+    actions={0:-1, 1:1}
+    action=actions[np.argmax([right,left])]
+
+    print("{0}, left: {1}, right: {2}".format(action, left, right))
+    # print("{0}, left: {1}, middle: {2}, right: {3}".format(action, left, straight, right))
     ### SEND CONTROL
-    if trgt != -100 and not FLAGS.evaluate: # policy mixing with FLAGS.alpha
-      action = trgt if np.random.binomial(1, FLAGS.alpha**(self.runs['train']+1)) else control[0,0]
-    else:
-      action = control[0,0]
-    if FLAGS.discrete:
-      # print control
-      control = self.model.bin_vals[np.argmax(control)]
     msg = Twist()
-    if FLAGS.type_of_noise == 'ou':
-      noise = self.exploration_noise.noise()
-      msg.linear.x = FLAGS.speed 
-      msg.linear.y = (not FLAGS.evaluate)*noise[1]*FLAGS.sigma_y
-      msg.linear.z = (not FLAGS.evaluate)*noise[2]*FLAGS.sigma_z
-      msg.angular.z = max(-1,min(1,action+(not FLAGS.evaluate)*FLAGS.sigma_yaw*noise[3]))
-    elif FLAGS.type_of_noise == 'uni':
-      msg.linear.x = FLAGS.speed
-      # msg.linear.x = FLAGS.speed + (not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_x, FLAGS.sigma_x)
-      msg.linear.y = (not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_y, FLAGS.sigma_y)
-      msg.linear.z = (not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_z, FLAGS.sigma_z)
-      msg.angular.z = max(-1,min(1,action+(not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_yaw, FLAGS.sigma_yaw)))
-    else:
-      raise IOError( 'Type of noise is unknown: {}'.format(FLAGS.type_of_noise))
+    msg.linear.x = 0.5
+    msg.linear.y = 0
+    msg.linear.z = 0
+    msg.angular.z = action
+
     self.action_pub.publish(msg)
-    
+
     # write control to log
     f=open(self.logfolder+'/ctr_log','a')
     f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
     f.close()
 
-    if not self.finished:
-      rec=time.time()
-      self.time_ctr_send.append(rec)
-      delay=self.time_ctr_send[-1]-self.time_im_received[-1]
-      self.time_delay.append(delay)  
-    
-    if FLAGS.show_depth and len(aux_depth) != 0 and not self.finished:
-      aux_depth = aux_depth.flatten()
-      self.depth_pub.publish(aux_depth)
-      aux_depth = []
+    if FLAGS.show_depth and not self.finished:
+      im = output[0].flatten()
+      self.depth_pub.publish(im)
       
-    # ADD EXPERIENCE REPLAY
-    if not FLAGS.evaluate and trgt != -100:
-      aux_info = {}
-      if FLAGS.auxiliary_depth: aux_info['target_depth']=trgt_depth
-      self.replay_buffer.add(im,[trgt],aux_info=aux_info)
+
 
   def supervised_callback(self, data):
     """Get target control from the /supervised_vel node"""
@@ -300,58 +250,7 @@ class PilotNode(object):
       print('neural control deactivated.')
       self.ready=False
       self.finished=True
-      # Train model from experience replay:
-      # Train the model with batchnormalization out of the image callback loop
-      depth_predictions = []
-      losses_train = {}
-      if self.replay_buffer.size()>FLAGS.batch_size and not FLAGS.evaluate:
-        for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 10)):
-          inputs, targets, aux_info = self.replay_buffer.sample_batch(FLAGS.batch_size)
-          if FLAGS.data_format=="NCHW": inputs = np.swapaxes(np.swapaxes(inputs,2,3),1,2) #make data NCHW instead of NHWC
-          if b==0:
-            if FLAGS.plot_depth and FLAGS.auxiliary_depth:
-              depth_predictions = tools.plot_depth(inputs, aux_info['target_depth'].reshape(-1,55,74))
-          depth_targets=[]
-          if FLAGS.auxiliary_depth: 
-            depth_targets=aux_info['target_depth'].reshape(-1,55,74)
-          losses = self.model.backward(inputs,targets[:].reshape(-1,1),depth_targets)
-          for k in losses.keys(): 
-            try:
-              losses_train[k].append(losses[k])
-            except:
-              losses_train[k]=[losses[k]]
-      k='train' if not FLAGS.evaluate else 'test'
-      self.average_distances[k]= self.average_distances[k]-self.average_distances[k]/(self.runs[k]+1)
-      self.average_distances[k] = self.average_distances[k]+self.current_distance/(self.runs[k]+1)
-      self.runs[k]+=1
-      sumvar={}
-      result_string='{0}: run {1}'.format(time.strftime('%H:%M'),self.runs[k])
-      vals={'current':self.current_distance, 'furthest':self.furthest_point}
-      for d in ['current', 'furthest']:
-        name='Distance_{0}_{1}'.format(d,'train' if not FLAGS.evaluate else 'test')
-        if len(self.world_name)!=0: name='{0}_{1}'.format(name,self.world_name)
-        sumvar[name]=vals[d]
-        result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
-      for k in losses_train.keys():
-        name={'t':'Loss_train_total','c':'Loss_train_control','d':'Loss_train_depth'}
-        sumvar[name[k]]=np.mean(losses_train[k])
-        result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
-      for k in self.accumlosses.keys():
-        name={'t':'Loss_test_total','c':'Loss_test_control','d':'Loss_test_depth'}
-        sumvar[name[k]]=self.accumlosses[k]
-        result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
-      if FLAGS.plot_depth and FLAGS.auxiliary_depth:
-        sumvar["depth_predictions"]=depth_predictions
-      result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
-      try:
-        self.model.summarize(sumvar)
-      except Exception as e:
-        print('failed to write', e)
-        pass
-      else:
-        print(result_string)
-      # ! Note: tf_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts
-      # Script starts next run once this file is updated.
+      result_string="woopwoop"
       try:
         f=open(os.path.join(self.logfolder,'tf_log'),'a')
         f.write(result_string)
