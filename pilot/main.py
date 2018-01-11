@@ -38,12 +38,13 @@ tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (
 #   Model Parameters
 # ===========================
 tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
-tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze, depth_q_net, naive_q_net.")
+tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze, depth_q_net, naive_q_net, three_q_net.")
 tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
 tf.app.flags.DEFINE_boolean("naive_q_learning", False, "In case of True, train a depth prediction network as V-value predictor in an RL setting.")
 tf.app.flags.DEFINE_boolean("depth_q_learning", False, "In case of True, train a depth prediction network as Q-value predictor in an RL setting.")
 tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
 tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
+tf.app.flags.DEFINE_integer("subsample", 1, "Specify the amount the predicted depth is subsampled to speed up training (55/factor,74/factor).")
 
 # ===========================
 #   Utility Parameters
@@ -70,6 +71,7 @@ import offline
 import models.mobile_net as mobile_net
 import models.depth_q_net as depth_q_net
 import models.naive_q_net as naive_q_net
+import models.three_q_net as three_q_net
 
 if not FLAGS.offline: from std_msgs.msg import Empty
 
@@ -177,7 +179,7 @@ def main(_):
 
   # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
-  model = Model(sess, action_dim, bound=FLAGS.action_bound)
+  model = Model(sess, action_dim, bound=FLAGS.action_bound, depth_input_size=[int(np.ceil(55./FLAGS.subsample)), int(np.ceil(74./FLAGS.subsample))])
   writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   model.writer = writer
   
@@ -193,7 +195,7 @@ def main(_):
   
   if FLAGS.offline:
     print('Offline training.')
-    offline.run(model,start_ep)
+    offline.run(model,start_ep, size_depth=[int(np.ceil(55./FLAGS.subsample)), int(np.ceil(74./FLAGS.subsample))])
   else: # online training/evaluating
     print('Online training.')
     rosnode = rosinterface.PilotNode(model, FLAGS.summary_dir+FLAGS.log_tag)

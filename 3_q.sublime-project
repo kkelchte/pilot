@@ -9,8 +9,8 @@
 	"folders":
 	[
 		{
-			"path": "/users/visics/kkelchte/tensorflow/examples/naive_q_learning/pilot",
-			"name":"naive_q"
+			"path": "/users/visics/kkelchte/tensorflow/examples/3_q_learning/pilot",
+			"name":"3_q"
 		},
 		{
 			"path": "/users/visics/kkelchte/blogs"

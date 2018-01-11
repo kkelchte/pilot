@@ -15,7 +15,7 @@ The data is collected from the data module.
 """
 
 
-def run_episode(data_type, sumvar, model):
+def run_episode(data_type, sumvar, model, size_depth=[55,74]):
   '''run over batches
   return different losses
   type: 'train', 'val' or 'test'
@@ -37,9 +37,9 @@ def run_episode(data_type, sumvar, model):
       actions = np.array([[_['ctr']] for _ in batch]) if FLAGS.depth_q_learning else []
       if FLAGS.data_format == "NCHW": 
         inputs = np.swapaxes(np.swapaxes(inputs,2,3),1,2)
-      targets = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.depth_q_learning or FLAGS.naive_q_learning else np.array([[_['ctr']] for _ in batch])
+      targets = np.array([_['depth'] for _ in batch]).reshape((-1,size_depth[0],size_depth[1])) if FLAGS.depth_q_learning or FLAGS.naive_q_learning else np.array([[_['ctr']] for _ in batch])
       try:
-        target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
+        target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,size_depth[0],size_depth[1])) if FLAGS.auxiliary_depth else []
         if len(target_depth) == 0 : raise ValueError('No depth in batch.')
       except ValueError: 
         target_depth = [] # In case there is no depth targets available
@@ -75,11 +75,11 @@ def run_episode(data_type, sumvar, model):
   sys.stdout.flush()
   return sumvar
 
-def run(model, start_ep=0):
+def run(model, start_ep=0, size_depth=[55,74]):
   if FLAGS.data_format=="NCHW":
-    data.prepare_data((model.input_size[2], model.input_size[3], model.input_size[1]))
+    data.prepare_data((model.input_size[2], model.input_size[3], model.input_size[1]), size_depth=size_depth)
   else:
-    data.prepare_data((model.input_size[1], model.input_size[2], model.input_size[3]))
+    data.prepare_data((model.input_size[1], model.input_size[2], model.input_size[3]), size_depth=size_depth)
   
   ep=start_ep
   while ep<FLAGS.max_episodes-1 and not FLAGS.testing:
@@ -87,11 +87,11 @@ def run(model, start_ep=0):
 
     print('start episode: {}'.format(ep))
     # ----------- train episode
-    sumvar = run_episode('train', {}, model)
+    sumvar = run_episode('train', {}, model, size_depth=size_depth)
     
     # ----------- validate episode
     #sumvar = run_episode('val', {}, model)
-    sumvar = run_episode('val', sumvar, model)
+    sumvar = run_episode('val', sumvar, model, size_depth=size_depth)
     
     #import pdb; pdb.set_trace()
 
@@ -105,7 +105,7 @@ def run(model, start_ep=0):
       print('saved checkpoint')
       model.save(FLAGS.summary_dir+FLAGS.log_tag)
   # ------------ test
-  sumvar = run_episode('test', {}, model)  
+  sumvar = run_episode('test', {}, model, size_depth=size_depth )
   # ----------- write summary
   try:
     model.summarize(sumvar)

@@ -1,10 +1,11 @@
-## Branch for naive q-learning
+## Branch  q-learning
 
-### Train Depth Q Net
+
+### Train 3-Q-Net
 
 ```
-python main.py --checkpoint mobilenet_025 --dataset doshico \
---continue_training False --log_tag test_depth_q_net --offline True \
---network depth_q_net --depth_q_learning True 
+python main.py --checkpoint_path mobilenet_025 --continue_training False \
+--depth_q_learning True --network three_q_net --dataset canyon --log_tag test_3_q_net \
+--discrete True --subsample 4 --num_outputs 3 
 ```
 
