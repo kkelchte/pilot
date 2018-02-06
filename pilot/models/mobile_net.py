@@ -332,10 +332,7 @@ def mobilenet_v1(inputs,
         # logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=tf.tanh,
                              normalizer_fn=None, scope='Conv2d_1c_1x1')
         if spatial_squeeze:
-          if FLAGS.data_format=='NCHW':
-            logits = tf.squeeze(logits, [2,3], name='SpatialSqueeze')
-          else:
-            logits = tf.squeeze(logits, [1,2], name='SpatialSqueeze')
+          logits = tf.squeeze(logits, [1,2], name='SpatialSqueeze')
         end_points['Logits'] = logits
       
 
@@ -350,10 +347,7 @@ def mobilenet_n(inputs,
   for i in range(FLAGS.n_frames):
     _, endpoints = mobilenet_v1(inputs[:,:,:,i*3:(i+1)*3], num_classes=num_classes, 
       is_training=is_training, reuse=(i!=0 and is_training) or not is_training)
-    if FLAGS.data_format == 'NCHW':
-      net = tf.squeeze(endpoints['AvgPool_1a'], [2,3])
-    else :
-      net = tf.squeeze(endpoints['AvgPool_1a'], [1,2])
+    net = tf.squeeze(endpoints['AvgPool_1a'], [1,2])
     features.append(net)
   with tf.variable_scope('concatenated_feature', reuse=not is_training): 
     control_input=tf.concat(features, axis=1)
@@ -387,11 +381,7 @@ def _reduced_kernel_size_for_small_input(input_tensor, kernel_size):
   if shape[1] is None or shape[2] is None:
     kernel_size_out = kernel_size
   else:
-    if FLAGS.data_format == 'NCHW':
-      kernel_size_out = [min(shape[2], kernel_size[0]),
-                       min(shape[3], kernel_size[1])]
-    else:
-      kernel_size_out = [min(shape[1], kernel_size[0]),
+    kernel_size_out = [min(shape[1], kernel_size[0]),
                        min(shape[2], kernel_size[1])]
   return kernel_size_out
 

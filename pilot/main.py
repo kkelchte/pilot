@@ -29,8 +29,6 @@ FLAGS = tf.app.flags.FLAGS
 #   Training Parameters
 # ==========================
 tf.app.flags.DEFINE_boolean("testing", False, "In case we're only testing, the model is tested on the test.txt files and not trained.")
-tf.app.flags.DEFINE_boolean("offline", True, "Training from an offline dataset.")
-tf.app.flags.DEFINE_float("learning_rate", 0.5, "Start learning rate.")
 tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
 tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (way data is saved), though NCHW is faster on GPU.")
 
@@ -38,9 +36,7 @@ tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (
 #   Model Parameters
 # ===========================
 tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
-tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze, depth_q_net.")
 tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
-tf.app.flags.DEFINE_boolean("depth_q_learning", False, "In case of True, train a depth prediction network as Q-value predictor in an RL setting.")
 tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
 tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
 
@@ -61,15 +57,25 @@ tf.app.flags.DEFINE_boolean("evaluate", False, "Just evaluate the network withou
 tf.app.flags.DEFINE_boolean("random_learning_rate", False, "Use sampled learning rate from UL(10**-2, 1)")
 tf.app.flags.DEFINE_boolean("plot_depth", False, "Specify whether the depth predictions is saved as images.")
 
+# ===========================
+#   Training
+# ===========================
+# INITIALIZATION
+tf.app.flags.DEFINE_string("checkpoint_path", 'mobilenet_025', "Specify the directory of the checkpoint of the earlier trained model.")
+tf.app.flags.DEFINE_boolean("continue_training", False, "Continue training of the prediction layers. If false, initialize the prediction layers randomly. The default value should remain True.")
+tf.app.flags.DEFINE_boolean("scratch", False, "Initialize full network randomly.")
+tf.app.flags.DEFINE_string("initializer", 'xavier', "Define the initializer: xavier or uniform [-init_scale, init_scale]")
+tf.app.flags.DEFINE_float("init_scale", 0.0005, "Std of uniform initialization")
+tf.app.flags.DEFINE_float("dropout_keep_prob", 0.5, "Specify the probability of dropout to keep the activation.")
 
-from model import Model
-import tools
-if not FLAGS.offline: import rosinterface
-import offline
+
+from monitor import Monitor
 import models.mobile_net as mobile_net
-import models.depth_q_net as depth_q_net
+from actor import Actor
 
-if not FLAGS.offline: from std_msgs.msg import Empty
+# Untag once we are in singularity
+# import rosinterface
+# from std_msgs.msg import Empty
 
 
 # ===========================
@@ -175,9 +181,13 @@ def main(_):
 
   # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
-  model = Model(sess, action_dim, bound=FLAGS.action_bound)
-  writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
-  model.writer = writer
+  
+  # Create Actor and critic models
+  actor = Actor(sess, action_dim)
+  import pdb; pdb.set_trace()
+  critic = Critic(sess, action_dim, num_actor_vars=actor.get_num_trainable_vars(), lr=FLAGS.critic_learning_rate, prefix='critic', hidden_size=FLAGS.hidden_size, device=FLAGS.device, tau=FLAGS.tau, initializer=initializer)
+
+  monitor = Monitor(sess)
   
   def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')

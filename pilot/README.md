@@ -1,5 +1,14 @@
 ## Examples
 
+### Branch for DDPG - Actor-Critic with collision probability estimator:
+Done: made model.py useless by integrating all in actor.py
+TODO:
+
+	* implement critic.py
+	* adjust rosinterface.py in finished() method:
+		* labelling last x frames before bump with 1 
+		* training critic and actor separately
+		* updating every x runs the target critic and actor to the real
 
 ### Train model from doshico paper
 
@@ -17,7 +26,7 @@ python main.py --checkpoint mobilenet_025 --data_format NHWC --dataset doshico -
 
 ```
 python main.py --checkpoint mobilenet_025 --dataset doshico \
---continue_training False --log_tag test_depth_q_net --offline True \
+--continue_training False --log_tag depth_q_net --offline True \
 --network depth_q_net --depth_q_learning True 
 ```
 
