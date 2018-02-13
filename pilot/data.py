@@ -21,7 +21,7 @@ FLAGS = tf.app.flags.FLAGS
 # ===========================
 #   Data Parameters
 # ===========================
-tf.app.flags.DEFINE_string("dataset", "small","pick the dataset in data_root from which your movies can be found.")
+tf.app.flags.DEFINE_string("dataset", "canyon_random","pick the dataset in data_root from which your movies can be found.")
 tf.app.flags.DEFINE_string("data_root", "~/pilot_data", "Define the root folder of the different datasets.")
 tf.app.flags.DEFINE_integer("num_threads", 4, "The number of threads for loading one minibatch.")
 
@@ -54,6 +54,7 @@ def load_set(data_type):
     # cut last lines to avoid emtpy lines
     while len(control_file_list[-1])<=1 : control_file_list=control_file_list[:-1]
     control_parsed = [(int(ctr.strip().split(' ')[0]),float(ctr.strip().split(' ')[6])) for ctr in control_file_list]
+    
     def sync_control():
       control_list = []
       corresponding_imgs = []
@@ -72,29 +73,38 @@ def load_set(data_type):
     num_imgs, control_list = sync_control()
     assert len(num_imgs) == len(control_list), "Length of number of images {0} is not equal to number of control {1}".format(len(num_imgs),len(control_list))
     
+    # Create collision list
+    collision_list=[]
+    if FLAGS.network == 'coll_q_net':
+      coll_file = open(join(run_dir,'collision_info.txt'),'r')
+      coll_file_list = coll_file.readlines()
+      while len(coll_file_list[-1])<=1 : coll_file_list=coll_file_list[:-1]
+      collision_dict={int(coll.strip().split(' ')[0]):int(coll.strip().split(' ')[1]) for coll in coll_file_list}
+      collision_list=[collision_dict[num_img] for num_img in num_imgs]
+      assert len(num_imgs) == len(collision_list), "Length of number of images {0} is not equal to number of collision labels {1}".format(len(num_imgs),len(collision_list))
+   
     # Add depth links if files exist
     depth_list = [] 
-    if FLAGS.auxiliary_depth or FLAGS.depth_q_learning:
-      try:
-        depths_jpg=listdir(join(run_dir,'Depth'))
-        if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
-      except OSError as e:
-        # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
-        pass
-      else:
-        num_depths=sorted([int(de[0:-4]) for de in depths_jpg])
-        smallest_depth = num_depths.pop(0)
-        for ni in num_imgs: #link the indices of rgb images with the smallest depth bigger than current index
-          while(ni > smallest_depth):
-            try:
-              smallest_depth = num_depths.pop(0)
-            except IndexError:
-              break
-          depth_list.append(smallest_depth)
-        num_imgs = num_imgs[:len(depth_list)]
-        control_list = control_list[:len(depth_list)]
-        assert len(num_imgs) == len(depth_list), "Length of input(imags,control,depth) is not equal"    
-    set_list.append({'name':run_dir, 'num_imgs':num_imgs, 'controls':control_list, 'depths':depth_list})
+    try:
+      depths_jpg=listdir(join(run_dir,'Depth'))
+      if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
+    except OSError as e:
+      # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
+      pass
+    else:
+      num_depths=sorted([int(de[0:-4]) for de in depths_jpg])
+      smallest_depth = num_depths.pop(0)
+      for ni in num_imgs: #link the indices of rgb images with the smallest depth bigger than current index
+        while(ni > smallest_depth):
+          try:
+            smallest_depth = num_depths.pop(0)
+          except IndexError:
+            break
+        depth_list.append(smallest_depth)
+      num_imgs = num_imgs[:len(depth_list)]
+      control_list = control_list[:len(depth_list)]
+      assert len(num_imgs) == len(depth_list), "Length of input(imags,control,depth) is not equal"    
+    set_list.append({'name':run_dir, 'num_imgs':num_imgs, 'controls':control_list, 'depths':depth_list, 'collisions':collision_list})
   f.close()
   if len(set_list)==0:
     print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
@@ -161,9 +171,9 @@ def generate_batch(data_type):
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
       # choose random index over image numbers:
-      frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs']) if not FLAGS.depth_q_learning else len(data_set[run_ind]['num_imgs'])-1))
-      if FLAGS.n_fc:
-        frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
+      frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
+      # if FLAGS.n_fc:
+      #   frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
       batch_indices.append((batch_num, run_ind, frame_ind))
     # print("picking random indices duration: ",time.time()-stime)
     def load_image_and_target(coord, batch_indices, batch, checklist):
@@ -178,29 +188,32 @@ def generate_batch(data_type):
             img = sm.imresize(img,im_size,'nearest').astype(float) #.astype(np.float32)
             assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
             de = []
-            if FLAGS.auxiliary_depth or FLAGS.depth_q_learning:
-              try:
-                depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind] if not FLAGS.depth_q_learning else data_set[run_ind]['depths'][frame_ind+1]))
-              except:
-                pass
-              else:
-                de = Image.open(depth_file)
-                de = sm.imresize(de,de_size,'nearest')
-                de = de * 1/255. * 5.
+            try:
+              depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind+1]))
+            except:
+              pass
+            else:
+              de = Image.open(depth_file)
+              de = sm.imresize(de,de_size,'nearest')
+              de = de * 1/255. * 5.
             return img, de
-          if FLAGS.n_fc: #concatenate features
-            ims = []
-            for frame in range(FLAGS.n_frames):
-              # target depth (de) is each time overwritten, only last frame is kept
-              image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
-              ims.append(image)
-            im = np.concatenate(ims, axis=2)
-            ctr = data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1]
+          # if FLAGS.n_fc: #concatenate features
+          #   ims = []
+          #   for frame in range(FLAGS.n_frames):
+          #     # target depth (de) is each time overwritten, only last frame is kept
+          #     image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
+          #     ims.append(image)
+          #   im = np.concatenate(ims, axis=2)
+          #   ctr = data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1]
+          # else:
+          im, de = load_rgb_depth_image(run_ind, frame_ind)
+          ctr = data_set[run_ind]['controls'][frame_ind]
+          if FLAGS.network == 'coll_q_net': 
+            col = data_set[run_ind]['collisions'][frame_ind]
+            batch.append({'img':im, 'ctr':ctr, 'depth':de, 'trgt':col})
           else:
-            im, de = load_rgb_depth_image(run_ind, frame_ind)
-            ctr = data_set[run_ind]['controls'][frame_ind]
-          # append rgb image, control and depth to batch
-          batch.append({'img':im, 'ctr':ctr, 'depth':de})
+            # append rgb image, control and depth to batch
+            batch.append({'img':im, 'ctr':ctr, 'depth':de})
           checklist.append(True)
         except IndexError as e:
           # print(e)
@@ -226,11 +239,10 @@ def generate_batch(data_type):
 #### FOR TESTING ONLY
   
 if __name__ == '__main__':
-  FLAGS.auxiliary_depth = False
-  FLAGS.n_fc = False
-  FLAGS.n_frames = 3
-  FLAGS.depth_q_learning = True
-  FLAGS.dataset = 'canyon'
+  
+  FLAGS.dataset = 'canyon_random'
+  # FLAGS.network="depth_q_net"
+  FLAGS.network="coll_q_net"
   FLAGS.random_seed = 123
   FLAGS.batch_size = 32
 
@@ -240,11 +252,14 @@ if __name__ == '__main__':
   print 'len images: {}'.format(len(full_set['train'][0]['num_imgs']))
   print 'len control: {}'.format(len(full_set['train'][0]['controls']))
   print 'len depth: {}'.format(len(full_set['train'][0]['depths']))
+  print 'len collisions: {}'.format(len(full_set['train'][0]['collisions']))
   
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
-    print ('rgb value: {0:0.1f}, depth value: {1:0.4f}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0]))
+    if FLAGS.network =='coll_q_net':
+      print ('rgb value: {0:0.1f}, depth value: {1:0.4f}, control: {2}, collision: {3}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0], batch[0]['ctr'], batch[0]['trgt']))
+    print ('rgb value: {0:0.1f}, depth value: {1:0.4f}, control: {2}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0], batch[0]['ctr']))
     # break
 
   print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))

@@ -2,103 +2,143 @@
 Data structure for implementing experience replay
 Author: Patrick Emami
 """
+import time
 from collections import deque
 import random
 import numpy as np
 import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_boolean("weight_replay", False, "Let more recent experience be more likely to be sampled from the batch.")
+tf.app.flags.DEFINE_boolean("normalized_replay", False, "Make labels / actions equally likely for the coll / depth q net.")
 
 
 class ReplayBuffer(object):
 
     def __init__(self, buffer_size, random_seed=123):
-        """
-        The right side of the deque contains the most recent experiences 
-        """
-        self.buffer_size = buffer_size
-        self.count = 0
-        self.buffer_list = []
-        self.current_buffer = deque()
-        self.buffer_list.append(self.current_buffer)
-        self.num_steps = 1 #num
-        
-    def add(self, state, target, aux_info={}):
-        experience = (state, target, aux_info)
-        if self.count < self.buffer_size: 
-            self.current_buffer.append(experience)
-            self.count += 1
-        else:
-          # Get rid of oldest buffer/run once it is smaller than number of steps
-          if len(self.buffer_list[0])<=self.num_steps:
-            self.count-=len(self.buffer_list.pop(0))
-            self.count+=1
-          else:
-            self.buffer_list[0].popleft()
-          # self.buffer.pop(0)
-          self.current_buffer.append(experience)
-        # print 'buffer size: ',self.count
-        # for i,b in enumerate(self.buffer_list): print ' buff: ',i,' len ',len(b)
-    def size(self):
-        return self.count
+      """
+      The right side of the deque contains the most recent experiences 
+      """
+      self.buffer_size = buffer_size
+      self.count = 0
+      self.buffer = deque()
+      self.num_steps = 1 #num
+
+      
+    def add(self, experience):
+      if self.count < self.buffer_size: 
+        self.count += 1
+      else:
+        self.buffer.popleft()
+      self.buffer.append(experience)
     
-    def new_run(self):
-      self.current_buffer = deque()
-      self.buffer_list.append(self.current_buffer)
-
-    def softmax(self, x):
-      e_x = np.exp(x-np.max(x))
-      return e_x/e_x.sum()
-
+    def size(self):
+      return self.count
+    
     def sample_batch(self, batch_size):
       assert batch_size < self.count, IOError('batchsize ',batch_size,' is bigger than buffer size: ',self.count)
-      # if FLAGS.lstm:
-      #   # 0. Clean up buffer list to assure that buffer is never shorter than num_steps
-      #   self.buffer_list=[buff for buff in self.buffer_list if len(buff)>=self.num_steps]
-      #   self.count=sum([len(buff) for buff in self.buffer_list])
-      #   # print 'buffer size: ',self.count
-      #   # for i,b in enumerate(self.buffer_list): print ' buff: ',i,' len ',len(b)
-      #   # 1. select rollouts / buffers in bufferlist to sample from
-      #   if len(self.buffer_list)>batch_size:
-      #     # caution this could demand big amount of RAM if replay buffer gets big
-      #     selected_buffers = random.sample(self.buffer_list, batch_size)
-      #   else:
-      #     selected_buffers = [random.choice(self.buffer_list) for _ in range(batch_size)]
-      #   # print(selected_buffers)
-      #   # 2. Choose a startindex that allows num_steps concatenated frames and put them in a batch
-      #   batch=[]
-      #   for buff in selected_buffers:
-      #     start_i = random.choice(range(len(buff)-self.num_steps+1))
-      #     batch.append([buff[start_i+i] for i in range(self.num_steps)])
-      #   assert len(batch) != 0, IOError('No buffer in bufferlist(',str(self.buffer_list),') found that is longer than num_steps(',self.num_steps,')')
-      #   # print 'batch ',batch
-      #   # 3. Split up the batch according to input, target and auxiliary information
-      #   # creating an array over time for each rollout and put them together in a list
-      #   input_batch = []
-      #   target_batch = []
-      #   aux_batch = {}
-      #   for k in batch[0][0][2].keys(): aux_batch[k]=[]
-      #   for rollout in batch:
-      #     input_batch.append(np.array([_[0] for _ in rollout]))
-      #     target_batch.append(np.array([_[1] for _ in rollout]))
-      #     for k in rollout[0][2].keys():
-      #       aux_batch[k].append(np.array([_[2][k] for _ in rollout]))
-      #   # 4. Put the list together in an array
-      #   input_batch = np.asarray(input_batch) #use asarray to avoid copying the data
-      #   target_batch = np.asarray(target_batch)
-      #   for k in aux_batch.keys(): aux_batch[k]=np.array(aux_batch[k])
-      # else:
-      batch=random.sample(self.current_buffer, batch_size)      
-      input_batch = np.array([_[0] for _ in batch])
-      target_batch = np.array([_[1] for _ in batch])
-      aux_batch = {}
-      for k in batch[0][2].keys():
-        aux_batch[k]=np.array([_[2][k] for _ in batch])
+      
+      if FLAGS.normalized_replay:
+        if FLAGS.network == "coll_q_net" :
+          probs=[]
+          N={0:0, 1:0}
+          for e in self.buffer: N[e['trgt']]+=1
+          for e in self.buffer: probs.append(1/(2.0*N[e['trgt']]))
+          # print("Current number of trgt 0: {0} and 1: {1}.".format(N[0], N[1]))
+          # print("Probs: {}".format(probs))
 
-      return input_batch, target_batch, aux_batch
+        if FLAGS.network == "depth_q_net":
+          probs=[]
+          N={-1:0, 0:0, 1:0}
+          for e in self.buffer:
+            if np.abs(e['action']) > 0.3: N[np.sign(e['action'])]+=1
+            else: N[0]+=1
+          for e in self.buffer: 
+            if np.abs(e['action']) > 0.3: probs.append(1/(3.0*N[np.sign(e['action'])]))
+            else: probs.append(1/(3.0*N[0]))
+          # print("Current number of action -1: {0}, 0: {1} and 1: {2}".format(N[-1], N[0], N[1]))
+          # print("Probs: {}".format(probs))
+
+        # ensure that probs sum to one by adjusting the last
+        if sum(probs)!=1: probs[-1]=1-sum(probs[:-1])
+
+      batch=np.random.choice(self.buffer, batch_size, p=probs if FLAGS.normalized_replay else None)      
+      
+      # batch=random.sample(self.buffer, batch_size)      
+      state_batch = np.array([_['state'] for _ in batch])
+      action_batch = np.array([_['action'] for _ in batch])
+      trgt_batch = np.array([_['trgt'] for _ in batch])
+      
+      return state_batch, action_batch, trgt_batch
+
+    def label_collision(self):
+      #label the last n experiences with target 1 
+      # as collision appeared in the next 10 steps
+      n=10
+      # from t_end till t_end-n
+      last_experiences=[self.buffer.pop() for i in range(n)]
+      for e in last_experiences: e['trgt']=1
+      self.buffer.extend(reversed(last_experiences))
 
     def clear(self):
-        self.current_buffer.clear()
-        self.buffer_list = []
+        self.buffer.clear()
         self.count = 0
+
+
+    def to_string(self):
+      for e in self.buffer: print("action: {0}, target: {1}, state: {2}".format(e['action'],e['trgt'],e['state'][0]))
+      # print self.buffer
+
+
+if __name__ == '__main__':
+  # Test replay buffer for coll_q_net:
+  # FLAGS.network='coll_q_net'
+  FLAGS.network='depth_q_net'
+  # sample episode
+  buffer=ReplayBuffer(100)
+  for i in range(30):
+    buffer.add({'state':np.zeros((3,3))+i,
+                'action':np.random.choice([-1,0,1],p=[0.1,0.8,0.1]),
+                'trgt':0})
+  buffer.label_collision()
+  
+  N={-1:0, 0:0, 1:0}
+  for e in buffer.buffer:
+    if np.abs(e['action']) > 0.3: N[np.sign(e['action'])]+=1
+    else: N[0]+=1
+  print("Current number of action -1: {0}, 0: {1} and 1: {2}".format(N[-1], N[0], N[1]))
+  
+
+  print("\n content of the buffer: \n")
+  buffer.to_string()
+  
+  prop_zero=[]
+  sample_size=10
+  for i in range(10):
+    stime=time.time()
+    state, action, trgt = buffer.sample_batch(sample_size)
+    prop_zero.append(float(len(action[action==0]))/sample_size)
+    print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime, 
+                                                                                                    float(len(action[action==-1]))/sample_size, 
+                                                                                                    float(len(action[action==0]))/sample_size, 
+                                                                                                    float(len(action[action==1]))/sample_size))
+
+  print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
+
+  FLAGS.normalized_replay=True
+  print("\n sample batch normalized \n")
+
+  prop_zero=[]
+  sample_size=10
+  for i in range(10):
+    stime=time.time()
+    state, action, trgt = buffer.sample_batch(sample_size)
+    prop_zero.append(float(len(action[action==0]))/sample_size)
+    print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime, 
+                                                                                                    float(len(action[action==-1]))/sample_size, 
+                                                                                                    float(len(action[action==0]))/sample_size, 
+                                                                                                    float(len(action[action==1]))/sample_size))
+  print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
+  
+  # print("\n sampled batch normalized \n")
+  # for i in range(6):
+  #   print("action: {0}, target: {1}, state: {2}".format(action[i], trgt[i], state[i][0]))

@@ -32,17 +32,14 @@ tf.app.flags.DEFINE_boolean("testing", False, "In case we're only testing, the m
 tf.app.flags.DEFINE_boolean("offline", True, "Training from an offline dataset.")
 tf.app.flags.DEFINE_float("learning_rate", 0.5, "Start learning rate.")
 tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
-tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (way data is saved), though NCHW is faster on GPU.")
 
 # ===========================
 #   Model Parameters
 # ===========================
 tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
-tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze, depth_q_net.")
-tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
-tf.app.flags.DEFINE_boolean("depth_q_learning", False, "In case of True, train a depth prediction network as Q-value predictor in an RL setting.")
-tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
-tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
+tf.app.flags.DEFINE_string("network", 'coll_q_net', "Define the type of network: depth_q_net, coll_q_net.")
+# tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
+# tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
 
 # ===========================
 #   Utility Parameters
@@ -59,6 +56,7 @@ tf.app.flags.DEFINE_float("action_bound", 1.0, "Define between what bounds the a
 tf.app.flags.DEFINE_boolean("real", False, "Define settings in case of interacting with the real (bebop) drone.")
 tf.app.flags.DEFINE_boolean("evaluate", False, "Just evaluate the network without training.")
 tf.app.flags.DEFINE_boolean("random_learning_rate", False, "Use sampled learning rate from UL(10**-2, 1)")
+
 tf.app.flags.DEFINE_boolean("plot_depth", False, "Specify whether the depth predictions is saved as images.")
 
 
@@ -99,7 +97,7 @@ def load_config(modelfolder, file_name = "configuration"):
   """
   print("Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['n_fc','auxiliary_depth', 'discrete']
+  boollist=['n_fc','discrete']
   intlist=['n_frames', 'num_outputs']
   floatlist=['depth_multiplier']
   stringlist=['network', 'data_format']
@@ -175,7 +173,7 @@ def main(_):
 
   # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
-  model = Model(sess, action_dim, bound=FLAGS.action_bound)
+  model = Model(sess, action_dim)
   writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   model.writer = writer
   

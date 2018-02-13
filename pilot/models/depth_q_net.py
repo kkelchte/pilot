@@ -259,7 +259,7 @@ def depth_q_net(inputs,
                 conv_defs=None,
                 spatial_squeeze=True,
                 reuse=None,
-                scope='MobilenetV1'):
+                scope='DpthQnet'):
   """depth_q_net model for regression of depth as q value.
   Args:
     inputs: a tensor of shape [batch_size, height, width, channels].
@@ -340,11 +340,7 @@ def _reduced_kernel_size_for_small_input(input_tensor, kernel_size):
   if shape[1] is None or shape[2] is None:
     kernel_size_out = kernel_size
   else:
-    if FLAGS.data_format == 'NCHW':
-      kernel_size_out = [min(shape[2], kernel_size[0]),
-                       min(shape[3], kernel_size[1])]
-    else:
-      kernel_size_out = [min(shape[1], kernel_size[0]),
+    kernel_size_out = [min(shape[1], kernel_size[0]),
                        min(shape[2], kernel_size[1])]
   return kernel_size_out
 

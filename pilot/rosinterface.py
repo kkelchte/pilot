@@ -32,15 +32,18 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_integer("buffer_size", 2000, "Define the number of experiences saved in the buffer.")
 tf.app.flags.DEFINE_float("ou_theta", 0.15, "Theta is the pull back force of the OU Noise.")
 tf.app.flags.DEFINE_string("type_of_noise", 'ou', "Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
-tf.app.flags.DEFINE_float("sigma_z", 0.01, "sigma_z is the amount of noise in the z direction.")
-tf.app.flags.DEFINE_float("sigma_x", 0.01, "sigma_x is the amount of noise in the forward speed.")
-tf.app.flags.DEFINE_float("sigma_y", 0.01, "sigma_y is the amount of noise in the y direction.")
-tf.app.flags.DEFINE_float("sigma_yaw", 0.1, "sigma_yaw is the amount of noise added to the steering angle.")
-tf.app.flags.DEFINE_float("speed", 1.3, "Define the forward speed of the quadrotor.")
-tf.app.flags.DEFINE_float("alpha",0.,"Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy.")
+tf.app.flags.DEFINE_float("sigma_z", 0.0, "sigma_z is the amount of noise in the z direction.")
+tf.app.flags.DEFINE_float("sigma_x", 0.0, "sigma_x is the amount of noise in the forward speed.")
+tf.app.flags.DEFINE_float("sigma_y", 0.0, "sigma_y is the amount of noise in the y direction.")
+tf.app.flags.DEFINE_float("sigma_yaw", 0., "sigma_yaw is the amount of noise added to the steering angle.")
+tf.app.flags.DEFINE_float("speed", 0.5, "Define the forward speed of the quadrotor.")
+tf.app.flags.DEFINE_float("epsilon",0.,"Apply epsilon-greedy policy for exploration.")
+
+
+tf.app.flags.DEFINE_integer("action_amplitude", 5, "Define the action that is used as input to estimate Q value.")
 
 tf.app.flags.DEFINE_boolean("off_policy",False,"In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
-tf.app.flags.DEFINE_boolean("show_depth",True,"Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
+tf.app.flags.DEFINE_boolean("show_depth",False,"Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 # =================================================
 
 class PilotNode(object):
@@ -56,31 +59,34 @@ class PilotNode(object):
     f.write(FLAGS.log_tag)
     f.write('\n')
     f.close()
+    self.model = model 
+    self.ready=False 
+    self.finished=True
+    
+    self.last_pose=[] # previous pose, used for accumulative distance
+    self.depth = [] # field to keep the latest supervised depth
+    self.prev_im=[] # in case of depth_q_net experience = (I_(t-1), a_(t-1), d_t)
+    self.prev_action=-100 # so keep action and image during 1 step and save it in the next step
+
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
     self.accumlosses = {} # gather losses and info over the run in a dictionary
     self.current_distance=0 # accumulative distance travelled from beginning of run used at evaluation
     self.furthest_point=0 # furthest point reached from spawning point at the beginning of run
     self.average_distances={'train':0, 'test':0} # running average over different runs
-    self.last_pose=[] # previous pose, used for accumulative distance
-    self.model = model 
-    self.ready=False 
-    self.finished=True
-    self.target_control = [] # field to keep the latest supervised control
-    self.target_depth = [] # field to keep the latest supervised depth
-    self.nfc_images =[] #used by n_fc networks for building up concatenated frames
+    # self.nfc_images =[] #used by n_fc networks for building up concatenated frames
     self.exploration_noise = OUNoise(4, 0, FLAGS.ou_theta,1)
     if FLAGS.show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
     if FLAGS.real or FLAGS.off_policy: # publish on pilot_vel so it can be used by control_mapping when flying in the real world
       self.action_pub=rospy.Publisher('/pilot_vel', Twist, queue_size=1)
     else: # if you fly in simulation, listen to supervised vel to get the target control from the BA expert
-      rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)
+      # rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)
       # the control topic is defined in the drone_sim yaml file
-      if rospy.has_param('control'): self.action_pub = rospy.Publisher(rospy.get_param('control'), Twist, queue_size=1)
+      self.action_pub=rospy.Publisher(rospy.get_param('control'), Twist, queue_size=1)
     if rospy.has_param('ready'): rospy.Subscriber(rospy.get_param('ready'), Empty, self.ready_callback)
     if rospy.has_param('finished'): rospy.Subscriber(rospy.get_param('finished'), Empty, self.finished_callback)
     if rospy.has_param('rgb_image'): rospy.Subscriber(rospy.get_param('rgb_image'), Image, self.image_callback)
-    if rospy.has_param('depth_image') and FLAGS.auxiliary_depth:
+    if rospy.has_param('depth_image'):
         rospy.Subscriber(rospy.get_param('depth_image'), Image, self.depth_callback)
     if not FLAGS.real: # initialize the replay buffer
       self.replay_buffer = ReplayBuffer(FLAGS.buffer_size, FLAGS.random_seed)
@@ -107,7 +113,7 @@ class PilotNode(object):
       FLAGS.speed=FLAGS.speed + (not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_x, FLAGS.sigma_x)
       if rospy.has_param('evaluate') and not FLAGS.real:
         FLAGS.evaluate = rospy.get_param('evaluate')
-        print '--> set evaluate to: {}'.format(FLAGS.evaluate)
+        # print '--> set evaluate to: {}'.format(FLAGS.evaluate)
       if rospy.has_param('world_name') :
         self.world_name = os.path.basename(rospy.get_param('world_name').split('.')[0])
         if 'sandbox' in self.world_name: self.world_name='sandbox'
@@ -140,7 +146,7 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
-      size = [self.model.input_size[2],self.model.input_size[3],self.model.input_size[1]] if FLAGS.data_format=='NCHW' else self.model.input_size[1:]
+      size = self.model.input_size[1:]
       im = sm.imresize(im,tuple(size),'nearest')
       return im
 
@@ -160,11 +166,8 @@ class PilotNode(object):
       # kill the run anyway.
       im=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in im.flatten()]).reshape(shp) # clipping nans: dur: 0.010
       # print 'min: ',np.amin(im),' and max: ',np.amax(im)
-      # Resize image
-      if FLAGS.auxiliary_depth or FLAGS.rl:
-        size = self.model.depth_input_size #(55,74)
-        im=sm.imresize(im,size,'nearest') # dur: 0.002
-        # cv2.imshow('depth', im)
+      size = self.model.depth_input_size #(55,74)
+      im=sm.imresize(im,size,'nearest') # dur: 0.002
       im = im *1/255.*5. # dur: 0.00004
       return im
     
@@ -176,19 +179,19 @@ class PilotNode(object):
 
     im = self.process_rgb(msg)
     if len(im)!=0: 
-      if FLAGS.n_fc: # when features are concatenated, multiple images should be kept.
-        self.nfc_images.append(im)
-        if len(self.nfc_images) < FLAGS.n_frames: return
-        else:
-          # concatenate last n-frames
-          im = np.concatenate(np.asarray(self.nfc_images[-FLAGS.n_frames:]),axis=2)
-          self.nfc_images = self.nfc_images[-FLAGS.n_frames+1:] # concatenate last n-1-frames
+      # if FLAGS.n_fc: # when features are concatenated, multiple images should be kept.
+      #   self.nfc_images.append(im)
+      #   if len(self.nfc_images) < FLAGS.n_frames: return
+      #   else:
+      #     # concatenate last n-frames
+      #     im = np.concatenate(np.asarray(self.nfc_images[-FLAGS.n_frames:]),axis=2)
+      #     self.nfc_images = self.nfc_images[-FLAGS.n_frames+1:] # concatenate last n-1-frames
       self.process_input(im)
     
   def depth_callback(self, msg):
     im = self.process_depth(msg)
-    if len(im)!=0 and FLAGS.auxiliary_depth:
-        self.target_depth = im #(64,) 
+    if len(im)!=0:
+      self.depth = im #(64,) 
     
   def process_input(self, im):
     """Process the inputs: images, targets, auxiliary tasks
@@ -196,72 +199,50 @@ class PilotNode(object):
       Plot auxiliary predictions.
       Fill replay buffer.
     """
-    aux_depth=[] # variable to keep predicted depth 
-    trgt = -100.
-    if FLAGS.data_format == 'NCHW': 
-      inpt=np.swapaxes(np.swapaxes(im,1,2),0,1) 
-    else :
-      inpt=im
-    if FLAGS.evaluate: ### EVALUATE
-      trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
-      trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and FLAGS.auxiliary_depth else []
-      control, losses, aux_results = self.model.forward([inpt], auxdepth=FLAGS.show_depth,targets=trgt, depth_targets=trgt_depth)
-      for k in ['c', 't', 'd']: 
-        if k in losses.keys(): 
-          try:
-            self.accumlosses[k] += losses[k]
-          except KeyError:
-            self.accumlosses[k] = losses[k]
-      if FLAGS.show_depth and FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
-    else: ###TRAINING
-      # Get necessary labels, if label is missing wait...
-      def check_field(target_name):
-        if len (target_name) == 0:
-          print('Waiting for {}'.format(target_name))
-          return False
-        else:
-          return True
-      if not check_field(self.target_control): 
-        return
-      else: 
-        trgt = self.target_control[5]
-      if FLAGS.auxiliary_depth:
-        if not check_field(self.target_depth): 
-          return
-        else: 
-          trgt_depth = copy.deepcopy(self.target_depth)
-      control, losses, aux_results = self.model.forward([inpt], auxdepth=FLAGS.show_depth)
-      if FLAGS.show_depth and FLAGS.auxiliary_depth: aux_depth = aux_results['d']
+    # save depth to keep images close.
+    depth = copy.deepcopy(self.depth)
     
-    ### SEND CONTROL
-    if trgt != -100 and not FLAGS.evaluate: # policy mixing with FLAGS.alpha
-      action = trgt if np.random.binomial(1, FLAGS.alpha**(self.runs['train']+1)) else control[0,0]
+    ### FORWARD 
+    # feed in 3 actions corresponding to right, straight and left.
+
+    # actions=np.array([-1,-0.5,0,0.5,1]).reshape((-1,1))
+    actions=np.array([-1,0,1]).reshape((-1,1))
+    # actions=np.array([-1,1]).reshape((-1,1))
+
+    output, _ = self.model.forward(np.asarray([im]*len(actions)), FLAGS.action_amplitude*actions)
+
+    ### EXTRACT CONTROL
+    if FLAGS.network == 'depth_q_net':
+      # take action corresponding to the maximum minimum depth:
+      action = float(actions[np.argmax([np.amin(o[o!=0]) for o in output])])
     else:
-      action = control[0,0]
-    if FLAGS.discrete:
-      # print control
-      control = self.model.bin_vals[np.argmax(control)]
+      # take action giving the lowest collision probability
+      action = float(actions[np.argmin(output)])
+
+    if FLAGS.epsilon != 0: #apply epsilon greedy policy
+        # calculated decaying epsilon
+        # epsilon=0.0146-0.00435*np.log(self.runs['train']+1)
+        epsilon=0.1**(self.runs['train']+1)
+
+        epsilon=max(epsilon, 0.0000001)  
+
+        action = 2*np.random.random_sample()-1 if np.random.binomial(1,epsilon) else action
+        #action = 2*np.random.random_sample()-1 if np.random.binomial(1, FLAGS.epsilon**self.runs['train']) else action
+
+    ### SEND CONTROL (with possibly some noise)
     msg = Twist()
-    if FLAGS.type_of_noise == 'ou':
-      noise = self.exploration_noise.noise()
-      msg.linear.x = FLAGS.speed 
-      msg.linear.y = (not FLAGS.evaluate)*noise[1]*FLAGS.sigma_y
-      msg.linear.z = (not FLAGS.evaluate)*noise[2]*FLAGS.sigma_z
-      msg.angular.z = max(-1,min(1,action+(not FLAGS.evaluate)*FLAGS.sigma_yaw*noise[3]))
-    elif FLAGS.type_of_noise == 'uni':
-      msg.linear.x = FLAGS.speed
-      # msg.linear.x = FLAGS.speed + (not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_x, FLAGS.sigma_x)
-      msg.linear.y = (not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_y, FLAGS.sigma_y)
-      msg.linear.z = (not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_z, FLAGS.sigma_z)
-      msg.angular.z = max(-1,min(1,action+(not FLAGS.evaluate)*np.random.uniform(-FLAGS.sigma_yaw, FLAGS.sigma_yaw)))
-    else:
-      raise IOError( 'Type of noise is unknown: {}'.format(FLAGS.type_of_noise))
+    noise = self.exploration_noise.noise()
+    msg.linear.x = FLAGS.speed 
+    msg.linear.y = noise[1]*FLAGS.sigma_y
+    msg.linear.z = noise[2]*FLAGS.sigma_z
+    msg.angular.z = action
+
     self.action_pub.publish(msg)
     
     # write control to log
-    f=open(self.logfolder+'/ctr_log','a')
-    f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
-    f.close()
+    # f=open(self.logfolder+'/ctr_log','a')
+    # f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
+    # f.close()
 
     if not self.finished:
       rec=time.time()
@@ -269,26 +250,24 @@ class PilotNode(object):
       delay=self.time_ctr_send[-1]-self.time_im_received[-1]
       self.time_delay.append(delay)  
     
-    if FLAGS.show_depth and len(aux_depth) != 0 and not self.finished:
-      aux_depth = aux_depth.flatten()
-      self.depth_pub.publish(aux_depth)
-      aux_depth = []
+    if FLAGS.show_depth and FLAGS.network=='depth_q_net' and not self.finished:
+      self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
-    if not FLAGS.evaluate and trgt != -100:
-      aux_info = {}
-      if FLAGS.auxiliary_depth: aux_info['target_depth']=trgt_depth
-      self.replay_buffer.add(im,[trgt],aux_info=aux_info)
-
-  def supervised_callback(self, data):
-    """Get target control from the /supervised_vel node"""
-    if not self.ready: return
-    self.target_control = [data.linear.x,
-      data.linear.y,
-      data.linear.z,
-      data.angular.x,
-      data.angular.y,
-      data.angular.z]
+    if not FLAGS.evaluate:
+      if FLAGS.network=='depth_q_net':
+        if len(self.prev_im)!= 0 and self.prev_action!=-100 :
+          experience={'state':self.prev_im,
+            'action':self.prev_action,
+            'trgt':depth}
+          self.replay_buffer.add(experience)
+        self.prev_im=copy.deepcopy(im)
+        self.prev_action=action
+      elif FLAGS.network=='coll_q_net':
+        experience={'state':im,
+          'action':action,
+          'trgt':0}
+        self.replay_buffer.add(experience)
       
   def finished_callback(self,msg):
     """When run is finished:
@@ -298,28 +277,39 @@ class PilotNode(object):
     """
     if self.ready and not self.finished:
       print('neural control deactivated.')
+
       self.ready=False
       self.finished=True
+      
+      # add code for cleaning up buffer: adding target 1 for last frames before collision
+      if FLAGS.network == 'coll_q_net' and not FLAGS.evaluate:
+        try:
+          f=open(self.logfolder+'/log','r')
+        except:
+          pass
+        else:
+          lines=f.readlines()
+          f.close()
+          if "bump" in lines[-1]:
+            print('label last n frames with collision') 
+            self.replay_buffer.label_collision()
+
+      print('{} frames in replay_buffer.'.format(self.replay_buffer.size()))
+
       # Train model from experience replay:
-      # Train the model with batchnormalization out of the image callback loop
-      depth_predictions = []
       losses_train = {}
       if self.replay_buffer.size()>FLAGS.batch_size and not FLAGS.evaluate:
-        for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 10)):
-          inputs, targets, aux_info = self.replay_buffer.sample_batch(FLAGS.batch_size)
-          if FLAGS.data_format=="NCHW": inputs = np.swapaxes(np.swapaxes(inputs,2,3),1,2) #make data NCHW instead of NHWC
-          if b==0:
-            if FLAGS.plot_depth and FLAGS.auxiliary_depth:
-              depth_predictions = tools.plot_depth(inputs, aux_info['target_depth'].reshape(-1,55,74))
-          depth_targets=[]
-          if FLAGS.auxiliary_depth: 
-            depth_targets=aux_info['target_depth'].reshape(-1,55,74)
-          losses = self.model.backward(inputs,targets[:].reshape(-1,1),depth_targets)
+        for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 10)): # sample max 10 batches from all experiences gathered.
+          states, actions, targets = self.replay_buffer.sample_batch(FLAGS.batch_size)
+          losses = self.model.backward(states,
+                                      actions.reshape(-1,1),
+                                      targets.reshape(-1,1) if FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.depth_input_size[0],self.model.depth_input_size[1]))
           for k in losses.keys(): 
             try:
               losses_train[k].append(losses[k])
             except:
               losses_train[k]=[losses[k]]
+      # Gather all info to build a proper summary and string of results
       k='train' if not FLAGS.evaluate else 'test'
       self.average_distances[k]= self.average_distances[k]-self.average_distances[k]/(self.runs[k]+1)
       self.average_distances[k] = self.average_distances[k]+self.current_distance/(self.runs[k]+1)
@@ -333,15 +323,13 @@ class PilotNode(object):
         sumvar[name]=vals[d]
         result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
       for k in losses_train.keys():
-        name={'t':'Loss_train_total','c':'Loss_train_control','d':'Loss_train_depth'}
+        name={'t':'Loss_train_total','o':'Loss_train_output'}
         sumvar[name[k]]=np.mean(losses_train[k])
         result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
       for k in self.accumlosses.keys():
-        name={'t':'Loss_test_total','c':'Loss_test_control','d':'Loss_test_depth'}
+        name={'t':'Loss_test_total','o':'Loss_test_output'}
         sumvar[name[k]]=self.accumlosses[k]
         result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
-      if FLAGS.plot_depth and FLAGS.auxiliary_depth:
-        sumvar["depth_predictions"]=depth_predictions
       result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       try:
         self.model.summarize(sumvar)
@@ -368,7 +356,7 @@ class PilotNode(object):
       self.accumlosses = {}
       self.current_distance = 0
       self.last_pose = []
-      self.nfc_images = []
+      # self.nfc_images = []
       self.furthest_point = 0
       self.world_name = ''
       if self.runs['train']%20==0 and not FLAGS.evaluate:
@@ -377,6 +365,8 @@ class PilotNode(object):
       self.time_im_received=[]
       self.time_ctr_send=[]
       self.time_delay=[]
+      self.prev_im=[]
+      self.prev_action=-100
     
       
 

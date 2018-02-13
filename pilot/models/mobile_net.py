@@ -303,26 +303,26 @@ def mobilenet_v1(inputs,
       end_points['AvgPool_1a'] = net
       if is_training:
         net = slim.dropout(net, keep_prob=FLAGS.dropout_keep_prob, scope='Dropout_1b')
-      # print( str(net))
-      with tf.variable_scope('aux_depth'):
-        end_point = 'aux_depth_fc'
-        depth_aux_feat = tf.reshape(net,[-1, int(FLAGS.depth_multiplier*1024)])
-        aux_logits=slim.fully_connected(depth_aux_feat, 4096, tf.nn.relu)
-        end_points[end_point] = aux_logits
+      
+      # with tf.variable_scope('aux_depth'):
+      #   end_point = 'aux_depth_fc'
+      #   depth_aux_feat = tf.reshape(net,[-1, int(FLAGS.depth_multiplier*1024)])
+      #   aux_logits=slim.fully_connected(depth_aux_feat, 4096, tf.nn.relu)
+      #   end_points[end_point] = aux_logits
         
-        end_point = 'aux_depth_fc_1'
-        aux_logits=slim.fully_connected(aux_logits, 55*74, tf.nn.relu)
-        end_points[end_point] = aux_logits
+      #   end_point = 'aux_depth_fc_1'
+      #   aux_logits=slim.fully_connected(aux_logits, 55*74, tf.nn.relu)
+      #   end_points[end_point] = aux_logits
 
-        # encode 4070 feat back to 256 representation
-        end_point = 'aux_depth_enc'
-        aux_enc_logits = slim.fully_connected(aux_logits, 200, None)
-        end_points[end_point] = aux_enc_logits
+      #   # encode 4070 feat back to 256 representation
+      #   end_point = 'aux_depth_enc'
+      #   aux_enc_logits = slim.fully_connected(aux_logits, 200, None)
+      #   end_points[end_point] = aux_enc_logits
 
-        # output height 55 width 74
-        end_point = 'aux_depth_reshaped'
-        aux_logits=tf.reshape(aux_logits, [-1, 55, 74])
-        end_points[end_point] = aux_logits
+      #   # output height 55 width 74
+      #   end_point = 'aux_depth_reshaped'
+      #   aux_logits=tf.reshape(aux_logits, [-1, 55, 74])
+      #   end_points[end_point] = aux_logits
 
 
 

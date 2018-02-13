@@ -26,42 +26,35 @@ def run_episode(data_type, sumvar, model):
   calculation_time = 0
   start_data_time = time.time()
   tot_loss=[]
-  ctr_loss=[]
-  dep_loss=[]
+  output_loss=[]
   for index, ok, batch in data.generate_batch(data_type):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
     if ok:
 
       inputs = np.array([_['img'] for _ in batch])
-      actions = np.array([[_['ctr']] for _ in batch]) if FLAGS.depth_q_learning else []
-      if FLAGS.data_format == "NCHW": 
-        inputs = np.swapaxes(np.swapaxes(inputs,2,3),1,2)
-      targets = np.array([[_['ctr']] for _ in batch] if not FLAGS.depth_q_learning else np.array([_['depth'] for _ in batch]).reshape((-1,55,74)))
-      try:
-        target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
-        if len(target_depth) == 0 : raise ValueError('No depth in batch.')
-      except ValueError: 
-        target_depth = [] # In case there is no depth targets available
+      actions = np.array([[_['ctr']] for _ in batch])
+      if FLAGS.network == 'depth_q_net':
+        targets = np.array([_['depth'] for _ in batch]).reshape((-1,55,74))
+      else:
+        targets = np.array([_['trgt'] for _ in batch]).reshape((-1,1))
       if data_type=='train':
-        losses = model.backward(inputs, actions=actions, targets=targets, depth_targets=target_depth)
+        losses = model.backward(inputs, actions=actions, targets=targets)
       elif data_type=='val' or data_type=='test':
-        _, losses, aux_results = model.forward(inputs, actions=actions, auxdepth=False, targets=targets, depth_targets=target_depth)
+        _, losses = model.forward(inputs, actions=actions, targets=targets)
       try:
-        ctr_loss.append(losses['c'])
-        if FLAGS.auxiliary_depth: dep_loss.append(losses['d'])
+        output_loss.append(losses['o'])
         tot_loss.append(losses['t'])
       except KeyError:
         pass
       if index == 1 and data_type=='val' and FLAGS.plot_depth: 
-          depth_predictions = tools.plot_depth(inputs, target_depth, model)
+          depth_predictions = tools.plot_depth(inputs, target, model)
     else:
       print('Failed to run {}.'.format(data_type))
     calculation_time+=(time.time()-start_calc_time)
     start_data_time = time.time()
   if len(tot_loss)!=0: sumvar['Loss_'+data_type+'_total']=np.mean(tot_loss) 
-  if len(ctr_loss)!=0: sumvar['Loss_'+data_type+'_control']=np.mean(ctr_loss)   
-  if len(tot_loss)!=0 and FLAGS.auxiliary_depth: sumvar['Loss_'+data_type+'_depth']=np.mean(dep_loss)   
+  if len(output_loss)!=0: sumvar['Loss_'+data_type+'_output']=np.mean(output_loss)   
   if len(depth_predictions) != 0: sumvar['depth_predictions']=depth_predictions
   print('>>{0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(data_type.upper(),tuple(time.localtime()[0:5]),
     tools.print_dur(data_loading_time),tools.print_dur(calculation_time)))
@@ -76,11 +69,7 @@ def run_episode(data_type, sumvar, model):
   return sumvar
 
 def run(model, start_ep=0):
-  if FLAGS.data_format=="NCHW":
-    data.prepare_data((model.input_size[2], model.input_size[3], model.input_size[1]))
-  else:
-    data.prepare_data((model.input_size[1], model.input_size[2], model.input_size[3]))
-  
+  data.prepare_data((model.input_size[1], model.input_size[2], model.input_size[3]))
   ep=start_ep
   while ep<FLAGS.max_episodes-1 and not FLAGS.testing:
     ep+=1
@@ -93,15 +82,13 @@ def run(model, start_ep=0):
     #sumvar = run_episode('val', {}, model)
     sumvar = run_episode('val', sumvar, model)
     
-    #import pdb; pdb.set_trace()
-
     # ----------- write summary
     try:
       model.summarize(sumvar)
     except Exception as e:
       print('failed to summarize {}'.format(e))
     # write checkpoint every x episodes
-    if (ep%20==0 and ep!=0):
+    if (ep%20==0 and ep!=0) or ep==FLAGS.max_episodes-1:
       print('saved checkpoint')
       model.save(FLAGS.summary_dir+FLAGS.log_tag)
   # ------------ test
@@ -111,4 +98,3 @@ def run(model, start_ep=0):
     model.summarize(sumvar)
   except Exception as e:
     print('failed to summarize {}'.format(e))
-  model.save(FLAGS.summary_dir+FLAGS.log_tag)
