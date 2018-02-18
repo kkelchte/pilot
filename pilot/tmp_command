@@ -1,0 +1,1 @@
+python main.py --log_tag offline_depth_q_net_both --continue_training False --batch_size 64 --learning_rate 0.05 --max_episodes 500 --network depth_q_net

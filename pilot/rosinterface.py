@@ -38,12 +38,13 @@ tf.app.flags.DEFINE_float("sigma_y", 0.0, "sigma_y is the amount of noise in the
 tf.app.flags.DEFINE_float("sigma_yaw", 0., "sigma_yaw is the amount of noise added to the steering angle.")
 tf.app.flags.DEFINE_float("speed", 0.5, "Define the forward speed of the quadrotor.")
 tf.app.flags.DEFINE_float("epsilon",0.,"Apply epsilon-greedy policy for exploration.")
+tf.app.flags.DEFINE_float("epsilon_decay",0.1,"Decay the epsilon exploration over time with a slow decay rate of 1/10.")
 
 
-tf.app.flags.DEFINE_integer("action_amplitude", 5, "Define the action that is used as input to estimate Q value.")
+tf.app.flags.DEFINE_integer("action_amplitude", 1, "Define the action that is used as input to estimate Q value.")
 
 tf.app.flags.DEFINE_boolean("off_policy",False,"In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
-tf.app.flags.DEFINE_boolean("show_depth",False,"Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
+tf.app.flags.DEFINE_boolean("show_depth",True,"Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 # =================================================
 
 class PilotNode(object):
@@ -220,14 +221,10 @@ class PilotNode(object):
       action = float(actions[np.argmin(output)])
 
     if FLAGS.epsilon != 0: #apply epsilon greedy policy
-        # calculated decaying epsilon
-        # epsilon=0.0146-0.00435*np.log(self.runs['train']+1)
-        epsilon=0.1**(self.runs['train']+1)
-
-        epsilon=max(epsilon, 0.0000001)  
-
-        action = 2*np.random.random_sample()-1 if np.random.binomial(1,epsilon) else action
-        #action = 2*np.random.random_sample()-1 if np.random.binomial(1, FLAGS.epsilon**self.runs['train']) else action
+      # calculate decaying epsilon
+      epsilon=FLAGS.epsilon*np.exp(-FLAGS.epsilon_decay*(self.runs['train']+1))
+      action = 2*np.random.random_sample()-1 if np.random.binomial(1,epsilon) else action
+      if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
     ### SEND CONTROL (with possibly some noise)
     msg = Twist()
@@ -254,7 +251,7 @@ class PilotNode(object):
       self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
-    if not FLAGS.evaluate:
+    if not FLAGS.evaluate and not self.finished:
       if FLAGS.network=='depth_q_net':
         if len(self.prev_im)!= 0 and self.prev_action!=-100 :
           experience={'state':self.prev_im,
@@ -276,7 +273,7 @@ class PilotNode(object):
         write log file and checkpoints away
     """
     if self.ready and not self.finished:
-      print('neural control deactivated.')
+      print('neural control deactivated. @ time: {}'.format(time.time()))
 
       self.ready=False
       self.finished=True
@@ -299,7 +296,8 @@ class PilotNode(object):
       # Train model from experience replay:
       losses_train = {}
       if self.replay_buffer.size()>FLAGS.batch_size and not FLAGS.evaluate:
-        for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 10)): # sample max 10 batches from all experiences gathered.
+        for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 100)): # sample max 10 batches from all experiences gathered.
+        # for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 10)): # sample max 10 batches from all experiences gathered.
           states, actions, targets = self.replay_buffer.sample_batch(FLAGS.batch_size)
           losses = self.model.backward(states,
                                       actions.reshape(-1,1),
@@ -330,8 +328,9 @@ class PilotNode(object):
         name={'t':'Loss_test_total','o':'Loss_test_output'}
         sumvar[name[k]]=self.accumlosses[k]
         result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
-      result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       try:
+        if len(self.time_delay) != 0: 
+          result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
         self.model.summarize(sumvar)
       except Exception as e:
         print('failed to write', e)
@@ -359,9 +358,10 @@ class PilotNode(object):
       # self.nfc_images = []
       self.furthest_point = 0
       self.world_name = ''
-      if self.runs['train']%20==0 and not FLAGS.evaluate:
-        # Save a checkpoint every 20 runs.
+      if self.runs['train']%10==1 and not FLAGS.evaluate:
+        # Save a checkpoint every 20 runs. (but also the first one)
         self.model.save(self.logfolder)
+        print('model saved [run {0}]'.format(self.runs['train']))
       self.time_im_received=[]
       self.time_ctr_send=[]
       self.time_delay=[]

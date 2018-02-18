@@ -16,7 +16,7 @@ FLAGS = tf.app.flags.FLAGS
 
 # INITIALIZATION
 tf.app.flags.DEFINE_string("checkpoint_path", 'mobilenet_025', "Specify the directory of the checkpoint of the earlier trained model.")
-tf.app.flags.DEFINE_boolean("continue_training", True, "Continue training of the prediction layers. If false, initialize the prediction layers randomly. The default value should remain True.")
+tf.app.flags.DEFINE_boolean("continue_training", False, "Continue training of the prediction layers. If false, initialize the prediction layers randomly.")
 tf.app.flags.DEFINE_boolean("scratch", False, "Initialize full network randomly.")
 
 # TRAINING
