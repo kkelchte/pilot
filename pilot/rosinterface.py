@@ -195,6 +195,7 @@ class PilotNode(object):
       self.depth = im #(64,) 
     
   def process_input(self, im):
+    print('process image')
     """Process the inputs: images, targets, auxiliary tasks
       Predict control based on the inputs.
       Plot auxiliary predictions.
@@ -211,6 +212,8 @@ class PilotNode(object):
     # actions=np.array([-1,1]).reshape((-1,1))
 
     output, _ = self.model.forward(np.asarray([im]*len(actions)), FLAGS.action_amplitude*actions)
+
+    print output
 
     ### EXTRACT CONTROL
     if FLAGS.network == 'depth_q_net':
@@ -235,7 +238,7 @@ class PilotNode(object):
     msg.angular.z = action
 
     self.action_pub.publish(msg)
-    
+    print('published action {}'.format(action))
     # write control to log
     # f=open(self.logfolder+'/ctr_log','a')
     # f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
