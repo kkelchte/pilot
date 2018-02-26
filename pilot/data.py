@@ -21,7 +21,7 @@ FLAGS = tf.app.flags.FLAGS
 # ===========================
 #   Data Parameters
 # ===========================
-tf.app.flags.DEFINE_string("dataset", "canyon_random","pick the dataset in data_root from which your movies can be found.")
+tf.app.flags.DEFINE_string("dataset", "canyon_rl","pick the dataset in data_root from which your movies can be found.")
 tf.app.flags.DEFINE_string("data_root", "~/pilot_data", "Define the root folder of the different datasets.")
 tf.app.flags.DEFINE_integer("num_threads", 4, "The number of threads for loading one minibatch.")
 
@@ -40,9 +40,12 @@ def load_set(data_type):
 
   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
   lst_runs = [ l.strip() for l in f.readlines() ]
+  
   for run_dir in lst_runs:
-    # print(run_dir)
+    print(run_dir)
+    
     imgs_jpg=listdir(join(run_dir,'RGB'))
+    
     # get list of all image numbers available in listdir
     num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg])
     assert len(num_imgs)!=0 , IOError('no images in {0}: {1}'.format(run_dir,len(imgs_jpg)))

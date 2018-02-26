@@ -29,9 +29,9 @@ from nav_msgs.msg import Odometry
 
 FLAGS = tf.app.flags.FLAGS
 # =================================================
-tf.app.flags.DEFINE_integer("buffer_size", 2000, "Define the number of experiences saved in the buffer.")
+tf.app.flags.DEFINE_integer("buffer_size", 1000, "Define the number of experiences saved in the buffer.")
 tf.app.flags.DEFINE_float("ou_theta", 0.15, "Theta is the pull back force of the OU Noise.")
-tf.app.flags.DEFINE_string("type_of_noise", 'ou', "Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
+tf.app.flags.DEFINE_string("noise", 'ou', "Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
 tf.app.flags.DEFINE_float("sigma_z", 0.0, "sigma_z is the amount of noise in the z direction.")
 tf.app.flags.DEFINE_float("sigma_x", 0.0, "sigma_x is the amount of noise in the forward speed.")
 tf.app.flags.DEFINE_float("sigma_y", 0.0, "sigma_y is the amount of noise in the y direction.")
@@ -39,6 +39,7 @@ tf.app.flags.DEFINE_float("sigma_yaw", 0., "sigma_yaw is the amount of noise add
 tf.app.flags.DEFINE_float("speed", 0.5, "Define the forward speed of the quadrotor.")
 tf.app.flags.DEFINE_float("epsilon",0.,"Apply epsilon-greedy policy for exploration.")
 tf.app.flags.DEFINE_float("epsilon_decay",0.1,"Decay the epsilon exploration over time with a slow decay rate of 1/10.")
+tf.app.flags.DEFINE_boolean("prefill",False,"Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
 
 
 tf.app.flags.DEFINE_integer("action_amplitude", 1, "Define the action that is used as input to estimate Q value.")
@@ -220,18 +221,23 @@ class PilotNode(object):
       # take action giving the lowest collision probability
       action = float(actions[np.argmin(output)])
 
-    if FLAGS.epsilon != 0: #apply epsilon greedy policy
-      # calculate decaying epsilon
-      epsilon=FLAGS.epsilon*np.exp(-FLAGS.epsilon_decay*(self.runs['train']+1))
-      action = 2*np.random.random_sample()-1 if np.random.binomial(1,epsilon) else action
-      if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
+    noise_sample = self.exploration_noise.noise()
+
+    if FLAGS.prefill and self.replay_buffer.size() < FLAGS.buffer_size:
+      action=2*np.random.random_sample()-1 if FLAGS.noise=='uni' else 0.3*noise_sample[0]
+    else:
+      if FLAGS.epsilon != 0: #apply epsilon greedy policy
+        # calculate decaying epsilon
+        random_action=2*np.random.random_sample()-1 if FLAGS.noise=='uni' else 0.3*noise_sample[0]
+        epsilon=FLAGS.epsilon*np.exp(-FLAGS.epsilon_decay*(self.runs['train']+1))
+        action = random_action if np.random.binomial(1,epsilon) else action
+        if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
     ### SEND CONTROL (with possibly some noise)
     msg = Twist()
-    noise = self.exploration_noise.noise()
     msg.linear.x = FLAGS.speed 
-    msg.linear.y = noise[1]*FLAGS.sigma_y
-    msg.linear.z = noise[2]*FLAGS.sigma_z
+    msg.linear.y = noise_sample[1]*FLAGS.sigma_y
+    msg.linear.z = noise_sample[2]*FLAGS.sigma_z
     msg.angular.z = action
 
     self.action_pub.publish(msg)
@@ -294,7 +300,7 @@ class PilotNode(object):
 
       # Train model from experience replay:
       losses_train = {}
-      if self.replay_buffer.size()>FLAGS.batch_size and not FLAGS.evaluate:
+      if self.replay_buffer.size()>FLAGS.batch_size and not FLAGS.evaluate and ((not FLAGS.prefill) or (FLAGS.prefill and self.replay_buffer.size() == FLAGS.buffer_size)):
         for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 100)): # sample max 10 batches from all experiences gathered.
         # for b in range(min(int(self.replay_buffer.size()/FLAGS.batch_size), 10)): # sample max 10 batches from all experiences gathered.
           states, actions, targets = self.replay_buffer.sample_batch(FLAGS.batch_size)
