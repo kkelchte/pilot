@@ -31,8 +31,8 @@ FLAGS = tf.app.flags.FLAGS
 # ==========================
 tf.app.flags.DEFINE_boolean("testing", False, "In case we're only testing, the model is tested on the test.txt files and not trained.")
 tf.app.flags.DEFINE_boolean("offline", True, "Training from an offline dataset.")
-tf.app.flags.DEFINE_float("learning_rate", 0.5, "Start learning rate.")
-tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
+tf.app.flags.DEFINE_float("learning_rate", 0.01, "Start learning rate.")
+tf.app.flags.DEFINE_integer("batch_size", 64, "Define the size of minibatches.")
 
 # ===========================
 #   Model Parameters
