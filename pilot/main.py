@@ -12,6 +12,7 @@ from tensorflow.contrib.slim.python.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
 from tensorflow.python.ops import random_ops
 
+
 import numpy as np
 import sys, os, os.path
 import subprocess
