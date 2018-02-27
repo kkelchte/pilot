@@ -10,8 +10,12 @@ import random
 from math import floor
 import tools
 from PIL import Image
-import scipy.io as sio
-import scipy.misc as sm
+# import scipy.io as sio
+# import scipy.misc as sm
+import skimage.io as sio
+import skimage.transform as sm
+import matplotlib.pyplot as plt
+
 #import skimage
 #import skimage.transform
 #from skimage import io
@@ -187,8 +191,10 @@ def generate_batch(data_type):
             # load image
             img_file = join(data_set[run_ind]['name'],'RGB', '{0:010d}.jpg'.format(data_set[run_ind]['num_imgs'][frame_ind]))
             # print('img_file ',img_file)
-            img = Image.open(img_file)
-            img = sm.imresize(img,im_size,'nearest').astype(float) #.astype(np.float32)
+            # img = Image.open(img_file)
+            img = sio.imread(img_file)
+            img = img[::2,::5,:]
+            img = sm.resize(img,im_size,mode='constant').astype(float) #.astype(np.float32)
             assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
             de = []
             try:
@@ -196,8 +202,12 @@ def generate_batch(data_type):
             except:
               pass
             else:
-              de = Image.open(depth_file)
-              de = sm.imresize(de,de_size,'nearest')
+              # de = Image.open(depth_file)
+              de = sio.imread(depth_file)
+              de = de[::6,::8]
+              # clip depth image with small values as they are due to image processing
+              de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
+              de[de<10]=0
               de = de * 1/255. * 5.
             return img, de
           # if FLAGS.n_fc: #concatenate features
@@ -210,6 +220,8 @@ def generate_batch(data_type):
           #   ctr = data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1]
           # else:
           im, de = load_rgb_depth_image(run_ind, frame_ind)
+
+              
           ctr = data_set[run_ind]['controls'][frame_ind]
           if FLAGS.network == 'coll_q_net': 
             col = data_set[run_ind]['collisions'][frame_ind]

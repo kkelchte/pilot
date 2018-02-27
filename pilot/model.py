@@ -25,9 +25,13 @@ tf.app.flags.DEFINE_float("init_scale", 0.0005, "Std of uniform initialization")
 tf.app.flags.DEFINE_float("grad_mul_weight", 0, "Specify the amount the gradients of prediction layers.")
 tf.app.flags.DEFINE_float("dropout_keep_prob", 0.5, "Specify the probability of dropout to keep the activation.")
 tf.app.flags.DEFINE_integer("clip_grad", 0, "Specify the max gradient norm: default 0 is no clipping, recommended 4.")
+tf.app.flags.DEFINE_float("min_depth", 0.01, "clip depth loss with weigths to focus on correct depth range.")
+tf.app.flags.DEFINE_float("max_depth", 2.0, "clip depth loss with weigths to focus on correct depth range.")
 tf.app.flags.DEFINE_string("optimizer", 'adadelta', "Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
 # tf.app.flags.DEFINE_string("no_batchnorm_learning", True, "In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
 tf.app.flags.DEFINE_string("initializer", 'xavier', "Define the initializer: xavier or uniform [-init_scale, init_scale]")
+
+import matplotlib.pyplot as plt
 
 """
 Build basic NN model
@@ -130,7 +134,10 @@ class Model(object):
     '''
     with tf.device(self.device):
       self.targets = tf.placeholder(tf.float32, [None,self.depth_input_size[0],self.depth_input_size[1]] if FLAGS.network=='depth_q_net' else [None, 1])
-      self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets)
+      if FLAGS.network=='depth_q_net':
+        weights=tf.multiply(tf.cast(tf.greater(self.targets,FLAGS.min_depth), tf.float32),tf.cast(tf.less(self.targets,FLAGS.max_depth), tf.float32))
+        self.weights=-1*tf.nn.pool(tf.expand_dims(-1*weights,3), [2,2], "MAX",padding="SAME")
+      self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if FLAGS.network=='depth_q_net' else 1.)
       self.total_loss = tf.losses.get_total_loss()
       
   def define_train(self):
@@ -187,11 +194,43 @@ class Model(object):
     feed_dict[self.targets]=targets
     tensors.append(self.total_loss)
     
+    #DEBUG
+    # tensors.append(self.weights)
+
     results = self.sess.run(tensors, feed_dict=feed_dict)
     losses={}
     _ = results.pop(0) # train_op
     losses['o']=results.pop(0) # control loss or Q-loss 
     losses['t'] = results.pop(0) # total loss
+
+    # weights=results.pop(0)[:,:,:,0]
+    # print("targets: {}".format(targets))
+    # print("weights: {}".format(weights))
+    # print("min target: {}".format(np.amin(targets)))
+    # print("max target: {}".format(np.amax(targets)))
+
+    # plt.subplot(331)
+    # plt.imshow(targets[0])
+    # plt.subplot(332)
+    # plt.imshow(targets[1])
+    # plt.subplot(333)
+    # plt.imshow(targets[2])
+    # plt.subplot(334)
+    # plt.imshow(weights[0])
+    # plt.subplot(335)
+    # plt.imshow(weights[1])
+    # plt.subplot(336)
+    # plt.imshow(weights[2])
+    # plt.subplot(337)
+    # plt.imshow(inputs[0])
+    # plt.subplot(338)
+    # plt.imshow(inputs[1])
+    # plt.subplot(339)
+    # plt.imshow(inputs[2])
+    # plt.show()  
+
+    # import pdb; pdb.set_trace()
+
     return losses
 
   def save(self, logfolder):
