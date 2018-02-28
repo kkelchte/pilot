@@ -95,7 +95,8 @@ class PilotNode(object):
     if not FLAGS.real: # initialize the replay buffer
       self.replay_buffer = ReplayBuffer(FLAGS.buffer_size, FLAGS.random_seed)
       self.accumloss = 0
-      rospy.Subscriber('/ground_truth/state', Odometry, self.gt_callback)
+      if rospy.has_param('gt_info'):
+        rospy.Subscriber(rospy.get_param('gt_info'), Odometry, self.gt_callback)
 
     # Add some lines to debug delays:
     self.time_im_received=[]
@@ -151,7 +152,7 @@ class PilotNode(object):
 
   def process_rgb(self, msg):
     """ Convert RGB serial data to opencv image of correct size"""
-    if not self.ready or self.finished: return []
+    # if not self.ready or self.finished: return []
     try:
       # Convert your ROS Image message to OpenCV2
       # changed to normal RGB order as i ll use matplotlib and PIL instead of opencv
@@ -165,7 +166,7 @@ class PilotNode(object):
 
   def process_depth(self, msg):
     """ Convert depth serial data to opencv image of correct size"""
-    if not self.ready or self.finished: return [] 
+    # if not self.ready or self.finished: return [] 
     try:
       # Convert your ROS Image message to OpenCV2
       im = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')#gets float of 32FC1 depth image
@@ -188,7 +189,7 @@ class PilotNode(object):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
     rec=time.time()
     # print 'time: {0}, len im: {1}, len ctr: {2}, act: received image.'.format(rec, len(self.time_im_received),len(self.time_ctr_send))
-    if self.ready and not self.finished: self.time_im_received.append(rec)
+    # if self.ready and not self.finished: self.time_im_received.append(rec)
 
     im = self.process_rgb(msg)
     if len(im)!=0: 
@@ -223,6 +224,8 @@ class PilotNode(object):
     # actions=np.array([-1,1]).reshape((-1,1))
 
     output, _ = self.model.forward(np.asarray([im]*len(actions)), FLAGS.action_amplitude*actions)
+
+    if not self.ready or self.finished: return
 
     ### EXTRACT CONTROL
     if FLAGS.network == 'depth_q_net':
@@ -263,9 +266,9 @@ class PilotNode(object):
 
     if not self.finished:
       rec=time.time()
-      self.time_ctr_send.append(rec)
-      delay=self.time_ctr_send[-1]-self.time_im_received[-1]
-      self.time_delay.append(delay)  
+      # self.time_ctr_send.append(rec)
+      # delay=self.time_ctr_send[-1]-self.time_im_received[-1]
+      # self.time_delay.append(delay)  
     
     if FLAGS.show_depth and not self.finished:
       self.depth_pub.publish(output.flatten())
@@ -307,7 +310,7 @@ class PilotNode(object):
         else:
           lines=f.readlines()
           f.close()
-          if "bump" in lines[-1]:
+          if "bump" in lines[-1] and self.replay_buffer.size()!=0:
             print('label last n frames with collision') 
             self.replay_buffer.label_collision()
 
