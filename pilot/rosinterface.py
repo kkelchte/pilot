@@ -160,8 +160,10 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
+      img = img[::2,::5,:]
       size = self.model.input_size[1:]
-      im = sm.imresize(im,tuple(size),'nearest')
+      img = sm.resize(img,size,mode='constant').astype(float) #.astype(np.float32)
+      # im = sm.imresize(im,tuple(size),'nearest')
       return im
 
   def process_depth(self, msg):
@@ -173,17 +175,21 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
-      im = im[::8,::8]
-      shp=im.shape
-      # assume that when value is not a number it is due to a too large distance (set to 5m)
-      # values can be nan for when they are closer than 0.5m but than the evaluate node should
-      # kill the run anyway.
-      im=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in im.flatten()]).reshape(shp) # clipping nans: dur: 0.010
+      # de=de*1/5.*255
+      de = de[::6,::8]
+      # im = im[::8,::8]
+      shp=de.shape
+      # # assume that when value is not a number it is due to a too large distance (set to 5m)
+      # # values can be nan for when they are closer than 0.5m but than the evaluate node should
+      # # kill the run anyway.
+      de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
       # print 'min: ',np.amin(im),' and max: ',np.amax(im)
       size = self.model.depth_input_size #(55,74)
-      im=sm.imresize(im,size,'nearest') # dur: 0.002
-      im = im *1/255.*5. # dur: 0.00004
-      return im
+      de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
+      de[de<10]=0
+      # im=sm.imresize(im,size,'nearest') # dur: 0.002
+      # de = de *1/255.*5. # dur: 0.00004
+      return de
     
   def image_callback(self, msg):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
