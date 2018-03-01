@@ -45,8 +45,8 @@ done
 # 	./condor_task_sing.sh -t depth_ep0_$i  -q $WT -s train_model.sh -n $ME -w "canyon" -p "--normalized_replay True --batch_size 64 --network depth_q_net --learning_rate $LR --random_seed $((i*1234)) --epsilon 0. --buffer_size $BFS --action_amplitude 1"
 # done
 
-# echo "| i | EPSILON | AMPL | NUM |" > /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
-# echo "|-|-|-|-|-| " >> /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# echo "| i | EPSILON | AMPL | NUM |" > /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# echo "|-|-|-|-|-| " >> /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
 # i=0
 # ME=1000
 # WT=$((3*24*60*60))
@@ -56,7 +56,7 @@ done
 # for k in 0 1 2 ; do
 # 	for EPSILON in 0.5 0.1 ; do
 #                 for AMPL in 1 5 ; do
-#                                 echo "| ${i} | $EPSILON | $AMPL | $k |" >> /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
+#                                 echo "| ${i} | $EPSILON | $AMPL | $k |" >> /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
 #                                 ./condor_task_sing.sh -t gridsearch_coll_q_$i -q $WT -s train_model.sh -n $ME -w "canyon" -p "--buffer_size $BFS --learning_rate $LR --random_seed $((i*1234)) --epsilon $EPSILON --action_amplitude $AMPL"
 #                                 ./condor_task_sing.sh -t gridsearch_depth_q_$i -q $WT -s train_model.sh -n $ME -w "canyon" -p "--buffer_size $BFS --network depth_q_net --learning_rate $LR --random_seed $((i*1234)) --epsilon $EPSILON --action_amplitude $AMPL"
 #                                 i=$((i+1))
@@ -67,8 +67,8 @@ done
 
 
 
-# echo "| i | LR | EPSILON | BFS | NUM | TYPE |" > /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
-# echo "|-|-|-|-|-| " >> /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# echo "| i | LR | EPSILON | BFS | NUM | TYPE |" > /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# echo "|-|-|-|-|-| " >> /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
 # i=0
 # ME=20000
 # WT=$((3*24*60*60))
@@ -88,7 +88,7 @@ done
 # 	for BFS in 1000 10000 ; do
 # 		for EPSILON in 0.5 0.1 0.01 ; do
 # 			for LR in 0.1 0.01 0.001 ; do
-# 				echo "| ${i} | $LR | $EPSILON | $BFS | $k | coll |" >> /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# 				echo "| ${i} | $LR | $EPSILON | $BFS | $k | coll |" >> /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
 # 				./condor_task_sing.sh -t gridsearch_coll_q_$i	-q $WT -s train_model.sh -n $ME -w "canyon" -p "--buffer_size $BFS --learning_rate $LR --random_seed $((i*1234)) --epsilon $EPSILON --epsilon_decay $EPSILON_DECAY"
 # 				i=$((i+1))
 # 				sleep 3
@@ -102,7 +102,7 @@ done
 # 	for BFS in 1000 10000 ; do
 # 		for EPSILON in 0.5 0.1 0.01 ; do
 # 			for LR in 0.1 0.01 0.001 ; do
-# 				echo "| ${i} | $LR | $EPSILON | $BFS | $k | depth |" >> /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# 				echo "| ${i} | $LR | $EPSILON | $BFS | $k | depth |" >> /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
 # 				./condor_task_sing.sh -t gridsearch_depth_q_$i	-q $WT -s train_model.sh -n $ME -w "canyon" -p "--buffer_size $BFS --network depth_q_net --learning_rate $LR --random_seed $((i*1234)) --epsilon $EPSILON --epsilon_decay $EPSILON_DECAY"
 # 				i=$((i+1))
 # 				sleep 3
@@ -117,13 +117,13 @@ done
 # i=0
 # DO=0.5
 # WD=4
-# echo "| i | LR | BS | GM | " > /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
-# echo "|-|-|-|-| " > /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# echo "| i | LR | BS | GM | " > /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# echo "|-|-|-|-| " > /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
 # for GM in 0. 0.01 0.1 ; do
 # 	for BS in 32 ; do
 # 		for DO in 0.25 0.5 0.75 ; do
 # 			for LR in 0.5 0.1 0.05 ; do
-# 					echo "${i};$LR;$BS;$DO;$GM" >> /esat/qayd/kkelchte/docker_home/tensorflow/log/gridsearchtags
+# 					echo "${i};$LR;$BS;$DO;$GM" >> /esat/opal/kkelchte/docker_home/tensorflow/log/gridsearchtags
 # 					WT="${WALLTIME[$((i%3))]}"
 # 					ME="${MAXEPISODES[$((i%3))]}"
 # 					./condor_task_offline.sh -t gridsearch_for_$i -q $WT -m mobilenet_025 -e true -n 20 -w "forest" -p "--n_fc True --grad_mul_weight $GM --batch_size $BS --learning_rate $LR --max_episodes $ME --dataset forest --weight_decay ${WD}e-05  --random_seed 512 --dropout_keep_prob $DO"

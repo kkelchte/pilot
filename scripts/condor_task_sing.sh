@@ -81,7 +81,7 @@ echo "COMMAND: ${COMMAND[@]}"
 # change up to two / by _
 description="$(echo "$TAG" | sed  -e "s/\//_/" | sed  -e "s/\//_/")_${NAME}_$(date +%F_%H%M)"
 # description="${TAG}_${NAME}_$(date +%F_%H%M)"
-condor_output_dir="/esat/qayd/kkelchte/docker_home/tensorflow/log/${TAG}/condor"
+condor_output_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor"
 temp_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/.tmp"
 condor_file="${temp_dir}/online_${description}.condor"
 shell_file="${temp_dir}/run_${description}.sh"
@@ -198,7 +198,7 @@ echo "Queue"                     >> $condor_file
 #--------------------------------------------------------------------------------------------
 echo "#!/bin/bash"           > $shell_file
 echo "echo started singularity."           >> $shell_file
-echo "source /esat/qayd/kkelchte/docker_home/.entrypoint_xpra" >> $shell_file
+echo "source /esat/opal/kkelchte/docker_home/.entrypoint_xpra" >> $shell_file
 echo "roscd simulation_supervised" >> $shell_file
 echo "echo PWD: \$PWD" >> $shell_file
 echo "${COMMAND[@]}  >> $condor_output_dir/condor_${description}.dockout" >> $shell_file

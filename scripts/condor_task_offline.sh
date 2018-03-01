@@ -122,7 +122,7 @@ fi
 # change up to two / by _
 description="$(echo "$TAG" | sed  -e "s/\//_/" | sed  -e "s/\//_/")_${NAME}_$(date +%F_%H%M)"
 # condor_output_dir='/users/visics/kkelchte/condor/log'
-condor_output_dir="/esat/qayd/kkelchte/docker_home/tensorflow/log/${TAG}/condor"
+condor_output_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor"
 
 temp_dir="/users/visics/kkelchte/condor/.tmp"
 condor_file="${temp_dir}/offline_${description}.condor"
@@ -209,9 +209,9 @@ echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/tmp/cuda-8.0/lib64:/users/visics/
 
 # echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/users/visics/kkelchte/local/cuda-8.0/lib64:/users/visics/kkelchte/local/lib/cudnn/lib64:">>$shell_file
 echo "source /users/visics/kkelchte/tensorflow/bin/activate">>$shell_file
-echo "export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages:/esat/qayd/kkelchte/docker_home/tensorflow/q-learning">>$shell_file
-echo "export HOME=/esat/qayd/kkelchte/docker_home">>$shell_file
-echo "cd /esat/qayd/kkelchte/docker_home/tensorflow/q-learning/pilot">>$shell_file
+echo "export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages:/esat/opal/kkelchte/docker_home/tensorflow/q-learning">>$shell_file
+echo "export HOME=/esat/opal/kkelchte/docker_home">>$shell_file
+echo "cd /esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot">>$shell_file
 echo "echo ${COMMAND_OFFLINE[@]}">>$shell_file
 echo "python ${COMMAND_OFFLINE[@]}">>$shell_file
 echo "echo \"[condor_shell_script] done: \$(date +%F_%H:%M)\"" >> $shell_file
@@ -221,9 +221,9 @@ echo "rm -r /tmp/cuda-8.0"           >> $shell_file
 # <<<<<
 
 if [ $EVALUATE = true ] ; then
-	echo "if [ \$( ls /esat/qayd/kkelchte/docker_home/tensorflow/log/${TAG}/2018* | grep my-model | wc -l ) -gt 2 ] ; then " >> $shell_file
+	echo "if [ \$( ls /esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/2018* | grep my-model | wc -l ) -gt 2 ] ; then " >> $shell_file
 	echo "	echo \"[condor_shell_script] Submit condor online job for evaluation \" " >> $shell_file
-	echo "	ssh qayd ./condor/condor_task_sing.sh ${COMMAND_ONLINE[@]} " >> $shell_file
+	echo "	ssh opal ./condor/condor_task_sing.sh ${COMMAND_ONLINE[@]} " >> $shell_file
 	echo "else">> $shell_file
 	echo "	echo \"Training model ${TAG} offline has failed.\" ">> $shell_file
 	echo "fi">> $shell_file

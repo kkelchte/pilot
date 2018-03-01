@@ -23,7 +23,7 @@ fi
 # fi
 
 echo "##########################   test: NFS  ###########################################################"
-if [ -e /esat/qayd/kkelchte ] ; then echo '[TEST_SINGULARITY]: ESAT NFS loaded correctly.';
+if [ -e /esat/opal/kkelchte ] ; then echo '[TEST_SINGULARITY]: ESAT NFS loaded correctly.';
 else
 	tput setaf 1
 	echo '[ERROR] /esat not mounted:'
@@ -33,7 +33,7 @@ else
 	exit
 fi
 echo "##########################   test: XPRA  ###########################################################"
-export HOME=/esat/qayd/kkelchte/docker_home
+export HOME=/esat/opal/kkelchte/docker_home
 export XAUTHORITY=$HOME/.Xauthority
 export DISPLAY=:100
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -60,7 +60,7 @@ else
 	exit
 fi
 echo "##########################   test: ROS  ###########################################################"
-export HOME=/esat/qayd/kkelchte/docker_home
+export HOME=/esat/opal/kkelchte/docker_home
 source /opt/ros/$ROS_DISTRO/setup.bash
 roscore &
 sleep 10
@@ -73,7 +73,7 @@ if [ -z "$(ps -ef | grep ROS)" ] ; then
 	exit
 fi
 echo "##########################   test: drone_ws  ###########################################################"
-export HOME=/esat/qayd/kkelchte/docker_home
+export HOME=/esat/opal/kkelchte/docker_home
 source $HOME/drone_ws/devel/setup.bash --extend
 ROS_PACKAGE_PATH=$HOME/drone_ws/src:$ROS_PACKAGE_PATH
 roscd hector_quadrotor
@@ -86,7 +86,7 @@ if [ "$(basename $PWD)" != "hector_quadrotor" ] ; then
 	exit
 fi
 echo "##########################   test: simsup_ws  ###########################################################"
-export HOME=/esat/qayd/kkelchte/docker_home
+export HOME=/esat/opal/kkelchte/docker_home
 source $HOME/simsup_ws/devel/setup.bash --extend
 export GAZEBO_MODEL_PATH=$HOME/simsup_ws/src/simulation_supervised/simulation_supervised_demo/models
 ROS_PACKAGE_PATH=$HOME/simsup_ws/src:$ROS_PACKAGE_PATH

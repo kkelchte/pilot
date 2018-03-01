@@ -2,7 +2,7 @@
 
 dataset='canyon_random'
 
-cd /esat/qayd/kkelchte/docker_home/pilot_data/$dataset
+cd /esat/opal/kkelchte/docker_home/pilot_data/$dataset
 
 
 # Delete all runs with less than 20 images

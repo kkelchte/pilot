@@ -14,8 +14,8 @@ if [[ -e /tmp/singlebel ]]; then
 	echo "[$(date +%F_%H:%M)] Hold: ${ClusterId}.${ProcId}" >> /users/visics/kkelchte/condor/out/pre_post_script.out
 	# put job on idle or hold for reason X
 	while [ $JobStatus = 2 ] ; do
-		ssh qayd /usr/bin/condor_hold ${ClusterId}.${ProcId}
-		# ssh qayd /usr/bin/condor_hold -reason 'singlebel is taken.' -subcode 0 ${ClusterId}.${ProcId}
+		ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId}
+		# ssh opal /usr/bin/condor_hold -reason 'singlebel is taken.' -subcode 0 ${ClusterId}.${ProcId}
 		JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:])
 		echo "[$(date +%F_%H:%M)] sleeping, status: $JobStatus" >> /users/visics/kkelchte/condor/out/pre_post_script.out
 		sleep 10
