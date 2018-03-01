@@ -1,6 +1,9 @@
 import rospy
 import numpy as np
-import scipy.misc as sm
+# import scipy.misc as sm
+import skimage.io as sio
+import skimage.transform as sm
+
 import sys, time, re, copy, cv2, os
 from os import path
 
@@ -156,7 +159,7 @@ class PilotNode(object):
     try:
       # Convert your ROS Image message to OpenCV2
       # changed to normal RGB order as i ll use matplotlib and PIL instead of opencv
-      im = bridge.imgmsg_to_cv2(msg, 'rgb8') 
+      img = bridge.imgmsg_to_cv2(msg, 'rgb8') 
     except CvBridgeError as e:
       print(e)
     else:
@@ -164,14 +167,14 @@ class PilotNode(object):
       size = self.model.input_size[1:]
       img = sm.resize(img,size,mode='constant').astype(float) #.astype(np.float32)
       # im = sm.imresize(im,tuple(size),'nearest')
-      return im
+      return img
 
   def process_depth(self, msg):
     """ Convert depth serial data to opencv image of correct size"""
     # if not self.ready or self.finished: return [] 
     try:
       # Convert your ROS Image message to OpenCV2
-      im = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')#gets float of 32FC1 depth image
+      de = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')#gets float of 32FC1 depth image
     except CvBridgeError as e:
       print(e)
     else:
