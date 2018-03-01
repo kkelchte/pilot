@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 FLAGS = tf.app.flags.FLAGS
 # =================================================
 tf.app.flags.DEFINE_integer("buffer_size", 1000, "Define the number of experiences saved in the buffer.")
-tf.app.flags.DEFINE_float("ou_theta", 0.15, "Theta is the pull back force of the OU Noise.")
+tf.app.flags.DEFINE_float("ou_theta", 0.05, "Theta is the pull back force of the OU Noise.")
 tf.app.flags.DEFINE_string("noise", 'ou', "Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
 tf.app.flags.DEFINE_float("sigma_z", 0.0, "sigma_z is the amount of noise in the z direction.")
 tf.app.flags.DEFINE_float("sigma_x", 0.0, "sigma_x is the amount of noise in the forward speed.")
