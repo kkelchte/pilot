@@ -2,20 +2,30 @@
 # Script used to invoke the condor online (singularity) and offline tasks.
 
 # -------OFFLINE-------
-#for i in $(seq 5) ; do 
-# 	echo $i 
-#	./condor_task_offline_3_q.sh -q $((60*60*5)) -t three_q/model_$i -m three_q/model_$i -p "--continue_training True --discrete True --max_episodes 160 --num_outputs 3 --dataset canyon --random_seed $((3000*$i+1539)) --network three_q_net --depth_q_learning True --subsample 1"
-	
-# 	# ./condor_task_offline_naive_q.sh -q $((60*60*5)) -t naive_q/model_$i -m mobilenet_025 -p "--continue_training False --dataset canyon --random_seed $((3000*$i+1539)) --network naive_q_net --naive_q_learning True" 
-#done
+# ./condor_task_offline.sh -q $((60*60*24)) -t off_coll_turtle/model_01 -p "--dataset canyon_rl_turtle --learning_rate 0.1"
+# ./condor_task_offline.sh -q $((60*60*24)) -t off_coll_turtle/model_001 -p "--dataset canyon_rl_turtle --learning_rate 0.01"
+# ./condor_task_offline.sh -q $((60*60*24)) -t off_coll_turtle/model_0001 -p "--dataset canyon_rl_turtle --learning_rate 0.001"
+# ./condor_task_offline.sh -q $((60*60*24)) -t off_coll_turtle/model_00001 -p "--dataset canyon_rl_turtle --learning_rate 0.0001"
 
-# -------CREATE DATASET------------
-ME=105
-WT=$((3*60*60))
-for i in $(seq 10) ; do
-	echo $i
-	./condor_task_sing.sh -t rec_$i -q $WT -s create_data_turtle.sh -n $ME -w "canyon" -p "--random_seed $((i*1234)) --epsilon 1 --epsilon_decay 0"
-	sleep 1
+
+# ./condor_task_offline.sh -q $((60*60*24*2)) -t off_depth_drone/model_001 -p "--max_episodes 10000 --network depth_q_net --dataset canyon_rl --learning_rate 0.01 --loss absolute --min_depth 0.001 --max_depth 2.0"
+# ./condor_task_offline.sh -q $((60*60*24*2)) -t off_depth_drone/model_0001 -p "--max_episodes 10000 --network depth_q_net --dataset canyon_rl --learning_rate 0.001 --loss absolute --min_depth 0.001 --max_depth 2.0"
+
+
+# # -------CREATE DATASET------------
+# ME=105
+# WT=$((3*60*60))
+# for i in $(seq 10) ; do
+# 	echo $i
+# 	./condor_task_sing.sh -t rec_$i -q $WT -s create_data_turtle.sh -n $ME -w "canyon" -p "--random_seed $((i*1234)) --epsilon 1 --epsilon_decay 0"
+# 	sleep 1
+# done
+
+
+# -------ONLINE---------
+for i in $(seq 3):
+	./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --epsilon_decay 0.001 --learning_rate 0.01"
+	./condor_task_sing.sh -q $((60*60*24*3)) -t on_depth_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --epsilon_decay 0.001 --network depth_q_net --learning_rate 0.01 --loss absolute --min_depth 0.001 --max_depth 2.0"
 done
 
 # -------Continue Training online with prefill replay buffer------------

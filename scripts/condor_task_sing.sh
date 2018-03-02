@@ -82,11 +82,11 @@ echo "COMMAND: ${COMMAND[@]}"
 description="$(echo "$TAG" | sed  -e "s/\//_/" | sed  -e "s/\//_/")_${NAME}_$(date +%F_%H%M)"
 # description="${TAG}_${NAME}_$(date +%F_%H%M)"
 condor_output_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor"
-temp_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/.tmp"
+temp_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor/.tmp"
 condor_file="${temp_dir}/online_${description}.condor"
 shell_file="${temp_dir}/run_${description}.sh"
-mkdir -p $temp_dir
 mkdir -p $condor_output_dir
+mkdir -p $temp_dir
 
 #--------------------------------------------------------------------------------------------
 # Delete previous log files if they are there

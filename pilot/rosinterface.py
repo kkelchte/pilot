@@ -43,8 +43,8 @@ tf.app.flags.DEFINE_float("sigma_y", 0.0, "sigma_y is the amount of noise in the
 tf.app.flags.DEFINE_float("sigma_yaw", 0., "sigma_yaw is the amount of noise added to the steering angle.")
 tf.app.flags.DEFINE_float("speed", 0.5, "Define the forward speed of the quadrotor.")
 tf.app.flags.DEFINE_float("epsilon",0.,"Apply epsilon-greedy policy for exploration.")
-tf.app.flags.DEFINE_float("epsilon_decay",0.1,"Decay the epsilon exploration over time with a slow decay rate of 1/10.")
-tf.app.flags.DEFINE_boolean("prefill",False,"Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+tf.app.flags.DEFINE_float("epsilon_decay",0.001,"Decay the epsilon exploration over time with a slow decay rate of 1/10.")
+tf.app.flags.DEFINE_boolean("prefill",True,"Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
 
 
 tf.app.flags.DEFINE_integer("action_amplitude", 1, "Define the action that is used as input to estimate Q value.")
@@ -252,7 +252,7 @@ class PilotNode(object):
       if FLAGS.epsilon != 0: #apply epsilon greedy policy
         # calculate decaying epsilon
         random_action=2*np.random.random_sample()-1 if FLAGS.noise=='uni' else 0.3*noise_sample[0]
-        epsilon=FLAGS.epsilon*np.exp(-FLAGS.epsilon_decay*(self.runs['train']+1))
+        epsilon=min([1, FLAGS.epsilon*np.exp(-FLAGS.epsilon_decay*(self.runs['train']+1))])
         action = random_action if np.random.binomial(1,epsilon) else action
         if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
