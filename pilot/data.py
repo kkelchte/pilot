@@ -25,7 +25,7 @@ FLAGS = tf.app.flags.FLAGS
 # ===========================
 #   Data Parameters
 # ===========================
-tf.app.flags.DEFINE_string("dataset", "canyon_rl","pick the dataset in data_root from which your movies can be found.")
+tf.app.flags.DEFINE_string("dataset", "canyon_rl_turtle","pick the dataset in data_root from which your movies can be found.")
 tf.app.flags.DEFINE_string("data_root", "~/pilot_data", "Define the root folder of the different datasets.")
 tf.app.flags.DEFINE_integer("num_threads", 4, "The number of threads for loading one minibatch.")
 
