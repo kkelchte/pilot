@@ -99,7 +99,7 @@ else
 fi
 #--------------------------------------------------------------------------------------------
 echo "Universe         = vanilla" > $condor_file
-echo "RequestCpus      = 4"      >> $condor_file
+echo "RequestCpus      = 8"      >> $condor_file
 echo "Request_GPUs     = 1"      >> $condor_file
 echo "RequestMemory    = 3G"     >> $condor_file
 echo "RequestDisk      = 19G"   >> $condor_file

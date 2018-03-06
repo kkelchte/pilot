@@ -13,20 +13,20 @@
 
 
 # # -------CREATE DATASET------------
-# ME=105
-# WT=$((3*60*60))
-# for i in $(seq 10) ; do
-# 	echo $i
-# 	./condor_task_sing.sh -t rec_$i -q $WT -s create_data_turtle.sh -n $ME -w "canyon" -p "--random_seed $((i*1234)) --epsilon 1 --epsilon_decay 0"
-# 	sleep 1
-# done
+ME=105
+WT=$((3*60*60))
+for i in $(seq 10) ; do
+	echo $i
+	./condor_task_sing.sh -t rec_$i -q $WT -s create_data_turtle.sh -n $ME -w "canyon" -p "--random_seed $((i*1234)) --epsilon 1 --epsilon_decay 0"
+	sleep 1
+done
 
 
 # -------ONLINE---------
-for i in $(seq 3):
-	./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --epsilon_decay 0.001 --learning_rate 0.01"
-	./condor_task_sing.sh -q $((60*60*24*3)) -t on_depth_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --epsilon_decay 0.001 --network depth_q_net --learning_rate 0.01 --loss absolute --min_depth 0.001 --max_depth 2.0"
-done
+# for i in $(seq 3); do
+# 	./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --learning_rate 0.01"
+# 	./condor_task_sing.sh -q $((60*60*24*3)) -t on_depth_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --network depth_q_net --learning_rate 0.01 --loss absolute --min_depth 0.001 --max_depth 2.0"
+# done
 
 # -------Continue Training online with prefill replay buffer------------
 # ME=1000
