@@ -196,8 +196,9 @@ class PilotNode(object):
     
   def image_callback(self, msg):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
-    rec=time.time()
-    # print 'time: {0}, len im: {1}, len ctr: {2}, act: received image.'.format(rec, len(self.time_im_received),len(self.time_ctr_send))
+    # now=rospy.get_rostime()
+    # rec=now.secs+now.nsecs*10e-10
+    # print 'time: {0} act: received image.'.format(rec)
     # if self.ready and not self.finished: self.time_im_received.append(rec)
 
     im = self.process_rgb(msg)
@@ -246,7 +247,7 @@ class PilotNode(object):
 
     noise_sample = self.exploration_noise.noise()
 
-    if FLAGS.prefill and self.replay_buffer.size() < FLAGS.buffer_size:
+    if FLAGS.prefill and self.replay_buffer.size() < FLAGS.buffer_size and not FLAGS.evaluate:
       action=2*np.random.random_sample()-1 if FLAGS.noise=='uni' else 0.3*noise_sample[0]
     else:
       if FLAGS.epsilon != 0: #apply epsilon greedy policy
@@ -264,6 +265,11 @@ class PilotNode(object):
     msg.angular.z = action
 
     self.action_pub.publish(msg)
+
+    # now=rospy.get_rostime()
+    # rec=now.secs+now.nsecs*10e-10
+    # print 'time: {0} act: send control.'.format(rec)
+    
     # write control to log
     # f=open(self.logfolder+'/ctr_log','a')
     # f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
@@ -273,8 +279,8 @@ class PilotNode(object):
       self.outputs=output
 
 
-    if not self.finished:
-      rec=time.time()
+    # if not self.finished:
+      # rec=time.time()
       # self.time_ctr_send.append(rec)
       # delay=self.time_ctr_send[-1]-self.time_im_received[-1]
       # self.time_delay.append(delay)  
