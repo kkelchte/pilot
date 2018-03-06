@@ -89,7 +89,7 @@ if [ $EVALUATE = true ] ; then
 	if [ ! -z "$TAG" ] ; then
 	  COMMAND_ONLINE+=(-t ${TAG})
 	fi
-	COMMAND_ONLINE+=(-s evaluate_model.sh)
+	COMMAND_ONLINE+=(-s evaluate_model_turtle.sh)
 	COMMAND_ONLINE+=(-m $TAG)
 	if [ ! -z "$NUMBER_OF_FLIGHTS" ] ; then
 		COMMAND_ONLINE+=(-n $NUMBER_OF_FLIGHTS)
@@ -224,7 +224,7 @@ echo "rm -r /tmp/cuda-8.0"           >> $shell_file
 if [ $EVALUATE = true ] ; then
 	echo "if [ \$( ls /esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/2018* | grep my-model | wc -l ) -gt 2 ] ; then " >> $shell_file
 	echo "	echo \"[condor_shell_script] Submit condor online job for evaluation \" " >> $shell_file
-	echo "	ssh opal ./condor/condor_task_sing.sh ${COMMAND_ONLINE[@]} " >> $shell_file
+	echo "	ssh opal /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_sing.sh ${COMMAND_ONLINE[@]} " >> $shell_file
 	echo "else">> $shell_file
 	echo "	echo \"Training model ${TAG} offline has failed.\" ">> $shell_file
 	echo "fi">> $shell_file
