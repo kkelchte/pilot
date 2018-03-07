@@ -179,6 +179,8 @@ class PilotNode(object):
       print(e)
     else:
       # de=de*1/5.*255
+      # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
+
       de = de[::6,::8]
       # im = im[::8,::8]
       shp=de.shape
@@ -186,12 +188,10 @@ class PilotNode(object):
       # # values can be nan for when they are closer than 0.5m but than the evaluate node should
       # # kill the run anyway.
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
-      # print 'min: ',np.amin(im),' and max: ',np.amax(im)
+      # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
       size = self.model.depth_input_size #(55,74)
       de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
-      de[de<10]=0
-      # im=sm.imresize(im,size,'nearest') # dur: 0.002
-      # de = de *1/255.*5. # dur: 0.00004
+      # de[de<0.001]=0      
       return de
     
   def image_callback(self, msg):
@@ -225,7 +225,7 @@ class PilotNode(object):
     """
     # save depth to keep images close.
     depth = copy.deepcopy(self.depth)
-    
+
     ### FORWARD 
     # feed in 3 actions corresponding to right, straight and left.
 
