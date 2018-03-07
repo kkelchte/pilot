@@ -25,8 +25,8 @@ tf.app.flags.DEFINE_float("init_scale", 0.0005, "Std of uniform initialization")
 tf.app.flags.DEFINE_float("grad_mul_weight", 0, "Specify the amount the gradients of prediction layers.")
 tf.app.flags.DEFINE_float("dropout_keep_prob", 0.5, "Specify the probability of dropout to keep the activation.")
 tf.app.flags.DEFINE_integer("clip_grad", 0, "Specify the max gradient norm: default 0 is no clipping, recommended 4.")
-tf.app.flags.DEFINE_float("min_depth", 0.0, "clip depth loss with weigths to focus on correct depth range.")
-tf.app.flags.DEFINE_float("max_depth", 5.0, "clip depth loss with weigths to focus on correct depth range.")
+tf.app.flags.DEFINE_float("min_depth", 0.001, "clip depth loss with weigths to focus on correct depth range.")
+tf.app.flags.DEFINE_float("max_depth", 2.0, "clip depth loss with weigths to focus on correct depth range.")
 tf.app.flags.DEFINE_string("optimizer", 'adadelta', "Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
 # tf.app.flags.DEFINE_string("no_batchnorm_learning", True, "In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
 tf.app.flags.DEFINE_string("initializer", 'xavier', "Define the initializer: xavier or uniform [-init_scale, init_scale]")
@@ -202,7 +202,7 @@ class Model(object):
     tensors.append(self.total_loss)
     
     #DEBUG
-    # tensors.append(self.weights)
+    tensors.append(self.weights)
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
     losses={}
@@ -210,7 +210,7 @@ class Model(object):
     losses['o']=results.pop(0) # control loss or Q-loss 
     losses['t'] = results.pop(0) # total loss
 
-    # weights=results.pop(0)[:,:,:,0]
+    weights=results.pop(0)[:,:,:,0]
     # print("targets: {}".format(targets))
     # print("weights: {}".format(weights))
     # print("min target: {}".format(np.amin(targets)))
