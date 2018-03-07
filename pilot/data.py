@@ -28,6 +28,7 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string("dataset", "canyon_rl_turtle","pick the dataset in data_root from which your movies can be found.")
 tf.app.flags.DEFINE_string("data_root", "~/pilot_data", "Define the root folder of the different datasets.")
 tf.app.flags.DEFINE_integer("num_threads", 4, "The number of threads for loading one minibatch.")
+tf.app.flags.DEFINE_boolean("normalize_data", False, "Define wether the collision tags 0 or 1 are normalized in a batch.")
 
 full_set = {}
 im_size=(250,250,3)
@@ -174,11 +175,34 @@ def generate_batch(data_type):
     checklist = []
     # list of samples to fill batch for threads to know what sample to load
     stime=time.time()
+    
+    count_tags={0:0,1:0}
     for batch_num in range(FLAGS.batch_size):
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
-      # choose random index over image numbers:
-      frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
+      if FLAGS.normalize_data and FLAGS.network == "coll_q_net":
+        if count_tags[0] >= FLAGS.batch_size /2:
+          # print("ensure next frames are of type 1 to balance the 0 and 1 labels")
+          # for i in range(len(data_set[run_ind]['num_imgs'])-1)[-8:]:
+          #   print data_set[run_ind]['collisions'][i]
+          frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1)[-8:])
+          assert data_set[run_ind]['collisions'][frame_ind] == 1, "collision is %d instead of 1 \n run: %d , frame: %d" % (data_set[run_ind]['collisions'][frame_ind], run_ind, frame_ind)
+        elif count_tags[1] >= FLAGS.batch_size /2:
+          while len(data_set[run_ind]['num_imgs']) < 11: 
+            run_ind = random.choice(range(len(data_set)))
+          # print("ensure next frames are of type 1 to balance the 0 and 1 labels")
+          # for i in range(len(data_set[run_ind]['num_imgs'])-1)[:-10]:
+          #   print data_set[run_ind]['collisions'][i]
+          frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1)[:-10])
+          assert data_set[run_ind]['collisions'][frame_ind] == 0
+        else:
+          # choose random index over image numbers:
+          frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
+        count_tags[data_set[run_ind]['collisions'][frame_ind]]+=1
+      else:
+        # choose random index over image numbers:
+        frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
+      
       # if FLAGS.n_fc:
       #   frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
       batch_indices.append((batch_num, run_ind, frame_ind))
@@ -255,12 +279,19 @@ def generate_batch(data_type):
   
 if __name__ == '__main__':
   
-  FLAGS.dataset = 'canyon_random'
-  # FLAGS.network="depth_q_net"
+  FLAGS.dataset = 'canyon_rl_turtle'
+  
+  tf.app.flags.DEFINE_string("network", 'coll_q_net', "Define the type of network: depth_q_net, coll_q_net.")
   FLAGS.network="coll_q_net"
+  # FLAGS.network="depth_q_net"
+  
+  tf.app.flags.DEFINE_integer("random_seed", 123, "Set the random seed to get similar examples.")
   FLAGS.random_seed = 123
-  FLAGS.batch_size = 32
 
+  tf.app.flags.DEFINE_integer("batch_size", 64, "Define the size of minibatches.")
+  FLAGS.batch_size = 11
+
+  # FLAGS.normalize_data = True
   prepare_data((240,320,3))
 
   print 'run_dir: {}'.format(full_set['train'][0]['name'])
@@ -272,9 +303,13 @@ if __name__ == '__main__':
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
-    if FLAGS.network =='coll_q_net':
-      print ('rgb value: {0:0.1f}, depth value: {1:0.4f}, control: {2}, collision: {3}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0], batch[0]['ctr'], batch[0]['trgt']))
-    print ('rgb value: {0:0.1f}, depth value: {1:0.4f}, control: {2}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0], batch[0]['ctr']))
+    print("number of 0: {0}, number of 1: {1}, total number: {2}".format(len([ _ for _ in batch if _['trgt']==0]),
+                                                                        len([ _ for _ in batch if _['trgt']==1]),
+                                                                        len(batch)))
+
+    # if FLAGS.network =='coll_q_net':
+    #   print ('rgb value: {0:0.1f}, depth value: {1:0.4f}, control: {2}, collision: {3}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0], batch[0]['ctr'], batch[0]['trgt']))
+    # print ('rgb value: {0:0.1f}, depth value: {1:0.4f}, control: {2}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0], batch[0]['ctr']))
     # break
 
   print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))

@@ -2,11 +2,10 @@
 # Script used to invoke the condor online (singularity) and offline tasks.
 
 # -------OFFLINE-------
-./condor_task_offline.sh -q $((60*60*5)) -e true -n 20 -w "canyon" -t off_on_test/model_depth -p "--dataset canyon_rl_turtle --network depth_q_net --learning_rate 0.01 --max_episodes 5 --loss absolute --min_depth 0.001 --max_depth 2.0"
-# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_01 -p "--dataset canyon_rl_turtle --learning_rate 0.1"
-# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_001 -p "--dataset canyon_rl_turtle --learning_rate 0.01"
-# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_0001 -p "--dataset canyon_rl_turtle --learning_rate 0.001"
-# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_00001 -p "--dataset canyon_rl_turtle --learning_rate 0.0001"
+./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_01 -p "--normalize_data True --learning_rate 0.1"
+./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_001 -p "--normalize_data True --learning_rate 0.01"
+./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_0001 -p "--normalize_data True --learning_rate 0.001"
+./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_00001 -p "--normalize_data True --learning_rate 0.0001"
 
 
 # ./condor_task_offline.sh -q $((60*60*24*2)) -t off_depth_drone/model_001 -p "--max_episodes 10000 --network depth_q_net --dataset canyon_rl --learning_rate 0.01 --loss absolute --min_depth 0.001 --max_depth 2.0"

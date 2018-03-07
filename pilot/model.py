@@ -202,7 +202,7 @@ class Model(object):
     tensors.append(self.total_loss)
     
     #DEBUG
-    tensors.append(self.weights)
+    # tensors.append(self.weights)
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
     losses={}
@@ -210,7 +210,7 @@ class Model(object):
     losses['o']=results.pop(0) # control loss or Q-loss 
     losses['t'] = results.pop(0) # total loss
 
-    weights=results.pop(0)[:,:,:,0]
+    # weights=results.pop(0)[:,:,:,0]
     # print("targets: {}".format(targets))
     # print("weights: {}".format(weights))
     # print("min target: {}".format(np.amin(targets)))
