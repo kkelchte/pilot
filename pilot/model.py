@@ -14,25 +14,6 @@ import numpy as np
 
 FLAGS = tf.app.flags.FLAGS
 
-# INITIALIZATION
-tf.app.flags.DEFINE_string("checkpoint_path", 'mobilenet_025', "Specify the directory of the checkpoint of the earlier trained model.")
-tf.app.flags.DEFINE_boolean("continue_training", False, "Continue training of the prediction layers. If false, initialize the prediction layers randomly.")
-tf.app.flags.DEFINE_boolean("scratch", False, "Initialize full network randomly.")
-
-# TRAINING
-tf.app.flags.DEFINE_float("weight_decay", 0.00004, "Weight decay of inception network")
-tf.app.flags.DEFINE_float("init_scale", 0.0005, "Std of uniform initialization")
-tf.app.flags.DEFINE_float("grad_mul_weight", 0, "Specify the amount the gradients of prediction layers.")
-tf.app.flags.DEFINE_float("dropout_keep_prob", 0.5, "Specify the probability of dropout to keep the activation.")
-tf.app.flags.DEFINE_integer("clip_grad", 0, "Specify the max gradient norm: default 0 is no clipping, recommended 4.")
-tf.app.flags.DEFINE_float("min_depth", 0.001, "clip depth loss with weigths to focus on correct depth range.")
-tf.app.flags.DEFINE_float("max_depth", 2.0, "clip depth loss with weigths to focus on correct depth range.")
-tf.app.flags.DEFINE_string("optimizer", 'adadelta', "Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
-# tf.app.flags.DEFINE_string("no_batchnorm_learning", True, "In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
-tf.app.flags.DEFINE_string("initializer", 'xavier', "Define the initializer: xavier or uniform [-init_scale, init_scale]")
-
-tf.app.flags.DEFINE_string("loss", 'mse', "Define the loss: mse, huber or absolute")
-
 import matplotlib.pyplot as plt
 
 """

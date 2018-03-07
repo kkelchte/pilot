@@ -23,10 +23,10 @@
 
 
 # -------ONLINE---------
-# for i in $(seq 3); do
-# 	./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5"
-# 	./condor_task_sing.sh -q $((60*60*24*3)) -t on_depth_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --network depth_q_net --loss absolute --min_depth 0.001 --max_depth 2.0"
-# done
+for i in $(seq 3); do
+	# ./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5"
+	./condor_task_sing.sh -q $((60*60*24*3)) -t on_depth_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --network depth_q_net --loss absolute"
+done
 
 # -------Continue Training online with prefill replay buffer------------
 # ME=1000

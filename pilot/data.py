@@ -25,11 +25,6 @@ FLAGS = tf.app.flags.FLAGS
 # ===========================
 #   Data Parameters
 # ===========================
-tf.app.flags.DEFINE_string("dataset", "canyon_rl_turtle","pick the dataset in data_root from which your movies can be found.")
-tf.app.flags.DEFINE_string("data_root", "~/pilot_data", "Define the root folder of the different datasets.")
-tf.app.flags.DEFINE_integer("num_threads", 4, "The number of threads for loading one minibatch.")
-tf.app.flags.DEFINE_boolean("normalize_data", False, "Define wether the collision tags 0 or 1 are normalized in a batch.")
-
 full_set = {}
 im_size=(250,250,3)
 de_size = (55,74)

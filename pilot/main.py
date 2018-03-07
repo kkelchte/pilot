@@ -33,6 +33,7 @@ tf.app.flags.DEFINE_boolean("testing", False, "In case we're only testing, the m
 tf.app.flags.DEFINE_boolean("offline", True, "Training from an offline dataset.")
 tf.app.flags.DEFINE_float("learning_rate", 0.01, "Start learning rate.")
 tf.app.flags.DEFINE_integer("batch_size", 64, "Define the size of minibatches.")
+tf.app.flags.DEFINE_integer("max_episodes", 1000, "The maximum number of episodes (~runs through all the training data.)")
 
 # ===========================
 #   Model Parameters
@@ -60,6 +61,63 @@ tf.app.flags.DEFINE_boolean("random_learning_rate", False, "Use sampled learning
 
 tf.app.flags.DEFINE_boolean("plot_depth", False, "Specify whether the depth predictions is saved as images.")
 
+# ===========================
+#   Data Parameters
+# ===========================
+tf.app.flags.DEFINE_boolean("normalize_data", False, "Define wether the collision tags 0 or 1 are normalized in a batch.")
+tf.app.flags.DEFINE_string("dataset", "canyon_rl_turtle","pick the dataset in data_root from which your movies can be found.")
+tf.app.flags.DEFINE_string("data_root", "~/pilot_data", "Define the root folder of the different datasets.")
+tf.app.flags.DEFINE_integer("num_threads", 4, "The number of threads for loading one minibatch.")
+
+
+# ===========================
+#   Model Parameters
+# ===========================
+# INITIALIZATION
+tf.app.flags.DEFINE_string("checkpoint_path", 'mobilenet_025', "Specify the directory of the checkpoint of the earlier trained model.")
+tf.app.flags.DEFINE_boolean("continue_training", False, "Continue training of the prediction layers. If false, initialize the prediction layers randomly.")
+tf.app.flags.DEFINE_boolean("scratch", False, "Initialize full network randomly.")
+
+# TRAINING
+tf.app.flags.DEFINE_float("weight_decay", 0.00004, "Weight decay of inception network")
+tf.app.flags.DEFINE_float("init_scale", 0.0005, "Std of uniform initialization")
+tf.app.flags.DEFINE_float("grad_mul_weight", 0, "Specify the amount the gradients of prediction layers.")
+tf.app.flags.DEFINE_float("dropout_keep_prob", 0.5, "Specify the probability of dropout to keep the activation.")
+tf.app.flags.DEFINE_integer("clip_grad", 0, "Specify the max gradient norm: default 0 is no clipping, recommended 4.")
+tf.app.flags.DEFINE_float("min_depth", 0.001, "clip depth loss with weigths to focus on correct depth range.")
+tf.app.flags.DEFINE_float("max_depth", 2.0, "clip depth loss with weigths to focus on correct depth range.")
+tf.app.flags.DEFINE_string("optimizer", 'adadelta', "Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
+# tf.app.flags.DEFINE_string("no_batchnorm_learning", True, "In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
+tf.app.flags.DEFINE_string("initializer", 'xavier', "Define the initializer: xavier or uniform [-init_scale, init_scale]")
+
+tf.app.flags.DEFINE_string("loss", 'mse', "Define the loss: mse, huber or absolute")
+
+# ===========================
+#   Replay Parameters
+# ===========================
+
+tf.app.flags.DEFINE_boolean("normalized_replay", True, "Make labels / actions equally likely for the coll / depth q net.")
+
+# ===========================
+#   Rosinterface Parameters
+# ===========================
+tf.app.flags.DEFINE_integer("buffer_size", 1000, "Define the number of experiences saved in the buffer.")
+tf.app.flags.DEFINE_float("ou_theta", 0.05, "Theta is the pull back force of the OU Noise.")
+tf.app.flags.DEFINE_string("noise", 'ou', "Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
+tf.app.flags.DEFINE_float("sigma_z", 0.0, "sigma_z is the amount of noise in the z direction.")
+tf.app.flags.DEFINE_float("sigma_x", 0.0, "sigma_x is the amount of noise in the forward speed.")
+tf.app.flags.DEFINE_float("sigma_y", 0.0, "sigma_y is the amount of noise in the y direction.")
+tf.app.flags.DEFINE_float("sigma_yaw", 0., "sigma_yaw is the amount of noise added to the steering angle.")
+tf.app.flags.DEFINE_float("speed", 0.5, "Define the forward speed of the quadrotor.")
+tf.app.flags.DEFINE_float("epsilon",0.,"Apply epsilon-greedy policy for exploration.")
+tf.app.flags.DEFINE_float("epsilon_decay",0.001,"Decay the epsilon exploration over time with a slow decay rate of 1/10.")
+tf.app.flags.DEFINE_boolean("prefill",True,"Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+
+
+tf.app.flags.DEFINE_integer("action_amplitude", 1, "Define the action that is used as input to estimate Q value.")
+
+tf.app.flags.DEFINE_boolean("off_policy",False,"In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
+tf.app.flags.DEFINE_boolean("show_depth",True,"Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 
 from model import Model
 import tools

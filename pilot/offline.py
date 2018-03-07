@@ -7,8 +7,6 @@ import data
 import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_integer("max_episodes", 1000, "The maximum number of episodes (~runs through all the training data.)")
-
 """
 This module scripts the procedure of running over episodes of training, validation and testing offline.
 The data is collected from the data module.

@@ -33,25 +33,6 @@ import matplotlib.pyplot as plt
 #from PIL import Image
 
 FLAGS = tf.app.flags.FLAGS
-# =================================================
-tf.app.flags.DEFINE_integer("buffer_size", 1000, "Define the number of experiences saved in the buffer.")
-tf.app.flags.DEFINE_float("ou_theta", 0.05, "Theta is the pull back force of the OU Noise.")
-tf.app.flags.DEFINE_string("noise", 'ou', "Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
-tf.app.flags.DEFINE_float("sigma_z", 0.0, "sigma_z is the amount of noise in the z direction.")
-tf.app.flags.DEFINE_float("sigma_x", 0.0, "sigma_x is the amount of noise in the forward speed.")
-tf.app.flags.DEFINE_float("sigma_y", 0.0, "sigma_y is the amount of noise in the y direction.")
-tf.app.flags.DEFINE_float("sigma_yaw", 0., "sigma_yaw is the amount of noise added to the steering angle.")
-tf.app.flags.DEFINE_float("speed", 0.5, "Define the forward speed of the quadrotor.")
-tf.app.flags.DEFINE_float("epsilon",0.,"Apply epsilon-greedy policy for exploration.")
-tf.app.flags.DEFINE_float("epsilon_decay",0.001,"Decay the epsilon exploration over time with a slow decay rate of 1/10.")
-tf.app.flags.DEFINE_boolean("prefill",True,"Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
-
-
-tf.app.flags.DEFINE_integer("action_amplitude", 1, "Define the action that is used as input to estimate Q value.")
-
-tf.app.flags.DEFINE_boolean("off_policy",False,"In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
-tf.app.flags.DEFINE_boolean("show_depth",True,"Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
-# =================================================
 
 class PilotNode(object):
   """Node to listen to ROS topics like depth, rgb input and supervised control.

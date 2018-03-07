@@ -9,7 +9,6 @@ import numpy as np
 import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_boolean("normalized_replay", True, "Make labels / actions equally likely for the coll / depth q net.")
 
 
 class ReplayBuffer(object):
