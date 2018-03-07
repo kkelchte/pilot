@@ -86,6 +86,8 @@ condor_output_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor"
 temp_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor/.tmp"
 condor_file="${temp_dir}/online_${description}.condor"
 shell_file="${temp_dir}/run_${description}.sh"
+sing_file="${temp_dir}/sing_${description}.sh"
+
 mkdir -p $condor_output_dir
 mkdir -p $temp_dir
 
@@ -100,7 +102,7 @@ else
 fi
 #--------------------------------------------------------------------------------------------
 echo "Universe         = vanilla" > $condor_file
-echo "RequestCpus      = 8"      >> $condor_file
+echo "RequestCpus      = 6"      >> $condor_file
 echo "Request_GPUs     = 1"      >> $condor_file
 echo "RequestMemory    = 3G"     >> $condor_file
 echo "RequestDisk      = 19G"   >> $condor_file
@@ -136,7 +138,7 @@ blacklist=" && (machineowner == \"Visics\") && \
           (machine != \"pollux.esat.kuleuven.be\") && \
           (machine != \"umbriel.esat.kuleuven.be\") && \
           (machine != \"triton.esat.kuleuven.be\") && \
-	  (machine != \"spinel.esat.kuleuven.be\")"
+	        (machine != \"spinel.esat.kuleuven.be\")"
 # greenlist=""
 # greenlist=" && ((machine == \"citrine.esat.kuleuven.be\") || \
 #             (machine == \"pyrite.esat.kuleuven.be\") || \
@@ -187,7 +189,8 @@ echo "Niceuser = true"           >> $condor_file
 echo "Initialdir       = $temp_dir"   >> $condor_file
 # echo "Initialdir       = /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts"   >> $condor_file
 # echo "Executable       = /usr/bin/singularity" >> $condor_file
-echo "Executable       = /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/start_singularity.sh" >> $condor_file
+echo "Executable       = $sing_file" >> $condor_file
+# echo "Executable       = /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/start_singularity.sh" >> $condor_file
 
 echo "Arguments        = $shell_file" >> $condor_file
 echo "Log 	           = $condor_output_dir/condor_${description}.log" >> $condor_file
@@ -205,9 +208,19 @@ echo "echo PWD: \$PWD" >> $shell_file
 echo "${COMMAND[@]}  >> $condor_output_dir/condor_${description}.dockout" >> $shell_file
 echo "echo \"[condor_shell_script] done: \$(date +%F_%H:%M)\"" >> $shell_file
 #--------------------------------------------------------------------------------------------
+# create sing file to ls gluster directory : bug of current singularity + fedora 27 version
+echo "#!/bin/bash"                                                                                     > $sing_file
+echo "echo \"exec \$1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow.imgs\" " >> $sing_file
+echo "cd /gluster/visics/singularity"                                                                 >> $sing_file
+echo "pwd"                                                                                            >> $sing_file
+echo "ls /gluster/visics/singularity"                                                                 >> $sing_file
+echo "sleep 1"                                                                                        >> $sing_file
+echo "/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow.imgs \$1"      >> $sing_file
+#--------------------------------------------------------------------------------------------
 
 chmod 600 $condor_file
 chmod 711 $shell_file
+chmod 711 $sing_file
 
 condor_submit $condor_file
 echo $condor_file

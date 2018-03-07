@@ -204,13 +204,14 @@ echo "#!/bin/bash"           > $shell_file
 echo "echo started executable"           >> $shell_file
 
 # >>>>>SMALL HACK TO COPY CUDA 8 AVOIDING JOB DISCONNECTIONS
-echo "cp -r /users/visics/kkelchte/local/cuda-8.0 /tmp"           >> $shell_file
-echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/tmp/cuda-8.0/lib64:/users/visics/kkelchte/local/lib/cudnn/lib64:">>$shell_file
+# echo "cp -r /users/visics/kkelchte/local/cuda-8.0 /tmp"           >> $shell_file
+# echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/tmp/cuda-8.0/lib64:/users/visics/kkelchte/local/lib/cudnn/lib64:">>$shell_file
 #<<<<<<
 
-# echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/users/visics/kkelchte/local/cuda-8.0/lib64:/users/visics/kkelchte/local/lib/cudnn/lib64:">>$shell_file
-echo "source /users/visics/kkelchte/tensorflow/bin/activate">>$shell_file
-echo "export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages:/esat/opal/kkelchte/docker_home/tensorflow/q-learning">>$shell_file
+echo "export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.0/lib64">>$shell_file
+echo "source /users/visics/kkelchte/tensorflow_cuda91/bin/activate">>$shell_file
+# echo "source /users/visics/kkelchte/tensorflow/bin/activate">>$shell_file
+echo "export PYTHONPATH=/users/visics/kkelchte/tensorflow_cuda91/lib/python2.7/site-packages:/esat/opal/kkelchte/docker_home/tensorflow/q-learning">>$shell_file
 echo "export HOME=/esat/opal/kkelchte/docker_home">>$shell_file
 echo "cd /esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot">>$shell_file
 echo "echo ${COMMAND_OFFLINE[@]}">>$shell_file
@@ -218,7 +219,7 @@ echo "python ${COMMAND_OFFLINE[@]}">>$shell_file
 echo "echo \"[condor_shell_script] done: \$(date +%F_%H:%M)\"" >> $shell_file
 
 # >>>>CLEANUP CUDA 8 AVOIDING JOB DISCONNECTIONS
-echo "rm -r /tmp/cuda-8.0"           >> $shell_file
+# echo "rm -r /tmp/cuda-8.0"           >> $shell_file
 # <<<<<
 
 if [ $EVALUATE = true ] ; then
