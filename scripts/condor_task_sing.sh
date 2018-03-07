@@ -11,6 +11,7 @@ usage() { echo "Usage: $0 [-g GPU4: true in case you want to use GPU of 4G or bi
 GPU4=false
 MODELDIR=''
 SCRIPT='evaluate_model.sh'
+WALLTIME=$((2*60*60))
 while getopts ":g:t:s:m:n:w:p:q:" o; do
     case "${o}" in
     		g)

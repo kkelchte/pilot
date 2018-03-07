@@ -81,8 +81,10 @@ def save_config(logfolder, file_name = "configuration"):
   print("Save configuration to: {}".format(logfolder))
   root = ET.Element("conf")
   flg = ET.SubElement(root, "flags")
-  
-  flags_dict = FLAGS.__dict__['__flags']
+  try:
+    flags_dict = FLAGS.__dict__['__flags'] #changing from tf 1.4 
+  except:
+    flags_dict = FLAGS.__dict__['__wrapped'] # to tf 1.5 ...
   for f in flags_dict:
     #print f, flags_dict[f]
     ET.SubElement(flg, f, name=f).text = str(flags_dict[f])
