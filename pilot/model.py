@@ -10,10 +10,6 @@ from tensorflow.python.ops import variables as tf_variables
 
 import numpy as np
 
-
-
-FLAGS = tf.app.flags.FLAGS
-
 import matplotlib.pyplot as plt
 
 """
@@ -21,7 +17,7 @@ Build basic NN model
 """
 class Model(object):
  
-  def __init__(self,  session, action_dim, prefix='model', device='/gpu:0', depth_input_size=(55,74)):
+  def __init__(self, FLAGS, session, action_dim, prefix='model', device='/gpu:0', depth_input_size=(55,74)):
     '''initialize model
     '''
     self.sess = session
@@ -29,22 +25,24 @@ class Model(object):
     self.depth_input_size = depth_input_size
     self.prefix = prefix
     self.device = device
+    
+    self.FLAGS=FLAGS
 
-    self.lr = FLAGS.learning_rate
+    self.lr = self.FLAGS.learning_rate
     self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
     
     #define the input size of the network input
-    if FLAGS.network =='depth_q_net' or FLAGS.network == 'coll_q_net':
+    if self.FLAGS.network =='depth_q_net' or self.FLAGS.network == 'coll_q_net':
       # Use NCHW instead of NHWC data input because this is faster on GPU.    
-      self.input_size = [None, depth_q_net.depth_q_net.default_image_size[FLAGS.depth_multiplier], 
-        depth_q_net.depth_q_net.default_image_size[FLAGS.depth_multiplier], 3]
+      self.input_size = [None, depth_q_net.depth_q_net.default_image_size[self.FLAGS.depth_multiplier], 
+        depth_q_net.depth_q_net.default_image_size[self.FLAGS.depth_multiplier], 3]
     else:
-      raise NotImplementedError( 'Network is unknown: ', FLAGS.network)
+      raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
     self.define_network()
         
     # Only feature extracting part is initialized from pretrained model
-    if not FLAGS.continue_training:
+    if not self.FLAGS.continue_training:
       # make sure you exclude the prediction layers of the model
       list_to_exclude = ["global_step", "DpthQnet/q_depth", "CollQnet/q_coll"]
       variables_to_restore = slim.get_variables_to_restore(exclude=list_to_exclude)
@@ -57,14 +55,14 @@ class Model(object):
       # variables_to_restore={'MobilenetV1/'+v.name[9:-2]:v for v in variables_to_restore}
       
     # get latest folder out of training directory if there is no checkpoint file
-    if FLAGS.checkpoint_path[0]!='/':
-      FLAGS.checkpoint_path = FLAGS.summary_dir+FLAGS.checkpoint_path
-    if not os.path.isfile(FLAGS.checkpoint_path+'/checkpoint'):
-      FLAGS.checkpoint_path = FLAGS.checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(FLAGS.checkpoint_path)) if os.path.isdir(FLAGS.checkpoint_path+'/'+mpath) and not mpath[-3:]=='val' and os.path.isfile(FLAGS.checkpoint_path+'/'+mpath+'/checkpoint')][-1]
+    if self.FLAGS.checkpoint_path[0]!='/':
+      self.FLAGS.checkpoint_path = self.FLAGS.summary_dir+self.FLAGS.checkpoint_path
+    if not os.path.isfile(self.FLAGS.checkpoint_path+'/checkpoint'):
+      self.FLAGS.checkpoint_path = self.FLAGS.checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(self.FLAGS.checkpoint_path)) if os.path.isdir(self.FLAGS.checkpoint_path+'/'+mpath) and not mpath[-3:]=='val' and os.path.isfile(self.FLAGS.checkpoint_path+'/'+mpath+'/checkpoint')][-1]
     
-    if not FLAGS.scratch: 
-      print('checkpoint: {}'.format(FLAGS.checkpoint_path))
-      init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(FLAGS.checkpoint_path), variables_to_restore)
+    if not self.FLAGS.scratch: 
+      print('checkpoint: {}'.format(self.FLAGS.checkpoint_path))
+      init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(self.FLAGS.checkpoint_path), variables_to_restore)
     
     # create saver for checkpoints
     self.saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=1)
@@ -80,9 +78,9 @@ class Model(object):
     
     init_all=tf_variables.global_variables_initializer()
     self.sess.run([init_all])
-    if not FLAGS.scratch:
+    if not self.FLAGS.scratch:
       self.sess.run([init_assign_op], init_feed_dict)
-      print('Successfully loaded model from:{}'.format(FLAGS.checkpoint_path))
+      print('Successfully loaded model from:{}'.format(self.FLAGS.checkpoint_path))
     else:
       print('Training model from scratch so no initialization.')
   
@@ -91,41 +89,47 @@ class Model(object):
     '''
     with tf.device(self.device):
       self.inputs = tf.placeholder(tf.float32, shape = self.input_size)
-      args_for_scope={'weight_decay': FLAGS.weight_decay,
-      'stddev':FLAGS.init_scale}
-      if FLAGS.network=='coll_q_net':
+      args_for_scope={'weight_decay': self.FLAGS.weight_decay,
+      'stddev':self.FLAGS.init_scale,
+      'initializer':self.FLAGS.initializer,
+      'random_seed':self.FLAGS.random_seed}
+      if self.FLAGS.network=='coll_q_net':
         self.actions = tf.placeholder(tf.float32, shape = [None, self.action_dim])
         args_for_model={'inputs':self.inputs,
-                        'actions':self.actions} 
+                        'actions':self.actions,
+                        'depth_multiplier':self.FLAGS.depth_multiplier,
+                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob} 
         with slim.arg_scope(coll_q_net.coll_q_net_arg_scope(is_training=True,**args_for_scope)):
           self.predictions_train, self.endpoints = coll_q_net.coll_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(coll_q_net.coll_q_net_arg_scope(is_training=False, **args_for_scope)):
           self.predictions_eval, _ = coll_q_net.coll_q_net(is_training=False, reuse = True,**args_for_model)
-      elif FLAGS.network=='depth_q_net':
+      elif self.FLAGS.network=='depth_q_net':
         self.actions = tf.placeholder(tf.float32, shape = [None, self.action_dim])
         args_for_model={'inputs':self.inputs,
-                        'actions':self.actions} 
+                        'actions':self.actions,
+                        'depth_multiplier':self.FLAGS.depth_multiplier,
+                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob} 
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=True,**args_for_scope)):
           self.predictions_train, self.endpoints = depth_q_net.depth_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=False, **args_for_scope)):
           self.predictions_eval, _ = depth_q_net.depth_q_net(is_training=False, reuse = True,**args_for_model)
       else:
-        raise NameError( '[model] Network is unknown: ', FLAGS.network)
+        raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
       
   def define_loss(self):
     '''tensor for calculating the loss
     '''
     with tf.device(self.device):
-      self.targets = tf.placeholder(tf.float32, [None,self.depth_input_size[0],self.depth_input_size[1]] if FLAGS.network=='depth_q_net' else [None, 1])
-      if FLAGS.network=='depth_q_net':
-        weights=tf.multiply(tf.cast(tf.greater(self.targets,FLAGS.min_depth), tf.float32),tf.cast(tf.less(self.targets,FLAGS.max_depth), tf.float32))
+      self.targets = tf.placeholder(tf.float32, [None,self.depth_input_size[0],self.depth_input_size[1]] if self.FLAGS.network=='depth_q_net' else [None, 1])
+      if self.FLAGS.network=='depth_q_net':
+        weights=tf.multiply(tf.cast(tf.greater(self.targets,self.FLAGS.min_depth), tf.float32),tf.cast(tf.less(self.targets,self.FLAGS.max_depth), tf.float32))
         self.weights=-1*tf.nn.pool(tf.expand_dims(-1*weights,3), [2,2], "MAX",padding="SAME")
-      if FLAGS.loss == 'huber':
-        self.loss = tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if FLAGS.network=='depth_q_net' else 1.)
-      elif FLAGS.loss == 'absolute':
-        self.loss = tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if FLAGS.network=='depth_q_net' else 1.)
+      if self.FLAGS.loss == 'huber':
+        self.loss = tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+      elif self.FLAGS.loss == 'absolute':
+        self.loss = tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
       else: 
-        self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if FLAGS.network=='depth_q_net' else 1.)
+        self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
       self.total_loss = tf.losses.get_total_loss()
       
   def define_train(self):
@@ -137,7 +141,7 @@ class Model(object):
         'adadelta':tf.train.AdadeltaOptimizer(learning_rate=self.lr),
         'gradientdescent':tf.train.GradientDescentOptimizer(learning_rate=self.lr),
         'rmsprop':tf.train.RMSPropOptimizer(learning_rate=self.lr)}
-      self.optimizer=optimizer_list[FLAGS.optimizer]
+      self.optimizer=optimizer_list[self.FLAGS.optimizer]
       # Create the train_op and scale the gradients by providing a map from variable
       # name (or variable) to a scaling coefficient:
       # Take possible a smaller step (gradient multiplier) for the feature extracting part
@@ -145,8 +149,8 @@ class Model(object):
       self.train_op = slim.learning.create_train_op(self.total_loss, 
         self.optimizer, 
         global_step=self.global_step, 
-        gradient_multipliers={v.name: FLAGS.grad_mul_weight for v in mobile_variables}, 
-        clip_gradient_norm=FLAGS.clip_grad)
+        gradient_multipliers={v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}, 
+        clip_gradient_norm=self.FLAGS.clip_grad)
 
   def forward(self, inputs, actions=[], targets=[]):
     '''run forward pass and return action prediction
@@ -244,7 +248,7 @@ class Model(object):
           if len(w)!=0: name='{0}_{1}'.format(name,w)
           self.add_summary_var(name)
       
-    if FLAGS.plot_depth:
+    if self.FLAGS.plot_depth:
       name="depth_predictions"
       dep_images = tf.placeholder(tf.uint8, [1, 400, 400, 3])
       # dep_images = tf.placeholder(tf.float32, [1, 400, 400, 3])
