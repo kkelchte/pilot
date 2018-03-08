@@ -16,11 +16,15 @@ import skimage.io as sio
 import skimage.transform as sm
 import matplotlib.pyplot as plt
 
+import argparse
+
 #import skimage
 #import skimage.transform
 #from skimage import io
 
-FLAGS = tf.app.flags.FLAGS
+# FLAGS = tf.app.flags.FLAGS
+
+FLAGS=None
 
 # ===========================
 #   Data Parameters
@@ -113,9 +117,10 @@ def load_set(data_type):
     print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
   return set_list
 
-def prepare_data(size, size_depth=(55,74)):
-  global im_size, full_set, de_size, max_key, datasetdir
+def prepare_data(_FLAGS, size, size_depth=(55,74)):
+  global FLAGS, im_size, full_set, de_size, max_key, datasetdir
   '''Load lists of tuples refering to images from which random batches can be drawn'''
+  FLAGS=_FLAGS
   # stime = time.time()
   # some startup settings
   # np.random.seed(FLAGS.random_seed)
@@ -273,21 +278,20 @@ def generate_batch(data_type):
 #### FOR TESTING ONLY
   
 if __name__ == '__main__':
-  
-  FLAGS.dataset = 'canyon_rl_turtle'
-  
-  tf.app.flags.DEFINE_string("network", 'coll_q_net', "Define the type of network: depth_q_net, coll_q_net.")
-  FLAGS.network="coll_q_net"
-  # FLAGS.network="depth_q_net"
-  
-  tf.app.flags.DEFINE_integer("random_seed", 123, "Set the random seed to get similar examples.")
-  FLAGS.random_seed = 123
+  parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  tf.app.flags.DEFINE_integer("batch_size", 64, "Define the size of minibatches.")
-  FLAGS.batch_size = 11
+  parser.add_argument("--normalize_data", action='store_true', help="Define wether the collision tags 0 or 1 are normalized in a batch.")
+  parser.add_argument("--dataset", default="canyon_rl_turtle", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
+  parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
 
-  # FLAGS.normalize_data = True
-  prepare_data((240,320,3))
+  parser.add_argument("--network",default='coll_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
+  parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  
+  FLAGS=parser.parse_args()  
+
+  prepare_data(FLAGS, (240,320,3))
 
   print 'run_dir: {}'.format(full_set['train'][0]['name'])
   print 'len images: {}'.format(len(full_set['train'][0]['num_imgs']))

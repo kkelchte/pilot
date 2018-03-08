@@ -99,8 +99,6 @@ import numpy as np
 
 slim = tf.contrib.slim
 
-FLAGS = tf.app.flags.FLAGS
-
 
 # Conv and DepthSepConv namedtuple define layers of the MobileNet architecture
 # Conv defines 3x3 convolution layers
@@ -259,6 +257,8 @@ def depth_q_net(inputs,
                 conv_defs=None,
                 spatial_squeeze=True,
                 reuse=None,
+                depth_multiplier=0.25,
+                dropout_keep_prob=0.5,
                 scope='DpthQnet'):
   """depth_q_net model for regression of depth as q value.
   Args:
@@ -291,19 +291,19 @@ def depth_q_net(inputs,
                         is_training=is_training):
       net, end_points = mobilenet_v1_base(inputs, scope=scope,
                                           min_depth=min_depth,
-                                          depth_multiplier=FLAGS.depth_multiplier,
+                                          depth_multiplier=depth_multiplier,
                                           conv_defs=conv_defs)
       kernel_size = _reduced_kernel_size_for_small_input(net, [7, 7])
       net = slim.avg_pool2d(net, kernel_size, padding='VALID',
                             scope='AvgPool_1a')
       end_points['AvgPool_1a'] = net
       if is_training:
-        net = slim.dropout(net, keep_prob=FLAGS.dropout_keep_prob, scope='Dropout_1b')
+        net = slim.dropout(net, keep_prob=dropout_keep_prob, scope='Dropout_1b')
 
       # print( str(net))
       with tf.variable_scope('q_depth'):
         end_point = 'depth_fc_0'
-        depth_feat = tf.concat([tf.reshape(net,[-1, int(FLAGS.depth_multiplier*1024)]),actions],axis=1)
+        depth_feat = tf.concat([tf.reshape(net,[-1, int(depth_multiplier*1024)]),actions],axis=1)
         depth_feat=slim.fully_connected(depth_feat, 4096, tf.nn.relu)
         end_points[end_point] = depth_feat
         # print("depth feat size: {}".format(depth_feat.get_shape().as_list()))
@@ -349,6 +349,8 @@ def depth_q_net_arg_scope(is_training=True,
                            weight_decay=0.00004,
                            stddev=0.09,
                            regularize_depthwise=False,
+                           initializer='xavier',
+                           random_seed=123,
                            data_format='NHWC'):
   """Defines the default MobilenetV1 arg scope.
   Args:
@@ -368,7 +370,7 @@ def depth_q_net_arg_scope(is_training=True,
   }
 
   # Set weight_decay for weights in Conv and DepthSepConv layers.
-  weights_init = tf.contrib.layers.xavier_initializer(seed=FLAGS.random_seed) if FLAGS.initializer=='xavier' else tf.truncated_normal_initializer(stddev=stddev, seed=FLAGS.random_seed)
+  weights_init = tf.contrib.layers.xavier_initializer(seed=random_seed) if initializer=='xavier' else tf.truncated_normal_initializer(stddev=stddev, seed=random_seed)
 
   # weights_init = tf.truncated_normal_initializer(stddev=stddev)
   regularizer = tf.contrib.layers.l2_regularizer(weight_decay)

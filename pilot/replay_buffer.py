@@ -8,15 +8,16 @@ import random
 import numpy as np
 import tensorflow as tf
 
-FLAGS = tf.app.flags.FLAGS
+# FLAGS = tf.app.flags.FLAGS
 
 
 class ReplayBuffer(object):
 
-    def __init__(self, buffer_size, random_seed=123):
+    def __init__(self, FLAGS, buffer_size, random_seed=123):
       """
       The right side of the deque contains the most recent experiences 
       """
+      self.FLAGS=FLAGS
       self.buffer_size = buffer_size
       self.count = 0
       self.buffer = deque()
@@ -36,8 +37,8 @@ class ReplayBuffer(object):
     def sample_batch(self, batch_size):
       assert batch_size < self.count, IOError('batchsize ',batch_size,' is bigger than buffer size: ',self.count)
       
-      if FLAGS.normalized_replay:
-        if FLAGS.network == "coll_q_net" :
+      if self.FLAGS.normalized_replay:
+        if self.FLAGS.network == "coll_q_net" :
           probs=[]
           N={0:0, 1:0}
           for e in self.buffer: N[e['trgt']]+=1
@@ -45,7 +46,7 @@ class ReplayBuffer(object):
           # print("Current number of trgt 0: {0} and 1: {1}.".format(N[0], N[1]))
           # print("Probs: {}".format(probs))
 
-        if FLAGS.network == "depth_q_net":
+        if self.FLAGS.network == "depth_q_net":
           probs=[]
           N={-1:0, 0:0, 1:0}
           for e in self.buffer:
@@ -60,7 +61,7 @@ class ReplayBuffer(object):
         # ensure that probs sum to one by adjusting the last
         if sum(probs)!=1: probs[-1]=1-sum(probs[:-1])
 
-      batch=np.random.choice(self.buffer, batch_size, p=probs if FLAGS.normalized_replay else None)      
+      batch=np.random.choice(self.buffer, batch_size, p=probs if self.FLAGS.normalized_replay else None)      
       
       # batch=random.sample(self.buffer, batch_size)      
       state_batch = np.array([_['state'] for _ in batch])
@@ -89,11 +90,17 @@ class ReplayBuffer(object):
 
 
 if __name__ == '__main__':
-  # Test replay buffer for coll_q_net:
+  parser = argparse.ArgumentParser(description='Test replay buffer for coll_q_net:')
+
+  parser.add_argument("--network",default='coll_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  parser.add_argument("--normalized_replay", action='store_false', help="Make labels / actions equally likely for the coll / depth q net.")
+
+  FLAGS=parser.parse_args()  
+
   # FLAGS.network='coll_q_net'
   FLAGS.network='depth_q_net'
   # sample episode
-  buffer=ReplayBuffer(100)
+  buffer=ReplayBuffer(FLAGS, 100)
   for i in range(30):
     buffer.add({'state':np.zeros((3,3))+i,
                 'action':np.random.choice([-1,0,1],p=[0.1,0.8,0.1]),

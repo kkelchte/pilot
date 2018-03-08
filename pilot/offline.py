@@ -6,7 +6,7 @@ import data
 
 import tensorflow as tf
 
-FLAGS = tf.app.flags.FLAGS
+FLAGS = None
 """
 This module scripts the procedure of running over episodes of training, validation and testing offline.
 The data is collected from the data module.
@@ -66,8 +66,11 @@ def run_episode(data_type, sumvar, model):
   sys.stdout.flush()
   return sumvar
 
-def run(model, start_ep=0):
-  data.prepare_data((model.input_size[1], model.input_size[2], model.input_size[3]))
+def run(_FLAGS, model, start_ep=0):
+  global FLAGS
+
+  FLAGS=_FLAGS
+  data.prepare_data(FLAGS, (model.input_size[1], model.input_size[2], model.input_size[3]))
   ep=start_ep
   while ep<FLAGS.max_episodes-1 and not FLAGS.testing:
     ep+=1
