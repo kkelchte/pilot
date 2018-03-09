@@ -248,7 +248,7 @@ class PilotNode(object):
     msg.linear.x = self.FLAGS.speed 
     msg.linear.y = noise_sample[1]*self.FLAGS.sigma_y
     msg.linear.z = noise_sample[2]*self.FLAGS.sigma_z
-    msg.angular.z = 0.1*action
+    msg.angular.z = action
 
     self.action_pub.publish(msg)
     # print("time: {}".format(time.time()-btime))
