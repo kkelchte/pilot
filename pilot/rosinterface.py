@@ -251,7 +251,7 @@ class PilotNode(object):
     msg.angular.z = 0.1*action
 
     self.action_pub.publish(msg)
-    print("time: {}".format(time.time()-btime))
+    # print("time: {}".format(time.time()-btime))
     
     # now=rospy.get_rostime()
     # rec=now.secs+now.nsecs*10e-10
