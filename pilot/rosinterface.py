@@ -205,6 +205,8 @@ class PilotNode(object):
       Plot auxiliary predictions.
       Fill replay buffer.
     """
+    btime=time.time()
+    
     # save depth to keep images close.
     depth = copy.deepcopy(self.depth)
 
@@ -216,7 +218,7 @@ class PilotNode(object):
     # actions=np.array([-1,1]).reshape((-1,1))
 
     output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*actions)
-
+    # output=np.asarray([1,0,1]).reshape((-1,1))
     if not self.ready or self.finished: return
 
     ### EXTRACT CONTROL
@@ -230,7 +232,8 @@ class PilotNode(object):
     noise_sample = self.exploration_noise.noise()
 
     if self.FLAGS.prefill and self.replay_buffer.size() < self.FLAGS.buffer_size and not self.FLAGS.evaluate:
-      print 'sample random to fill buffer!'
+      # print 'sample random to fill buffer!'
+      # action=0
       action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else 0.3*noise_sample[0]
     else:
       if self.FLAGS.epsilon != 0: #apply epsilon greedy policy
@@ -248,7 +251,8 @@ class PilotNode(object):
     msg.angular.z = 0.1*action
 
     self.action_pub.publish(msg)
-
+    print("time: {}".format(time.time()-btime))
+    
     # now=rospy.get_rostime()
     # rec=now.secs+now.nsecs*10e-10
     # print 'time: {0} act: send control.'.format(rec)
