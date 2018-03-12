@@ -32,6 +32,8 @@ FLAGS=None
 full_set = {}
 im_size=(250,250,3)
 de_size = (55,74)
+collision_num=10 # number of frames before collision labelled with 10
+
 def load_set(data_type):
   """Load a type (train, val or test) of set in the set_list
   as a tuple: first tuple element the directory of the fligth 
@@ -83,7 +85,7 @@ def load_set(data_type):
     # Create collision list
     collision_list=[]
     if FLAGS.network == 'coll_q_net':
-      coll_file = open(join(run_dir,'collision_info.txt'),'r')
+      coll_file = open(join(run_dir,FLAGS.collision_file),'r')
       coll_file_list = coll_file.readlines()
       while len(coll_file_list[-1])<=1 : coll_file_list=coll_file_list[:-1]
       collision_dict={int(coll.strip().split(' ')[0]):int(coll.strip().split(' ')[1]) for coll in coll_file_list}
@@ -118,7 +120,7 @@ def load_set(data_type):
   return set_list
 
 def prepare_data(_FLAGS, size, size_depth=(55,74)):
-  global FLAGS, im_size, full_set, de_size, max_key, datasetdir
+  global FLAGS, im_size, full_set, de_size, max_key, datasetdir, collision_num
   '''Load lists of tuples refering to images from which random batches can be drawn'''
   FLAGS=_FLAGS
   # stime = time.time()
@@ -136,7 +138,11 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
   im_size=size
   de_size = size_depth
-
+  # collision_info_3.txt --> collision_num = 3
+  try:
+    collision_num = int(FLAGS.collision_file.split('.')[0].split('_')[2])
+  except:
+    collision_num = 10
 
   
 def generate_batch(data_type):
@@ -181,26 +187,30 @@ def generate_batch(data_type):
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
       if FLAGS.normalize_data and FLAGS.network == "coll_q_net":
+        # import pdb; pdb.set_trace()
         if count_tags[0] >= FLAGS.batch_size /2:
+          frame_ind = random.choice([ i for i in range(len(data_set[run_ind]['collisions'])) if data_set[run_ind]['collisions'][i]==1])
           # print("ensure next frames are of type 1 to balance the 0 and 1 labels")
           # for i in range(len(data_set[run_ind]['num_imgs'])-1)[-8:]:
           #   print data_set[run_ind]['collisions'][i]
-          frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1)[-8:])
-          assert data_set[run_ind]['collisions'][frame_ind] == 1, "collision is %d instead of 1 \n run: %d , frame: %d" % (data_set[run_ind]['collisions'][frame_ind], run_ind, frame_ind)
+          # frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1)[-(collision_num-1):])
+          # assert data_set[run_ind]['collisions'][frame_ind] == 1, "collision is %d instead of 1 \n run: %d , frame: %d" % (data_set[run_ind]['collisions'][frame_ind], run_ind, frame_ind)
         elif count_tags[1] >= FLAGS.batch_size /2:
-          while len(data_set[run_ind]['num_imgs']) < 11: 
+          while len(data_set[run_ind]['num_imgs']) < collision_num+1: 
             run_ind = random.choice(range(len(data_set)))
-          # print("ensure next frames are of type 1 to balance the 0 and 1 labels")
+          frame_ind = random.choice([ i for i in range(len(data_set[run_ind]['collisions'])) if data_set[run_ind]['collisions'][i]==0])
+          
+          # print("ensure next frames are of type 0 to balance the 0 and 1 labels")
           # for i in range(len(data_set[run_ind]['num_imgs'])-1)[:-10]:
           #   print data_set[run_ind]['collisions'][i]
-          frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1)[:-10])
-          assert data_set[run_ind]['collisions'][frame_ind] == 0
+          # frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1)[:-(collision_num)])
+          # assert data_set[run_ind]['collisions'][frame_ind] == 0
         else:
           # choose random index over image numbers:
           frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
         count_tags[data_set[run_ind]['collisions'][frame_ind]]+=1
       else:
-        # choose random index over image numbers:
+        # choose random index over image numbers: (-1 because future depth becomes target label)
         frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
       
       # if FLAGS.n_fc:
@@ -288,6 +298,8 @@ if __name__ == '__main__':
   parser.add_argument("--network",default='coll_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  
+  parser.add_argument("--collision_file",default='collision_info.txt',type=str,help="define file with collision labels")
   
   FLAGS=parser.parse_args()  
 
