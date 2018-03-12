@@ -64,21 +64,21 @@ COMMAND_OFFLINE=(${SCRIPT})
 if [ ! -z "$TAG" ] ; then
   COMMAND_OFFLINE+=(--log_tag ${TAG}/$(date +%F_%H%M))
 fi
-if [ ! -z "$MODELDIR" ] ; then
-	COMMAND_OFFLINE+=(--checkpoint_path $MODELDIR)
-  if [ $MODELDIR = 'mobilenet_025' ] ; then
-    COMMAND_OFFLINE+=(--continue_training False)
-  fi
-else 
-  COMMAND_OFFLINE+=(--scratch True)
-fi
-COMMAND_OFFLINE+=(--offline True)
+# if [ ! -z "$MODELDIR" ] ; then
+# 	COMMAND_OFFLINE+=(--checkpoint_path $MODELDIR)
+#   if [ $MODELDIR = 'mobilenet_025' ] ; then
+#     COMMAND_OFFLINE+=(--continue_training False)
+#   fi
+# else 
+#   COMMAND_OFFLINE+=(--scratch True)
+# fi
+# COMMAND_OFFLINE+=(--offline True)
 if [[ -n "$PARAMS" ]] ; then
-	echo ${PARAMS[@]}
-	for p in "${PARAMS[@]}" ; do 
-		echo $p
-		COMMAND_OFFLINE+=($p)
-	done
+ 	echo ${PARAMS[@]}
+ 	for p in "${PARAMS[@]}" ; do 
+ 		echo $p
+ 		COMMAND_OFFLINE+=($p)
+ 	done
 fi
 echo "COMMAND_OFFLINE: ${COMMAND_OFFLINE[@]}"
 if [ $EVALUATE = true ] ; then
@@ -102,20 +102,20 @@ if [ $EVALUATE = true ] ; then
 	skip=false
 	if [[ ! -z "$PARAMS" ]] ; then
 	  for p in "${PARAMS[@]}" ; do
-	  	if [ $skip = true ] ; then
-	  		# did not take previous parameters so should skip True or False value
-	  		skip=false
-	  		continue
-  		fi
-	  	if [[ $p == '--continue_training' ||  $p == '--scratch' ]] ; then
-	  		# skip also the True or False parameter which is next
-	  		skip=true
-	  	else
-		  	COMMAND_ONLINE+=(-p $p)	  		
-	  	fi
+	  	# if [ $skip = true ] ; then
+	  	# 	# did not take previous parameters so should skip True or False value
+	  	# 	skip=false
+	  	# 	continue
+  		# fi
+	  	# if [[ $p == '--continue_training' ||  $p == '--scratch' ]] ; then
+	  	# 	# skip also the True or False parameter which is next
+	  	# 	skip=true
+	  	# else
+	  	COMMAND_ONLINE+=(-p $p)	  		
+	  	# fi
 	  done
 	fi
-	COMMAND_ONLINE+=(-p '--load_config' -p 'True')
+	# COMMAND_ONLINE+=(-p '--load_config' -p 'True')
 	echo "COMMAND_ONLINE: ${COMMAND_ONLINE[@]}"
 fi
 

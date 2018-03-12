@@ -8,6 +8,8 @@ import random
 import numpy as np
 import tensorflow as tf
 
+import argparse
+
 # FLAGS = tf.app.flags.FLAGS
 
 
@@ -95,10 +97,13 @@ if __name__ == '__main__':
   parser.add_argument("--network",default='coll_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--normalized_replay", action='store_false', help="Make labels / actions equally likely for the coll / depth q net.")
 
-  FLAGS=parser.parse_args()  
 
-  # FLAGS.network='coll_q_net'
-  FLAGS.network='depth_q_net'
+  FLAGS=parser.parse_args()  
+  # FLAGS.normalized_replay=False
+  print FLAGS.normalized_replay
+
+  FLAGS.network='coll_q_net'
+  # FLAGS.network='depth_q_net'
   # sample episode
   buffer=ReplayBuffer(FLAGS, 100)
   for i in range(30):
@@ -112,25 +117,30 @@ if __name__ == '__main__':
     if np.abs(e['action']) > 0.3: N[np.sign(e['action'])]+=1
     else: N[0]+=1
   print("Current number of action -1: {0}, 0: {1} and 1: {2}".format(N[-1], N[0], N[1]))
-  
+
+  N={0:0, 1:0}
+  for e in buffer.buffer:
+    if e['trgt']==0: N[0]+=1
+    else: N[1]+=1
+  print("Current number of target 0: {0}, 1: {1}".format(N[0], N[1]))
+    
 
   print("\n content of the buffer: \n")
   buffer.to_string()
   
-  prop_zero=[]
-  sample_size=10
-  for i in range(10):
-    stime=time.time()
-    state, action, trgt = buffer.sample_batch(sample_size)
-    prop_zero.append(float(len(action[action==0]))/sample_size)
-    print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime, 
-                                                                                                    float(len(action[action==-1]))/sample_size, 
-                                                                                                    float(len(action[action==0]))/sample_size, 
-                                                                                                    float(len(action[action==1]))/sample_size))
+  # prop_zero=[]
+  # sample_size=10
+  # for i in range(10):
+  #   stime=time.time()
+  #   state, action, trgt = buffer.sample_batch(sample_size)
+  #   prop_zero.append(float(len(action[action==0]))/sample_size)
+  #   print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime, 
+  #                                                                                                   float(len(action[action==-1]))/sample_size, 
+  #                                                                                                   float(len(action[action==0]))/sample_size, 
+  #                                                                                                   float(len(action[action==1]))/sample_size))
 
-  print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
+  # print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
 
-  FLAGS.normalized_replay=True
   print("\n sample batch normalized \n")
 
   prop_zero=[]
@@ -138,12 +148,14 @@ if __name__ == '__main__':
   for i in range(10):
     stime=time.time()
     state, action, trgt = buffer.sample_batch(sample_size)
-    prop_zero.append(float(len(action[action==0]))/sample_size)
-    print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime, 
-                                                                                                    float(len(action[action==-1]))/sample_size, 
-                                                                                                    float(len(action[action==0]))/sample_size, 
-                                                                                                    float(len(action[action==1]))/sample_size))
-  print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
+    print("trgt 0: {0}, trgt 1: {1}".format(len(trgt[trgt==0]),len(trgt[trgt==1])))
+    # print("prp labels 0: {0}/10 prop labels 1 {1}/10".format(len(trgt[trgt == 0])), len(trgt[trgt==1]))
+    # prop_zero.append(float(len(action[action==0]))/sample_size)
+    # print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime, 
+    #                                                                                                 float(len(action[action==-1]))/sample_size, 
+                                                                                                    # float(len(action[action==0]))/sample_size, 
+                                                                                                    # float(len(action[action==1]))/sample_size))
+  # print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
   
   # print("\n sampled batch normalized \n")
   # for i in range(6):

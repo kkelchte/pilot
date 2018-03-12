@@ -2,12 +2,24 @@
 # Script used to invoke the condor online (singularity) and offline tasks.
 
 # -------OFFLINE-------
+
+for i in $(seq 3); do
+# for d in canyon_rl_turtle canyon_rl_turtle_150 canyon_rl_turtle_30  canyon_rl_turtle_300 canyon_rl_turtle_600 canyon_rl_turtle_75 ; do
+#	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_$d -p "--normalize_data --dataset $d"
+	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_canyon_rl_turtle_75_$i -p "--network depth_q_net --dataset canyon_rl_turtle_75 --loss absolute --random_seed $((i*1354))"
+	sleep 1
+done
+
+#for i in $(seq 5) ; do
+#	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_$i -p "--network depth_q_net --loss absolute --random_seed $((i*1329)) --dataset canyon_rl_turtle_600 --max_episodes 900"
+#	sleep 1
+#done
 # ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_01 -p "--normalize_data True --learning_rate 0.1"
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_tf15_001 -p "--max_episodes 1000 --normalize_data True --learning_rate 0.01"
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_tf15_0001 -p "--max_episodes 1000 --normalize_data True --learning_rate 0.001"
+# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_tf15_001 -p "--max_episodes 1000 --normalize_data True --learning_rate 0.01"
+# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_tf15_0001 -p "--max_episodes 1000 --normalize_data True --learning_rate 0.001"
 # ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_00001 -p "--normalize_data True --learning_rate 0.0001"
 
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_tf15 -p "--max_episodes 1000 --network depth_q_net --learning_rate 0.01 --loss absolute"
+# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_tf15 -p "--max_episodes 1000 --network depth_q_net --learning_rate 0.01 --loss absolute"
 
 # ./condor_task_offline.sh -q $((60*60*24*2)) -t off_depth_drone/model_001 -p "--max_episodes 10000 --network depth_q_net --dataset canyon_rl --learning_rate 0.01 --loss absolute --min_depth 0.001 --max_depth 2.0"
 # ./condor_task_offline.sh -q $((60*60*24*2)) -t off_depth_drone/model_0001 -p "--max_episodes 10000 --network depth_q_net --dataset canyon_rl --learning_rate 0.001 --loss absolute --min_depth 0.001 --max_depth 2.0"
