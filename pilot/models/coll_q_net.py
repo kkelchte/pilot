@@ -315,7 +315,7 @@ def coll_q_net(inputs,
 
         # output 1
         end_point = 'q_coll_pred'
-        coll_predictions=slim.fully_connected(q_coll_feat, 1, tf.nn.relu)
+        coll_predictions=slim.fully_connected(q_coll_feat, 1, tf.nn.sigmoid)
         end_points[end_point] = coll_predictions
 
   return coll_predictions, end_points
