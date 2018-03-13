@@ -227,7 +227,10 @@ class PilotNode(object):
       action = float(actions[np.argmax([np.amin(o[o!=0]) for o in output])])
     else:
       # take action giving the lowest collision probability
-      action = float(actions[np.argmin(output)])
+      # if all actions are equal go straight:
+      outputs_compared=[output[i]==output[i+1] for i in range(len(output)-1)]
+      if sum(outputs_compared) == len(outputs_compared): action = 0
+      else: action = float(actions[np.argmin(output)])
 
     noise_sample = self.exploration_noise.noise()
 

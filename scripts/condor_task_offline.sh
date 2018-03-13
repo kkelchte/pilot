@@ -123,7 +123,7 @@ fi
 description="$(echo "$TAG" | sed  -e "s/\//_/" | sed  -e "s/\//_/")_${NAME}_$(date +%F_%H%M)"
 # condor_output_dir='/users/visics/kkelchte/condor/log'
 condor_output_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor"
-temp_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor/.tmp"
+temp_dir(machineowner == \"Visics\") && ="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor/.tmp"
 # temp_dir="/users/visics/kkelchte/condor/.tmp"
 # temp_dir="/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/.tmp"
 condor_file="${temp_dir}/offline_${description}.condor"
@@ -169,9 +169,9 @@ else
 	GPUMEM=1900
 fi
 if [ -z "$blacklist" ] ; then
-	echo "Requirements = (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5)">> $condor_file	
+	echo "Requirements = (machineowner == \"Visics\") && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5)">> $condor_file	
 else
-	echo "Requirements = (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5) && $blacklist">> $condor_file
+	echo "Requirements = (machineowner == \"Visics\") && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5) && $blacklist">> $condor_file
 fi
 # wall time ==> generally assumed a job should take 6hours longest,
 # job will be killed after this walltime

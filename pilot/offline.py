@@ -13,7 +13,7 @@ The data is collected from the data module.
 """
 
 
-def run_episode(data_type, sumvar, model):
+def run_episode(data_type, sumvar, model, epsilon=0):
   '''run over batches
   return different losses
   type: 'train', 'val' or 'test'
@@ -32,6 +32,9 @@ def run_episode(data_type, sumvar, model):
 
       inputs = np.array([_['img'] for _ in batch])
       actions = np.array([[_['ctr']] for _ in batch])
+      if epsilon != 0:        
+        random_actions=2*np.random.random_sample(len(actions)).reshape((-1,1))-1
+        actions = random_actions if np.random.binomial(1,epsilon) else actions
       if FLAGS.network == 'depth_q_net':
         targets = np.array([_['depth'] for _ in batch]).reshape((-1,55,74))
       else:
@@ -77,8 +80,15 @@ def run(_FLAGS, model, start_ep=0):
 
     print('start episode: {}'.format(ep))
     # ----------- train episode
-    sumvar = run_episode('train', {}, model)
-    
+    if FLAGS.epsilon_offline:
+      epsilon=min([1, FLAGS.epsilon*np.exp(-FLAGS.epsilon_decay*(ep))])
+      if epsilon < 0.0000001: 
+        epsilon = 0 #avoid taking binomial of too small epsilon.
+        FLAGS.epsilon_offline=False
+      sumvar = run_episode('train', {}, model, epsilon)
+    else:
+      sumvar = run_episode('train', {}, model)
+
     # ----------- validate episode
     #sumvar = run_episode('val', {}, model)
     sumvar = run_episode('val', sumvar, model)

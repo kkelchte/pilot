@@ -94,10 +94,15 @@ def main(_):
   #   Training Parameters
   # ==========================
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
-  parser.add_argument("--offline", action='store_false', help="Training from an offline dataset.")
   parser.add_argument("--learning_rate", default=0.01, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+
+  # ==========================
+  #   Offline Parameters
+  # ==========================
+  parser.add_argument("--offline", action='store_false', help="Training from an offline dataset.")
   parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
+  parser.add_argument("--epsilon_offline", action='store_true',help="Use a decaying epsilon to pretrain on collision prediction without listening to the action.")
 
   # ===========================
   #   Model Parameters
