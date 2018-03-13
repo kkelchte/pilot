@@ -205,7 +205,7 @@ class PilotNode(object):
       Plot auxiliary predictions.
       Fill replay buffer.
     """
-    btime=time.time()
+    # btime=time.time()
     
     # save depth to keep images close.
     depth = copy.deepcopy(self.depth)
@@ -334,6 +334,7 @@ class PilotNode(object):
               losses_train[k].append(losses[k])
             except:
               losses_train[k]=[losses[k]]
+      
       # Gather all info to build a proper summary and string of results
       k='train' if not self.FLAGS.evaluate else 'test'
       self.average_distances[k]= self.average_distances[k]-self.average_distances[k]/(self.runs[k]+1)

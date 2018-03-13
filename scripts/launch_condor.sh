@@ -3,14 +3,14 @@
 
 # -------OFFLINE-------
 
-for i in $(seq 3); do
-# for d in canyon_rl_turtle canyon_rl_turtle_150 canyon_rl_turtle_30  canyon_rl_turtle_300 canyon_rl_turtle_600 canyon_rl_turtle_75 ; do
-#	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_$d -p "--normalize_data --dataset $d"
-	for c in 3 5 7 ; do
-		./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_cl${c}_$i -p "--collision_file collision_info_${c}.txt --normalize_data --random_seed $((i*1354))"
-		sleep 1
-	done
-done
+# for i in $(seq 3); do
+# # for d in canyon_rl_turtle canyon_rl_turtle_150 canyon_rl_turtle_30  canyon_rl_turtle_300 canyon_rl_turtle_600 canyon_rl_turtle_75 ; do
+# #	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_$d -p "--normalize_data --dataset $d"
+# 	for c in 3 5 7 ; do
+# 		./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_cl${c}_$i -p "--collision_file collision_info_${c}.txt --normalize_data --random_seed $((i*1354))"
+# 		sleep 1
+# 	done
+# done
 
 #for i in $(seq 5) ; do
 #	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_$i -p "--network depth_q_net --loss absolute --random_seed $((i*1329)) --dataset canyon_rl_turtle_600 --max_episodes 900"
@@ -38,10 +38,10 @@ done
 
 
 # -------ONLINE---------
-# for i in $(seq 3); do
-# 	# ./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5"
-# 	./condor_task_sing.sh -q $((60*60*24*3)) -t on_depth_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --network depth_q_net --loss absolute"
-# done
+for i in $(seq 3); do
+	./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_straight_default_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5"
+	# ./condor_task_sing.sh -q $((60*60*24*3)) -t on_depth_turtle/model_001_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --network depth_q_net --loss absolute"
+done
 
 # -------Continue Training online with prefill replay buffer------------
 # ME=1000
