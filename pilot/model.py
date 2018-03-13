@@ -124,12 +124,19 @@ class Model(object):
       if self.FLAGS.network=='depth_q_net':
         weights=tf.multiply(tf.cast(tf.greater(self.targets,self.FLAGS.min_depth), tf.float32),tf.cast(tf.less(self.targets,self.FLAGS.max_depth), tf.float32))
         self.weights=-1*tf.nn.pool(tf.expand_dims(-1*weights,3), [2,2], "MAX",padding="SAME")
-      if self.FLAGS.loss == 'huber':
-        self.loss = tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
-      elif self.FLAGS.loss == 'absolute':
-        self.loss = tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
-      else: 
-        self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+        if self.FLAGS.loss == 'huber':
+          self.loss = tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+        elif self.FLAGS.loss == 'absolute':
+          self.loss = tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+        else: 
+          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+      else:
+        if self.FLAGS.loss == 'ce':
+          # cross entropy loss:
+          self.loss = -tf.reduce_mean(tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train)))
+          tf.losses.add_loss(self.loss)
+        else:
+          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
       self.total_loss = tf.losses.get_total_loss()
       
   def define_train(self):

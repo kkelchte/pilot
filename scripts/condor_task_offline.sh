@@ -169,9 +169,9 @@ else
 	GPUMEM=1900
 fi
 if [ -z "$blacklist" ] ; then
-	echo "Requirements = (machineowner == \"Visics\") && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5)">> $condor_file	
+	echo "Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5)">> $condor_file	
 else
-	echo "Requirements = (machineowner == \"Visics\") && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5) && $blacklist">> $condor_file
+	echo "Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5) && $blacklist">> $condor_file
 fi
 # wall time ==> generally assumed a job should take 6hours longest,
 # job will be killed after this walltime
