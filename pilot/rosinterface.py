@@ -231,7 +231,6 @@ class PilotNode(object):
       outputs_compared=[output[i]==output[i+1] for i in range(len(output)-1)]
       if sum(outputs_compared) == len(outputs_compared): action = 0
       else: action = float(actions[np.argmin(output)])
-
     noise_sample = self.exploration_noise.noise()
 
     if self.FLAGS.prefill and self.replay_buffer.size() < self.FLAGS.buffer_size and not self.FLAGS.evaluate:
