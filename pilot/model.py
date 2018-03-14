@@ -136,7 +136,7 @@ class Model(object):
           self.loss = -tf.reduce_mean(tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train)))
           tf.losses.add_loss(self.loss)
         else:
-          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.)
       self.total_loss = tf.losses.get_total_loss()
       
   def define_train(self):

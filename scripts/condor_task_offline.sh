@@ -123,7 +123,7 @@ fi
 description="$(echo "$TAG" | sed  -e "s/\//_/" | sed  -e "s/\//_/")_${NAME}_$(date +%F_%H%M)"
 # condor_output_dir='/users/visics/kkelchte/condor/log'
 condor_output_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor"
-temp_dir(machineowner == \"Visics\") && ="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor/.tmp"
+temp_dir="/esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/condor/.tmp"
 # temp_dir="/users/visics/kkelchte/condor/.tmp"
 # temp_dir="/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/.tmp"
 condor_file="${temp_dir}/offline_${description}.condor"

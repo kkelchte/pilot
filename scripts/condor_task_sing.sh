@@ -210,16 +210,16 @@ echo "echo \"[condor_shell_script] done: \$(date +%F_%H:%M)\"" >> $shell_file
 #--------------------------------------------------------------------------------------------
 # create sing file to ls gluster directory : bug of current singularity + fedora 27 version
 echo "#!/bin/bash"                                                                                     > $sing_file
-echo "echo \"exec \$1 in singularity image /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img\" " >> $sing_file
-# echo "echo \"exec \$1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow.imgs\" " >> $sing_file
-echo "cd /esat/opal/kkelchte/singularity_images"                                                                 >> $sing_file
-# echo "cd /gluster/visics/singularity"                                                                 >> $sing_file
+# echo "echo \"exec \$1 in singularity image /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img\" " >> $sing_file
+echo "echo \"exec \$1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow.imgs\" " >> $sing_file
+# echo "cd /esat/opal/kkelchte/singularity_images"                                                                 >> $sing_file
+echo "cd /gluster/visics/singularity"                                                                 >> $sing_file
 echo "pwd"                                                                                            >> $sing_file
-echo "ls /esat/opal/kkelchte/singularity_images"                                                                 >> $sing_file
-# echo "ls /gluster/visics/singularity"                                                                 >> $sing_file
+# echo "ls /esat/opal/kkelchte/singularity_images"                                                                 >> $sing_file
+echo "ls /gluster/visics/singularity"                                                                 >> $sing_file
 echo "sleep 1"                                                                                        >> $sing_file
-echo "/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img \$1"      >> $sing_file
-# echo "/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow.imgs \$1"      >> $sing_file
+# echo "/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img \$1"      >> $sing_file
+echo "/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow.imgs \$1"      >> $sing_file
 #--------------------------------------------------------------------------------------------
 
 chmod 600 $condor_file
