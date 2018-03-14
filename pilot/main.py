@@ -102,7 +102,6 @@ def main(_):
   # ==========================
   parser.add_argument("--offline", action='store_false', help="Training from an offline dataset.")
   parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
-  parser.add_argument("--epsilon_offline", action='store_true',help="Use a decaying epsilon to pretrain on collision prediction without listening to the action.")
 
   # ===========================
   #   Model Parameters

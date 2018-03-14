@@ -3,12 +3,12 @@
 
 # -------OFFLINE-------
 
-# for i in $(seq 3); do
-# # for d in canyon_rl_turtle canyon_rl_turtle_150 canyon_rl_turtle_30  canyon_rl_turtle_300 canyon_rl_turtle_600 canyon_rl_turtle_75 ; do
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_canyon_rl_turtle_30_1 -p "--network depth_q_net --dataset canyon_rl_turtle_30"
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_canyon_rl_turtle_30_2 -p "--network depth_q_net --dataset canyon_rl_turtle_30"
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_canyon_rl_turtle_30_b -p "--network depth_q_net --dataset canyon_rl_turtle_30b"
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_canyon_rl_turtle_30_c -p "--network depth_q_net --dataset canyon_rl_turtle_30c"
+for i in $(seq 3); do
+	for d in canyon_rl_turtle canyon_rl_turtle_150 canyon_rl_turtle_30  canyon_rl_turtle_300 canyon_rl_turtle_600 canyon_rl_turtle_75 ; do
+./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute"
+./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute"
+./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute"
+./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute"
 
 
 
