@@ -5,27 +5,20 @@
 
 for i in $(seq 3); do
 	for d in canyon_rl_turtle canyon_rl_turtle_150 canyon_rl_turtle_30  canyon_rl_turtle_300 canyon_rl_turtle_600 canyon_rl_turtle_75 ; do
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute"
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute"
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute"
-./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute"
-
-
-
-
-for i in 1 2 ; do
-	for c in 5 6 7 ; do
-		./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_cl${c}_$i -p "--collision_file collision_info_${c}.txt --normalize_data --random_seed $((i*1354))"
+		./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute --random_seed $((i*1354))"
+		./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute --random_seed $((i*1354))"
+		./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute --random_seed $((i*1354))"
+		./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_${d}_${i} -p "--network depth_q_net --dataset $d --loss absolute --random_seed $((i*1354))"
 	done
+done
+
+
+
+for i in 1 2 3 ; do
+	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_cl${c}_$i -p "--collision_file collision_info_7.txt --normalize_data --random_seed $((i*1354)) --loss ce"
 	sleep 1
 done	
 
-for i in 1 2 3 ; do
-	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_eps05_$i -p "--epsilon_offline --epsilon 0.5 --normalize_data --random_seed $((i*1354))"
-	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_ce_$i -p "--loss ce --normalize_data --random_seed $((i*1354))"
-	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_ref_$i -p "--normalize_data --random_seed $((i*1354))"
-	sleep 1
-done
 
 #for i in $(seq 5) ; do
 #	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_$i -p "--network depth_q_net --loss absolute --random_seed $((i*1329)) --dataset canyon_rl_turtle_600 --max_episodes 900"

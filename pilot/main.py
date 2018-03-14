@@ -101,7 +101,7 @@ def main(_):
   #   Offline Parameters
   # ==========================
   parser.add_argument("--offline", action='store_false', help="Training from an offline dataset.")
-  parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
+  parser.add_argument("--max_episodes",default=400,type=int,help="The maximum number of episodes (~runs through all the training data.)")
 
   # ===========================
   #   Model Parameters
