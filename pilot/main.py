@@ -101,15 +101,7 @@ def main(_):
   #   Offline Parameters
   # ==========================
   parser.add_argument("--offline", action='store_false', help="Training from an offline dataset.")
-  parser.add_argument("--max_episodes",default=400,type=int,help="The maximum number of episodes (~runs through all the training data.)")
-
-  # ===========================
-  #   Model Parameters
-  # ===========================
-  parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
-  parser.add_argument("--network",default='coll_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
-  # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
-  # parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc.")
+  parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
 
   # ===========================
   #   Utility Parameters
@@ -140,6 +132,11 @@ def main(_):
   # ===========================
   #   Model Parameters
   # ===========================
+  parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
+  parser.add_argument("--network",default='coll_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
+  # parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc.")
+  
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
   parser.add_argument("--continue_training",action='store_true', help="Continue training of the prediction layers. If false, initialize the prediction layers randomly.")

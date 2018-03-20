@@ -74,8 +74,8 @@ class ReplayBuffer(object):
 
     def label_collision(self):
       #label the last n experiences with target 1 
-      # as collision appeared in the next 10 steps
-      n=10
+      # as collision appeared in the next 7 steps
+      n=7
       # from t_end till t_end-n
       last_experiences=[self.buffer.pop() for i in range(n)]
       for e in last_experiences: e['trgt']=1

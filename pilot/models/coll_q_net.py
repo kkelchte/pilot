@@ -308,10 +308,9 @@ def coll_q_net(inputs,
         end_points[end_point] = q_coll_feat
         # print("q_coll feat size: {}".format(q_coll_feat.get_shape().as_list()))
 
-        
-        end_point = 'q_coll_fc_1'
-        q_coll_feat=slim.fully_connected(q_coll_feat, 4096, tf.nn.relu)
-        end_points[end_point] = q_coll_feat
+        # end_point = 'q_coll_fc_1'
+        # q_coll_feat=slim.fully_connected(q_coll_feat, 4096, tf.nn.relu)
+        # end_points[end_point] = q_coll_feat
 
         # output 1
         end_point = 'q_coll_pred'

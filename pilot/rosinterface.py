@@ -323,8 +323,8 @@ class PilotNode(object):
       # Train model from experience replay:
       losses_train = {}
       if self.replay_buffer.size()>self.FLAGS.batch_size and not self.FLAGS.evaluate and ((not self.FLAGS.prefill) or (self.FLAGS.prefill and self.replay_buffer.size() == self.FLAGS.buffer_size)):
-        for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 100)): # sample max 10 batches from all experiences gathered.
-        # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)): # sample max 10 batches from all experiences gathered.
+        # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 100)): # sample max 10 batches from all experiences gathered.
+        for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)): # sample max 10 batches from all experiences gathered.
           states, actions, targets = self.replay_buffer.sample_batch(self.FLAGS.batch_size)
           losses = self.model.backward(states,
                                       actions.reshape(-1,1),

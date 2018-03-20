@@ -45,7 +45,7 @@ def load_set(data_type):
     return []
 
   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
-  lst_runs = [ l.strip() for l in f.readlines() ]
+  lst_runs = [ l.strip() for l in f.readlines() if len(l) > 2]
   
   for run_dir in lst_runs:
     print(run_dir)
