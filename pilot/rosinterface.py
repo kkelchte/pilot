@@ -212,10 +212,8 @@ class PilotNode(object):
 
     ### FORWARD 
     # feed in 3 actions corresponding to right, straight and left.
-
-    # actions=np.array([-1,-0.5,0,0.5,1]).reshape((-1,1))
-    actions=np.array([-1,0,1]).reshape((-1,1))
-    # actions=np.array([-1,1]).reshape((-1,1))
+    actions=np.arange(-1.0, 1.0+2./self.FLAGS.action_quantity, 2./(self.FLAGS.action_quantity-1)).reshape((-1,1))
+    if self.FLAGS.action_smoothing: actions=np.array([a+np.random.uniform(low=-1./(self.FLAGS.action_quantity-1),high=1./(self.FLAGS.action_quantity-1)) for a in actions]).reshape((-1,1))
 
     output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*actions)
     # output=np.asarray([1,0,1]).reshape((-1,1))
@@ -227,7 +225,7 @@ class PilotNode(object):
       action = float(actions[np.argmax([np.amin(o[o!=0]) for o in output])])
     else:
       # take action giving the lowest collision probability
-      # if all actions are equal go straight:
+      # if all actions are equally likeli to end with a bump, make straight the default:
       outputs_compared=[output[i]==output[i+1] for i in range(len(output)-1)]
       if sum(outputs_compared) == len(outputs_compared): action = 0
       else: action = float(actions[np.argmin(output)])
@@ -251,7 +249,7 @@ class PilotNode(object):
     msg.linear.y = noise_sample[1]*self.FLAGS.sigma_y
     msg.linear.z = noise_sample[2]*self.FLAGS.sigma_z
     msg.angular.z = action
-
+    # print action
     self.action_pub.publish(msg)
     # print("time: {}".format(time.time()-btime))
     
