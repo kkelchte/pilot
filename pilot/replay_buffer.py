@@ -67,7 +67,7 @@ class ReplayBuffer(object):
       
       # batch=random.sample(self.buffer, batch_size)      
       state_batch = np.array([_['state'] for _ in batch])
-      action_batch = np.array([_['action'] for _ in batch])
+      action_batch = np.array([max(min(_['action'],self.FLAGS.action_bound),-self.FLAGS.action_bound) for _ in batch])
       trgt_batch = np.array([_['trgt'] for _ in batch])
       
       return state_batch, action_batch, trgt_batch

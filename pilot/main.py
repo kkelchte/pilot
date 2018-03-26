@@ -174,7 +174,7 @@ def main(_):
   parser.add_argument("--sigma_yaw", default=0.0, type=float, help= "sigma_yaw is the amount of noise added to the steering angle.")
   parser.add_argument("--speed", default=0.5, type=float, help= "Define the forward speed of the quadrotor.")
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
-  parser.add_argument("--epsilon_decay", default=0.001, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
+  parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
   parser.add_argument("--prefill", action='store_false', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
 
   parser.add_argument("--action_amplitude", default=1, type=int, help="Define the action that is used as input to estimate Q value.")

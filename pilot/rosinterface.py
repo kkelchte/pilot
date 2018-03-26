@@ -241,6 +241,7 @@ class PilotNode(object):
         random_action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else 0.3*noise_sample[0]
         epsilon=min([1, self.FLAGS.epsilon*np.exp(-self.FLAGS.epsilon_decay*(self.runs['train']+1))])
         action = random_action if np.random.binomial(1,epsilon) else action
+        # print("random: {0}, epsilon: {1}, action:{2}".format(random_action,epsilon,action))
         if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
     ### SEND CONTROL (with possibly some noise)
