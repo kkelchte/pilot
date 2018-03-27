@@ -123,7 +123,7 @@ def main(_):
   # ===========================
   #   Data Parameters
   # ===========================
-  parser.add_argument("--normalize_data", action='store_true', help="Define wether the collision tags 0 or 1 are normalized in a batch.")
+  parser.add_argument("--normalize_data", action='store_true', help="Define wether the collision tags 0 or 1 are normalized in a batch. Only relevant for coll q net.")
   parser.add_argument("--dataset", default="canyon_rl_turtle", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
@@ -175,11 +175,12 @@ def main(_):
   parser.add_argument("--speed", default=0.5, type=float, help= "Define the forward speed of the quadrotor.")
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
-  parser.add_argument("--prefill", action='store_false', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+  parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
 
   parser.add_argument("--action_amplitude", default=1, type=int, help="Define the action that is used as input to estimate Q value.")
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions used at the forward pass to evaluate a state.")
   parser.add_argument("--action_smoothing",action='store_true', help="Define whether the actions should be sampled uniformly within the bin to represent better the continuous actions space.")
+  parser.add_argument("--action_normalization",action='store_true', help="Normalize action space from -1:1 to 0:1 avoiding gradients to cancel out.")
 
   parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
   parser.add_argument("--show_depth",action='store_false', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")

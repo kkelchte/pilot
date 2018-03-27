@@ -215,20 +215,27 @@ class PilotNode(object):
     actions=np.arange(-1.0, 1.0+2./self.FLAGS.action_quantity, 2./(self.FLAGS.action_quantity-1)).reshape((-1,1))
     if self.FLAGS.action_smoothing: actions=np.array([a+np.random.uniform(low=-1./(self.FLAGS.action_quantity-1),high=1./(self.FLAGS.action_quantity-1)) for a in actions]).reshape((-1,1))
 
-    output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*actions)
+    # map actions from range -1:1 to range 0:1 as inputs for the network
+    inputs=(actions+1.)/2 if self.FLAGS.action_normalization else actions
+
+    output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*inputs)
     # output=np.asarray([1,0,1]).reshape((-1,1))
     if not self.ready or self.finished: return
 
     ### EXTRACT CONTROL
     if self.FLAGS.network == 'depth_q_net':
       # take action corresponding to the maximum minimum depth:
-      action = float(actions[np.argmax([np.amin(o[o!=0]) for o in output])])
+      action = float(inputs[np.argmax([np.amin(o[o!=0]) for o in output])])
     else:
       # take action giving the lowest collision probability
       # if all actions are equally likeli to end with a bump, make straight the default:
       outputs_compared=[output[i]==output[i+1] for i in range(len(output)-1)]
-      if sum(outputs_compared) == len(outputs_compared): action = 0
-      else: action = float(actions[np.argmin(output)])
+      if sum(outputs_compared) == len(outputs_compared): action = 0.5 if self.FLAGS.action_normalization else 0
+      else: action = float(inputs[np.argmin(output)])
+
+    # map actions back to range -1:1
+    if self.FLAGS.action_normalization: action=2*action-1 
+
     noise_sample = self.exploration_noise.noise()
 
     if self.FLAGS.prefill and self.replay_buffer.size() < self.FLAGS.buffer_size and not self.FLAGS.evaluate:
@@ -281,14 +288,14 @@ class PilotNode(object):
       if self.FLAGS.network=='depth_q_net':
         if len(self.prev_im)!= 0 and self.prev_action!=-100 :
           experience={'state':self.prev_im,
-            'action':self.prev_action,
+            'action':self.prev_action if not self.FLAGS.action_normalization else (self.prev_action+1)/2, #map action to range 0:1 as input in case of normalization
             'trgt':depth}
           self.replay_buffer.add(experience)
         self.prev_im=copy.deepcopy(im)
         self.prev_action=action
       elif self.FLAGS.network=='coll_q_net':
         experience={'state':im,
-          'action':action,
+          'action':action if not self.FLAGS.action_normalization else (action+1)/2,
           'trgt':0}
         self.replay_buffer.add(experience)
       

@@ -213,7 +213,7 @@ def generate_batch(data_type):
         elif FLAGS.network == "depth_q_net":
           frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
         else:
-          raise NotImplementedError("data normalization offline not implemented for network {}".format(FLAGS.network))
+          raise NotImplementedError("[data.py]: normalization offline not implemented for network {}".format(FLAGS.network))
       else:
         # choose random index over image numbers: (-1 because future depth becomes target label)
         frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
@@ -264,7 +264,8 @@ def generate_batch(data_type):
           ctr = data_set[run_ind]['controls'][frame_ind]
           # clip control avoiding values larger than 1
           ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
-
+          # normalize control form -bound:+bound to 0 and 1
+          if FLAGS.action_normalization: ctr=(ctr+FLAGS.action_bound)/(2*FLAGS.action_bound) 
           if FLAGS.network == 'coll_q_net': 
             col = data_set[run_ind]['collisions'][frame_ind]
             batch.append({'img':im, 'ctr':ctr, 'depth':de, 'trgt':col})

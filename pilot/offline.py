@@ -54,8 +54,8 @@ def run_episode(data_type, sumvar, model):
   if len(tot_loss)!=0: sumvar['Loss_'+data_type+'_total']=np.mean(tot_loss) 
   if len(output_loss)!=0: sumvar['Loss_'+data_type+'_output']=np.mean(output_loss)   
   if len(depth_predictions) != 0: sumvar['depth_predictions']=depth_predictions
-  print('>>{0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(data_type.upper(),tuple(time.localtime()[0:5]),
-    tools.print_dur(data_loading_time),tools.print_dur(calculation_time)))
+  print('>>{4}: {0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(data_type.upper(),tuple(time.localtime()[0:5]),
+    tools.print_dur(data_loading_time),tools.print_dur(calculation_time), FLAGS.log_tag))
   if data_type == 'val' or data_type == 'test':
     # print('{}'.format(str([k+" : "+sumvar[k] for k in sumvar if k != 'depth_predictions'])))
     msg=str(["{0} : {1}".format(k,sumvar[k]) for k in sumvar.keys() if k != 'depth_predictions'])
