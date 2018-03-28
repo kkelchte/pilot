@@ -218,6 +218,8 @@ class PilotNode(object):
     # map actions from range -1:1 to range 0:1 as inputs for the network
     inputs=(actions+1.)/2 if self.FLAGS.action_normalization else actions
 
+    # print 'inputs: ',inputs
+
     output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*inputs)
     # output=np.asarray([1,0,1]).reshape((-1,1))
     if not self.ready or self.finished: return
@@ -226,6 +228,7 @@ class PilotNode(object):
     if self.FLAGS.network == 'depth_q_net':
       # take action corresponding to the maximum minimum depth:
       action = float(inputs[np.argmax([np.amin(o[o!=0]) for o in output])])
+      # print 'input: ',action
     else:
       # take action giving the lowest collision probability
       # if all actions are equally likeli to end with a bump, make straight the default:
@@ -235,6 +238,7 @@ class PilotNode(object):
 
     # map actions back to range -1:1
     if self.FLAGS.action_normalization: action=2*action-1 
+    # print 'action: ',action
 
     noise_sample = self.exploration_noise.noise()
 
@@ -330,7 +334,7 @@ class PilotNode(object):
       losses_train = {}
       if self.replay_buffer.size()>self.FLAGS.batch_size and not self.FLAGS.evaluate and ((not self.FLAGS.prefill) or (self.FLAGS.prefill and self.replay_buffer.size() == self.FLAGS.buffer_size)):
         # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 100)): # sample max 10 batches from all experiences gathered.
-        for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)): # sample max 10 batches from all experiences gathered.
+        for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), self.FLAGS.grad_steps)): # sample max 10 batches from all experiences gathered.
           states, actions, targets = self.replay_buffer.sample_batch(self.FLAGS.batch_size)
           losses = self.model.backward(states,
                                       actions.reshape(-1,1),

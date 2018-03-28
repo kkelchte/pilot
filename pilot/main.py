@@ -72,6 +72,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
       if child.attrib['name'] in boollist:
         FLAGS.__setattr__(child.attrib['name'], child.text=='True')
         print 'set:', child.attrib['name'], child.text=='True'
+        # import pdb; pdb.set_trace()
       elif child.attrib['name'] in intlist:
         FLAGS.__setattr__(child.attrib['name'], int(child.text))
         print 'set:', child.attrib['name'], int(child.text)
@@ -184,6 +185,8 @@ def main(_):
 
   parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
   parser.add_argument("--show_depth",action='store_false', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
+
+  parser.add_argument("--grad_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
 
   FLAGS=parser.parse_args()
 
