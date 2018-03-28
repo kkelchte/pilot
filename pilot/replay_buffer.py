@@ -40,8 +40,8 @@ class ReplayBuffer(object):
       assert batch_size < self.count, IOError('batchsize ',batch_size,' is bigger than buffer size: ',self.count)
       
       if self.FLAGS.normalized_replay:
+        probs=[]
         if self.FLAGS.network == "coll_q_net" :
-          probs=[]
           N={0:0, 1:0}
           for e in self.buffer: N[e['trgt']]+=1
           for e in self.buffer: probs.append(1/(2.0*N[e['trgt']]))
@@ -49,7 +49,6 @@ class ReplayBuffer(object):
           # print("Probs: {}".format(probs))
 
         if self.FLAGS.network == "depth_q_net":
-          probs=[]
           N={-1:0, 0:0, 1:0}
           for e in self.buffer:
             if np.abs(e['action']) > 0.3: N[np.sign(e['action'])]+=1

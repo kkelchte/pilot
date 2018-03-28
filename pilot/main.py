@@ -62,7 +62,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   """
   print("Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['n_fc','discrete']
+  boollist=['n_fc','discrete','action_normalization']
   intlist=['n_frames', 'num_outputs']
   floatlist=['depth_multiplier']
   stringlist=['network', 'data_format']
@@ -160,7 +160,7 @@ def main(_):
   #   Replay Parameters
   # ===========================
 
-  parser.add_argument("--normalized_replay", action='store_false', help="Make labels / actions equally likely for the coll / depth q net.")
+  parser.add_argument("--normalized_replay", action='store_true', help="Make labels / actions equally likely for the coll / depth q net.")
 
   # ===========================
   #   Rosinterface Parameters

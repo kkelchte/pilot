@@ -4,14 +4,14 @@
 # -------OFFLINE-------
 
 # -------DIFFERENT DATASETS
-for i in $(seq 3); do
-	d="canyon_rl_turtle_collision_free_epsilon03"
-	# for d in canyon_rl_turtle canyon_rl_turtle_150 canyon_rl_turtle_30  canyon_rl_turtle_300 canyon_rl_turtle_600 canyon_rl_turtle_75 ; do
-		./condor_task_offline.sh -q $((60*60*24)) -t off_depth_turtle/model_coll_free_eps03_${i}  -e true -n 20 -w "canyon" -p "--dataset $d --random_seed $((i*1354)) --loss absolute --network depth_q_net --max_episodes 800"	
-# # 		# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_${d}_$i -p "--dataset $d --random_seed $((i*1354)) --loss ce --collision_file collision_info_7.txt --normalize_data"
-		sleep 1
- 	# done
-done
+# for i in $(seq 3); do
+# 	d="canyon_rl_turtle_collision_free_epsilon03"
+# 	# for d in canyon_rl_turtle canyon_rl_turtle_150 canyon_rl_turtle_30  canyon_rl_turtle_300 canyon_rl_turtle_600 canyon_rl_turtle_75 ; do
+# 		./condor_task_offline.sh -q $((60*60*24)) -t off_depth_turtle/model_coll_free_eps03_${i}  -e true -n 20 -w "canyon" -p "--dataset $d --random_seed $((i*1354)) --loss absolute --network depth_q_net --max_episodes 800"	
+# # # 		# ./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_coll_turtle/model_${d}_$i -p "--dataset $d --random_seed $((i*1354)) --loss ce --collision_file collision_info_7.txt --normalize_data"
+# 		sleep 1
+#  	# done
+# done
 
 # -------COLLISION_FREE DATASET
 #for i in $(seq 3); do
@@ -42,10 +42,10 @@ done
 
 
 # -------ONLINE---------
-# for i in $(seq 3); do
-# ./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_9_smooth_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --random_seed $((i*1354)) --loss ce --action_quantity 9 --action_smoothing"
-# ./condor_task_sing.sh -q $((60*60*24*3)) -t on_depth_turtle/model_9_smooth_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --random_seed $((i*1354)) --network depth_q_net --loss absolute --action_quantity 9 --action_smoothing"
-# done
+for i in $(seq 3); do
+	# ./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_9_smooth_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --random_seed $((i*1354)) --loss ce --action_quantity 9 --action_smoothing"
+	./condor_task_sing.sh -q $((60*60*10)) -t on_depth_turtle/model_ref_$i -s train_model_turtle.sh -n 500 -p "--epsilon 0. --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+done
 
 
 # for i in canyon_rl_turtle_30_2 ; do 
