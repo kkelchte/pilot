@@ -58,12 +58,11 @@ def load_set(data_type):
     if not isfile(join(run_dir,'RGB','{0:010d}.jpg'.format(num_imgs[-1]))):
       print('ERROR:',run_dir,' imgnum: ',num_imgs[-1])
     # parse control data  
-    control_file = open(join(run_dir,'control_info.txt'),'r')
-    control_file_list = control_file.readlines()
+    ctr_file = open(join(run_dir,FLAGS.control_file),'r')
+    control_file_list = ctr_file.readlines()
     # cut last lines to avoid emtpy lines
     while len(control_file_list[-1])<=1 : control_file_list=control_file_list[:-1]
     control_parsed = [(int(ctr.strip().split(' ')[0]),float(ctr.strip().split(' ')[6])) for ctr in control_file_list]
-    
     def sync_control():
       control_list = []
       corresponding_imgs = []

@@ -129,6 +129,7 @@ def main(_):
   parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--collision_file", default='collision_info.txt', type=str, help="Define the name of the file with the collision labels.")
+  parser.add_argument("--control_file", default='control_info.txt', type=str, help="Define the name of the file with the action labels.")
 
   # ===========================
   #   Model Parameters

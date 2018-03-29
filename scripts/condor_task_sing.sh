@@ -139,8 +139,11 @@ blacklist=" && (machineowner == \"Visics\") && \
           (machine != \"umbriel.esat.kuleuven.be\") && \
           (machine != \"triton.esat.kuleuven.be\") && \
           (machine != \"amethyst.esat.kuleuven.be\") && \
+          (machine != \"ulexite.esat.kuleuven.be\") && \
+          (machine != \"garnet.esat.kuleuven.be\") && \
       	  (machine != \"estragon.esat.kuleuven.be\") && \
-	        (machine != \"spinel.esat.kuleuven.be\")"
+          (machine != \"spinel.esat.kuleuven.be\") && \
+	        (machine != \"diamond.esat.kuleuven.be\")"
 
 # greenlist=""
 # greenlist=" && ((machine == \"citrine.esat.kuleuven.be\") || \
@@ -150,7 +153,6 @@ blacklist=" && (machineowner == \"Visics\") && \
 #             (machine == \"iolite.esat.kuleuven.be\") || \
 #             (machine == \"hematite.esat.kuleuven.be\") || \
 #             (machine == \"amethyst.esat.kuleuven.be\") || \
-#             (machine == \"garnet.esat.kuleuven.be\"))"
 
 # from umbriel this is due to driver version mismatch
 
