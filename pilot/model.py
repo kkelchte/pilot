@@ -21,7 +21,7 @@ class Model(object):
     '''initialize model
     '''
     self.sess = session
-    self.action_dim = FLAGS.action_bound
+    self.action_dim = FLAGS.action_dim
     self.depth_input_size = depth_input_size
     self.prefix = prefix
     self.device = device

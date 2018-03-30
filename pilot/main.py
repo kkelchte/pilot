@@ -116,6 +116,7 @@ def main(_):
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--owr", action='store_true', help="Overwrite existing logfolder when it is not testing.")
   parser.add_argument("--action_bound", default=1.0, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
+  parser.add_argument("--action_dim", default=1.0, type=float, help= "Define the dimension of the actions: 1dimensional as it only turns in yaw.")
   parser.add_argument("--real", action='store_true', help="Define settings in case of interacting with the real (bebop) drone.")
   parser.add_argument("--evaluate", action='store_true', help="Just evaluate the network without training.")
   parser.add_argument("--random_learning_rate", action='store_true', help="Use sampled learning rate from UL(10**-2, 1)")
@@ -237,6 +238,7 @@ def main(_):
     
   save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
 
+  
   config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
