@@ -89,6 +89,18 @@ class ReplayBuffer(object):
       for e in self.buffer: print("action: {0}, target: {1}, state: {2}".format(e['action'],e['trgt'],e['state'][0]))
       # print self.buffer
 
+    def get_variance(self):
+      images=np.asarray([e['state'] for e in self.buffer])
+      mean_state_variance=np.mean(np.var(images,axis=0))
+      # print 'mean state variance: '+str(mean_state_variance)
+      actions=np.asarray([e['action'] for e in self.buffer])
+      action_variance=np.var(actions,axis=0)
+      # print 'action variance: ',action_variance
+      targets=np.asarray([e['trgt'] for e in self.buffer])
+      mean_trgt_variance=np.mean(np.var(targets,axis=0))
+      # print 'mean trgt variance: '+str(mean_state_variance)
+      return {'state':mean_state_variance, 'action':action_variance, 'trgt':mean_trgt_variance}  
+
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test replay buffer for coll_q_net:')
@@ -105,11 +117,13 @@ if __name__ == '__main__':
   # FLAGS.network='depth_q_net'
   # sample episode
   buffer=ReplayBuffer(FLAGS, 100)
-  for i in range(30):
+  for i in range(3):
     buffer.add({'state':np.zeros((3,3))+i,
                 'action':np.random.choice([-1,0,1],p=[0.1,0.8,0.1]),
                 'trgt':0})
-  buffer.label_collision()
+  # buffer.label_collision()
+  buffer.get_variance()
+  import pdb; pdb.set_trace()
   
   N={-1:0, 0:0, 1:0}
   for e in buffer.buffer:

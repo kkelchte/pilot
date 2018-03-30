@@ -365,7 +365,11 @@ class PilotNode(object):
       for k in self.accumlosses.keys():
         name={'t':'Loss_test_total','o':'Loss_test_output'}
         sumvar[name[k]]=self.accumlosses[k]
-        result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
+        result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k])
+      buffer_variances=self.replay_buffer.get_variance()
+      for i in ['state','action','trgt']:
+        sumvar[i+'_variance']=buffer_variances[i]
+        result_string='{0}, {1}:{2:0.5e}'.format(result_string, i+'_variance',buffer_variances[i]) 
       try:
         if len(self.time_delay) != 0: 
           result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))

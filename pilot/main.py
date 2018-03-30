@@ -237,8 +237,6 @@ def main(_):
     
   save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
 
-  action_dim = 1 #only turn in yaw from -1:1
-  
   config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
@@ -247,7 +245,7 @@ def main(_):
 
   # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
-  model = Model(FLAGS, sess, action_dim)
+  model = Model(FLAGS, sess)
   writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   model.writer = writer
   

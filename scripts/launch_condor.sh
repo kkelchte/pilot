@@ -44,9 +44,10 @@
 # -------ONLINE---------
 for i in $(seq 3); do
 	# ./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_9_smooth_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --random_seed $((i*1354)) --loss ce --action_quantity 9 --action_smoothing"
-	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_ref_$i -s train_model_turtle.sh -n 6000 -p "--epsilon 0. --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
-	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_gs50_$i -s train_model_turtle.sh -n 6000 -p "--grad_steps 50 --epsilon 0. --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
-	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_gs100_$i -s train_model_turtle.sh -n 6000 -p "--grad_steps 100 --epsilon 0. --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_bf10_$i -s train_model_turtle.sh -n 1000 -p "--buffer_size 12 --batch_size 10 --grad_steps 1 --epsilon 0. --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_bf50_$i -s train_model_turtle.sh -n 1000 -p "--buffer_size 52 --batch_size 50 --grad_steps 1 --epsilon 0. --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_bf10_eps03_$i -s train_model_turtle.sh -n 1000 -p "--buffer_size 12 --batch_size 10 --grad_steps 1 --epsilon 0.3 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_bf50_eps03_$i -s train_model_turtle.sh -n 1000 -p "--buffer_size 52 --batch_size 50 --grad_steps 1 --epsilon 0.3 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
 done
 
 

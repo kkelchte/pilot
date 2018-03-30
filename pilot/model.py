@@ -17,11 +17,11 @@ Build basic NN model
 """
 class Model(object):
  
-  def __init__(self, FLAGS, session, action_dim, prefix='model', device='/gpu:0', depth_input_size=(55,74)):
+  def __init__(self, FLAGS, session, prefix='model', device='/gpu:0', depth_input_size=(55,74)):
     '''initialize model
     '''
     self.sess = session
-    self.action_dim = action_dim
+    self.action_dim = FLAGS.action_bound
     self.depth_input_size = depth_input_size
     self.prefix = prefix
     self.device = device
@@ -254,7 +254,9 @@ class Model(object):
           name = 'Distance_{0}_{1}'.format(d,t)
           if len(w)!=0: name='{0}_{1}'.format(name,w)
           self.add_summary_var(name)
-      
+    for i in ['state','action','trgt']:
+      name = i+'_variance'
+      self.add_summary_var(name)      
     if self.FLAGS.plot_depth:
       name="depth_predictions"
       dep_images = tf.placeholder(tf.uint8, [1, 400, 400, 3])
