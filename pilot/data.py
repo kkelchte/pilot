@@ -263,8 +263,7 @@ def generate_batch(data_type):
           ctr = data_set[run_ind]['controls'][frame_ind]
           # clip control avoiding values larger than 1
           ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
-          # normalize control form -bound:+bound to 0 and 1
-          if FLAGS.action_normalization: ctr=(ctr+FLAGS.action_bound)/(2.*FLAGS.action_bound) 
+          
           if FLAGS.network == 'coll_q_net': 
             col = data_set[run_ind]['collisions'][frame_ind]
             batch.append({'img':im, 'ctr':ctr, 'depth':de, 'trgt':col})

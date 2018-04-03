@@ -62,7 +62,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   """
   print("Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['n_fc','discrete','action_normalization']
+  boollist=['n_fc','discrete']
   intlist=['n_frames', 'num_outputs']
   floatlist=['depth_multiplier']
   stringlist=['network', 'data_format']
@@ -163,7 +163,7 @@ def main(_):
   #   Replay Parameters
   # ===========================
 
-  parser.add_argument("--normalized_replay", action='store_true', help="Make labels / actions equally likely for the coll / depth q net.")
+  parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, recency, min_variance")
 
   # ===========================
   #   Rosinterface Parameters
@@ -183,7 +183,6 @@ def main(_):
   parser.add_argument("--action_amplitude", default=1, type=int, help="Define the action that is used as input to estimate Q value.")
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions used at the forward pass to evaluate a state.")
   parser.add_argument("--action_smoothing",action='store_true', help="Define whether the actions should be sampled uniformly within the bin to represent better the continuous actions space.")
-  parser.add_argument("--action_normalization",action='store_true', help="Normalize action space from -1:1 to 0:1 avoiding gradients to cancel out.")
 
   parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
   parser.add_argument("--show_depth",action='store_false', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")

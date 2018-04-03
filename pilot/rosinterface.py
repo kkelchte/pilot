@@ -56,7 +56,9 @@ class PilotNode(object):
     self.depth = [] # field to keep the latest supervised depth
     self.prev_im=[] # in case of depth_q_net experience = (I_(t-1), a_(t-1), d_t)
     self.prev_action=-100 # so keep action and image during 1 step and save it in the next step
-
+    self.prev_prediction=[]
+    self.prev_weight=[]
+    
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
     self.accumlosses = {} # gather losses and info over the run in a dictionary
@@ -78,7 +80,7 @@ class PilotNode(object):
     if rospy.has_param('depth_image'):
         rospy.Subscriber(rospy.get_param('depth_image'), Image, self.depth_callback)
     if not self.FLAGS.real: # initialize the replay buffer
-      self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.buffer_size, self.FLAGS.random_seed)
+      self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed)
       self.accumloss = 0
       if rospy.has_param('gt_info'):
         rospy.Subscriber(rospy.get_param('gt_info'), Odometry, self.gt_callback)
@@ -214,31 +216,23 @@ class PilotNode(object):
     # feed in 3 actions corresponding to right, straight and left.
     actions=np.arange(-1.0, 1.0+2./self.FLAGS.action_quantity, 2./(self.FLAGS.action_quantity-1)).reshape((-1,1))
     if self.FLAGS.action_smoothing: actions=np.array([a+np.random.uniform(low=-1./(self.FLAGS.action_quantity-1),high=1./(self.FLAGS.action_quantity-1)) for a in actions]).reshape((-1,1))
-
-    # map actions from range -1:1 to range 0:1 as inputs for the network
-    inputs=(actions+1.)/2 if self.FLAGS.action_normalization else actions
-
-    # print 'inputs: ',inputs
-
-    output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*inputs)
+  
+    output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*actions)
     # output=np.asarray([1,0,1]).reshape((-1,1))
     if not self.ready or self.finished: return
 
     ### EXTRACT CONTROL
     if self.FLAGS.network == 'depth_q_net':
       # take action corresponding to the maximum minimum depth:
-      action = float(inputs[np.argmax([np.amin(o[o!=0]) for o in output])])
+      best_output=np.argmax([np.amin(o[o!=0]) for o in output])
+      action = float(actions[best_output])
       # print 'input: ',action
     else:
       # take action giving the lowest collision probability
       # if all actions are equally likeli to end with a bump, make straight the default:
       outputs_compared=[output[i]==output[i+1] for i in range(len(output)-1)]
-      if sum(outputs_compared) == len(outputs_compared): action = 0.5 if self.FLAGS.action_normalization else 0
-      else: action = float(inputs[np.argmin(output)])
-
-    # map actions back to range -1:1
-    if self.FLAGS.action_normalization: action=2*action-1 
-    # print 'action: ',action
+      if sum(outputs_compared) == len(outputs_compared): action = 0
+      else: action = float(actions[np.argmin(output)])
 
     noise_sample = self.exploration_noise.noise()
 
@@ -261,7 +255,6 @@ class PilotNode(object):
     msg.linear.y = noise_sample[1]*self.FLAGS.sigma_y
     msg.linear.z = noise_sample[2]*self.FLAGS.sigma_z
     msg.angular.z = action
-    # print action
     self.action_pub.publish(msg)
     # print("time: {}".format(time.time()-btime))
     
@@ -274,9 +267,8 @@ class PilotNode(object):
     # f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
     # f.close()
 
-    if self.FLAGS.network=='coll_q_net':
-      self.outputs=output
-
+    # if self.FLAGS.network=='coll_q_net':
+    #   self.outputs=output
 
     # if not self.finished:
       # rec=time.time()
@@ -290,17 +282,23 @@ class PilotNode(object):
     # ADD EXPERIENCE REPLAY
     if not self.FLAGS.evaluate and not self.finished:
       if self.FLAGS.network=='depth_q_net':
-        if len(self.prev_im)!= 0 and self.prev_action!=-100 :
+        closest_action_index = np.argmin([np.abs(a-action) for a in actions])
+        if len(self.prev_im)!= 0 and self.prev_action!=-100 and len(self.prev_prediction) != 0 and self.prev_weight != -1:
+          # weight error according to how close input-action on which depth is predicted and actual applied action
           experience={'state':self.prev_im,
-            'action':self.prev_action if not self.FLAGS.action_normalization else (self.prev_action+1)/2, #map action to range 0:1 as input in case of normalization
-            'trgt':depth}
+            'action':self.prev_action,
+            'trgt':depth,
+            'error':self.prev_weight*np.mean((self.prev_prediction-depth)**2)}
           self.replay_buffer.add(experience)
         self.prev_im=copy.deepcopy(im)
         self.prev_action=action
+        self.prev_prediction=output[closest_action_index]
+        self.prev_weight=1-(self.FLAGS.action_quantity-1)*(np.abs(actions[closest_action_index]-action)/2)
       elif self.FLAGS.network=='coll_q_net':
         experience={'state':im,
-          'action':action if not self.FLAGS.action_normalization else (action+1)/2,
-          'trgt':0}
+          'action':action,
+          'trgt':0,
+          'error':output[best_output]}
         self.replay_buffer.add(experience)
       
   def finished_callback(self,msg):
@@ -315,27 +313,14 @@ class PilotNode(object):
       self.ready=False
       self.finished=True
       
-      # add code for cleaning up buffer: adding target 1 for last frames before collision
-      if self.FLAGS.network == 'coll_q_net' and not self.FLAGS.evaluate:
-        try:
-          f=open(self.logfolder+'/log','r')
-        except:
-          pass
-        else:
-          lines=f.readlines()
-          f.close()
-          if "bump" in lines[-1] and self.replay_buffer.size()!=0:
-            print('label last n frames with collision') 
-            self.replay_buffer.label_collision()
-
-      print('{} frames in replay_buffer.'.format(self.replay_buffer.size()))
-
       # Train model from experience replay:
       losses_train = {}
       if self.replay_buffer.size()>self.FLAGS.batch_size and not self.FLAGS.evaluate and ((not self.FLAGS.prefill) or (self.FLAGS.prefill and self.replay_buffer.size() == self.FLAGS.buffer_size)):
+        # add code for cleaning up buffer: adding target 1 for last frames before collision
+        self.replay_buffer.preprocess(self.logfolder)
         # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 100)): # sample max 10 batches from all experiences gathered.
         for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), self.FLAGS.grad_steps)): # sample max 10 batches from all experiences gathered.
-          states, actions, targets = self.replay_buffer.sample_batch(self.FLAGS.batch_size)
+          states, actions, targets = self.replay_buffer.sample_batch()
           losses = self.model.backward(states,
                                       actions.reshape(-1,1),
                                       targets.reshape(-1,1) if self.FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.depth_input_size[0],self.model.depth_input_size[1]))
@@ -366,10 +351,11 @@ class PilotNode(object):
         name={'t':'Loss_test_total','o':'Loss_test_output'}
         sumvar[name[k]]=self.accumlosses[k]
         result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k])
-      buffer_variances=self.replay_buffer.get_variance()
-      for i in ['state','action','trgt']:
-        sumvar[i+'_variance']=buffer_variances[i]
-        result_string='{0}, {1}:{2:0.5e}'.format(result_string, i+'_variance',buffer_variances[i]) 
+      if self.replay_buffer.size > 10: 
+        buffer_variances=self.replay_buffer.get_variance()
+        for i in ['state','action','trgt']:
+          sumvar[i+'_variance']=buffer_variances[i]
+          result_string='{0}, {1}:{2:0.5e}'.format(result_string, i+'_variance',buffer_variances[i]) 
       try:
         if len(self.time_delay) != 0: 
           result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
@@ -409,6 +395,8 @@ class PilotNode(object):
       self.time_delay=[]
       self.prev_im=[]
       self.prev_action=-100
-    
+      self.prev_prediction=[]
+      self.prev_weight=[]
+      
       
 

@@ -125,11 +125,11 @@ class Model(object):
         weights=tf.multiply(tf.cast(tf.greater(self.targets,self.FLAGS.min_depth), tf.float32),tf.cast(tf.less(self.targets,self.FLAGS.max_depth), tf.float32))
         self.weights=-1*tf.nn.pool(tf.expand_dims(-1*weights,3), [2,2], "MAX",padding="SAME")
         if self.FLAGS.loss == 'huber':
-          self.loss = tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+          self.loss = tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0])
         elif self.FLAGS.loss == 'absolute':
-          self.loss = tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+          self.loss = tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0])
         else: 
-          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0])
       else:
         if self.FLAGS.loss == 'ce':
           # cross entropy loss:

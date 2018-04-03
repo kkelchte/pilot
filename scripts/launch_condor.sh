@@ -18,9 +18,11 @@
 #	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_colfree_${i} -p "--dataset canyon_rl_turtle_collision_free --random_seed $((i*1354)) --loss absolute --network depth_q_net --max_episodes 1000"	
 #done
 
-# -------NO DEPTH CLIPPING
-# for i in $(seq 3) ; do
-# 	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_noclip_$i -p "--network depth_q_net --loss absolute --random_seed $((i*1329)) --dataset canyon_rl_turtle --max_episodes 1000 --min_depth 0 --max_depth 5.0"
+# -------CLIP COLLISIONS FROM RANDOM DATASET
+# for i in $(seq 1) ; do
+# 	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_clipcoll_200n_$i -p "--network depth_q_net --loss absolute --random_seed $((i*1329)) --dataset canyon_rl_turtle_clip_collision --learning_rate 0.1 --max_episodes 200"
+# 	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_clipcoll_400n_$i -p "--network depth_q_net --loss absolute --random_seed $((i*1329)) --dataset canyon_rl_turtle_clip_collision --learning_rate 0.1 --max_episodes 400"
+# 	./condor_task_offline.sh -q $((60*60*24)) -e true -n 20 -w "canyon" -t off_depth_turtle/model_clipcoll_800n_$i -p "--network depth_q_net --loss absolute --random_seed $((i*1329)) --dataset canyon_rl_turtle_clip_collision --learning_rate 0.1 --max_episodes 800"
 # 	sleep 1
 # done
 
@@ -43,11 +45,10 @@
 
 # -------ONLINE---------
 for i in $(seq 3); do
-	# ./condor_task_sing.sh -q $((60*60*24*3)) -t on_coll_turtle/model_9_smooth_$i -s train_model_turtle.sh -n 10000 -p "--epsilon 0.5 --random_seed $((i*1354)) --loss ce --action_quantity 9 --action_smoothing"
-	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_bf10_$i -s train_model_turtle.sh -n 1000 -p "--buffer_size 12 --batch_size 10 --grad_steps 1 --epsilon 0. --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
-	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_bf50_$i -s train_model_turtle.sh -n 1000 -p "--buffer_size 52 --batch_size 50 --grad_steps 1 --epsilon 0. --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
-	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_bf10_eps03_$i -s train_model_turtle.sh -n 1000 -p "--buffer_size 12 --batch_size 10 --grad_steps 1 --epsilon 0.3 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
-	./condor_task_sing.sh -q $((60*60*65)) -t on_depth_turtle/model_bf50_eps03_$i -s train_model_turtle.sh -n 1000 -p "--buffer_size 52 --batch_size 50 --grad_steps 1 --epsilon 0.3 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_eps03_$i -s train_model_turtle.sh -n 500 -p "--epsilon 0.3 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_eps05_$i -s train_model_turtle.sh -n 500 -p "--epsilon 0.5 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_tdreplay_$i -s train_model_turtle.sh -n 500 -p "--replay_priority td_error --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_actreplay_$i -s train_model_turtle.sh -n 500 -p "--replay_priority uniform_action --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
 done
 
 
