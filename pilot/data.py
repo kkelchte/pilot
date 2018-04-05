@@ -22,13 +22,8 @@ import argparse
 #import skimage.transform
 #from skimage import io
 
-# FLAGS = tf.app.flags.FLAGS
-
 FLAGS=None
 
-# ===========================
-#   Data Parameters
-# ===========================
 full_set = {}
 im_size=(250,250,3)
 de_size = (55,74)

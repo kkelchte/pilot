@@ -27,10 +27,17 @@ class ReplayBuffer(object):
     def add(self, experience):
       if self.count < self.buffer_size: 
         self.count += 1
+        self.buffer.append(experience)
       else:
-        self.buffer.popleft()
-
-      self.buffer.append(experience)
+        if self.FLAGS.prioritized_keeping and self.probs:
+          last=np.argmin(self.probs)
+          del self.probs[last]
+          del self.buffer[last]
+          self.buffer.append(experience)
+          self.preprocess()
+        else:
+          self.buffer.popleft()
+          self.buffer.append(experience)
     
     def size(self):
       
@@ -39,7 +46,7 @@ class ReplayBuffer(object):
     def sample_batch(self):
       assert self.FLAGS.batch_size < self.count, IOError('batchsize ',self.FLAGS.batch_size,' is bigger than buffer size: ',self.count)
       
-      batch=np.random.choice(self.buffer, self.FLAGS.batch_size, p=np.squeeze(self.probs))      
+      batch=np.random.choice(self.buffer, self.FLAGS.batch_size, p=np.squeeze(self.probs) if self.probs else None)      
         
       state_batch = np.array([_['state'] for _ in batch])
       action_batch = np.array([max(min(_['action'],self.FLAGS.action_bound),-self.FLAGS.action_bound) for _ in batch])
@@ -88,12 +95,54 @@ class ReplayBuffer(object):
         # ensure that probs sum to one by adjusting the last
         if sum(probs)!=1: probs[-1]=1-sum(probs[:-1])
         self.probs = probs[:]
- 
-    def preprocess(self, logfolder=''):
-      '''1. Label collisions in case of coll_q_net
-      2. Calculate priorities according to type of prioritized replay
+
+    def prioritize_with_variance(self,variance_source='state'):
+      """Provide probability weights according to state/action/target variance
+      """
+      mean_image=np.mean([e[variance_source] for e in self.buffer])
+      variances=[np.mean((e[variance_source]-mean_image)**2) for e in self.buffer]
+      total_variance=sum(variances)
+      self.probs=[v/total_variance for v in variances]
+      # ensure that probs sum to one by adjusting the last
+      if sum(self.probs)!=1: self.probs[-1]=1-sum(self.probs[:-1])
+        
+    def prioritize_with_random_actions(self):
+      """Pick actions from replay buffer if they were selected randomly
+      """
+      # stime=time.time()
+      total_random=sum([e['rnd'] for e in self.buffer])
+      # print('total_random: {}'.format(total_random))
+      if total_random == 0: total_random=self.count #everything is equally likely if no experiences were random
+      self.probs=[float(e['rnd'])/(total_random+0.0) for e in self.buffer]
+      if sum(self.probs)!=1: self.probs[-1]=1-sum(self.probs[:-1])
+      # print("duration: {}".format(time.time()-stime))
+
+    def preprocess(self):
+      '''Calculate priorities according to type of prioritized replay
       '''
-      # 1. Label collisions in case of coll_q_net and bump
+      # Calculate priorities according to type of prioritized replay
+      if self.FLAGS.replay_priority == 'no': 
+        return
+      elif self.FLAGS.replay_priority == 'uniform_action': 
+        self.prioritize_with_uniform_action()
+      elif self.FLAGS.replay_priority == 'uniform_collision': 
+        self.prioritize_with_uniform_collision()
+      elif self.FLAGS.replay_priority == 'td_error': 
+        self.prioritize_with_td_error()
+      elif self.FLAGS.replay_priority == 'action_variance':
+        self.prioritize_with_variance('action')
+      elif self.FLAGS.replay_priority == 'state_variance':
+        self.prioritize_with_variance('state')
+      elif self.FLAGS.replay_priority == 'trgt_variance':
+        self.prioritize_with_variance('trgt')
+      elif self.FLAGS.replay_priority == 'random_action':
+        self.prioritize_with_random_actions()
+      else:
+        raise NotImplementedError( '[ReplayBuffer] Type of priority is not implemented: ', self.FLAGS.replay_priority)
+
+    def label_collision(self,logfolder=''):
+      #label the last n experiences with target 1 
+      # as collision appeared in the next 7 steps
       if self.FLAGS.network == 'coll_q_net':
         try:
           f=open(logfolder+'/log','r')
@@ -104,37 +153,24 @@ class ReplayBuffer(object):
           f.close()
           if "bump" in lines[-1] and self.count!=0:
             print('label last n frames with collision') 
-            label_collision()
-
-      # 2. Calculate priorities according to type of prioritized replay
-      if self.FLAGS.replay_priority == 'no': 
-        return
-      elif self.FLAGS.replay_priority == 'uniform_action': 
-        self.prioritize_with_uniform_action()
-      elif self.FLAGS.replay_priority == 'uniform_collision': 
-        self.prioritize_with_uniform_collision()
-      elif self.FLAGS.replay_priority == 'td_error': 
-        self.prioritize_with_td_error()
-      else:
-        raise NotImplementedError( '[ReplayBuffer] Type of priority is not implemented: ', self.FLAGS.replay_priority)
-
-    def label_collision(self):
-      #label the last n experiences with target 1 
-      # as collision appeared in the next 7 steps
-      n=7
-      # from t_end till t_end-n
-      last_experiences=[self.buffer.pop() for i in range(n)]
-      for e in last_experiences: e['trgt']=1
-      self.buffer.extend(reversed(last_experiences))
+        n=7
+        # from t_end till t_end-n
+        last_experiences=[self.buffer.pop() for i in range(n)]
+        for e in last_experiences: e['trgt']=1
+        if self.FLAGS.replay_priority == 'td_error':
+          for e in last_experiences: 
+            e['error']=1-e['error']
+        self.buffer.extend(reversed(last_experiences))
 
     def clear(self):
         self.buffer.clear()
         self.count = 0
 
     def to_string(self):
-      for e in self.buffer: 
+      for i,e in enumerate(self.buffer): 
         msg=""
         for k in e.keys(): msg="{0} {1}: {2}".format(msg, k, np.asarray(e[k]).flatten()[0])
+        if self.probs: msg="{0}, p: {1}".format(msg,self.probs[i])
         print msg
      
     def get_variance(self):
@@ -155,7 +191,7 @@ if __name__ == '__main__':
 
   parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, recency, min_variance")
   parser.add_argument("--network",default='coll_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
-  parser.add_argument("--buffer_size", default=100, type=int, help="Define the number of experiences saved in the buffer.")
+  parser.add_argument("--buffer_size", default=20, type=int, help="Define the number of experiences saved in the buffer.")
   parser.add_argument("--batch_size",default=10,type=int,help="Define the size of minibatches.")
   parser.add_argument("--action_bound", default=1.0, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
   
@@ -164,45 +200,33 @@ if __name__ == '__main__':
   # FLAGS.network='coll_q_net'
   FLAGS.network='depth_q_net'
 
+  FLAGS.replay_priority="random_action"
+  FLAGS.prioritized_keeping=True
+
   print "FLAGS.replay_priority: ",FLAGS.replay_priority
 
   # sample episode of data acquisition
   buffer=ReplayBuffer(FLAGS)
-  for i in range(30):
-    buffer.add({'state':np.zeros((1,1))+i,
-                'action':np.random.choice([-1,0,1],p=[0.1,0.1,0.8]),
-                'trgt':0,
-                'error':1})
-  for i in range(10):
+  for i in range(20):
+    action=np.random.choice([-1,0,1],p=[0.1,0.8,0.1])
     buffer.add({'state':np.zeros((1,1))+100+i,
-                'action':np.random.choice([-1,0,1],p=[0.1,0.1,0.8]),
+                'action':action,
                 'trgt':0,
-                'error':10})
-  print buffer.get_variance()
-  
-  # buffer.label_collision()
+                'error':10,
+                'rnd':action==1})
   buffer.preprocess()
-  # N={-1:0, 0:0, 1:0}
-  # for e in buffer.buffer:
-  #   if np.abs(e['action']) > 0.3: N[np.sign(e['action'])]+=1
-  #   else: N[0]+=1
-  # print("Current number of action -1: {0}, 0: {1} and 1: {2}".format(N[-1], N[0], N[1]))
-
-  # N={0:0, 1:0}
-  # for e in buffer.buffer:
-  #   if e['trgt']==0: N[0]+=1
-  #   else: N[1]+=1
-  # print("Current number of target 0: {0}, 1: {1}".format(N[0], N[1]))
-    
-
   print("\n content of the buffer: \n")
   buffer.to_string()
+
+  # print buffer.get_variance()
+  
+  # buffer.label_collision()
   
   prop_zero=[]
   for i in range(10):
     stime=time.time()
     state, action, trgt = buffer.sample_batch()
-    # print("states: {0}".format(state))
+    print("state: {1}, actions: {0}".format(np.asarray(action).flatten()[0],np.asarray(state).flatten()[0]))
     prop_zero.append(state)
 
     # print("trgt 0: {0}, trgt 1: {1}".format(len(trgt[trgt==0]),len(trgt[trgt==1])))
@@ -214,18 +238,21 @@ if __name__ == '__main__':
 
   print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
 
-  print("\n sample batch normalized \n")
-
-  FLAGS.replay_priority='td_error'
-  print "FLAGS.replay_priority: ",FLAGS.replay_priority
-
-  buffer.preprocess()
-
+  for i in range(50):
+    action=np.random.choice([-1,0,1],p=[0.1,0.8,0.1])
+    buffer.add({'state':np.zeros((1,1))+1000+i,
+                'action':action,
+                'trgt':0,
+                'error':10,
+                'rnd':action==1})
+  print("\n content of the buffer: \n")
+  buffer.to_string()
+  
   prop_zero=[]
   for i in range(10):
     stime=time.time()
     state, action, trgt = buffer.sample_batch()
-    # print("states: {0}".format(state))
+    print("state: {1}, actions: {0}".format(np.asarray(action).flatten()[0],np.asarray(state).flatten()[0]))
     prop_zero.append(state)
     
     # print("trgt 0: {0}, trgt 1: {1}".format(len(trgt[trgt==0]),len(trgt[trgt==1])))

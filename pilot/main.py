@@ -41,11 +41,7 @@ def save_config(FLAGS, logfolder, file_name = "configuration"):
   print("Save configuration to: {}".format(logfolder))
   root = ET.Element("conf")
   flg = ET.SubElement(root, "flags")
-  # import pdb;pdb.set_trace()
-  # try:
-  #   flags_dict = FLAGS.__dict__['__flags'] #changing from tf 1.4 
-  # except:
-  #   flags_dict = FLAGS.__dict__['__wrapped'] # to tf 1.5 ...
+  
   flags_dict=FLAGS.__dict__
   for f in flags_dict:
     # print f, flags_dict[f]
@@ -68,11 +64,9 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   stringlist=['network', 'data_format']
   for child in tree.getroot().find('flags'):
     try :
-      # import pdb;pdb.set_trace()
       if child.attrib['name'] in boollist:
         FLAGS.__setattr__(child.attrib['name'], child.text=='True')
         print 'set:', child.attrib['name'], child.text=='True'
-        # import pdb; pdb.set_trace()
       elif child.attrib['name'] in intlist:
         FLAGS.__setattr__(child.attrib['name'], int(child.text))
         print 'set:', child.attrib['name'], int(child.text)
@@ -163,7 +157,8 @@ def main(_):
   #   Replay Parameters
   # ===========================
 
-  parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, recency, min_variance")
+  parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, state/action/target_variance, random_action")
+  parser.add_argument("--prioritized_keeping", action='store_true', help="In case of True, the replay buffer only keeps replay data that is most likely to be sampled.")
 
   # ===========================
   #   Rosinterface Parameters
@@ -190,10 +185,6 @@ def main(_):
   parser.add_argument("--grad_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
 
   FLAGS=parser.parse_args()
-
-  # if not FLAGS.offline: 
-  # from std_msgs.msg import Empty
-
 
   np.random.seed(FLAGS.random_seed)
   tf.set_random_seed(FLAGS.random_seed)
@@ -236,8 +227,6 @@ def main(_):
     FLAGS=load_config(FLAGS, checkpoint_path)
     
   save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
-
-  
   config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error

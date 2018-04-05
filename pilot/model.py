@@ -33,7 +33,7 @@ class Model(object):
 
     
     #define the input size of the network input
-    if self.FLAGS.network =='depth_q_net' or self.FLAGS.network == 'coll_q_net':
+    if self.FLAGS.network == 'depth_q_net' or self.FLAGS.network == 'coll_q_net':
       # Use NCHW instead of NHWC data input because this is faster on GPU.    
       self.input_size = [None, depth_q_net.depth_q_net.default_image_size[self.FLAGS.depth_multiplier], 
         depth_q_net.depth_q_net.default_image_size[self.FLAGS.depth_multiplier], 3]
@@ -51,9 +51,7 @@ class Model(object):
       variables_to_restore={'MobilenetV1/'+v.name[9:-2]:v for v in variables_to_restore}
     else: #If continue training
       variables_to_restore = slim.get_variables_to_restore()
-      # variables_to_restore = slim.get_variables_to_restore(exclude=["global_step"])
-      # variables_to_restore={'MobilenetV1/'+v.name[9:-2]:v for v in variables_to_restore}
-      
+    
     # get latest folder out of training directory if there is no checkpoint file
     if self.FLAGS.checkpoint_path[0]!='/':
       self.FLAGS.checkpoint_path = self.FLAGS.summary_dir+self.FLAGS.checkpoint_path
@@ -115,7 +113,7 @@ class Model(object):
           self.predictions_eval, _ = depth_q_net.depth_q_net(is_training=False, reuse = True,**args_for_model)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
-      
+  
   def define_loss(self):
     '''tensor for calculating the loss
     '''

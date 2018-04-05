@@ -32,8 +32,6 @@ import matplotlib.pyplot as plt
 
 #from PIL import Image
 
-# FLAGS = tf.app.flags.FLAGS
-
 class PilotNode(object):
   """Node to listen to ROS topics like depth, rgb input and supervised control.
   The node also publishes to pilot control and predicted depth for visualization.
@@ -58,7 +56,8 @@ class PilotNode(object):
     self.prev_action=-100 # so keep action and image during 1 step and save it in the next step
     self.prev_prediction=[]
     self.prev_weight=[]
-    
+    self.prev_random=False
+
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
     self.accumlosses = {} # gather losses and info over the run in a dictionary
@@ -139,7 +138,6 @@ class PilotNode(object):
 
   def process_rgb(self, msg):
     """ Convert RGB serial data to opencv image of correct size"""
-    # if not self.ready or self.finished: return []
     try:
       # Convert your ROS Image message to OpenCV2
       # changed to normal RGB order as i ll use matplotlib and PIL instead of opencv
@@ -236,16 +234,19 @@ class PilotNode(object):
 
     noise_sample = self.exploration_noise.noise()
 
+    random=False
     if self.FLAGS.prefill and self.replay_buffer.size() < self.FLAGS.buffer_size and not self.FLAGS.evaluate:
       # print 'sample random to fill buffer!'
       # action=0
       action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else 0.3*noise_sample[0]
+      random=True #needed for random_action replay priority
     else:
       if self.FLAGS.epsilon != 0: #apply epsilon greedy policy
         # calculate decaying epsilon
         random_action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else 0.3*noise_sample[0]
         epsilon=min([1, self.FLAGS.epsilon*np.exp(-self.FLAGS.epsilon_decay*(self.runs['train']+1))])
         action = random_action if np.random.binomial(1,epsilon) else action
+        random= action==random_action #needed for random_action replay priority
         # print("random: {0}, epsilon: {1}, action:{2}".format(random_action,epsilon,action))
         if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
@@ -270,36 +271,43 @@ class PilotNode(object):
     # if self.FLAGS.network=='coll_q_net':
     #   self.outputs=output
 
-    # if not self.finished:
-      # rec=time.time()
-      # self.time_ctr_send.append(rec)
-      # delay=self.time_ctr_send[-1]-self.time_im_received[-1]
-      # self.time_delay.append(delay)  
+    rec=time.time()
     
     if self.FLAGS.show_depth and not self.finished:
       self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
     if not self.FLAGS.evaluate and not self.finished:
+
       if self.FLAGS.network=='depth_q_net':
         closest_action_index = np.argmin([np.abs(a-action) for a in actions])
         if len(self.prev_im)!= 0 and self.prev_action!=-100 and len(self.prev_prediction) != 0 and self.prev_weight != -1:
           # weight error according to how close input-action on which depth is predicted and actual applied action
           experience={'state':self.prev_im,
             'action':self.prev_action,
-            'trgt':depth,
-            'error':self.prev_weight*np.mean((self.prev_prediction-depth)**2)}
+            'trgt':depth}
+          if self.FLAGS.replay_priority == 'td_error': experience['error']=self.prev_weight*np.mean((self.prev_prediction-depth)**2)
+          elif self.FLAGS.replay_priority == 'random_action': experience['rnd']=self.prev_random
+          
           self.replay_buffer.add(experience)
         self.prev_im=copy.deepcopy(im)
         self.prev_action=action
         self.prev_prediction=output[closest_action_index]
         self.prev_weight=1-(self.FLAGS.action_quantity-1)*(np.abs(actions[closest_action_index]-action)/2)
+        self.prev_random=random
       elif self.FLAGS.network=='coll_q_net':
         experience={'state':im,
           'action':action,
-          'trgt':0,
-          'error':output[best_output]}
+          'trgt':0}
+        if self.FLAGS.replay_priority == 'td_error': 
+          experience['error']=output[best_output]
+        elif self.FLAGS.replay_priority == 'random_action': 
+          experience['rnd']=random
         self.replay_buffer.add(experience)
+
+    delay=time.time()-rec
+    self.time_delay.append(delay)  
+
       
   def finished_callback(self,msg):
     """When run is finished:
@@ -317,7 +325,8 @@ class PilotNode(object):
       losses_train = {}
       if self.replay_buffer.size()>self.FLAGS.batch_size and not self.FLAGS.evaluate and ((not self.FLAGS.prefill) or (self.FLAGS.prefill and self.replay_buffer.size() == self.FLAGS.buffer_size)):
         # add code for cleaning up buffer: adding target 1 for last frames before collision
-        self.replay_buffer.preprocess(self.logfolder)
+        self.replay_buffer.label_collision(self.logfolder)
+        self.replay_buffer.preprocess()
         # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 100)): # sample max 10 batches from all experiences gathered.
         for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), self.FLAGS.grad_steps)): # sample max 10 batches from all experiences gathered.
           states, actions, targets = self.replay_buffer.sample_batch()
@@ -356,9 +365,9 @@ class PilotNode(object):
         for i in ['state','action','trgt']:
           sumvar[i+'_variance']=buffer_variances[i]
           result_string='{0}, {1}:{2:0.5e}'.format(result_string, i+'_variance',buffer_variances[i]) 
+      if len(self.time_delay) != 0: 
+        result_string='{0} min: {1}, avg: {2}, max: {3}'.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       try:
-        if len(self.time_delay) != 0: 
-          result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
         self.model.summarize(sumvar)
       except Exception as e:
         print('failed to write', e)
@@ -383,7 +392,6 @@ class PilotNode(object):
       self.accumlosses = {}
       self.current_distance = 0
       self.last_pose = []
-      # self.nfc_images = []
       self.furthest_point = 0
       self.world_name = ''
       if self.runs['train']%10==1 and not self.FLAGS.evaluate:
@@ -397,6 +405,6 @@ class PilotNode(object):
       self.prev_action=-100
       self.prev_prediction=[]
       self.prev_weight=[]
-      
+      self.prev_random=False
       
 

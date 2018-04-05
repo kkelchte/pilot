@@ -44,11 +44,16 @@
 
 
 # -------ONLINE---------
-for i in $(seq 3); do
-	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_eps03_$i -s train_model_turtle.sh -n 500 -p "--epsilon 0.3 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
-	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_eps05_$i -s train_model_turtle.sh -n 500 -p "--epsilon 0.5 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
-	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_tdreplay_$i -s train_model_turtle.sh -n 500 -p "--replay_priority td_error --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
-	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_actreplay_$i -s train_model_turtle.sh -n 500 -p "--replay_priority uniform_action --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1"
+for i in $(seq 1); do
+	# for i in 2; do
+	# ./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_eps03_$i -s train_model_turtle.sh -n 800 -p "--epsilon 0.3 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1 --buffer_size 5000"
+	# ./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_eps05_$i -s train_model_turtle.sh -n 800 -p "--epsilon 0.5 --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1 --buffer_size 5000"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_sttvar_$i -s train_model_turtle.sh -n 800 -p "--replay_priority state_variance --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1 --buffer_size 5000"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_sttvar_priokeep_$i -s train_model_turtle.sh -n 800 -p "--prioritized_keeping --replay_priority state_variance --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1 --buffer_size 5000"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_actvar_$i -s train_model_turtle.sh -n 800 -p "--replay_priority action_variance --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1 --buffer_size 5000"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_trgtvar_$i -s train_model_turtle.sh -n 800 -p "--replay_priority trgt_variance --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1 --buffer_size 5000"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_rndact_$i -s train_model_turtle.sh -n 800 -p "--replay_priority random_action --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1 --buffer_size 5000"
+	./condor_task_sing.sh -q $((60*60*30)) -t on_depth_turtle/model_rndact_priokeep_$i -s train_model_turtle.sh -n 800 -p "--prioritized_keeping --replay_priority random_action --random_seed $((i*1354)) --network depth_q_net --loss absolute --learning_rate 0.1 --buffer_size 5000"
 done
 
 
