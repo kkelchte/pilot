@@ -226,7 +226,9 @@ def generate_batch(data_type):
             # print('img_file ',img_file)
             # img = Image.open(img_file)
             img = sio.imread(img_file)
-            img = img[::2,::5,:]
+            scale_height = int(np.floor(img.shape[0]/im_size[0]))
+            scale_width = int(np.floor(img.shape[1]/im_size[1]))
+            img = img[::scale_height,::scale_width]
             img = sm.resize(img,im_size,mode='constant').astype(float) #.astype(np.float32)
             assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
             de = []
@@ -238,7 +240,7 @@ def generate_batch(data_type):
               # de = Image.open(depth_file)
               de = sio.imread(depth_file)
               scale_height = int(np.floor(de.shape[0]/de_size[0]))
-              scale_width = int(np.floor(de.shape[0]/de_size[0]))
+              scale_width = int(np.floor(de.shape[1]/de_size[1]))
               de = de[::scale_height,::scale_width]
               # clip depth image with small values as they are due to image processing
               de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
