@@ -237,7 +237,9 @@ def generate_batch(data_type):
             else:
               # de = Image.open(depth_file)
               de = sio.imread(depth_file)
-              de = de[::6,::8]
+              scale_height = int(np.floor(de.shape[0]/de_size[0]))
+              scale_width = int(np.floor(de.shape[0]/de_size[0]))
+              de = de[::scale_height,::scale_width]
               # clip depth image with small values as they are due to image processing
               de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
               de[de<10]=0
