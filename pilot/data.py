@@ -89,7 +89,7 @@ def load_set(data_type):
     # Add depth links if files exist
     depth_list = [] 
     try:
-      depths_jpg=listdir(join(run_dir,'Depth'))
+      depths_jpg=listdir(join(run_dir,FLAGS.depth_directory))
       if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
     except OSError as e:
       # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
@@ -233,7 +233,7 @@ def generate_batch(data_type):
             assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
             de = []
             try:
-              depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind+1]))
+              depth_file = join(data_set[run_ind]['name'],FLAGS.depth_directory, '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind+1]))
             except:
               pass
             else:

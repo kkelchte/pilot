@@ -224,7 +224,7 @@ echo "echo \"[condor_shell_script] done: \$(date +%F_%H:%M)\"" >> $shell_file
 
 if [ $EVALUATE = true ] ; then
 	echo "if [ \$( ls /esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/2018* | grep my-model | wc -l ) -gt 2 ] ; then " >> $shell_file
-	echo "	echo \"[condor_shell_script] Submit condor online job for evaluation \" " >> $shell_file
+	echo "	echo \" \$(date +%F_%H:%M) [condor_shell_script] Submit condor online job for evaluation \" " >> $shell_file
 	echo "	ssh opal /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_sing.sh ${COMMAND_ONLINE[@]}" >> $shell_file
 	echo "else">> $shell_file
 	echo "	echo \"Training model ${TAG} offline has failed.\" ">> $shell_file

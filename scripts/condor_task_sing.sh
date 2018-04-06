@@ -189,7 +189,7 @@ echo "Requirements = (CUDAGlobalMemoryMb >= $GPU_MEM) && (CUDACapability >= 3.5)
 # echo "+RequestWalltime = 59"  >> $condor_file
 echo "+RequestWalltime = $WALLTIME"  >> $condor_file
 
-echo "Niceuser = true"           >> $condor_file
+# echo "Niceuser = true"           >> $condor_file
 
 echo "Initialdir       = $temp_dir"   >> $condor_file
 # echo "Initialdir       = /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts"   >> $condor_file
