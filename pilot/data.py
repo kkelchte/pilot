@@ -10,24 +10,24 @@ import random
 from math import floor
 import tools
 from PIL import Image
-import scipy.io as sio
-import scipy.misc as sm
+# import scipy.io as sio
+# import scipy.misc as sm
+import skimage.io as sio
+import skimage.transform as sm
+import matplotlib.pyplot as plt
+
+import argparse
+
 #import skimage
 #import skimage.transform
 #from skimage import io
 
-FLAGS = tf.app.flags.FLAGS
-
-# ===========================
-#   Data Parameters
-# ===========================
-tf.app.flags.DEFINE_string("dataset", "small","pick the dataset in data_root from which your movies can be found.")
-tf.app.flags.DEFINE_string("data_root", "~/pilot_data", "Define the root folder of the different datasets.")
-tf.app.flags.DEFINE_integer("num_threads", 4, "The number of threads for loading one minibatch.")
+FLAGS=None
 
 full_set = {}
 im_size=(250,250,3)
 de_size = (55,74)
+
 def load_set(data_type):
   """Load a type (train, val or test) of set in the set_list
   as a tuple: first tuple element the directory of the fligth 
@@ -39,18 +39,21 @@ def load_set(data_type):
     return []
 
   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
-  lst_runs = [ l.strip() for l in f.readlines() ]
+  lst_runs = [ l.strip() for l in f.readlines() if len(l) > 2]
+  
   for run_dir in lst_runs:
-    # print(run_dir)
+    print(run_dir)
+    
     imgs_jpg=listdir(join(run_dir,'RGB'))
+    
     # get list of all image numbers available in listdir
     num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg])
     assert len(num_imgs)!=0 , IOError('no images in {0}: {1}'.format(run_dir,len(imgs_jpg)))
     if not isfile(join(run_dir,'RGB','{0:010d}.jpg'.format(num_imgs[-1]))):
       print('ERROR:',run_dir,' imgnum: ',num_imgs[-1])
     # parse control data  
-    control_file = open(join(run_dir,'control_info.txt'),'r')
-    control_file_list = control_file.readlines()
+    ctr_file = open(join(run_dir,FLAGS.control_file),'r')
+    control_file_list = ctr_file.readlines()
     # cut last lines to avoid emtpy lines
     while len(control_file_list[-1])<=1 : control_file_list=control_file_list[:-1]
     control_parsed = [(int(ctr.strip().split(' ')[0]),float(ctr.strip().split(' ')[6])) for ctr in control_file_list]
@@ -74,7 +77,7 @@ def load_set(data_type):
     
     # Add depth links if files exist
     depth_list = [] 
-    if FLAGS.auxiliary_depth or FLAGS.depth_q_learning:
+    if FLAGS.auxiliary_depth:
       try:
         depths_jpg=listdir(join(run_dir,'Depth'))
         if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
@@ -100,9 +103,10 @@ def load_set(data_type):
     print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
   return set_list
 
-def prepare_data(size, size_depth=(55,74)):
-  global im_size, full_set, de_size, max_key, datasetdir
+def prepare_data(_FLAGS, size, size_depth=(55,74)):
+  global FLAGS, im_size, full_set, de_size, max_key, datasetdir
   '''Load lists of tuples refering to images from which random batches can be drawn'''
+  FLAGS=_FLAGS
   # stime = time.time()
   # some startup settings
   # np.random.seed(FLAGS.random_seed)
@@ -118,7 +122,6 @@ def prepare_data(size, size_depth=(55,74)):
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
   im_size=size
   de_size = size_depth
-
 
   
 def generate_batch(data_type):
@@ -161,10 +164,11 @@ def generate_batch(data_type):
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
       # choose random index over image numbers:
-      frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs']) if not FLAGS.depth_q_learning else len(data_set[run_ind]['num_imgs'])-1))
+      frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])))
       if FLAGS.n_fc:
         frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
       batch_indices.append((batch_num, run_ind, frame_ind))
+    
     # print("picking random indices duration: ",time.time()-stime)
     def load_image_and_target(coord, batch_indices, batch, checklist):
       while not coord.should_stop():
@@ -174,19 +178,29 @@ def generate_batch(data_type):
             # load image
             img_file = join(data_set[run_ind]['name'],'RGB', '{0:010d}.jpg'.format(data_set[run_ind]['num_imgs'][frame_ind]))
             # print('img_file ',img_file)
-            img = Image.open(img_file)
-            img = sm.imresize(img,im_size,'nearest').astype(float) #.astype(np.float32)
+            # img = Image.open(img_file)
+            img = sio.imread(img_file)
+            scale_height = int(np.floor(img.shape[0]/im_size[0]))
+            scale_width = int(np.floor(img.shape[1]/im_size[1]))
+            img = img[::scale_height,::scale_width]
+            img = sm.resize(img,im_size,mode='constant').astype(float) #.astype(np.float32)
             assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
             de = []
-            if FLAGS.auxiliary_depth or FLAGS.depth_q_learning:
-              try:
-                depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind] if not FLAGS.depth_q_learning else data_set[run_ind]['depths'][frame_ind+1]))
-              except:
-                pass
-              else:
-                de = Image.open(depth_file)
-                de = sm.imresize(de,de_size,'nearest')
-                de = de * 1/255. * 5.
+            try:
+              depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind]))
+            except:
+              pass
+            else:
+              # de = Image.open(depth_file)
+              de = sio.imread(depth_file)
+              scale_height = int(np.floor(de.shape[0]/de_size[0]))
+              scale_width = int(np.floor(de.shape[1]/de_size[1]))
+              de = de[::scale_height,::scale_width]
+              # clip depth image with small values as they are due to image processing
+              de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
+              de[de<10]=0
+              de = de * (1/255. * 5.)
+              if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['depths'][frame_ind], data_set[run_ind]['name']))
             return img, de
           if FLAGS.n_fc: #concatenate features
             ims = []
@@ -199,6 +213,10 @@ def generate_batch(data_type):
           else:
             im, de = load_rgb_depth_image(run_ind, frame_ind)
             ctr = data_set[run_ind]['controls'][frame_ind]
+
+          # clip control avoiding values larger than 1
+          ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
+            
           # append rgb image, control and depth to batch
           batch.append({'img':im, 'ctr':ctr, 'depth':de})
           checklist.append(True)
@@ -226,15 +244,24 @@ def generate_batch(data_type):
 #### FOR TESTING ONLY
   
 if __name__ == '__main__':
-  FLAGS.auxiliary_depth = False
-  FLAGS.n_fc = False
-  FLAGS.n_frames = 3
-  FLAGS.depth_q_learning = True
-  FLAGS.dataset = 'canyon'
-  FLAGS.random_seed = 123
-  FLAGS.batch_size = 32
+  parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  prepare_data((240,320,3))
+  parser.add_argument("--normalize_data", action='store_true', help="Define wether the collision tags 0 or 1 are normalized in a batch.")
+  parser.add_argument("--dataset", default="canyon_rl_turtle_collision_free", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
+  parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
+  parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
+  parser.add_argument("--action_bound", default=1, type=float, help="Bound the action space between -b and b")
+  parser.add_argument("--auxiliary_depth", action='store_true', help="Define wether network is trained with auxiliary depth prediction.")
+  parser.add_argument("--n_fc", action='store_true', help="Define wether network uses 3 concatenated consecutive frames.")
+
+  parser.add_argument("--network",default='depth_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
+  parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  
+  FLAGS=parser.parse_args()  
+
+  prepare_data(FLAGS, (240,320,3))
 
   print 'run_dir: {}'.format(full_set['train'][0]['name'])
   print 'len images: {}'.format(len(full_set['train'][0]['num_imgs']))
@@ -244,8 +271,8 @@ if __name__ == '__main__':
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
-    print ('rgb value: {0:0.1f}, depth value: {1:0.4f}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0]))
-    # break
+    actions=[_['ctr'] for _ in batch]
+    print("avg: {0},var: {1}".format(np.mean(actions), np.var(actions)))
 
   print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
   

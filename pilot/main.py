@@ -12,70 +12,28 @@ from tensorflow.contrib.slim.python.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
 from tensorflow.python.ops import random_ops
 
+
 import numpy as np
 import sys, os, os.path
 import subprocess
 import shutil
 import time
 import signal
+import argparse
 
 # Block all the ugly printing...
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-
-FLAGS = tf.app.flags.FLAGS
-
-# ==========================
-#   Training Parameters
-# ==========================
-tf.app.flags.DEFINE_boolean("testing", False, "In case we're only testing, the model is tested on the test.txt files and not trained.")
-tf.app.flags.DEFINE_boolean("offline", True, "Training from an offline dataset.")
-tf.app.flags.DEFINE_float("learning_rate", 0.5, "Start learning rate.")
-tf.app.flags.DEFINE_integer("batch_size", 16, "Define the size of minibatches.")
-tf.app.flags.DEFINE_string("data_format", 'NHWC', "NHWC is the most convenient (way data is saved), though NCHW is faster on GPU.")
-
-# ===========================
-#   Model Parameters
-# ===========================
-tf.app.flags.DEFINE_float("depth_multiplier", 0.25, "Define the depth of the network in case of mobilenet.")
-tf.app.flags.DEFINE_string("network", 'mobile', "Define the type of network: mobile, squeeze, depth_q_net.")
-tf.app.flags.DEFINE_boolean("auxiliary_depth", False, "Specify whether a depth map is predicted.")
-tf.app.flags.DEFINE_boolean("depth_q_learning", False, "In case of True, train a depth prediction network as Q-value predictor in an RL setting.")
-tf.app.flags.DEFINE_boolean("n_fc", False, "In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
-tf.app.flags.DEFINE_integer("n_frames", 3, "Specify the amount of frames concatenated in case of n_fc.")
-
-# ===========================
-#   Utility Parameters
-# ===========================
-# Print output of ros verbose or not
-tf.app.flags.DEFINE_boolean("load_config", False, "Load flags from the configuration file found in the checkpoint path.")
-tf.app.flags.DEFINE_boolean("verbose", True, "Print output of ros verbose or not.")
-tf.app.flags.DEFINE_string("summary_dir", 'tensorflow/log/', "Choose the directory to which tensorflow should save the summaries.")
-tf.app.flags.DEFINE_string("log_tag", 'testing', "Add log_tag to overcome overwriting of other log files.")
-tf.app.flags.DEFINE_string("device", '/gpu:0', "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
-tf.app.flags.DEFINE_integer("random_seed", 123, "Set the random seed to get similar examples.")
-tf.app.flags.DEFINE_boolean("owr", False, "Overwrite existing logfolder when it is not testing.")
-tf.app.flags.DEFINE_float("action_bound", 1.0, "Define between what bounds the actions can go. Default: [-1:1].")
-tf.app.flags.DEFINE_boolean("real", False, "Define settings in case of interacting with the real (bebop) drone.")
-tf.app.flags.DEFINE_boolean("evaluate", False, "Just evaluate the network without training.")
-tf.app.flags.DEFINE_boolean("random_learning_rate", False, "Use sampled learning rate from UL(10**-2, 1)")
-tf.app.flags.DEFINE_boolean("plot_depth", False, "Specify whether the depth predictions is saved as images.")
-
-
 from model import Model
 import tools
-if not FLAGS.offline: import rosinterface
 import offline
 import models.mobile_net as mobile_net
-import models.depth_q_net as depth_q_net
-
-if not FLAGS.offline: from std_msgs.msg import Empty
 
 
 # ===========================
 #   Save settings
 # ===========================
-def save_config(logfolder, file_name = "configuration"):
+def save_config(FLAGS, logfolder, file_name = "configuration"):
   """
   save all the FLAG values in a config file / xml file
   """
@@ -83,9 +41,9 @@ def save_config(logfolder, file_name = "configuration"):
   root = ET.Element("conf")
   flg = ET.SubElement(root, "flags")
   
-  flags_dict = FLAGS.__dict__['__flags']
+  flags_dict=FLAGS.__dict__
   for f in flags_dict:
-    #print f, flags_dict[f]
+    # print f, flags_dict[f]
     ET.SubElement(flg, f, name=f).text = str(flags_dict[f])
   tree = ET.ElementTree(root)
   tree.write(os.path.join(logfolder,file_name+".xml"), encoding="us-ascii", xml_declaration=True, method="xml")
@@ -93,7 +51,7 @@ def save_config(logfolder, file_name = "configuration"):
 # ===========================
 #   Load settings
 # ===========================
-def load_config(modelfolder, file_name = "configuration"):
+def load_config(FLAGS, modelfolder, file_name = "configuration"):
   """
   save all the FLAG values in a config file / xml file
   """
@@ -120,24 +78,119 @@ def load_config(modelfolder, file_name = "configuration"):
     except : 
       print 'couldnt set:', child.attrib['name'], child.text
       pass
+  return FLAGS
 
 # Use the main method for starting the training procedure and closing it in the end.
 def main(_):
-  # for p in sys.path:
-  #   print 'path: {}'.format(p)
+  parser = argparse.ArgumentParser(description='Main pilot that can train or evaluate online or offline from a dataset.')
+  
+  # ==========================
+  #   Training Parameters
+  # ==========================
+  parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
+  parser.add_argument("--learning_rate", default=0.5, type=float, help="Start learning rate.")
+  parser.add_argument("--batch_size",default=16,type=int,help="Define the size of minibatches.")
+
+  # ==========================
+  #   Offline Parameters
+  # ==========================
+  parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
+
+  # ===========================
+  #   Utility Parameters
+  # ===========================
+  # Print output of ros verbose or not
+  parser.add_argument("--load_config", action='store_true',help="Load flags from the configuration file found in the checkpoint path.")
+  parser.add_argument("--verbose", action='store_false', help="Print output of ros verbose or not.")
+  parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
+  parser.add_argument("--log_tag", default='testing', type=str, help="Add log_tag to overcome overwriting of other log files.")
+  parser.add_argument("--device", default='/gpu:0', type=str, help= "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
+  parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
+  parser.add_argument("--owr", action='store_true', help="Overwrite existing logfolder when it is not testing.")
+  parser.add_argument("--action_quantity",default=9, type=int, help="Define the number of actions in the output layer.")
+  parser.add_argument("--action_bound", default=1.0, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
+  parser.add_argument("--action_dim", default=1.0, type=float, help= "Define the dimension of the actions: 1dimensional as it only turns in yaw.")
+  parser.add_argument("--real", action='store_true', help="Define settings in case of interacting with the real (bebop) drone.")
+  parser.add_argument("--evaluate", action='store_true', help="Just evaluate the network without training.")
+  parser.add_argument("--random_learning_rate", action='store_true', help="Use sampled learning rate from UL(10**-2, 1)")
+  parser.add_argument("--plot_depth", action='store_true', help="Specify whether the depth predictions is saved as images.")
+
+  # ===========================
+  #   Data Parameters
+  # ===========================
+  parser.add_argument("--dataset", default="doshico", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
+  parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
+  parser.add_argument("--control_file", default='control_info.txt', type=str, help="Define the name of the file with the action labels.")
+
+  # ===========================
+  #   Model Parameters
+  # ===========================
+  parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
+  parser.add_argument("--network",default='mobile',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
+  parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc.")
+  parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
+  parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
+  
+  # INITIALIZATION
+  parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
+  parser.add_argument("--continue_training",action='store_true', help="Continue training of the prediction layers. If false, initialize the prediction layers randomly.")
+  parser.add_argument("--scratch", action='store_true', help="Initialize full network randomly.")
+
+  # TRAINING
+  parser.add_argument("--depth_weight", default=1.0, type=float, help="Define the weight applied to the depth values in the loss relative to the control loss.")
+  parser.add_argument("--control_weight", default=1.0, type=float, help="Define the weight applied to the control loss.")
+  parser.add_argument("--weight_decay",default=0.00004,type=float, help= "Weight decay of inception network")
+  parser.add_argument("--init_scale", default=0.0005, type=float, help= "Std of uniform initialization")
+  parser.add_argument("--grad_mul_weight", default=0, type=float, help="Specify the amount the gradients of prediction layers.")
+  parser.add_argument("--dropout_keep_prob", default=0.5, type=float, help="Specify the probability of dropout to keep the activation.")
+  parser.add_argument("--clip_grad", default=0, type=int, help="Specify the max gradient norm: default 0 is no clipping, recommended 4.")
+  parser.add_argument("--optimizer", default='adadelta', type=str, help="Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
+  # parser.add_argument("--no_batchnorm_learning",action='store_false', help="In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
+  parser.add_argument("--grad_mul", action='store_true',help="Specify whether the weights of the prediction layers should be learned faster.")
+  parser.add_argument("--initializer",default='xavier',type=str, help="Define the initializer: xavier or uniform [-init_scale, init_scale]")
+
+  parser.add_argument("--loss",default='mse',type=str, help="Define the loss: mse, huber or absolute")
+
+  # ===========================
+  #   Replay Parameters
+  # ===========================
+
+  # parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, state/action/target_variance, random_action")
+  # parser.add_argument("--prioritized_keeping", action='store_true', help="In case of True, the replay buffer only keeps replay data that is most likely to be sampled.")
+
+  # ===========================
+  #   Rosinterface Parameters
+  # ===========================
+  parser.add_argument("--online", action='store_true', help="Training/evaluating online in simulation.")
+
+  parser.add_argument("--buffer_size", default=1000, type=int, help="Define the number of experiences saved in the buffer.")
+  parser.add_argument("--ou_theta", default=0.05, type=float, help= "Theta is the pull back force of the OU Noise.")
+  parser.add_argument("--noise", default='ou', type=str, help="Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
+  parser.add_argument("--sigma_z", default=0.0, type=float, help= "sigma_z is the amount of noise in the z direction.")
+  parser.add_argument("--sigma_x", default=0.0, type=float, help= "sigma_x is the amount of noise in the forward speed.")
+  parser.add_argument("--sigma_y", default=0.0, type=float, help= "sigma_y is the amount of noise in the y direction.")
+  parser.add_argument("--sigma_yaw", default=0.0, type=float, help= "sigma_yaw is the amount of noise added to the steering angle.")
+  parser.add_argument("--speed", default=0.5, type=float, help= "Define the forward speed of the quadrotor.")
+  parser.add_argument("--alpha",default=0., type=float, help="Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy..")
+  # parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
+  # parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
+  # parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+
+  parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
+  parser.add_argument("--show_depth",action='store_false', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
+
+  # parser.add_argument("--grad_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
+
+  FLAGS=parser.parse_args()
+
   np.random.seed(FLAGS.random_seed)
   tf.set_random_seed(FLAGS.random_seed)
   
   if FLAGS.random_learning_rate:
     FLAGS.learning_rate = 10**np.random.uniform(-2,0)
-    
-  if FLAGS.load_config:
-    checkpoint_path = FLAGS.checkpoint_path
-    if checkpoint_path[0]!='/': checkpoint_path = os.path.join(os.getenv('HOME'),'tensorflow/log',checkpoint_path)
-    if not os.path.isfile(checkpoint_path+'/checkpoint'):
-      checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/checkpoint')][-1]
-    load_config(checkpoint_path)
-    
+  
   FLAGS.summary_dir = os.path.join(os.getenv('HOME'),FLAGS.summary_dir)
   print("summary dir: {}".format(FLAGS.summary_dir))
   
@@ -153,6 +206,7 @@ def main(_):
       if len(checkpoints) != 0:
         # if a checkpoint is found in current folder, use this folder as checkpoint path.
         #raise NameError( 'Logfolder already exists, overwriting alert: '+ FLAGS.summary_dir+FLAGS.log_tag )
+        FLAGS.load_config = True
         FLAGS.scratch = False
         FLAGS.continue_training = True
         FLAGS.checkpoint_path = FLAGS.log_tag
@@ -163,19 +217,24 @@ def main(_):
         shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
   if not os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag): 
     os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
-  save_config(FLAGS.summary_dir+FLAGS.log_tag)
-
-  action_dim = 1 #only turn in yaw from -1:1
-  
+    
+  if FLAGS.load_config:
+    checkpoint_path = FLAGS.checkpoint_path
+    if checkpoint_path[0]!='/': checkpoint_path = os.path.join(os.getenv('HOME'),'tensorflow/log',checkpoint_path)
+    if not os.path.isfile(checkpoint_path+'/checkpoint'):
+      checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/checkpoint')][-1]
+    FLAGS=load_config(FLAGS, checkpoint_path)
+    
+  save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
   config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
   config.gpu_options.allow_growth = True
-  # config.gpu_options.per_process_gpu_memory_fraction = 0.4
+  # config.gpu_options.per_process_gpu_memory_fraction = 0.4 # use for debugging
 
   # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
-  model = Model(sess, action_dim, bound=FLAGS.action_bound)
+  model = Model(FLAGS, sess)
   writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   model.writer = writer
   
@@ -189,12 +248,10 @@ def main(_):
   signal.signal(signal.SIGINT, signal_handler)
   print('------------Press Ctrl+C to end the learning') 
   
-  if FLAGS.offline:
-    print('Offline training.')
-    offline.run(model,start_ep)
-  else: # online training/evaluating
-    print('Online training.')
-    rosnode = rosinterface.PilotNode(model, FLAGS.summary_dir+FLAGS.log_tag)
+  if FLAGS.online:
+    print('Online---')
+    import rosinterface
+    rosnode = rosinterface.PilotNode(FLAGS, model, FLAGS.summary_dir+FLAGS.log_tag)
     while True:
         try:
           sys.stdout.flush()
@@ -204,7 +261,9 @@ def main(_):
           sess.close()
           print('done')
           sys.exit(0)
-  
+  else:
+    print('Offline training.')
+    offline.run(FLAGS,model,start_ep)
     
 if __name__ == '__main__':
   tf.app.run() 

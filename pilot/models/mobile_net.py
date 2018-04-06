@@ -99,8 +99,6 @@ import numpy as np
 
 slim = tf.contrib.slim
 
-FLAGS = tf.app.flags.FLAGS
-
 
 # Conv and DepthSepConv namedtuple define layers of the MobileNet architecture
 # Conv defines 3x3 convolution layers
@@ -260,6 +258,8 @@ def mobilenet_v1(inputs,
                  prediction_fn=tf.contrib.layers.softmax,
                  spatial_squeeze=True,
                  reuse=None,
+                 depth_multiplier=0.25,
+                 dropout_keep_prob=0.5,
                  scope='MobilenetV1'):
   """Mobilenet v1 model for classification.
   Args:
@@ -295,18 +295,19 @@ def mobilenet_v1(inputs,
                         is_training=is_training):
       net, end_points = mobilenet_v1_base(inputs, scope=scope,
                                           min_depth=min_depth,
-                                          depth_multiplier=FLAGS.depth_multiplier,
+                                          depth_multiplier=depth_multiplier,
                                           conv_defs=conv_defs)
       kernel_size = _reduced_kernel_size_for_small_input(net, [7, 7])
       net = slim.avg_pool2d(net, kernel_size, padding='VALID',
                             scope='AvgPool_1a')
       end_points['AvgPool_1a'] = net
       if is_training:
-        net = slim.dropout(net, keep_prob=FLAGS.dropout_keep_prob, scope='Dropout_1b')
+        net = slim.dropout(net, keep_prob=dropout_keep_prob, scope='Dropout_1b')
+
       # print( str(net))
       with tf.variable_scope('aux_depth'):
         end_point = 'aux_depth_fc'
-        depth_aux_feat = tf.reshape(net,[-1, int(FLAGS.depth_multiplier*1024)])
+        depth_aux_feat = tf.reshape(net,[-1, int(depth_multiplier*1024)])
         aux_logits=slim.fully_connected(depth_aux_feat, 4096, tf.nn.relu)
         end_points[end_point] = aux_logits
         
@@ -332,10 +333,7 @@ def mobilenet_v1(inputs,
         # logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=tf.tanh,
                              normalizer_fn=None, scope='Conv2d_1c_1x1')
         if spatial_squeeze:
-          if FLAGS.data_format=='NCHW':
-            logits = tf.squeeze(logits, [2,3], name='SpatialSqueeze')
-          else:
-            logits = tf.squeeze(logits, [1,2], name='SpatialSqueeze')
+          logits = tf.squeeze(logits, [1,2], name='SpatialSqueeze')
         end_points['Logits'] = logits
       
 
@@ -345,20 +343,20 @@ def mobilenet_v1(inputs,
 
 def mobilenet_n(inputs,
                  num_classes=1000,
+            		 n_frames=3,
+                 depth_multiplier=0.25,
+            		 dropout_keep_prob=0.5,
                  is_training=True):
   features = []
-  for i in range(FLAGS.n_frames):
+  for i in range(n_frames):
     _, endpoints = mobilenet_v1(inputs[:,:,:,i*3:(i+1)*3], num_classes=num_classes, 
       is_training=is_training, reuse=(i!=0 and is_training) or not is_training)
-    if FLAGS.data_format == 'NCHW':
-      net = tf.squeeze(endpoints['AvgPool_1a'], [2,3])
-    else :
-      net = tf.squeeze(endpoints['AvgPool_1a'], [1,2])
+    net = tf.squeeze(endpoints['AvgPool_1a'], [1,2])
     features.append(net)
   with tf.variable_scope('concatenated_feature', reuse=not is_training): 
     control_input=tf.concat(features, axis=1)
     if is_training:
-      control_input = slim.dropout(control_input, keep_prob=FLAGS.dropout_keep_prob, scope='Dropout_1b')  
+      control_input = slim.dropout(control_input, keep_prob=dropout_keep_prob, scope='Dropout_1b')  
   with tf.variable_scope('control', reuse=not is_training):
     control_input = slim.fully_connected(control_input, 50, tf.nn.relu, normalizer_fn=None, scope='H_fc_control')
     outputs = slim.fully_connected(control_input, 1, None, normalizer_fn=None, scope='Fc_control')
@@ -387,11 +385,7 @@ def _reduced_kernel_size_for_small_input(input_tensor, kernel_size):
   if shape[1] is None or shape[2] is None:
     kernel_size_out = kernel_size
   else:
-    if FLAGS.data_format == 'NCHW':
-      kernel_size_out = [min(shape[2], kernel_size[0]),
-                       min(shape[3], kernel_size[1])]
-    else:
-      kernel_size_out = [min(shape[1], kernel_size[0]),
+    kernel_size_out = [min(shape[1], kernel_size[0]),
                        min(shape[2], kernel_size[1])]
   return kernel_size_out
 
@@ -400,6 +394,8 @@ def mobilenet_v1_arg_scope(is_training=True,
                            weight_decay=0.00004,
                            stddev=0.09,
                            regularize_depthwise=False,
+                           initializer='xavier',
+                           random_seed=123,
                            data_format='NHWC'):
   """Defines the default MobilenetV1 arg scope.
   Args:
@@ -419,7 +415,7 @@ def mobilenet_v1_arg_scope(is_training=True,
   }
 
   # Set weight_decay for weights in Conv and DepthSepConv layers.
-  weights_init = tf.contrib.layers.xavier_initializer(seed=FLAGS.random_seed) if FLAGS.initializer=='xavier' else tf.truncated_normal_initializer(stddev=stddev, seed=FLAGS.random_seed)
+  weights_init = tf.contrib.layers.xavier_initializer(seed=random_seed) if initializer=='xavier' else tf.truncated_normal_initializer(stddev=stddev, seed=random_seed)
 
   # weights_init = tf.truncated_normal_initializer(stddev=stddev)
   regularizer = tf.contrib.layers.l2_regularizer(weight_decay)
