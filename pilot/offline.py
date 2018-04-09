@@ -81,6 +81,11 @@ def run(_FLAGS, model, start_ep=0):
 
     # ----------- validate episode
     #sumvar = run_episode('val', {}, model)
+
+    # !! TO REMOVE:
+    # if FLAGS.depth_directory==''
+    # !! TO REMOVE
+    
     sumvar = run_episode('val', sumvar, model)
     
     # ----------- write summary

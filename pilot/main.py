@@ -95,7 +95,6 @@ def main(_):
   # ==========================
   #   Offline Parameters
   # ==========================
-  parser.add_argument("--offline", action='store_false', help="Training from an offline dataset.")
   parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
 
   # ===========================
@@ -164,6 +163,7 @@ def main(_):
   # ===========================
   #   Rosinterface Parameters
   # ===========================
+  parser.add_argument("--online", action='store_true', help="Training/evaluating online in simulation.")
   parser.add_argument("--buffer_size", default=1000, type=int, help="Define the number of experiences saved in the buffer.")
   parser.add_argument("--ou_theta", default=0.05, type=float, help= "Theta is the pull back force of the OU Noise.")
   parser.add_argument("--noise", default='ou', type=str, help="Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
@@ -250,10 +250,7 @@ def main(_):
   signal.signal(signal.SIGINT, signal_handler)
   print('------------Press Ctrl+C to end the learning') 
   
-  if FLAGS.offline:
-    print('Offline training.')
-    offline.run(FLAGS,model,start_ep)
-  else: # online training/evaluating
+  if FLAGS.online: # online training/evaluating
     print('Online training.')
     import rosinterface
     rosnode = rosinterface.PilotNode(FLAGS, model, FLAGS.summary_dir+FLAGS.log_tag)
@@ -266,6 +263,9 @@ def main(_):
           sess.close()
           print('done')
           sys.exit(0)
+  else:
+    print('Offline training.')
+    offline.run(FLAGS,model,start_ep)
   
     
 if __name__ == '__main__':

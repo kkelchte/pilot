@@ -170,9 +170,9 @@ class PilotNode(object):
       # # values can be nan for when they are closer than 0.5m but than the evaluate node should
       # # kill the run anyway.
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
-      # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
       size = self.model.depth_input_size #(55,74)
       de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
+
       # de[de<0.001]=0      
       return de
     
