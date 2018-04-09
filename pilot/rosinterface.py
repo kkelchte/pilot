@@ -365,7 +365,7 @@ class PilotNode(object):
         for i in ['state','action','trgt']:
           sumvar[i+'_variance']=buffer_variances[i]
           result_string='{0}, {1}:{2:0.5e}'.format(result_string, i+'_variance',buffer_variances[i]) 
-      if len(self.time_delay) != 0: 
+      if len(self.time_delay) > 2: 
         result_string='{0} min: {1}, avg: {2}, max: {3}'.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       try:
         self.model.summarize(sumvar)
