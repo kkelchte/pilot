@@ -130,9 +130,8 @@ class PilotNode(object):
       print(e)
     else:
       img = img[::2,::5,:]
-      size = self.model.input_size[1:]
-      img = sm.resize(img,size,mode='constant').astype(float) #.astype(np.float32)
-      # im = sm.imresize(im,tuple(size),'nearest')
+      img = sm.resize(img,self.model.input_size[1:],mode='constant').astype(float) #.astype(np.float32)
+      # img = sm.imresize(img,tuple(self.model.input_size[1:]),'nearest')
       return img
 
   def process_depth(self, msg):
@@ -144,20 +143,22 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
-      # de=de*1/5.*255
-      # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
-
+      
+      # de = de[::8,::8]
+      
       de = de[::6,::8]
-      # im = im[::8,::8]
       shp=de.shape
       # # assume that when value is not a number it is due to a too large distance (set to 5m)
       # # values can be nan for when they are closer than 0.5m but than the evaluate node should
       # # kill the run anyway.
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
       # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
-      size = self.model.depth_input_size #(55,74)
-      de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
+      
+      de = sm.resize(de,self.model.depth_input_size,order=1,mode='constant', preserve_range=True)
+      # de = sm.imresize(de,self.model.depth_input_size,'nearest') # dur: 0.002
+      print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
       # de[de<0.001]=0      
+      # de = de *1/255.*5.
       return de
     
   def image_callback(self, msg):
@@ -178,7 +179,7 @@ class PilotNode(object):
       self.process_input(im)
     
   def depth_callback(self, msg):
-    print 'received depth'
+    # print 'received depth'
     im = self.process_depth(msg)
     if len(im)!=0 and self.FLAGS.auxiliary_depth:
         self.target_depth = im #(64,) 
@@ -272,7 +273,7 @@ class PilotNode(object):
 
   def supervised_callback(self, data):
     """Get target control from the /supervised_vel node"""
-    print 'received control'
+    # print 'received control'
 
     if not self.ready: return
     self.target_control = [data.linear.x,
