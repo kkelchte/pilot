@@ -137,7 +137,6 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
     collision_num = int(FLAGS.collision_file.split('.')[0].split('_')[2])
   except:
     collision_num = 10
-
   
 def generate_batch(data_type):
   """ 
@@ -305,6 +304,8 @@ if __name__ == '__main__':
   parser.add_argument("--network",default='depth_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--control_file",default='control_info.txt',type=str,help="Control file.")
+  parser.add_argument("--depth_directory",default='Depth',type=str,help="Depth directory.")
   
   # parser.add_argument("--collision_file",default='collision_info.txt',type=str,help="define file with collision labels")
   
@@ -321,8 +322,9 @@ if __name__ == '__main__':
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
-    actions=[_['ctr'] for _ in batch]
-    print("avg: {0},var: {1}".format(np.mean(actions), np.var(actions)))
+    pass
+    # actions=[_['ctr'] for _ in batch]
+    # print("avg: {0},var: {1}".format(np.mean(actions), np.var(actions)))
 
     # if FLAGS.network =='coll_q_net':
     #   print ('rgb value: {0:0.1f}, depth value: {1:0.4f}, control: {2}, collision: {3}'.format(batch[0]['img'][0,0,0], batch[0]['depth'][0,0], batch[0]['ctr'], batch[0]['trgt']))
@@ -331,3 +333,12 @@ if __name__ == '__main__':
 
   print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
   
+  start_time=time.time()
+  for index, ok, batch in generate_batch('train'):
+    pass
+  print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
+
+  start_time=time.time()
+  for index, ok, batch in generate_batch('train'):
+    pass
+  print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))

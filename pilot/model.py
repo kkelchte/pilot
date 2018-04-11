@@ -123,19 +123,20 @@ class Model(object):
         weights=tf.multiply(tf.cast(tf.greater(self.targets,self.FLAGS.min_depth), tf.float32),tf.cast(tf.less(self.targets,self.FLAGS.max_depth), tf.float32))
         self.weights=-1*tf.nn.pool(tf.expand_dims(-1*weights,3), [2,2], "MAX",padding="SAME")
         if self.FLAGS.loss == 'huber':
-          self.loss = tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0])
+          self.loss = tf.reduce_mean(tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0],reduction=tf.losses.Reduction.NONE,loss_collection=''),axis=[1,2])
         elif self.FLAGS.loss == 'absolute':
-          self.loss = tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0])
+          self.loss = tf.reduce_mean(tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0],reduction=tf.losses.Reduction.NONE,loss_collection=''),axis=[1,2])
         else: 
-          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0])
+          self.loss = tf.reduce_mean(tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0],reduction=tf.losses.Reduction.NONE,loss_collection=''),axis=[1,2])
       else:
         if self.FLAGS.loss == 'ce':
           # cross entropy loss:
-          self.loss = -tf.reduce_mean(tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train)))
-          tf.losses.add_loss(self.loss)
+          self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
         else:
-          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.)
+          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.,reduction=tf.losses.Reduction.NONE,loss_collection='')
+      tf.losses.add_loss(tf.reduce_mean(self.loss))
       self.total_loss = tf.losses.get_total_loss()
+      # self.total_loss = self.loss
       
   def define_train(self):
     '''applying gradients to the weights from normal loss function
@@ -151,6 +152,7 @@ class Model(object):
       # name (or variable) to a scaling coefficient:
       # Take possible a smaller step (gradient multiplier) for the feature extracting part
       mobile_variables = [v for v in tf.global_variables() if (v.name.find('Adadelta')==-1 and v.name.find('BatchNorm')==-1 and v.name.find('Adam')==-1  and v.name.find('q_depth')==-1 and v.name.find('q_coll')==-1)]
+      # self.train_op = slim.learning.create_train_op(self.total_loss, 
       self.train_op = slim.learning.create_train_op(self.total_loss, 
         self.optimizer, 
         global_step=self.global_step, 
@@ -200,34 +202,6 @@ class Model(object):
     losses['o']=results.pop(0) # control loss or Q-loss 
     losses['t'] = results.pop(0) # total loss
 
-    # weights=results.pop(0)[:,:,:,0]
-    # print("targets: {}".format(targets))
-    # print("weights: {}".format(weights))
-    # print("min target: {}".format(np.amin(targets)))
-    # print("max target: {}".format(np.amax(targets)))
-
-    # plt.subplot(331)
-    # plt.imshow(targets[0])
-    # plt.subplot(332)
-    # plt.imshow(targets[1])
-    # plt.subplot(333)
-    # plt.imshow(targets[2])
-    # plt.subplot(334)
-    # plt.imshow(weights[0])
-    # plt.subplot(335)
-    # plt.imshow(weights[1])
-    # plt.subplot(336)
-    # plt.imshow(weights[2])
-    # plt.subplot(337)
-    # plt.imshow(inputs[0])
-    # plt.subplot(338)
-    # plt.imshow(inputs[1])
-    # plt.subplot(339)
-    # plt.imshow(inputs[2])
-    # plt.show()  
-
-    # import pdb; pdb.set_trace()
-
     return losses
 
   def save(self, logfolder):
@@ -246,6 +220,10 @@ class Model(object):
       for l in ['total', 'output']:
         name='Loss_{0}_{1}'.format(t,l)
         self.add_summary_var(name)
+        if l == 'output':
+          for n in ['min','max','var']:
+            name='Loss_{0}_{1}_{2}'.format(t,l,n)
+            self.add_summary_var(name)
     for d in ['current','furthest']:
       for t in ['train', 'test']:
         for w in ['','sandbox','forest','canyon','esat_corridor_v1', 'esat_corridor_v2']:

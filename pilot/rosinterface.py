@@ -335,8 +335,8 @@ class PilotNode(object):
                                       targets.reshape(-1,1) if self.FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.depth_input_size[0],self.model.depth_input_size[1]))
           for k in losses.keys(): 
             try:
-              losses_train[k].append(losses[k])
-            except:
+              losses_train[k].extend(np.asarray([losses[k]]).flatten()) #in order to cope both with integers and lists
+            except: # first element of training
               losses_train[k]=[losses[k]]
       
       # Gather all info to build a proper summary and string of results
@@ -354,8 +354,15 @@ class PilotNode(object):
         result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
       for k in losses_train.keys():
         name={'t':'Loss_train_total','o':'Loss_train_output'}
-        sumvar[name[k]]=np.mean(losses_train[k])
+        sumvar[name[k]]=np.mean(losses_train[k])   
         result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
+        if k=='o':
+          sumvar[name[k]+'_min']=np.min(losses_train[k])
+          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_min', np.min(losses_train[k]))
+          sumvar[name[k]+'_max']=np.max(losses_train[k])
+          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_max', np.max(losses_train[k]))
+          sumvar[name[k]+'_var']=np.var(losses_train[k])
+          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_var', np.var(losses_train[k]))
       for k in self.accumlosses.keys():
         name={'t':'Loss_test_total','o':'Loss_test_output'}
         sumvar[name[k]]=self.accumlosses[k]
