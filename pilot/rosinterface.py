@@ -156,7 +156,7 @@ class PilotNode(object):
       
       de = sm.resize(de,self.model.depth_input_size,order=1,mode='constant', preserve_range=True)
       # de = sm.imresize(de,self.model.depth_input_size,'nearest') # dur: 0.002
-      print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
+      # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
       # de[de<0.001]=0      
       # de = de *1/255.*5.
       return de
