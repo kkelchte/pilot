@@ -60,7 +60,7 @@ class PilotNode(object):
 
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
-    self.accumlosses = {} # gather losses and info over the run in a dictionary
+    # self.accumlosses = {} # gather losses and info over the run in a dictionary
     self.current_distance=0 # accumulative distance travelled from beginning of run used at evaluation
     self.furthest_point=0 # furthest point reached from spawning point at the beginning of run
     self.average_distances={'train':0, 'test':0} # running average over different runs
@@ -80,6 +80,7 @@ class PilotNode(object):
         rospy.Subscriber(rospy.get_param('depth_image'), Image, self.depth_callback)
     if not self.FLAGS.real: # initialize the replay buffer
       self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed)
+      self.validation_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed) if self.FLAGS.validate_online else None
       self.accumloss = 0
       if rospy.has_param('gt_info'):
         rospy.Subscriber(rospy.get_param('gt_info'), Odometry, self.gt_callback)
@@ -277,7 +278,7 @@ class PilotNode(object):
       self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
-    if not self.FLAGS.evaluate and not self.finished:
+    if ( not self.FLAGS.evaluate or self.FLAGS.validate_online) and not self.finished:
 
       if self.FLAGS.network=='depth_q_net':
         closest_action_index = np.argmin([np.abs(a-action) for a in actions])
@@ -288,8 +289,10 @@ class PilotNode(object):
             'trgt':depth}
           if self.FLAGS.replay_priority == 'td_error': experience['error']=self.prev_weight*np.mean((self.prev_prediction-depth)**2)
           elif self.FLAGS.replay_priority == 'random_action': experience['rnd']=self.prev_random
-          
-          self.replay_buffer.add(experience)
+          if self.FLAGS.evaluate: 
+            self.validation_buffer.add(experience)
+          else:
+            self.replay_buffer.add(experience)
         self.prev_im=copy.deepcopy(im)
         self.prev_action=action
         self.prev_prediction=output[closest_action_index]
@@ -303,7 +306,10 @@ class PilotNode(object):
           experience['error']=output[best_output]
         elif self.FLAGS.replay_priority == 'random_action': 
           experience['rnd']=random
-        self.replay_buffer.add(experience)
+        if self.FLAGS.evaluate:
+          self.validation_buffer.add(experience)
+        else:
+          self.replay_buffer.add(experience)
 
     delay=time.time()-rec
     self.time_delay.append(delay)  
@@ -333,11 +339,30 @@ class PilotNode(object):
           losses = self.model.backward(states,
                                       actions.reshape(-1,1),
                                       targets.reshape(-1,1) if self.FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.depth_input_size[0],self.model.depth_input_size[1]))
-          for k in losses.keys(): 
+          for k in losses.keys():
             try:
               losses_train[k].extend(np.asarray([losses[k]]).flatten()) #in order to cope both with integers and lists
-            except: # first element of training
-              losses_train[k]=[losses[k]]
+            except Exception : # first element of training
+              losses_train[k]=list(np.asarray([losses[k]]).flatten())
+          if self.FLAGS.replay_priority == 'td_error':
+            self.replay_buffer.update_probabilities(states,actions,targets,np.asarray(losses['o']).flatten())
+          if self.FLAGS.clip_loss_to_max:
+            self.FLAGS.max_loss = np.amax(np.asarray(losses_train['o']).flatten())
+      # validate on validation buffer
+      losses_test = {}
+      if self.FLAGS.validate_online and self.validation_buffer.size()>self.FLAGS.batch_size:
+        # add code for cleaning up buffer: adding target 1 for last frames before collision
+        self.validation_buffer.label_collision(self.logfolder)
+        for b in range(min(int(self.validation_buffer.size()/self.FLAGS.batch_size), self.FLAGS.grad_steps)): # sample max 10 batches from all experiences gathered.
+          states, actions, targets = self.validation_buffer.sample_batch()
+          _, losses = self.model.forward(states,
+                                      actions.reshape(-1,1),
+                                      targets.reshape(-1,1) if self.FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.depth_input_size[0],self.model.depth_input_size[1]))
+          for k in losses.keys():
+            try:
+              losses_test[k].extend(np.asarray([losses[k]]).flatten()) #in order to cope both with integers and lists
+            except Exception : # first batch
+              losses_test[k]=list(np.asarray([losses[k]]).flatten())
       
       # Gather all info to build a proper summary and string of results
       k='train' if not self.FLAGS.evaluate else 'test'
@@ -357,23 +382,28 @@ class PilotNode(object):
         sumvar[name[k]]=np.mean(losses_train[k])   
         result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
         if k=='o':
-          sumvar[name[k]+'_min']=np.min(losses_train[k])
-          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_min', np.min(losses_train[k]))
-          sumvar[name[k]+'_max']=np.max(losses_train[k])
-          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_max', np.max(losses_train[k]))
-          sumvar[name[k]+'_var']=np.var(losses_train[k])
-          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_var', np.var(losses_train[k]))
-      for k in self.accumlosses.keys():
+          sumvar[name[k]+'_min']=np.amin(np.asarray(losses_train[k]).flatten())
+          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_min', np.amin(np.asarray(losses_train[k]).flatten()))
+          sumvar[name[k]+'_max']=np.amax(np.asarray(losses_train[k]).flatten())
+          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_max', np.amax(np.asarray(losses_train[k]).flatten()))
+          sumvar[name[k]+'_var']=np.var(np.asarray(losses_train[k]).flatten())
+          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_var', np.var(np.asarray(losses_train[k]).flatten()))
+      for k in losses_test.keys():
         name={'t':'Loss_test_total','o':'Loss_test_output'}
-        sumvar[name[k]]=self.accumlosses[k]
-        result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k])
+        sumvar[name[k]]=np.mean(losses_test[k])   
+        result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_test[k]))
+
+      # for k in self.accumlosses.keys():
+      # name={'t':'Loss_test_total','o':'Loss_test_output'}
+      # sumvar[name[k]]=self.accumlosses[k]
+      # result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k])
       if self.replay_buffer.size > 10: 
         buffer_variances=self.replay_buffer.get_variance()
         for i in ['state','action','trgt']:
           sumvar[i+'_variance']=buffer_variances[i]
           result_string='{0}, {1}:{2:0.5e}'.format(result_string, i+'_variance',buffer_variances[i]) 
       if len(self.time_delay) > 2: 
-        result_string='{0} min: {1}, avg: {2}, max: {3}'.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
+        result_string='{0} min_delay: {1}, avg_delay: {2}, max_delay: {3}'.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       try:
         self.model.summarize(sumvar)
       except Exception as e:
@@ -396,7 +426,7 @@ class PilotNode(object):
         f.write(result_string)
         f.write('\n')
         f.close()
-      self.accumlosses = {}
+      # self.accumlosses = {}
       self.current_distance = 0
       self.last_pose = []
       self.furthest_point = 0

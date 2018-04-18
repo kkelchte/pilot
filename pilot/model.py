@@ -134,6 +134,9 @@ class Model(object):
           self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
         else:
           self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.,reduction=tf.losses.Reduction.NONE,loss_collection='')
+      self.max_loss = tf.placeholder(tf.float32)
+      self.loss = tf.clip_by_value(self.loss, tf.constant(0.,dtype=tf.float32), self.max_loss)
+      # self.loss = tf.clip_by_value(self.loss, tf.constant(0.,dtype=tf.float32), tf.constant(self.FLAGS.max_loss,dtype=tf.float32))
       tf.losses.add_loss(tf.reduce_mean(self.loss))
       self.total_loss = tf.losses.get_total_loss()
       # self.total_loss = self.loss
@@ -157,7 +160,8 @@ class Model(object):
         self.optimizer, 
         global_step=self.global_step, 
         gradient_multipliers={v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}, 
-        clip_gradient_norm=self.FLAGS.clip_grad)
+        clip_gradient_norm=self.FLAGS.clip_grad,
+        summarize_gradients=True)
 
   def forward(self, inputs, actions=[], targets=[]):
     '''run forward pass and return action prediction
@@ -172,6 +176,7 @@ class Model(object):
     if len(targets) != 0: # if target control is available, calculate loss
       tensors.append(self.loss)
       feed_dict[self.targets]=targets
+      feed_dict[self.max_loss]=self.FLAGS.max_loss
     
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
@@ -191,6 +196,7 @@ class Model(object):
     feed_dict[self.actions]=actions
     tensors.append(self.loss)
     feed_dict[self.targets]=targets
+    feed_dict[self.max_loss]=self.FLAGS.max_loss
     tensors.append(self.total_loss)
     
     #DEBUG

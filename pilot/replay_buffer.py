@@ -183,7 +183,25 @@ class ReplayBuffer(object):
       targets=np.asarray([e['trgt'] for e in self.buffer])
       mean_trgt_variance=np.mean(np.var(targets,axis=0))
       # print 'mean trgt variance: '+str(mean_state_variance)
-      return {'state':mean_state_variance, 'action':action_variance, 'trgt':mean_trgt_variance}  
+      return {'state':mean_state_variance, 'action':action_variance, 'trgt':mean_trgt_variance}
+
+    def get_experience(self,state,action,target):
+      for e in self.buffer:
+        check_state=np.array_equal(e['state'],state)
+        check_target=e['trgt']==target if isinstance(target,(int,float)) else np.array_equal(e['trgt'],target)
+        check_action=e['action']==action if isinstance(action,(int,float)) else np.array_equal(e['action'],action)
+        if check_state and check_target and check_action:
+          return e
+
+    def update_probabilities(self,states,actions,targets,costs):
+      # retrieve experiences from states
+      experiences=[]
+      for i in range(len(states)):
+        e=self.get_experience(states[i],actions[i],targets[i])
+        e['error']=costs[i]
+      self.preprocess() 
+
+      
 
 
 if __name__ == '__main__':
@@ -192,7 +210,7 @@ if __name__ == '__main__':
   parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, recency, min_variance")
   parser.add_argument("--network",default='coll_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--buffer_size", default=20, type=int, help="Define the number of experiences saved in the buffer.")
-  parser.add_argument("--batch_size",default=10,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--batch_size",default=4,type=int,help="Define the size of minibatches.")
   parser.add_argument("--action_bound", default=1.0, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
   
   FLAGS=parser.parse_args()  
@@ -200,8 +218,8 @@ if __name__ == '__main__':
   # FLAGS.network='coll_q_net'
   FLAGS.network='depth_q_net'
 
-  FLAGS.replay_priority="random_action"
-  FLAGS.prioritized_keeping=True
+  # FLAGS.replay_priority="td_error"
+  FLAGS.prioritized_keeping=False
 
   print "FLAGS.replay_priority: ",FLAGS.replay_priority
 
@@ -209,10 +227,10 @@ if __name__ == '__main__':
   buffer=ReplayBuffer(FLAGS)
   for i in range(20):
     action=np.random.choice([-1,0,1],p=[0.1,0.8,0.1])
-    buffer.add({'state':np.zeros((1,1))+100+i,
+    buffer.add({'state':np.zeros((2,2))+i,
                 'action':action,
                 'trgt':0,
-                'error':10,
+                'error':i,
                 'rnd':action==1})
   buffer.preprocess()
   print("\n content of the buffer: \n")
@@ -226,44 +244,47 @@ if __name__ == '__main__':
   for i in range(10):
     stime=time.time()
     state, action, trgt = buffer.sample_batch()
-    print("state: {1}, actions: {0}".format(np.asarray(action).flatten()[0],np.asarray(state).flatten()[0]))
-    prop_zero.append(state)
-
+    for s in state: print "state: ",s," cost ",0
+    # print("state: {1}, actions: {0}".format(np.asarray(action).flatten()[0],np.asarray(state).flatten()[0]))
+    prop_zero.append(sum(state))
+    buffer.update_probabilities(state,action,trgt, np.zeros((FLAGS.batch_size)))
+    buffer.to_string()
     # print("trgt 0: {0}, trgt 1: {1}".format(len(trgt[trgt==0]),len(trgt[trgt==1])))
     # prop_zero.append(float(len(trgt[trgt==0]))/FLAGS.batch_size)
     
     # prop_zero.append(float(len(action[action==0]))/FLAGS.batch_size)
     # print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime,
-     # float(len(action[action==-1]))/FLAGS.batch_size,float(len(action[action==0]))/FLAGS.batch_size,float(len(action[action==1]))/FLAGS.batch_size))
+    # float(len(action[action==-1]))/FLAGS.batch_size,float(len(action[action==0]))/FLAGS.batch_size,float(len(action[action==1]))/FLAGS.batch_size))
 
-  print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
+  print sum(prop_zero)
+  # print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
 
-  for i in range(50):
-    action=np.random.choice([-1,0,1],p=[0.1,0.8,0.1])
-    buffer.add({'state':np.zeros((1,1))+1000+i,
-                'action':action,
-                'trgt':0,
-                'error':10,
-                'rnd':action==1})
-  print("\n content of the buffer: \n")
-  buffer.to_string()
+  # for i in range(50):
+  #   action=np.random.choice([-1,0,1],p=[0.1,0.8,0.1])
+  #   buffer.add({'state':np.zeros((1,1))+1000+i,
+  #               'action':action,
+  #               'trgt':0,
+  #               'error':10,
+  #               'rnd':action==1})
+  # print("\n content of the buffer: \n")
+  # buffer.to_string()
   
-  prop_zero=[]
-  for i in range(10):
-    stime=time.time()
-    state, action, trgt = buffer.sample_batch()
-    print("state: {1}, actions: {0}".format(np.asarray(action).flatten()[0],np.asarray(state).flatten()[0]))
-    prop_zero.append(state)
+  # prop_zero=[]
+  # for i in range(10):
+  #   stime=time.time()
+  #   state, action, trgt = buffer.sample_batch()
+  #   print("state: {1}, actions: {0}".format(np.asarray(action).flatten()[0],np.asarray(state).flatten()[0]))
+  #   prop_zero.append(state)
     
-    # print("trgt 0: {0}, trgt 1: {1}".format(len(trgt[trgt==0]),len(trgt[trgt==1])))
-    # prop_zero.append(float(len(trgt[trgt==0]))/FLAGS.batch_size)
+  #   # print("trgt 0: {0}, trgt 1: {1}".format(len(trgt[trgt==0]),len(trgt[trgt==1])))
+  #   # prop_zero.append(float(len(trgt[trgt==0]))/FLAGS.batch_size)
     
-    # prop_zero.append(float(len(action[action==0]))/FLAGS.batch_size)
-    # print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime, 
-                                                                                                    # float(len(action[action==-1]))/FLAGS.batch_size, 
-                                                                                                    # float(len(action[action==0]))/FLAGS.batch_size, 
-                                                                                                    # float(len(action[action==1]))/FLAGS.batch_size))
-  print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
+  #   # prop_zero.append(float(len(action[action==0]))/FLAGS.batch_size)
+  #   # print("time to sample: {0:f}s, proportion of labels -1: {1}, proportion of labels 0: {2}, proportion of labels 1: {3}".format(time.time()-stime, 
+  #                                                                                                   # float(len(action[action==-1]))/FLAGS.batch_size, 
+  #                                                                                                   # float(len(action[action==0]))/FLAGS.batch_size, 
+  #                                                                                                   # float(len(action[action==1]))/FLAGS.batch_size))
+  # print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
   
   # print("\n sampled batch normalized \n")
   # for i in range(6):

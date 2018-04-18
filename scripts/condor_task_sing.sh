@@ -143,7 +143,8 @@ blacklist=" && (machineowner == \"Visics\") && \
           (machine != \"garnet.esat.kuleuven.be\") && \
       	  (machine != \"estragon.esat.kuleuven.be\") && \
           (machine != \"spinel.esat.kuleuven.be\") && \
-	        (machine != \"diamond.esat.kuleuven.be\")"
+          (machine != \"diamond.esat.kuleuven.be\") && \
+	        (machine != \"ricotta.esat.kuleuven.be\")"
 
 # greenlist=""
 # greenlist=" && ((machine == \"citrine.esat.kuleuven.be\") || \

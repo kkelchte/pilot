@@ -153,6 +153,9 @@ def main(_):
 
   parser.add_argument("--loss",default='absolute',type=str, help="Define the loss: mse, huber or absolute")
 
+  parser.add_argument("--max_loss", default=100, type=float, help= "Define the maximum loss before it is clipped.")
+  parser.add_argument("--clip_loss_to_max",action='store_true', help="Over time, allow only smaller losses by clipping the maximum allowed loss to the lowest maximum loss.")
+
   # ===========================
   #   Replay Parameters
   # ===========================
@@ -180,6 +183,7 @@ def main(_):
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions used at the forward pass to evaluate a state.")
   parser.add_argument("--action_smoothing",action='store_true', help="Define whether the actions should be sampled uniformly within the bin to represent better the continuous actions space.")
 
+  parser.add_argument("--validate_online",action='store_true', help="Use intermediate test runs as a validation set in replay buffer from which a validation loss can be calculated.")
   parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
   parser.add_argument("--show_depth",action='store_false', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 
