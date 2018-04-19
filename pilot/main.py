@@ -151,7 +151,7 @@ def main(_):
   # parser.add_argument("--no_batchnorm_learning",action='store_false', help="In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
   parser.add_argument("--initializer",default='xavier',type=str, help="Define the initializer: xavier or uniform [-init_scale, init_scale]")
 
-  parser.add_argument("--loss",default='absolute',type=str, help="Define the loss: mse, huber or absolute")
+  parser.add_argument("--loss",default='absolute',type=str, help="Define the loss: mse, huber, ce or absolute")
 
   parser.add_argument("--max_loss", default=100, type=float, help= "Define the maximum loss before it is clipped.")
   parser.add_argument("--clip_loss_to_max",action='store_true', help="Over time, allow only smaller losses by clipping the maximum allowed loss to the lowest maximum loss.")

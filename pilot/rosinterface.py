@@ -241,8 +241,7 @@ class PilotNode(object):
       # action=0
       action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else 0.3*noise_sample[0]
       random=True #needed for random_action replay priority
-    else:
-      if self.FLAGS.epsilon != 0: #apply epsilon greedy policy
+    elif not self.FLAGS.evaluate and self.FLAGS.epsilon != 0: #apply epsilon greedy policy
         # calculate decaying epsilon
         random_action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else 0.3*noise_sample[0]
         epsilon=min([1, self.FLAGS.epsilon*np.exp(-self.FLAGS.epsilon_decay*(self.runs['train']+1))])
