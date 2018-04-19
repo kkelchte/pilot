@@ -118,6 +118,7 @@ def main(_):
   # ===========================
   #   Data Parameters
   # ===========================
+  parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
   parser.add_argument("--dataset", default="doshico", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")

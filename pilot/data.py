@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 
 import argparse
 
+import h5py
+
 #import skimage
 #import skimage.transform
 #from skimage import io
@@ -38,25 +40,29 @@ def load_set(data_type):
     print('Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
     return []
 
+  # open text file with list of data directories corresponding to the datatype
   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
-  lst_runs = [ l.strip() for l in f.readlines() if len(l) > 2]
+  runs = [ l.strip() for l in f.readlines() if len(l) > 2]
   
-  for run_dir in lst_runs:
+  for run_dir in runs:
     print(run_dir)
     
-    imgs_jpg=listdir(join(run_dir,'RGB'))
-    
+    ### Collect RGB as paths to image files
+    imgs_jpg=listdir(join(run_dir,'RGB'))    
     # get list of all image numbers available in listdir
     num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg])
     assert len(num_imgs)!=0 , IOError('no images in {0}: {1}'.format(run_dir,len(imgs_jpg)))
     if not isfile(join(run_dir,'RGB','{0:010d}.jpg'.format(num_imgs[-1]))):
       print('ERROR:',run_dir,' imgnum: ',num_imgs[-1])
-    # parse control data  
+
+    ### Collect Control as 1 yaw turn value
     ctr_file = open(join(run_dir,FLAGS.control_file),'r')
     control_file_list = ctr_file.readlines()
     # cut last lines to avoid emtpy lines
     while len(control_file_list[-1])<=1 : control_file_list=control_file_list[:-1]
     control_parsed = [(int(ctr.strip().split(' ')[0]),float(ctr.strip().split(' ')[6])) for ctr in control_file_list]
+
+    ### Synchronize control and RGB frames
     def sync_control():
       control_list = []
       corresponding_imgs = []
@@ -75,7 +81,7 @@ def load_set(data_type):
     num_imgs, control_list = sync_control()
     assert len(num_imgs) == len(control_list), "Length of number of images {0} is not equal to number of control {1}".format(len(num_imgs),len(control_list))
     
-    # Add depth links if files exist
+    ### Collect depth as paths to image files
     depth_list = [] 
     if FLAGS.auxiliary_depth:
       try:
@@ -97,7 +103,40 @@ def load_set(data_type):
         num_imgs = num_imgs[:len(depth_list)]
         control_list = control_list[:len(depth_list)]
         assert len(num_imgs) == len(depth_list), "Length of input(imags,control,depth) is not equal"    
+    
+    ### Add list of RGB images, controls and depth images to the dataset
     set_list.append({'name':run_dir, 'num_imgs':num_imgs, 'controls':control_list, 'depths':depth_list})
+  f.close()
+  if len(set_list)==0:
+    print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
+  return set_list
+
+def load_set_hdf5(data_type):
+  """Load a type (train, val or test) of set in the set_list
+  as a tuple: first tuple element the directory of the fligth 
+  and the second the number of images taken in that flight
+  """
+  set_list = []
+  if not os.path.exists(join(datasetdir, data_type+'_set.txt')):
+    print('Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
+    return []
+
+  # open text file with list of data directories corresponding to the datatype
+  f = open(join(datasetdir, data_type+'_set.txt'), 'r')
+  runs={} #dictionary with for each parent directory a list of all folders related to this datatype
+  for r in sorted([ l.strip() for l in f.readlines() if len(l) > 2]):
+    if os.path.dirname(r) in runs.keys():
+      runs[os.path.dirname(r)].append(os.path.basename(r))  
+    else :
+      runs[os.path.dirname(r)] = [os.path.basename(r)]     
+  for directory in runs.keys():
+    data_file = h5py.File(directory+'/data.hdf5', 'r')
+    for run in data_file.keys():
+      set_list.append({'name':directory+'/'+str(run), 
+                       'images':data_file[run]['RGB'][:],
+                       'depths':data_file[run]['Depth'][:],
+                       'controls':data_file[run]['control_info'][:]})
+    data_file.close()
   f.close()
   if len(set_list)==0:
     print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
@@ -109,20 +148,20 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   FLAGS=_FLAGS
   # stime = time.time()
   # some startup settings
-  # np.random.seed(FLAGS.random_seed)
-  # tf.set_random_seed(FLAGS.random_seed)
   random.seed(FLAGS.random_seed)
 
   if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
   datasetdir = join(FLAGS.data_root, FLAGS.dataset)
   
-  train_set = load_set('train')
-  val_set=load_set('val')
-  test_set=load_set('test')
+  train_set = load_set('train') if not FLAGS.hdf5 else load_set_hdf5('train')
+  val_set=load_set('val') if not FLAGS.hdf5 else load_set_hdf5('val')
+  # test_set=load_set('test') if not FLAGS.hdf5 else load_set_hdf5('test')
+  test_set=[]
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
+  import pdb; pdb.set_trace()
+
   im_size=size
   de_size = size_depth
-
   
 def generate_batch(data_type):
   """ 
@@ -247,13 +286,15 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
   parser.add_argument("--normalize_data", action='store_true', help="Define wether the collision tags 0 or 1 are normalized in a batch.")
-  parser.add_argument("--dataset", default="canyon_rl_turtle_collision_free", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="doshico", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--action_bound", default=1, type=float, help="Bound the action space between -b and b")
   parser.add_argument("--auxiliary_depth", action='store_true', help="Define wether network is trained with auxiliary depth prediction.")
   parser.add_argument("--n_fc", action='store_true', help="Define wether network uses 3 concatenated consecutive frames.")
+  parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
+
 
   parser.add_argument("--network",default='depth_q_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
