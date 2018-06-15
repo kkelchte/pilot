@@ -41,7 +41,7 @@ def run_episode(data_type, sumvar, model):
       elif data_type=='val' or data_type=='test':
         _, losses = model.forward(inputs, actions=actions, targets=targets)
       try:
-        output_loss.append(losses['o'])
+        output_loss.extend(losses['o']) # for each element in the batch
         tot_loss.append(losses['t'])
       except KeyError:
         pass
@@ -52,10 +52,14 @@ def run_episode(data_type, sumvar, model):
     calculation_time+=(time.time()-start_calc_time)
     start_data_time = time.time()
   if len(tot_loss)!=0: sumvar['Loss_'+data_type+'_total']=np.mean(tot_loss) 
-  if len(output_loss)!=0: sumvar['Loss_'+data_type+'_output']=np.mean(output_loss)   
+  if len(output_loss)!=0: 
+    sumvar['Loss_'+data_type+'_output']=np.mean(output_loss)   
+    sumvar['Loss_'+data_type+'_output_min']=np.min(output_loss)   
+    sumvar['Loss_'+data_type+'_output_max']=np.max(output_loss)   
+    sumvar['Loss_'+data_type+'_output_var']=np.var(output_loss)   
   if len(depth_predictions) != 0: sumvar['depth_predictions']=depth_predictions
-  print('>>{0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(data_type.upper(),tuple(time.localtime()[0:5]),
-    tools.print_dur(data_loading_time),tools.print_dur(calculation_time)))
+  print('>>{4}: {0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(data_type.upper(),tuple(time.localtime()[0:5]),
+    tools.print_dur(data_loading_time),tools.print_dur(calculation_time), FLAGS.log_tag))
   if data_type == 'val' or data_type == 'test':
     # print('{}'.format(str([k+" : "+sumvar[k] for k in sumvar if k != 'depth_predictions'])))
     msg=str(["{0} : {1}".format(k,sumvar[k]) for k in sumvar.keys() if k != 'depth_predictions'])
@@ -81,8 +85,20 @@ def run(_FLAGS, model, start_ep=0):
 
     # ----------- validate episode
     #sumvar = run_episode('val', {}, model)
+
+    # !! TO REMOVE:
+    change_back=False
+    if FLAGS.depth_directory=='Depth_predicted':
+      FLAGS.depth_directory='Depth'
+      change_back=True
+    # !! TO REMOVE
+    
     sumvar = run_episode('val', sumvar, model)
     
+    # !! TO REMOVE
+    if change_back: FLAGS.depth_directory='Depth_predicted'
+    # !! TO REMOVE
+
     # ----------- write summary
     try:
       model.summarize(sumvar)

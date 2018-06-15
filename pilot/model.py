@@ -17,11 +17,11 @@ Build basic NN model
 """
 class Model(object):
  
-  def __init__(self, FLAGS, session, action_dim, prefix='model', device='/gpu:0', depth_input_size=(55,74)):
+  def __init__(self, FLAGS, session, prefix='model', device='/gpu:0', depth_input_size=(55,74)):
     '''initialize model
     '''
     self.sess = session
-    self.action_dim = action_dim
+    self.action_dim = FLAGS.action_dim
     self.depth_input_size = depth_input_size
     self.prefix = prefix
     self.device = device
@@ -33,7 +33,7 @@ class Model(object):
 
     
     #define the input size of the network input
-    if self.FLAGS.network =='depth_q_net' or self.FLAGS.network == 'coll_q_net':
+    if self.FLAGS.network == 'depth_q_net' or self.FLAGS.network == 'coll_q_net':
       # Use NCHW instead of NHWC data input because this is faster on GPU.    
       self.input_size = [None, depth_q_net.depth_q_net.default_image_size[self.FLAGS.depth_multiplier], 
         depth_q_net.depth_q_net.default_image_size[self.FLAGS.depth_multiplier], 3]
@@ -51,9 +51,7 @@ class Model(object):
       variables_to_restore={'MobilenetV1/'+v.name[9:-2]:v for v in variables_to_restore}
     else: #If continue training
       variables_to_restore = slim.get_variables_to_restore()
-      # variables_to_restore = slim.get_variables_to_restore(exclude=["global_step"])
-      # variables_to_restore={'MobilenetV1/'+v.name[9:-2]:v for v in variables_to_restore}
-      
+    
     # get latest folder out of training directory if there is no checkpoint file
     if self.FLAGS.checkpoint_path[0]!='/':
       self.FLAGS.checkpoint_path = self.FLAGS.summary_dir+self.FLAGS.checkpoint_path
@@ -115,7 +113,7 @@ class Model(object):
           self.predictions_eval, _ = depth_q_net.depth_q_net(is_training=False, reuse = True,**args_for_model)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
-      
+  
   def define_loss(self):
     '''tensor for calculating the loss
     '''
@@ -125,19 +123,23 @@ class Model(object):
         weights=tf.multiply(tf.cast(tf.greater(self.targets,self.FLAGS.min_depth), tf.float32),tf.cast(tf.less(self.targets,self.FLAGS.max_depth), tf.float32))
         self.weights=-1*tf.nn.pool(tf.expand_dims(-1*weights,3), [2,2], "MAX",padding="SAME")
         if self.FLAGS.loss == 'huber':
-          self.loss = tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+          self.loss = tf.reduce_mean(tf.losses.huber_loss(self.targets, self.predictions_train, weights=self.weights[:,:,:,0],reduction=tf.losses.Reduction.NONE,loss_collection=''),axis=[1,2])
         elif self.FLAGS.loss == 'absolute':
-          self.loss = tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+          self.loss = tf.reduce_mean(tf.losses.absolute_difference(self.targets, self.predictions_train, weights=self.weights[:,:,:,0],reduction=tf.losses.Reduction.NONE,loss_collection=''),axis=[1,2])
         else: 
-          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0] if self.FLAGS.network=='depth_q_net' else 1.)
+          self.loss = tf.reduce_mean(tf.losses.mean_squared_error(self.predictions_train, self.targets, weights=self.weights[:,:,:,0],reduction=tf.losses.Reduction.NONE,loss_collection=''),axis=[1,2])
       else:
         if self.FLAGS.loss == 'ce':
           # cross entropy loss:
-          self.loss = -tf.reduce_mean(tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train)))
-          tf.losses.add_loss(self.loss)
+          self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
         else:
-          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.)
+          self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.,reduction=tf.losses.Reduction.NONE,loss_collection='')
+      self.max_loss = tf.placeholder(tf.float32)
+      self.loss = tf.clip_by_value(self.loss, tf.constant(0.,dtype=tf.float32), self.max_loss)
+      # self.loss = tf.clip_by_value(self.loss, tf.constant(0.,dtype=tf.float32), tf.constant(self.FLAGS.max_loss,dtype=tf.float32))
+      tf.losses.add_loss(tf.reduce_mean(self.loss))
       self.total_loss = tf.losses.get_total_loss()
+      # self.total_loss = self.loss
       
   def define_train(self):
     '''applying gradients to the weights from normal loss function
@@ -153,11 +155,13 @@ class Model(object):
       # name (or variable) to a scaling coefficient:
       # Take possible a smaller step (gradient multiplier) for the feature extracting part
       mobile_variables = [v for v in tf.global_variables() if (v.name.find('Adadelta')==-1 and v.name.find('BatchNorm')==-1 and v.name.find('Adam')==-1  and v.name.find('q_depth')==-1 and v.name.find('q_coll')==-1)]
+      # self.train_op = slim.learning.create_train_op(self.total_loss, 
       self.train_op = slim.learning.create_train_op(self.total_loss, 
         self.optimizer, 
         global_step=self.global_step, 
         gradient_multipliers={v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}, 
-        clip_gradient_norm=self.FLAGS.clip_grad)
+        clip_gradient_norm=self.FLAGS.clip_grad,
+        summarize_gradients=True)
 
   def forward(self, inputs, actions=[], targets=[]):
     '''run forward pass and return action prediction
@@ -172,6 +176,7 @@ class Model(object):
     if len(targets) != 0: # if target control is available, calculate loss
       tensors.append(self.loss)
       feed_dict[self.targets]=targets
+      feed_dict[self.max_loss]=self.FLAGS.max_loss
     
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
@@ -191,6 +196,7 @@ class Model(object):
     feed_dict[self.actions]=actions
     tensors.append(self.loss)
     feed_dict[self.targets]=targets
+    feed_dict[self.max_loss]=self.FLAGS.max_loss
     tensors.append(self.total_loss)
     
     #DEBUG
@@ -201,34 +207,6 @@ class Model(object):
     _ = results.pop(0) # train_op
     losses['o']=results.pop(0) # control loss or Q-loss 
     losses['t'] = results.pop(0) # total loss
-
-    # weights=results.pop(0)[:,:,:,0]
-    # print("targets: {}".format(targets))
-    # print("weights: {}".format(weights))
-    # print("min target: {}".format(np.amin(targets)))
-    # print("max target: {}".format(np.amax(targets)))
-
-    # plt.subplot(331)
-    # plt.imshow(targets[0])
-    # plt.subplot(332)
-    # plt.imshow(targets[1])
-    # plt.subplot(333)
-    # plt.imshow(targets[2])
-    # plt.subplot(334)
-    # plt.imshow(weights[0])
-    # plt.subplot(335)
-    # plt.imshow(weights[1])
-    # plt.subplot(336)
-    # plt.imshow(weights[2])
-    # plt.subplot(337)
-    # plt.imshow(inputs[0])
-    # plt.subplot(338)
-    # plt.imshow(inputs[1])
-    # plt.subplot(339)
-    # plt.imshow(inputs[2])
-    # plt.show()  
-
-    # import pdb; pdb.set_trace()
 
     return losses
 
@@ -248,13 +226,19 @@ class Model(object):
       for l in ['total', 'output']:
         name='Loss_{0}_{1}'.format(t,l)
         self.add_summary_var(name)
+        if l == 'output':
+          for n in ['min','max','var']:
+            name='Loss_{0}_{1}_{2}'.format(t,l,n)
+            self.add_summary_var(name)
     for d in ['current','furthest']:
       for t in ['train', 'test']:
         for w in ['','sandbox','forest','canyon','esat_corridor_v1', 'esat_corridor_v2']:
           name = 'Distance_{0}_{1}'.format(d,t)
           if len(w)!=0: name='{0}_{1}'.format(name,w)
           self.add_summary_var(name)
-      
+    for i in ['state','action','trgt']:
+      name = i+'_variance'
+      self.add_summary_var(name)      
     if self.FLAGS.plot_depth:
       name="depth_predictions"
       dep_images = tf.placeholder(tf.uint8, [1, 400, 400, 3])
