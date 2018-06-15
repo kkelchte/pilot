@@ -19,6 +19,7 @@ from model import Model
 from ou_noise import OUNoise
 import tools
 
+from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import CompressedImage
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
@@ -73,10 +74,10 @@ class PilotNode(object):
     # else: # if you fly in simulation, listen to supervised vel to get the target control from the BA expert
     #   # rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)
     # the control topic is defined in the drone_sim yaml file
-    self.action_pub=rospy.Publisher(rospy.get_param('control'), Twist, queue_size=1)
+    self.action_pub=rospy.Publisher('/nn_vel', Twist, queue_size=1)
 
-    if rospy.has_param('ready'): rospy.Subscriber(rospy.get_param('ready'), Empty, self.ready_callback)
-    if rospy.has_param('finished'): rospy.Subscriber(rospy.get_param('finished'), Empty, self.finished_callback)
+    rospy.Subscriber('/nn_start', Empty, self.ready_callback)
+    rospy.Subscriber('/nn_stop', Empty, self.finished_callback)
 
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
@@ -85,7 +86,11 @@ class PilotNode(object):
       else:
         rospy.Subscriber(image_topic, Image, self.image_callback)
     if rospy.has_param('depth_image'):
-        rospy.Subscriber(rospy.get_param('depth_image'), Image, self.depth_callback)
+      depth_topic = rospy.get_param('depth_image')
+      if 'scan' in depth_topic:
+        rospy.Subscriber(depth_topic, LaserScan, self.scan_depth_callback)
+      else:
+        rospy.Subscriber(depth_topic, Image, self.depth_callback)
     if not self.FLAGS.real: # initialize the replay buffer
       self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed)
       self.validation_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed) if self.FLAGS.validate_online else None
@@ -124,9 +129,8 @@ class PilotNode(object):
         self.FLAGS.evaluate = rospy.get_param('evaluate')
         print '--> set evaluate to: {}'.format(self.FLAGS.evaluate)
       if rospy.has_param('world_name') :
-        self.world_name = os.path.basename(rospy.get_param('world_name').split('.')[0])
-        if 'sandbox' in self.world_name: self.world_name='sandbox'
-    
+        self.world_name = rospy.get_param('world_name')
+        
   def gt_callback(self, data):
     """Callback function that keeps track of positions for logging"""
     if not self.ready: return
@@ -138,12 +142,12 @@ class PilotNode(object):
     self.furthest_point=max([self.furthest_point, np.sqrt(current_pos[0]**2+current_pos[1]**2)])
     
     # Get pose (rotation and translation) [DEPRECATED: USED FOR ODOMETRY]
-    quaternion = (data.pose.pose.orientation.x,
-      data.pose.pose.orientation.y,
-      data.pose.pose.orientation.z,
-      data.pose.pose.orientation.w)
-    self.last_pose = transformations.quaternion_matrix(quaternion) # orientation of current frame relative to global frame
-    self.last_pose[0:3,3]=current_pos
+    # quaternion = (data.pose.pose.orientation.x,
+    #   data.pose.pose.orientation.y,
+    #   data.pose.pose.orientation.z,
+    #   data.pose.pose.orientation.w)
+    # self.last_pose = transformations.quaternion_matrix(quaternion) # orientation of current frame relative to global frame
+    # self.last_pose[0:3,3]=current_pos
 
   def process_rgb(self, msg):
     """ Convert RGB serial data to opencv image of correct size"""
@@ -197,6 +201,19 @@ class PilotNode(object):
 
       # de[de<0.001]=0      
       return de
+
+  def process_scan(self, msg):
+    """Preprocess serial scan: clip horizontal field of view, clip at 1's and ignore 0's, smooth over 4 bins."""
+    # ALLERT: field of view should follow camera: In case of wide-angle camera this corresponds from -60 to 60. 
+    ranges=[1 if r > 1 or r==0 else r for r in msg.ranges]
+    # clip left 45degree range from 0:45 reversed with right 45degree range from the last 45:
+    ranges=list(reversed(ranges[:45]))+list(reversed(ranges[-45:]))
+    # add some smoothing by averaging over 4 neighboring bins
+    ranges = [sum(ranges[i*4:i*4+4])/4 for i in range(int(len(ranges)/4))]
+    # make it a numpy array
+    de = np.asarray(ranges)
+    print de.shape
+    return de
     
   def compressed_image_callback(self, msg):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
@@ -221,7 +238,12 @@ class PilotNode(object):
     im = self.process_depth(msg)
     if len(im)!=0:
       self.depth = im #(64,) 
-    
+  
+  def scan_depth_callback(self, msg):
+    im = self.process_scan(msg)
+    if len(im)!=0:
+      self.depth = im #(64,)
+
   def process_input(self, im):
     """Process the inputs: images, targets, auxiliary tasks
       Predict control based on the inputs.
@@ -272,7 +294,7 @@ class PilotNode(object):
         # print("random: {0}, epsilon: {1}, action:{2}".format(random_action,epsilon,action))
         if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
-    print "rosinterface ", action
+    # print "rosinterface ", action
 
     ### SEND CONTROL (with possibly some noise)
     msg = Twist()
@@ -301,7 +323,6 @@ class PilotNode(object):
       
     # ADD EXPERIENCE REPLAY
     if ( not self.FLAGS.evaluate or self.FLAGS.validate_online) and not self.finished:
-
       if self.FLAGS.network=='depth_q_net':
         closest_action_index = np.argmin([np.abs(a-action) for a in actions])
         if len(self.prev_im)!= 0 and self.prev_action!=-100 and len(self.prev_prediction) != 0 and self.prev_weight != -1:
