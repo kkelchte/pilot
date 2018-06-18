@@ -68,7 +68,7 @@ class PilotNode(object):
     self.average_distances={'train':0, 'test':0} # running average over different runs
     # self.nfc_images =[] #used by n_fc networks for building up concatenated frames
     self.exploration_noise = OUNoise(4, 0, self.FLAGS.ou_theta,1)
-    if self.FLAGS.show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
+    if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
     # if self.FLAGS.real or self.FLAGS.off_policy: # publish on pilot_vel so it can be used by control_mapping when flying in the real world
     #   self.action_pub=rospy.Publisher('/tf_vel', Twist, queue_size=1)
     # else: # if you fly in simulation, listen to supervised vel to get the target control from the BA expert
@@ -154,7 +154,8 @@ class PilotNode(object):
     try:
       # Convert your ROS Image message to OpenCV2
       # changed to normal RGB order as i ll use matplotlib and PIL instead of opencv
-      img =bridge.imgmsg_to_cv2(msg, 'rgb8') 
+      img =bridge.imgmsg_to_cv2(msg) 
+      # img =bridge.imgmsg_to_cv2(msg, 'rgb8') 
     except CvBridgeError as e:
       print(e)
     else:
@@ -196,7 +197,7 @@ class PilotNode(object):
       # # values can be nan for when they are closer than 0.5m but than the evaluate node should
       # # kill the run anyway.
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
-      size = self.model.depth_input_size #(55,74)
+      size = self.model.output_size #(55,74)
       de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
 
       # de[de<0.001]=0      
@@ -211,8 +212,9 @@ class PilotNode(object):
     # add some smoothing by averaging over 4 neighboring bins
     ranges = [sum(ranges[i*4:i*4+4])/4 for i in range(int(len(ranges)/4))]
     # make it a numpy array
-    de = np.asarray(ranges)
-    print de.shape
+    de = np.asarray(ranges).reshape((1,-1))
+    if list(de.shape) != self.model.output_size: # reshape if necessary
+      de = sm.resize(de,self.model.output_size,order=1,mode='constant', preserve_range=True)
     return de
     
   def compressed_image_callback(self, msg):
@@ -237,12 +239,12 @@ class PilotNode(object):
   def depth_callback(self, msg):
     im = self.process_depth(msg)
     if len(im)!=0:
-      self.depth = im #(64,) 
+      self.depth = im
   
   def scan_depth_callback(self, msg):
     im = self.process_scan(msg)
     if len(im)!=0:
-      self.depth = im #(64,)
+      self.depth = im
 
   def process_input(self, im):
     """Process the inputs: images, targets, auxiliary tasks
@@ -318,7 +320,7 @@ class PilotNode(object):
 
     rec=time.time()
     
-    if self.FLAGS.show_depth and not self.finished:
+    if not self.FLAGS.dont_show_depth and not self.finished:
       self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
@@ -486,5 +488,3 @@ class PilotNode(object):
       self.prev_prediction=[]
       self.prev_weight=[]
       self.prev_random=False
-      
-

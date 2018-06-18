@@ -259,6 +259,7 @@ def depth_q_net(inputs,
                 reuse=None,
                 depth_multiplier=0.25,
                 dropout_keep_prob=0.5,
+                output_size=[55,74],
                 scope='DpthQnet'):
   """depth_q_net model for regression of depth as q value.
   Args:
@@ -275,7 +276,7 @@ def depth_q_net(inputs,
       able to reuse 'scope' must be given.
     scope: Optional variable_scope.
   Returns:
-    depth predictions: tensor of shape [batch_size, 55, 74]
+    depth predictions: tensor of shape [batch_size, 55, 74] or [batch_size, 1, 22]
     end_points: a dictionary from components of the network to the corresponding
       activation.
   Raises:
@@ -306,16 +307,15 @@ def depth_q_net(inputs,
         depth_feat = tf.concat([tf.reshape(net,[-1, int(depth_multiplier*1024)]),actions],axis=1)
         depth_feat=slim.fully_connected(depth_feat, 4096, tf.nn.relu)
         end_points[end_point] = depth_feat
-        # print("depth feat size: {}".format(depth_feat.get_shape().as_list()))
-
         
+        # output height 55 width 74 [drone]
+        # output: 21 [turtle]
         end_point = 'depth_fc_1'
-        depth_feat=slim.fully_connected(depth_feat, 55*74, tf.nn.relu)
+        depth_feat=slim.fully_connected(depth_feat, output_size[0]*output_size[1], tf.nn.relu)
         end_points[end_point] = depth_feat
 
-        # output height 55 width 74
         end_point = 'depth_reshaped'
-        depth_predictions=tf.reshape(depth_feat, [-1, 55, 74])
+        depth_predictions=tf.reshape(depth_feat, [-1, output_size[0], output_size[1]])
         end_points[end_point] = depth_predictions
 
   return depth_predictions, end_points
