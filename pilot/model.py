@@ -17,12 +17,12 @@ Build basic NN model
 """
 class Model(object):
  
-  def __init__(self, FLAGS, session, prefix='model', device='/gpu:0', depth_input_size=(55,74)):
+  def __init__(self, FLAGS, session, prefix='model', device='/gpu:0'):
     '''initialize model
     '''
     self.sess = session
     self.action_dim = FLAGS.action_dim
-    self.depth_input_size = depth_input_size
+    self.output_size = FLAGS.output_size
     self.prefix = prefix
     self.device = device
     
@@ -119,7 +119,7 @@ class Model(object):
     '''tensor for calculating the loss
     '''
     with tf.device(self.device):
-      self.targets = tf.placeholder(tf.float32, [None,self.depth_input_size[0],self.depth_input_size[1]] if self.FLAGS.network=='depth_q_net' else [None, 1])
+      self.targets = tf.placeholder(tf.float32, [None,self.output_size[0],self.output_size[1]] if self.FLAGS.network=='depth_q_net' else [None, 1])
       if self.FLAGS.network=='depth_q_net':
         weights=tf.multiply(tf.cast(tf.greater(self.targets,self.FLAGS.min_depth), tf.float32),tf.cast(tf.less(self.targets,self.FLAGS.max_depth), tf.float32))
         self.weights=-1*tf.nn.pool(tf.expand_dims(-1*weights,3), [2,2], "MAX",padding="SAME")

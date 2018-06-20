@@ -57,11 +57,6 @@ if [ ! -z "$TAG" ] ; then
 fi
 if [ ! -z "$MODELDIR" ] ; then
 	COMMAND+=(-m $MODELDIR)
-#   if [ $MODELDIR = 'mobilenet_025' ] ; then
-#     PARAMS+=(--continue_training False)
-#   fi
-# else 
-#   PARAMS+=(--scratch True)
 fi
 if [ ! -z "$NUMBER_OF_FLIGHTS" ] ; then
 	COMMAND+=(-n $NUMBER_OF_FLIGHTS)
