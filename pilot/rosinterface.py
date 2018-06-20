@@ -205,10 +205,12 @@ class PilotNode(object):
 
   def process_scan(self, msg):
     """Preprocess serial scan: clip horizontal field of view, clip at 1's and ignore 0's, smooth over 4 bins."""
-    # ALLERT: field of view should follow camera: In case of wide-angle camera this corresponds from -60 to 60. 
+    # field of view should follow camera: 
+    #    wide-angle camera: -60 to 60. 
+    #    normal camera: -35 to 35.
     ranges=[1 if r > 1 or r==0 else r for r in msg.ranges]
     # clip left 45degree range from 0:45 reversed with right 45degree range from the last 45:
-    ranges=list(reversed(ranges[:45]))+list(reversed(ranges[-45:]))
+    ranges=list(reversed(ranges[:self.FLAGS.field_of_view/2]))+list(reversed(ranges[-self.FLAGS.field_of_view/2:]))
     # add some smoothing by averaging over 4 neighboring bins
     ranges = [sum(ranges[i*4:i*4+4])/4 for i in range(int(len(ranges)/4))]
     # make it a numpy array
