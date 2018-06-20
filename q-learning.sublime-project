@@ -1,0 +1,28 @@
+{
+	"folders":
+	[
+		{
+			"path": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised"
+		},
+		{
+			"path": "."
+		},
+		{
+			"file_include_patterns":
+			[
+				".bashrc"
+			],
+			"folder_exclude_patterns":
+			[
+				"**/**"
+			],
+			"path": "/users/visics/kkelchte"
+		},
+		{
+			"path": "/users/visics/kkelchte/blogs/kkelchte.github.io"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots"
+		}
+	]
+}
