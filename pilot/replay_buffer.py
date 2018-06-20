@@ -39,8 +39,7 @@ class ReplayBuffer(object):
           self.buffer.popleft()
           self.buffer.append(experience)
     
-    def size(self):
-      
+    def size(self):  
       return self.count
     
     def sample_batch(self):

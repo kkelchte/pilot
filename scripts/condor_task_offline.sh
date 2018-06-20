@@ -64,15 +64,6 @@ COMMAND_OFFLINE=(${SCRIPT})
 if [ ! -z "$TAG" ] ; then
   COMMAND_OFFLINE+=(--log_tag ${TAG}/$(date +%F_%H%M))
 fi
-# if [ ! -z "$MODELDIR" ] ; then
-# 	COMMAND_OFFLINE+=(--checkpoint_path $MODELDIR)
-#   if [ $MODELDIR = 'mobilenet_025' ] ; then
-#     COMMAND_OFFLINE+=(--continue_training False)
-#   fi
-# else 
-#   COMMAND_OFFLINE+=(--scratch True)
-# fi
-# COMMAND_OFFLINE+=(--offline True)
 if [[ -n "$PARAMS" ]] ; then
  	echo ${PARAMS[@]}
  	for p in "${PARAMS[@]}" ; do 
