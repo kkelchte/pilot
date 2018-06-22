@@ -54,7 +54,7 @@ def load_set(data_type):
       print('ERROR:',run_dir,' imgnum: ',num_imgs[-1])
     # parse control data  
     ctr_file = open(join(run_dir,FLAGS.control_file),'r')
-    control_file_list = ctr_file.readlines()
+    control_file_list = ctr_file.readlines()[2:]
     # cut last lines to avoid emtpy lines
     while len(control_file_list[-1])<=1 : control_file_list=control_file_list[:-1]
     control_parsed = [(int(ctr.strip().split(' ')[0]),float(ctr.strip().split(' ')[6])) for ctr in control_file_list]
@@ -106,8 +106,24 @@ def load_set(data_type):
         depth_list.append(smallest_depth)
       num_imgs = num_imgs[:len(depth_list)]
       control_list = control_list[:len(depth_list)]
-      assert len(num_imgs) == len(depth_list), "Length of input(imags,control,depth) is not equal"    
-    set_list.append({'name':run_dir, 'num_imgs':num_imgs, 'controls':control_list, 'depths':depth_list, 'collisions':collision_list})
+      assert len(num_imgs) == len(depth_list), "Length of input(imags,control,depth) is not equal"
+
+    # Add scan information if file exist
+    scan_list = []
+    if os.path.isfile(join(run_dir,'scan.txt')):
+      scans = open(join(run_dir,'scan.txt'),'r').readlines()[2:]
+      ranges = np.zeros((len(scans),int(FLAGS.field_of_view/FLAGS.smooth_scan)))
+      print ranges.shape
+      for si,s in enumerate(scans):
+        def check(r):
+          """clip at FLAGS.max_depth, set 0's to nan"""
+          return min(r,FLAGS.max_depth) if r!=0 else np.nan
+        # clip left FOV/2 range from 0:FOV/2 reversed with right FOV/2degree range from the last FOV/2:
+        scan=list(reversed([ check(float(r)) for r in s[12:-2].split(',')[0:FLAGS.field_of_view/2]]))+list(reversed([check(float(r)) for r in s[12:-2].split(',')[-FLAGS.field_of_view/2:]]))
+        # add some smoothing by averaging over 4 neighboring bins
+        ranges[si]=[np.nanmean(scan[i*FLAGS.smooth_scan:i*FLAGS.smooth_scan+FLAGS.smooth_scan]) for i in range(int(len(scan)/FLAGS.smooth_scan))]
+        
+    set_list.append({'name':run_dir, 'num_imgs':num_imgs, 'controls':control_list, 'depths':depth_list, 'collisions':collision_list, 'scans':ranges})
   f.close()
   if len(set_list)==0:
     print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
@@ -257,7 +273,13 @@ def generate_batch(data_type):
           # else:
           im, de = load_rgb_depth_image(run_ind, frame_ind)
 
-              
+          # load scan
+          scan = []
+          try: #load next scan 
+            scan = data_set[run_ind]['scans'][frame_ind+1]
+          except:
+            pass
+
           ctr = data_set[run_ind]['controls'][frame_ind]
           # clip control avoiding values larger than 1
           ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
@@ -266,8 +288,8 @@ def generate_batch(data_type):
             col = data_set[run_ind]['collisions'][frame_ind]
             batch.append({'img':im, 'ctr':ctr, 'depth':de, 'trgt':col})
           else:
-            # append rgb image, control and depth to batch
-            batch.append({'img':im, 'ctr':ctr, 'depth':de})
+            # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
+            batch.append({'img':im, 'ctr':ctr, 'depth':de if len(scan) == 0 else scan})
           checklist.append(True)
         except IndexError as e:
           # print(e)
@@ -307,6 +329,10 @@ if __name__ == '__main__':
   parser.add_argument("--control_file",default='control_info.txt',type=str,help="Control file.")
   parser.add_argument("--depth_directory",default='Depth',type=str,help="Depth directory.")
   
+  parser.add_argument("--field_of_view", default=104, type=int, help="The field of view of the camera cuts the depth scan in the range visible for the camera. Value should be even. Normal: 72 (-36:36), Wide-Angle: 120 (-60:60)")
+  parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings.")
+  parser.add_argument("--max_depth", default=6, type=float, help="clip depth loss with weigths to focus on correct depth range.")
+
   # parser.add_argument("--collision_file",default='collision_info.txt',type=str,help="define file with collision labels")
   
   FLAGS=parser.parse_args()  
@@ -322,6 +348,9 @@ if __name__ == '__main__':
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
+    scans = [_['depth'] for _ in batch]
+    
+    import pdb; pdb.set_trace()
     pass
     # actions=[_['ctr'] for _ in batch]
     # print("avg: {0},var: {1}".format(np.mean(actions), np.var(actions)))

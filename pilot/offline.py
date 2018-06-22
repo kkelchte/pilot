@@ -33,7 +33,7 @@ def run_episode(data_type, sumvar, model):
       inputs = np.array([_['img'] for _ in batch])
       actions = np.array([[_['ctr']] for _ in batch])
       if FLAGS.network == 'depth_q_net':
-        targets = np.array([_['depth'] for _ in batch]).reshape((-1,55,74))
+        targets = np.array([_['depth'] for _ in batch]).reshape((-1,FLAGS.output_size[0],FLAGS.output_size[1]))
       else:
         targets = np.array([_['trgt'] for _ in batch]).reshape((-1,1))
       if data_type=='train':
@@ -86,19 +86,8 @@ def run(_FLAGS, model, start_ep=0):
     # ----------- validate episode
     #sumvar = run_episode('val', {}, model)
 
-    # !! TO REMOVE:
-    change_back=False
-    if FLAGS.depth_directory=='Depth_predicted':
-      FLAGS.depth_directory='Depth'
-      change_back=True
-    # !! TO REMOVE
-    
     sumvar = run_episode('val', sumvar, model)
     
-    # !! TO REMOVE
-    if change_back: FLAGS.depth_directory='Depth_predicted'
-    # !! TO REMOVE
-
     # ----------- write summary
     try:
       model.summarize(sumvar)

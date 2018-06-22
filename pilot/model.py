@@ -107,7 +107,8 @@ class Model(object):
         args_for_model={'inputs':self.inputs,
                         'actions':self.actions,
                         'depth_multiplier':self.FLAGS.depth_multiplier,
-                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob} 
+                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob,
+                        'output_size':self.output_size} 
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=True,**args_for_scope)):
           self.predictions_train, self.endpoints = depth_q_net.depth_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=False, **args_for_scope)):
