@@ -130,6 +130,7 @@ class PilotNode(object):
         print '--> set evaluate to: {}'.format(self.FLAGS.evaluate)
       if rospy.has_param('world_name') :
         self.world_name = rospy.get_param('world_name')
+      time.sleep(1) # wait one second, otherwise create_dataset can't follow...
         
   def gt_callback(self, data):
     """Callback function that keeps track of positions for logging"""
