@@ -328,28 +328,10 @@
 	"buffers":
 	[
 		{
-			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-06-14_unit_tests_simulation_supervised.md",
+			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 			"settings":
 			{
-				"buffer_size": 6779,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/users/visics/kkelchte/.bashrc",
-			"settings":
-			{
-				"buffer_size": 12040,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
-			"settings":
-			{
-				"buffer_size": 4394,
+				"buffer_size": 20489,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -403,9 +385,11 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
+		"/users/visics/kkelchte/.bashrc",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-06-14_unit_tests_simulation_supervised.md",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_simulation_script.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/show_scan_prediction.py",
-		"/users/visics/kkelchte/.bashrc",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2017-12-13_docker_build.md",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-06-06_domain_free_collision_avoidance.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/q-learning.sublime-project",
@@ -528,9 +512,7 @@
 		"/esat/qayd/kkelchte/docker_home/tensorflow/log/doshico_11/condor/condor_doshico_11__2017-12-13_1541.dockout",
 		"/esat/qayd/kkelchte/docker_home/tensorflow/log/doshico_11/xterm_python_2017-12-13_144206",
 		"/users/visics/kkelchte/condor/condor_task_docker.sh",
-		"/users/visics/kkelchte/condor/prescript_sing.sh",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/log/doshico_41/condor/condor_doshico_41__2017-12-13_1429.log",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/log/doshico_40/condor/condor_doshico_40__2017-12-13_1345.err"
+		"/users/visics/kkelchte/condor/prescript_sing.sh"
 	],
 	"find":
 	{
@@ -572,88 +554,32 @@
 			[
 				{
 					"buffer": 0,
-					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-06-14_unit_tests_simulation_supervised.md",
+					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6779,
+						"buffer_size": 20489,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6288,
-								6288
+								20225,
+								20225
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 1215.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/users/visics/kkelchte/.bashrc",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 12040,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								12037,
-								12037
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 2749.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 4394,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/XML/XML.sublime-syntax",
+							"syntax": "Packages/Python/Python.sublime-syntax",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 240.0,
+						"translation.y": 5085.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -707,6 +633,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"run c",
+				"simulation_supervised/simulation_supervised/python/run_script.py"
+			],
 			[
 				".ba",
 				"kkelchte/.bashrc"
@@ -1214,10 +1144,6 @@
 			[
 				"starpysi",
 				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/start_python_sing.sh"
-			],
-			[
-				"evalmod",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/evaluate_model.sh"
 			]
 		],
 		"width": 0.0
