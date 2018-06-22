@@ -331,7 +331,7 @@
 			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 			"settings":
 			{
-				"buffer_size": 20489,
+				"buffer_size": 20492,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -558,15 +558,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 20489,
+						"buffer_size": 20492,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								20225,
-								20225
+								8538,
+								8538
 							]
 						],
 						"settings":
@@ -576,7 +576,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 5085.0,
+						"translation.y": 1890.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
