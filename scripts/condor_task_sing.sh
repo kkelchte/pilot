@@ -3,33 +3,35 @@
 
 usage() { echo "Usage: $0 [-g GPU4: true in case you want to use GPU of 4G or bigger.]
 		[-t TAG: tag this test for log folder ]
-		[-s SCRIPT: define which scripts from simulation_supervised should run, default evaluate.]
 		[-m MODELDIR: checkpoint to initialize weights with in logfolder, leave open for training from scratch]
     [-n NUMBER_OF_FLIGHTS: number of episodes flights training online]
     [-w \" WORLDS \" : space-separated list of gazebo worlds ex \" canyon forest sandbox \" ]
     [-p \" PARAMS \" : space-separated list of tensorflow flags ex \" --auxiliary_depth True --max_episodes 20 \" ]" 1>&2; exit 1; }
 GPU4=false
+EVALUATE=false
 MODELDIR=''
-SCRIPT='evaluate_model_turtle.sh'
+SCRIPT='run_script.py'
 WALLTIME=$((2*60*60))
-while getopts ":g:t:s:m:n:w:p:q:" o; do
+while getopts ":e:g:t:s:m:n:w:p:q:d:" o; do
     case "${o}" in
+        e)
+            EVALUATE=${OPTARG} ;;
     		g)
 						GPU4=${OPTARG} ;;
         t)
             TAG=${OPTARG} ;;
-        s)
-						SCRIPT=${OPTARG} ;;
-				m)
+        m)
 						MODELDIR=${OPTARG} ;;
 				n)
 						NUMBER_OF_FLIGHTS=${OPTARG} ;;
 				w)
 						WORLDS+=(${OPTARG}) ;;
 				p)
-						PARAMS+=(${OPTARG}) ;;
+						PARAMS=${OPTARG} ;;
         q)
             WALLTIME=${OPTARG} ;;
+	d)
+	    CREATE_DS=${OPTARG} ;;
         *)
             usage ;;
     esac
@@ -41,17 +43,17 @@ echo
 echo "$(tput setaf 3)--------: CONDOR ONLINE :--------"
 echo "TAG: $TAG"
 echo "GPU4: $GPU4"
+echo "EVALUATE: $EVALUATE"
 echo "MODELDIR: $MODELDIR"
 echo "NUMBER_OF_FLIGHTS: $NUMBER_OF_FLIGHTS"
 echo "WORLDS: ${WORLDS[@]}"
-echo "SCRIPT: $SCRIPT"
-echo "PARAMS: ${PARAMS[@]}"
+echo "PARAMS: $PARAMS"
 echo "WALLTIME: ${WALLTIME}"
+echo "CREATE_DS: ${CREATE_DS}"
 echo
 tput sgr 0 
 
-# Add -g false to avoid to loose computation time for displaying control or depth predictions
-COMMAND=(./scripts/${SCRIPT} -s start_python_sing_ql.sh -g false)
+COMMAND=(python ${SCRIPT} -pe sing)
 if [ ! -z "$TAG" ] ; then
   COMMAND+=(-t $TAG)
 fi
@@ -61,15 +63,19 @@ fi
 if [ ! -z "$NUMBER_OF_FLIGHTS" ] ; then
 	COMMAND+=(-n $NUMBER_OF_FLIGHTS)
 fi
+if [[ ! -z "$PARAMS" ]] ; then
+    COMMAND+=(-p $PARAMS)
+fi
 if [[ ! -z "$WORLDS" ]] ; then
     for w in "${WORLDS[@]}" ; do
       COMMAND+=(-w $w)
     done
 fi
-if [[ ! -z "$PARAMS" ]] ; then
-    for p in "${PARAMS[@]}" ; do
-      COMMAND+=(-p $p)
-    done
+if [ $EVALUATE ] ; then
+  COMMAND+=(-e)
+fi
+if [ $CREATE_DS ] ; then
+  COMMAND+=(-ds)
 fi
 
 echo "COMMAND: ${COMMAND[@]}"
@@ -122,30 +128,32 @@ echo "when_to_transfer_output = ON_EXIT_OR_EVICT" >> $condor_file
 echo "periodic_release = HoldReasonCode == 1 && HoldReasonSubCode == 0" >> $condor_file
 
 # blacklist="( machineowner == \"Visics\" && machine != \"andromeda.esat.kuleuven.be\")"
-blacklist=" && (machineowner == \"Visics\") && \
-          (machine != \"andromeda.esat.kuleuven.be\") && \
-          (machine != \"vega.esat.kuleuven.be\") && \
-          (machine != \"wasat.esat.kuleuven.be\") && \
-          (machine != \"nickeline.esat.kuleuven.be\") && \
-          (machine != \"unuk.esat.kuleuven.be\") && \
-          (machine != \"ymir.esat.kuleuven.be\") && \
-          (machine != \"emerald.esat.kuleuven.be\") && \
-          (machine != \"pollux.esat.kuleuven.be\") && \
-          (machine != \"umbriel.esat.kuleuven.be\") && \
-          (machine != \"triton.esat.kuleuven.be\") && \
-          (machine != \"amethyst.esat.kuleuven.be\") && \
-          (machine != \"ulexite.esat.kuleuven.be\") && \
-          (machine != \"garnet.esat.kuleuven.be\") && \
-      	  (machine != \"estragon.esat.kuleuven.be\") && \
-          (machine != \"spinel.esat.kuleuven.be\") && \
-          (machine != \"diamond.esat.kuleuven.be\") && \
-	        (machine != \"ricotta.esat.kuleuven.be\")"
+# blacklist=" && (machineowner == \"Visics\") && \
+#           (machine != \"andromeda.esat.kuleuven.be\") && \
+#           (machine != \"vega.esat.kuleuven.be\") && \
+#           (machine != \"wasat.esat.kuleuven.be\") && \
+#           (machine != \"nickeline.esat.kuleuven.be\") && \
+#           (machine != \"unuk.esat.kuleuven.be\") && \
+#           (machine != \"ymir.esat.kuleuven.be\") && \
+#           (machine != \"emerald.esat.kuleuven.be\") && \
+#           (machine != \"pollux.esat.kuleuven.be\") && \
+#           (machine != \"umbriel.esat.kuleuven.be\") && \
+#           (machine != \"triton.esat.kuleuven.be\") && \
+#           (machine != \"amethyst.esat.kuleuven.be\") && \
+#           (machine != \"ulexite.esat.kuleuven.be\") && \
+#           (machine != \"garnet.esat.kuleuven.be\") && \
+#       	  (machine != \"estragon.esat.kuleuven.be\") && \
+#           (machine != \"spinel.esat.kuleuven.be\") && \
+#           (machine != \"diamond.esat.kuleuven.be\") && \
+# 	        (machine != \"ricotta.esat.kuleuven.be\")"
 
-# greenlist=""
-# greenlist=" && ((machine == \"citrine.esat.kuleuven.be\") || \
-#             (machine == \"pyrite.esat.kuleuven.be\") || \
-#             (machine == \"opal.esat.kuleuven.be\") || \
-#             (machine == \"kunzite.esat.kuleuven.be\") || \
+blacklist=" && ( machineowner == \"Visics\")"
+
+#greenlist=""
+greenlist=" && ((machine == \"fluorite.esat.kuleuven.be\") || \
+             (machine == \"jade.esat.kuleuven.be\") || \
+             (machine == \"malachite.esat.kuleuven.be\") || \
+	     (machine == \"vega.esat.kuleuven.be\")) " 
 #             (machine == \"iolite.esat.kuleuven.be\") || \
 #             (machine == \"hematite.esat.kuleuven.be\") || \
 #             (machine == \"amethyst.esat.kuleuven.be\") || \
@@ -171,21 +179,9 @@ echo "Requirements = (CUDAGlobalMemoryMb >= $GPU_MEM) && (CUDACapability >= 3.5)
 # wall time ==> generally assumed a job should take 6hours longest,
 # job will be killed after this walltime
 # default is 6h ~ 21600
-# 15 hours
-# echo "+RequestWalltime = 54000"  >> $condor_file
-# 10 hours
-# echo "+RequestWalltime = 36000"  >> $condor_file
-# 3 hours:
-# echo "+RequestWalltime = 10800"  >> $condor_file
-# 1 hour:
-# echo "+RequestWalltime = 3600"  >> $condor_file
-# 30 min:
-# echo "+RequestWalltime = 1800"  >> $condor_file
-# 10 min:
-# echo "+RequestWalltime = 59"  >> $condor_file
 echo "+RequestWalltime = $WALLTIME"  >> $condor_file
 
-# echo "Niceuser = true"           >> $condor_file
+echo "Niceuser = true"           >> $condor_file
 
 echo "Initialdir       = $temp_dir"   >> $condor_file
 # echo "Initialdir       = /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts"   >> $condor_file
@@ -204,7 +200,7 @@ echo "Queue"                     >> $condor_file
 echo "#!/bin/bash"           > $shell_file
 echo "echo started singularity."           >> $shell_file
 echo "source /esat/opal/kkelchte/docker_home/.entrypoint_xpra" >> $shell_file
-echo "roscd simulation_supervised" >> $shell_file
+echo "roscd simulation_supervised/python" >> $shell_file
 echo "echo PWD: \$PWD" >> $shell_file
 echo "${COMMAND[@]}  >> $condor_output_dir/condor_${description}.dockout" >> $shell_file
 echo "echo \"[condor_shell_script] done: \$(date +%F_%H:%M)\"" >> $shell_file
@@ -212,7 +208,7 @@ echo "echo \"[condor_shell_script] done: \$(date +%F_%H:%M)\"" >> $shell_file
 # create sing file to ls gluster directory : bug of current singularity + fedora 27 version
 echo "#!/bin/bash"                                                                                     > $sing_file
 # echo "echo \"exec \$1 in singularity image /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img\" " >> $sing_file
-echo "echo \"exec \$1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow.imgs\" " >> $sing_file
+echo "echo \"exec \$1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img\" " >> $sing_file
 # echo "cd /esat/opal/kkelchte/singularity_images"                                                                 >> $sing_file
 echo "cd /gluster/visics/singularity"                                                                 >> $sing_file
 echo "pwd"                                                                                            >> $sing_file
@@ -220,7 +216,7 @@ echo "pwd"                                                                      
 echo "ls /gluster/visics/singularity"                                                                 >> $sing_file
 echo "sleep 1"                                                                                        >> $sing_file
 # echo "/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img \$1"      >> $sing_file
-echo "/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow.imgs \$1"      >> $sing_file
+echo "/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img \$1"      >> $sing_file
 #--------------------------------------------------------------------------------------------
 
 chmod 600 $condor_file

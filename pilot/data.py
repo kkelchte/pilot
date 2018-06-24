@@ -113,7 +113,6 @@ def load_set(data_type):
     if os.path.isfile(join(run_dir,'scan.txt')):
       scans = open(join(run_dir,'scan.txt'),'r').readlines()[2:]
       ranges = np.zeros((len(scans),int(FLAGS.field_of_view/FLAGS.smooth_scan)))
-      print ranges.shape
       for si,s in enumerate(scans):
         def check(r):
           """clip at FLAGS.max_depth, set 0's to nan"""
@@ -349,7 +348,7 @@ if __name__ == '__main__':
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
     scans = [_['depth'] for _ in batch]
-    
+
     import pdb; pdb.set_trace()
     pass
     # actions=[_['ctr'] for _ in batch]

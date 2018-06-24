@@ -3,39 +3,39 @@
 
 
 usage() { echo "Usage: $0 [-g GPU4: true in case you want to use GPU of 4G or bigger.]
-		[-t TAG: tag this test for log folder ]
-		[-s SCRIPT: define which python scripts from pilot should run]
-		[-m MODELDIR: checkpoint to initialize weights with in logfolder, leave open for training from scratch]
-    [-e EVALUATE: add -e option if model should be evaluated ]
-    [-n NUMBER_OF_FLIGHTS: for evaluation]
-		[-w \" WORLDS \" : space-separated list of gazebo worlds for evaluating online ex \" canyon forest sandbox \" ]
-    [-p \" PARAMS \" : space-separated list of tensorflow flags ex \" --auxiliary_depth True --max_episodes 20 \" ]" 1>&2; exit 1; }
+        [-t TAG: tag this test for log folder ]
+        [-s SCRIPT: define which python scripts from pilot should run]
+        [-m MODELDIR: checkpoint to initialize weights with in logfolder, leave open for training from scratch]
+        [-e EVALUATE: add -e option if model should be evaluated ]
+        [-n NUMBER_OF_FLIGHTS: for evaluation]
+        [-w \" WORLDS \" : space-separated list of gazebo worlds for evaluating online ex \" canyon forest sandbox \" ]
+        [-p \" PARAMS \" : space-separated list of tensorflow flags ex \" --auxiliary_depth True --max_episodes 20 \" ]" 1>&2; exit 1; }
 GPU4=false
 SCRIPT="main.py"
 MODELDIR=''
 EVALUATE=false
-NUMBER_OF_FLIGHTS=20
+NUMBER_OF_FLIGHTS=50
 WALLTIME=$((60*60*2))
 while getopts ":g:t:s:m:e:n:w:p:q:" o; do
     case "${o}" in
-    		g)
-						GPU4=${OPTARG} ;;
-        t)
-            TAG=${OPTARG} ;;
-        s)
-						SCRIPT=${OPTARG} ;;
-				m)
-						MODELDIR=${OPTARG} ;;
-				e)
-						EVALUATE=${OPTARG} ;;
-				n)
-						NUMBER_OF_FLIGHTS=${OPTARG} ;;
-				w)
-						WORLDS=(${OPTARG}) ;;
-				p)
-						PARAMS=(${OPTARG}) ;;
-				q)
-						WALLTIME=${OPTARG} ;;
+                g)
+                        GPU4=${OPTARG} ;;
+                t)
+                        TAG=${OPTARG} ;;
+                s)
+                        SCRIPT=${OPTARG} ;;
+                m)
+                        MODELDIR=${OPTARG} ;;
+                e)
+                        EVALUATE=${OPTARG} ;;
+                n)
+                        NUMBER_OF_FLIGHTS=${OPTARG} ;;
+                w)
+                        WORLDS=(${OPTARG}) ;;
+                p)
+                        PARAMS=(${OPTARG}) ;;
+                q)
+                        WALLTIME=${OPTARG} ;;
         *)
             usage ;;
     esac
@@ -52,9 +52,9 @@ echo "SCRIPT: $SCRIPT"
 echo "PARAMS: ${PARAMS[@]}"
 echo "WALLTIME: ${WALLTIME}"
 if [ $EVALUATE ] ; then
-	echo "EVALUATE: $EVALUATE"
-	echo "WORLDS: ${WORLDS[@]}"
-	echo "NUMBER_OF_FLIGHTS: $NUMBER_OF_FLIGHTS"
+    echo "EVALUATE: $EVALUATE"
+    echo "WORLDS: ${WORLDS[@]}"
+    echo "NUMBER_OF_FLIGHTS: $NUMBER_OF_FLIGHTS"
 fi
 echo
 tput sgr 0 
@@ -65,49 +65,35 @@ if [ ! -z "$TAG" ] ; then
   COMMAND_OFFLINE+=(--log_tag ${TAG}/$(date +%F_%H%M))
 fi
 if [[ -n "$PARAMS" ]] ; then
- 	echo ${PARAMS[@]}
- 	for p in "${PARAMS[@]}" ; do 
- 		echo $p
- 		COMMAND_OFFLINE+=($p)
- 	done
+    echo ${PARAMS[@]}
+    for p in "${PARAMS[@]}" ; do 
+        echo $p
+        COMMAND_OFFLINE+=($p)
+    done
 fi
 echo "COMMAND_OFFLINE: ${COMMAND_OFFLINE[@]}"
 if [ $EVALUATE = true ] ; then
-	COMMAND_ONLINE=()
-	if [ $GPU4 = true ] ; then
-	  COMMAND_ONLINE+=(-g true)
-	fi
-	if [ ! -z "$TAG" ] ; then
-	  COMMAND_ONLINE+=(-t ${TAG})
-	fi
-	COMMAND_ONLINE+=(-s evaluate_model_turtle.sh)
-	COMMAND_ONLINE+=(-m $TAG)
-	if [ ! -z "$NUMBER_OF_FLIGHTS" ] ; then
-		COMMAND_ONLINE+=(-n $NUMBER_OF_FLIGHTS)
-	fi
-	if [[ ! -z "$WORLDS" ]] ; then
-	  for w in "${WORLDS[@]}" ; do
-	    COMMAND_ONLINE+=(-w $w)
-	  done
-	fi
-	skip=false
-	if [[ ! -z "$PARAMS" ]] ; then
-	  for p in "${PARAMS[@]}" ; do
-	  	# if [ $skip = true ] ; then
-	  	# 	# did not take previous parameters so should skip True or False value
-	  	# 	skip=false
-	  	# 	continue
-  		# fi
-	  	# if [[ $p == '--continue_training' ||  $p == '--scratch' ]] ; then
-	  	# 	# skip also the True or False parameter which is next
-	  	# 	skip=true
-	  	# else
-	  	COMMAND_ONLINE+=(-p $p)	  		
-	  	# fi
-	  done
-	fi
-	# COMMAND_ONLINE+=(-p '--load_config' -p 'True')
-	echo "COMMAND_ONLINE: ${COMMAND_ONLINE[@]}"
+    COMMAND_ONLINE=()
+    if [ $GPU4 = true ] ; then
+      COMMAND_ONLINE+=(-g true)
+    fi
+    if [ ! -z "$TAG" ] ; then
+      COMMAND_ONLINE+=(-t ${TAG}_eva)
+    fi
+    COMMAND_ONLINE+=(-m $TAG)
+    if [ ! -z "$NUMBER_OF_FLIGHTS" ] ; then
+        COMMAND_ONLINE+=(-n $NUMBER_OF_FLIGHTS)
+        COMMAND_ONLINE+=(-q $((NUMBER_OF_FLIGHTS * 60 * 20)) )
+    fi
+    if [[ ! -z "$WORLDS" ]] ; then
+      for w in "${WORLDS[@]}" ; do
+        COMMAND_ONLINE+=(-w $w)
+      done
+    fi
+    COMMAND_ONLINE+=(-e true)
+    COMMAND_ONLINE+=(-p eva_params.yaml)
+    # COMMAND_ONLINE+=(-p '--load_config' -p 'True')
+    echo "COMMAND_ONLINE: ${COMMAND_ONLINE[@]}"
 fi
 
 # change up to two / by _
@@ -125,11 +111,11 @@ mkdir -p $temp_dir
 #--------------------------------------------------------------------------------------------
 # Delete previous log files if they are there
 if [ -d $condor_output_dir ];then
-	rm -f "$condor_output_dir/offline_${description}.log"
-	rm -f "$condor_output_dir/offline_${description}.out"
-	rm -f "$condor_output_dir/offline_${description}.err"
+    rm -f "$condor_output_dir/offline_${description}.log"
+    rm -f "$condor_output_dir/offline_${description}.out"
+    rm -f "$condor_output_dir/offline_${description}.err"
 else
-	mkdir $condor_output_dir
+    mkdir $condor_output_dir
 fi
 #--------------------------------------------------------------------------------------------
 echo "Universe         = vanilla" > $condor_file
@@ -140,29 +126,29 @@ echo "RequestDisk      = 50G"   >> $condor_file
 #blacklist="distributionversion == \"26\""
 # blacklist="(machine != \"andromeda.esat.kuleuven.be\")"
 blacklist="(machine != \"andromeda.esat.kuleuven.be\") && \
-					(machine != \"amethyst.esat.kuleuven.be\") && \
-					(machine != \"vega.esat.kuleuven.be\") && \
-					(machine != \"wasat.esat.kuleuven.be\") && \
-					(machine != \"unuk.esat.kuleuven.be\") && \
-					(machine != \"emerald.esat.kuleuven.be\") && \
-					(machine != \"ymir.esat.kuleuven.be\") "
-					# (machine != \"pyrite.esat.kuleuven.be\") && \
-					# (machine != \"lesath.esat.kuleuven.be\") && \
-					# (machine != \"nickeline.esat.kuleuven.be\") && \
-					# (machine != \"pollux.esat.kuleuven.be\") && \
-					# (machine != \"realgar.esat.kuleuven.be\") "
+                    (machine != \"amethyst.esat.kuleuven.be\") && \
+                    (machine != \"vega.esat.kuleuven.be\") && \
+                    (machine != \"wasat.esat.kuleuven.be\") && \
+                    (machine != \"unuk.esat.kuleuven.be\") && \
+                    (machine != \"emerald.esat.kuleuven.be\") && \
+                    (machine != \"ymir.esat.kuleuven.be\") "
+                    # (machine != \"pyrite.esat.kuleuven.be\") && \
+                    # (machine != \"lesath.esat.kuleuven.be\") && \
+                    # (machine != \"nickeline.esat.kuleuven.be\") && \
+                    # (machine != \"pollux.esat.kuleuven.be\") && \
+                    # (machine != \"realgar.esat.kuleuven.be\") "
 
 # From umbriel --> due to no GPU
 
 if [ $GPU4 = true ] ; then
-	GPUMEM=3900
+    GPUMEM=3900
 else 
-	GPUMEM=1900
+    GPUMEM=1900
 fi
 if [ -z "$blacklist" ] ; then
-	echo "Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5)">> $condor_file	
+    echo "Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5)">> $condor_file  
 else
-	echo "Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5) && $blacklist">> $condor_file
+    echo "Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= $GPUMEM) && (CUDACapability >= 3.5) && $blacklist">> $condor_file
 fi
 # wall time ==> generally assumed a job should take 6hours longest,
 # job will be killed after this walltime
@@ -183,7 +169,7 @@ echo "Niceuser = true"           >> $condor_file
 
 echo "Initialdir       = $temp_dir"   >> $condor_file
 echo "Executable       = $shell_file" >> $condor_file
-echo "Log 	           = $condor_output_dir/condor_${description}.log" >> $condor_file
+echo "Log              = $condor_output_dir/condor_${description}.log" >> $condor_file
 echo "Output           = $condor_output_dir/condor_${description}.out" >> $condor_file
 echo "Error            = $condor_output_dir/condor_${description}.err" >> $condor_file
 echo "Notification = Error"      >> $condor_file
@@ -214,13 +200,13 @@ echo "echo \"[condor_shell_script] done: \$(date +%F_%H:%M)\"" >> $shell_file
 # <<<<<
 
 if [ $EVALUATE = true ] ; then
-	echo "if [ \$( ls /esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/2018* | grep my-model | wc -l ) -gt 2 ] ; then " >> $shell_file
-	echo "	echo \" \$(date +%F_%H:%M) [condor_shell_script] Submit condor online job for evaluation \" " >> $shell_file
-	echo "	ssh opal /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_sing.sh ${COMMAND_ONLINE[@]}" >> $shell_file
-	echo "else">> $shell_file
-	echo "	echo \"Training model ${TAG} offline has failed.\" ">> $shell_file
-	echo "fi">> $shell_file
-	# echo "/usr/bin/bash /users/visics/kkelchte/condor/condor_task_sing.sh ${COMMAND_ONLINE[@]} " >> $shell_file
+    echo "if [ \$( ls /esat/opal/kkelchte/docker_home/tensorflow/log/${TAG}/2018* | grep my-model | wc -l ) -gt 2 ] ; then " >> $shell_file
+    echo "  echo \" \$(date +%F_%H:%M) [condor_shell_script] Submit condor online job for evaluation \" " >> $shell_file
+    echo "  ssh opal /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_sing.sh ${COMMAND_ONLINE[@]}" >> $shell_file
+    echo "else">> $shell_file
+    echo "  echo \"Training model ${TAG} offline has failed.\" ">> $shell_file
+    echo "fi">> $shell_file
+    # echo "/usr/bin/bash /users/visics/kkelchte/condor/condor_task_sing.sh ${COMMAND_ONLINE[@]} " >> $shell_file
 fi
 #--------------------------------------------------------------------------------------------
 

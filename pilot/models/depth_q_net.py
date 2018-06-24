@@ -309,7 +309,7 @@ def depth_q_net(inputs,
         end_points[end_point] = depth_feat
         
         # output height 55 width 74 [drone]
-        # output: 21 [turtle]
+        # output: 26 [turtle]
         end_point = 'depth_fc_1'
         depth_feat=slim.fully_connected(depth_feat, output_size[0]*output_size[1], tf.nn.relu)
         end_points[end_point] = depth_feat
