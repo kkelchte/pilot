@@ -74,7 +74,9 @@ def run(_FLAGS, model, start_ep=0):
   global FLAGS
 
   FLAGS=_FLAGS
+  start_time=time.time()
   data.prepare_data(FLAGS, (model.input_size[1], model.input_size[2], model.input_size[3]))
+  print("data loading time: {0:0.0f}".format(time.time()-start_time))
   ep=start_ep
   while ep<FLAGS.max_episodes-1 and not FLAGS.testing:
     ep+=1

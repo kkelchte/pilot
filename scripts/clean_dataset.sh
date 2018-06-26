@@ -1,6 +1,6 @@
 # Clean data
 
-dataset='canyon_turtle_scan'
+dataset='extra_canyon_turtle_scan'
 
 cd /esat/opal/kkelchte/docker_home/pilot_data/$dataset
 
@@ -40,9 +40,9 @@ done
 #________________________________________________________________
 
 cd /esat/opal/kkelchte/docker_home/pilot_data
-cp -r $dataset ${dataset}_collision_free_tmp
-rm ${dataset}_collision_free_tmp/*.txt
-cd ${dataset}_collision_free_tmp
+cp -r $dataset ${dataset}_collision_free
+rm ${dataset}_collision_free/*.txt
+cd ${dataset}_collision_free
 
 # Parse the expected number of left over images to know if not too much is deleted
 init_num="$(for d in 0* ; do ls $d/RGB; done | wc -l)"
@@ -61,11 +61,13 @@ else
 	echo "successfully extracted collision free dataset."
 fi
 
+
+echo "Dont forget to make train_set val_set and test_set in ${dataset} and ${dataset}_collision_free"
 # Copy to correct location
-cd ..
-mkdir ${dataset}_collision_free
-i=0 
-for d in ${dataset}_collision_free_tmp/0* ; do echo "mv $d ${dataset}_collision_free/$(printf %05d $i)_canyon"; mv $d ${dataset}_collision_free/$(printf %05d $i)_canyon; i=$((i+1)); donefor d in ${dataset}_collision_free_tmp/0* ; do echo "mv $d ${dataset}_collision_free/$(printf %05d $i)_canyon"; mv $d ${dataset}_collision_free/$(printf %05d $i)_canyon; i=$((i+1)); done
+#cd ..
+#mkdir ${dataset}_collision_free
+#i=0 
+#for d in ${dataset}_collision_free_tmp/0* ; do echo "mv $d ${dataset}_collision_free/$(printf %05d $i)_canyon"; mv $d ${dataset}_collision_free/$(printf %05d $i)_canyon; i=$((i+1)); donefor d in ${dataset}_collision_free_tmp/0* ; do echo "mv $d ${dataset}_collision_free/$(printf %05d $i)_canyon"; mv $d ${dataset}_collision_free/$(printf %05d $i)_canyon; i=$((i+1)); done
 
 # Create train, test and val set....
 
