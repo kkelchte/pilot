@@ -60,6 +60,7 @@ class PilotNode(object):
     self.prev_weight=[]
     self.prev_random=False
 
+    self.start_time=0
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
     # self.accumlosses = {} # gather losses and info over the run in a dictionary
@@ -69,15 +70,15 @@ class PilotNode(object):
     # self.nfc_images =[] #used by n_fc networks for building up concatenated frames
     self.exploration_noise = OUNoise(4, 0, self.FLAGS.ou_theta,1)
     if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
-    # if self.FLAGS.real or self.FLAGS.off_policy: # publish on pilot_vel so it can be used by control_mapping when flying in the real world
-    #   self.action_pub=rospy.Publisher('/tf_vel', Twist, queue_size=1)
-    # else: # if you fly in simulation, listen to supervised vel to get the target control from the BA expert
-    #   # rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)
-    # the control topic is defined in the drone_sim yaml file
     self.action_pub=rospy.Publisher('/nn_vel', Twist, queue_size=1)
 
     rospy.Subscriber('/nn_start', Empty, self.ready_callback)
     rospy.Subscriber('/nn_stop', Empty, self.finished_callback)
+
+    # extract imitation loss from supervised velocity
+    rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)
+    self.supervised_vel=[]
+    self.imitation_loss=[]
 
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
@@ -141,14 +142,23 @@ class PilotNode(object):
     if len(self.last_pose)!= 0:
         self.current_distance += np.sqrt((self.last_pose[0,3]-current_pos[0])**2+(self.last_pose[1,3]-current_pos[1])**2)
     self.furthest_point=max([self.furthest_point, np.sqrt(current_pos[0]**2+current_pos[1]**2)])
-    
+
     # Get pose (rotation and translation) [DEPRECATED: USED FOR ODOMETRY]
-    # quaternion = (data.pose.pose.orientation.x,
-    #   data.pose.pose.orientation.y,
-    #   data.pose.pose.orientation.z,
-    #   data.pose.pose.orientation.w)
-    # self.last_pose = transformations.quaternion_matrix(quaternion) # orientation of current frame relative to global frame
-    # self.last_pose[0:3,3]=current_pos
+    quaternion = (data.pose.pose.orientation.x,
+      data.pose.pose.orientation.y,
+      data.pose.pose.orientation.z,
+      data.pose.pose.orientation.w)
+    self.last_pose = transformations.quaternion_matrix(quaternion) # orientation of current frame relative to global frame
+    self.last_pose[0:3,3]=current_pos
+  
+  def supervised_callback(self, data):
+    """Save supervised velocity command to calculate an imitation loss on the fly."""
+    self.supervised_vel=[data.linear.x, 
+                        data.linear.y, 
+                        data.linear.z, 
+                        data.angular.x, 
+                        data.angular.y,
+                        data.angular.z]
 
   def process_rgb(self, msg):
     """ Convert RGB serial data to opencv image of correct size"""
@@ -273,8 +283,10 @@ class PilotNode(object):
     if self.FLAGS.network == 'depth_q_net':
       # take action corresponding to the maximum minimum depth:
       best_output=np.argmax([np.amin(o[o!=0]) for o in output])
+      # keep only depth prediction of action going to be performed
+      output = output[best_output]
       action = float(actions[best_output])
-      # print 'input: ',action
+      print 'action: ',action
     else:
       # take action giving the lowest collision probability
       # if all actions are equally likeli to end with a bump, make straight the default:
@@ -300,31 +312,30 @@ class PilotNode(object):
         # print("random: {0}, epsilon: {1}, action:{2}".format(random_action,epsilon,action))
         if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
-    # print "rosinterface ", action
+    print "action ", action
 
+    # Adjust speed in real_maze
+    speed = self.FLAGS.speed
+    if self.world_name ==  'real_maze':
+      speed_dict={-1:0.5*self.FLAGS.speed,
+                  0:self.FLAGS.speed,
+                  1:0.5*self.FLAGS.speed} 
     ### SEND CONTROL (with possibly some noise)
     msg = Twist()
-    msg.linear.x = self.FLAGS.speed 
+    msg.linear.x = speed
     msg.linear.y = noise_sample[1]*self.FLAGS.sigma_y
     msg.linear.z = noise_sample[2]*self.FLAGS.sigma_z
     msg.angular.z = action
     self.action_pub.publish(msg)
     
-    # now=rospy.get_rostime()
-    # rec=now.secs+now.nsecs*10e-10
-    # print 'time: {0} act: send control.'.format(rec)
+
+    ### keep track of imitation loss on the fly
+    if len(self.supervised_vel) != 0:
+      self.imitation_loss.append((self.supervised_vel[5]-action)**2)
     
-    # write control to log
-    # f=open(self.logfolder+'/ctr_log','a')
-    # f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
-    # f.close()
-
-    # if self.FLAGS.network=='coll_q_net':
-    #   self.outputs=output
-
     rec=time.time()
     
-    if not self.FLAGS.dont_show_depth and not self.finished:
+    if self.FLAGS.network == 'depth_q_net' and not self.FLAGS.dont_show_depth and not self.finished:
       self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
@@ -375,7 +386,8 @@ class PilotNode(object):
 
       self.ready=False
       self.finished=True
-      
+      if self.start_time!=0: 
+        driving_duration = rospy.get_time() - self.start_time
       # Train model from experience replay:
       losses_train = {}
       if self.replay_buffer.size()>self.FLAGS.batch_size and not self.FLAGS.evaluate and ((not self.FLAGS.prefill) or (self.FLAGS.prefill and self.replay_buffer.size() == self.FLAGS.buffer_size)):
@@ -426,21 +438,23 @@ class PilotNode(object):
         if len(self.world_name)!=0: name='{0}_{1}'.format(name,self.world_name)
         sumvar[name]=vals[d]
         result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
-      for k in losses_train.keys():
-        name={'t':'Loss_train_total','o':'Loss_train_output'}
-        sumvar[name[k]]=np.mean(losses_train[k])   
-        result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
-        if k=='o':
-          sumvar[name[k]+'_min']=np.amin(np.asarray(losses_train[k]).flatten())
-          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_min', np.amin(np.asarray(losses_train[k]).flatten()))
-          sumvar[name[k]+'_max']=np.amax(np.asarray(losses_train[k]).flatten())
-          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_max', np.amax(np.asarray(losses_train[k]).flatten()))
-          sumvar[name[k]+'_var']=np.var(np.asarray(losses_train[k]).flatten())
-          result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_var', np.var(np.asarray(losses_train[k]).flatten()))
-      for k in losses_test.keys():
-        name={'t':'Loss_test_total','o':'Loss_test_output'}
-        sumvar[name[k]]=np.mean(losses_test[k])   
-        result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_test[k]))
+      if len(losses_train) != 0:
+        for k in losses_train.keys():
+          name={'t':'Loss_train_total','o':'Loss_train_output'}
+          sumvar[name[k]]=np.mean(losses_train[k])   
+          result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
+          if k=='o':
+            sumvar[name[k]+'_min']=np.amin(np.asarray(losses_train[k]).flatten())
+            result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_min', np.amin(np.asarray(losses_train[k]).flatten()))
+            sumvar[name[k]+'_max']=np.amax(np.asarray(losses_train[k]).flatten())
+            result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_max', np.amax(np.asarray(losses_train[k]).flatten()))
+            sumvar[name[k]+'_var']=np.var(np.asarray(losses_train[k]).flatten())
+            result_string='{0}, {1}:{2}'.format(result_string, name[k]+'_var', np.var(np.asarray(losses_train[k]).flatten()))
+      if len(losses_test) != 0:
+        for k in losses_test.keys():
+          name={'t':'Loss_test_total','o':'Loss_test_output'}
+          sumvar[name[k]]=np.mean(losses_test[k])   
+          result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_test[k]))
 
       # for k in self.accumlosses.keys():
       # name={'t':'Loss_test_total','o':'Loss_test_output'}
@@ -452,14 +466,21 @@ class PilotNode(object):
           sumvar[i+'_variance']=buffer_variances[i]
           result_string='{0}, {1}:{2:0.5e}'.format(result_string, i+'_variance',buffer_variances[i]) 
       if len(self.time_delay) > 2: 
-        result_string='{0} min_delay: {1}, avg_delay: {2}, max_delay: {3}'.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
+        result_string='{0}, min_delay: {1}, avg_delay: {2}, max_delay: {3}'.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
+      # add driving duration (collision free)
+      if self.start_time!=0: 
+        result_string='{0}, driving_duration: {1:0.1f}'.format(result_string, driving_duration)
+        sumvar['driving_time']=driving_duration
+      # add imitation loss
+      if len(self.imitation_loss)!=0:
+        result_string='{0}, imitation_loss: {1:0.1f}'.format(result_string, np.mean(self.imitation_loss))
+        sumvar['imitation_loss']=np.mean(self.imitation_loss)
       try:
         self.model.summarize(sumvar)
       except Exception as e:
         print('failed to write', e)
         pass
-      else:
-        print(result_string)
+      print(result_string)
       # ! Note: tf_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts
       # Script starts next run once this file is updated.
       try:
@@ -492,3 +513,5 @@ class PilotNode(object):
       self.prev_prediction=[]
       self.prev_weight=[]
       self.prev_random=False
+      self.start_time=0
+      self.imitation_loss=[]

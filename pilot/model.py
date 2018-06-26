@@ -234,13 +234,15 @@ class Model(object):
             self.add_summary_var(name)
     for d in ['current','furthest']:
       for t in ['train', 'test']:
-        for w in ['','sandbox','forest','canyon','esat_corridor_v1', 'esat_corridor_v2']:
+        for w in ['','sandbox','forest','canyon','esat_corridor_v1', 'esat_corridor_v2','real_maze']:
           name = 'Distance_{0}_{1}'.format(d,t)
           if len(w)!=0: name='{0}_{1}'.format(name,w)
           self.add_summary_var(name)
     for i in ['state','action','trgt']:
       name = i+'_variance'
-      self.add_summary_var(name)      
+      self.add_summary_var(name)
+    self.add_summary_var('driving_time')      
+    self.add_summary_var('imitation_loss')      
     if self.FLAGS.plot_depth:
       name="depth_predictions"
       dep_images = tf.placeholder(tf.uint8, [1, 400, 400, 3])
