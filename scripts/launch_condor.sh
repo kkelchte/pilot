@@ -56,9 +56,9 @@
 # done
 
 # EVALUATE ONLINE
-for i in 0 1 2 3 4 ; do
+for i in 0 ; do
 	./condor_task_sing.sh -t coll_q_net/ds1500_${i}_eva -m coll_q_net/ds1500_${i} -n 10 -w 'canyon' -p "eva_params.yaml" -e -q 12000
-	./condor_task_sing.sh -t coll_q_net/ds1500_4096_${i}_eva -m coll_q_net/ds1500_4096_${i} -n 10 -w 'canyon' -p "eva_params.yaml" -e -q 12000
+	# ./condor_task_sing.sh -t coll_q_net/ds1500_4096_${i}_eva -m coll_q_net/ds1500_4096_${i} -n 10 -w 'canyon' -p "eva_params.yaml" -e -q 12000
 done
 
 # ------------REAL DATA-----------
