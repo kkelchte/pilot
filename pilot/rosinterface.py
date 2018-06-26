@@ -272,7 +272,7 @@ class PilotNode(object):
 
     ### FORWARD 
     # feed in 3 actions corresponding to right, straight and left.
-    actions=np.arange(-1.0, 1.0+2./self.FLAGS.action_quantity, 2./(self.FLAGS.action_quantity-1)).reshape((-1,1))
+    actions=np.arange(-self.FLAGS.action_bound, self.FLAGS.action_bound+2./self.FLAGS.action_quantity, 2./(self.FLAGS.action_quantity-1)).reshape((-1,1))
     if self.FLAGS.action_smoothing: actions=np.array([a+np.random.uniform(low=-1./(self.FLAGS.action_quantity-1),high=1./(self.FLAGS.action_quantity-1)) for a in actions]).reshape((-1,1))
   
     output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*actions)
@@ -305,7 +305,8 @@ class PilotNode(object):
     # elif not self.FLAGS.evaluate and self.FLAGS.epsilon != 0: #TODO: change back to evaluation dependency when training online with epsilon!!!
     elif self.FLAGS.epsilon != 0: 
         # calculate decaying epsilon
-        random_action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else 0.3*noise_sample[0]
+        random_action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else self.FLAGS.action_bound*0.3*noise_sample[0] #make turtlebot less reactive 
+        # random_action=2*np.random.random_sample()-1 if self.FLAGS.noise=='uni' else 0.3*noise_sample[0]
         epsilon=min([1, self.FLAGS.epsilon*np.exp(-self.FLAGS.epsilon_decay*(self.runs['train']+1))])
         action = random_action if np.random.binomial(1,epsilon) else action
         random= action==random_action #needed for random_action replay priority

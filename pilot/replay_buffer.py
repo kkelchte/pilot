@@ -23,6 +23,7 @@ class ReplayBuffer(object):
       self.buffer = deque()
       self.num_steps = 1 #num
       self.probs = None
+      self.collision_length = 5
 
     def add(self, experience):
       if self.count < self.buffer_size: 
@@ -152,9 +153,8 @@ class ReplayBuffer(object):
           f.close()
           if "bump" in lines[-1] and self.count!=0:
             print('label last n frames with collision') 
-        n=7
         # from t_end till t_end-n
-        last_experiences=[self.buffer.pop() for i in range(n)]
+        last_experiences=[self.buffer.pop() for i in range(self.collision_length)]
         for e in last_experiences: e['trgt']=1
         if self.FLAGS.replay_priority == 'td_error':
           for e in last_experiences: 

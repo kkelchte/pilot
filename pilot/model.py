@@ -97,7 +97,8 @@ class Model(object):
         args_for_model={'inputs':self.inputs,
                         'actions':self.actions,
                         'depth_multiplier':self.FLAGS.depth_multiplier,
-                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob} 
+                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob,
+                        'fc2_nodes':self.FLAGS.fc2_nodes} 
         with slim.arg_scope(coll_q_net.coll_q_net_arg_scope(is_training=True,**args_for_scope)):
           self.predictions_train, self.endpoints = coll_q_net.coll_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(coll_q_net.coll_q_net_arg_scope(is_training=False, **args_for_scope)):
@@ -134,7 +135,7 @@ class Model(object):
         if self.FLAGS.loss == 'ce':
           # cross entropy loss:
           # self.loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.targets, logits=self.predictions_train,  dim=-1)
-          self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
+          self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))-tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
           # self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
         else:
           self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.,reduction=tf.losses.Reduction.NONE,loss_collection='')
