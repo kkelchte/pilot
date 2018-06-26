@@ -259,6 +259,7 @@ def coll_q_net(inputs,
                 reuse=None,
                 depth_multiplier=0.25,
                 dropout_keep_prob=0.5,
+                fc2_nodes=25,
                 scope='CollQnet'):
   """coll_q_net model for regression of depth as q value.
   Args:
@@ -310,7 +311,7 @@ def coll_q_net(inputs,
 
         end_point = 'q_coll_fc_1'
         # q_coll_feat=slim.fully_connected(q_coll_feat, 4096, tf.nn.relu)
-        q_coll_feat=slim.fully_connected(q_coll_feat, 25, tf.nn.relu)
+        q_coll_feat=slim.fully_connected(q_coll_feat, fc2_nodes, tf.nn.relu)
         end_points[end_point] = q_coll_feat
 
         # output 1

@@ -71,10 +71,10 @@ if [[ ! -z "$WORLDS" ]] ; then
       COMMAND+=(-w $w)
     done
 fi
-if [ $EVALUATE ] ; then
+if [ ! -z "$EVALUATE" ] ; then
   COMMAND+=(-e)
 fi
-if [ $CREATE_DS ] ; then
+if [ ! -z "$CREATE_DS" ] ; then
   COMMAND+=(-ds)
 fi
 
@@ -152,6 +152,7 @@ blacklist=" && ( machineowner == \"Visics\")"
 #greenlist=""
 greenlist=" && ((machine == \"fluorite.esat.kuleuven.be\") || \
              (machine == \"jade.esat.kuleuven.be\") || \
+             (machine == \"vladimir.esat.kuleuven.be\") || \
       	     (machine == \"malachite.esat.kuleuven.be\")) "
 
 # from umbriel this is due to driver version mismatch
