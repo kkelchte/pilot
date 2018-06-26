@@ -290,7 +290,7 @@ class PilotNode(object):
       # take action corresponding to the maximum minimum depth:
       best_output=np.argmax([np.amin(o[o!=0]) for o in output])
       # keep only depth prediction of action going to be performed
-      output = output[best_output]
+      self.depth_prediction= output[best_output]
       action = float(actions[best_output])
       # print 'action: ',action
     else:
@@ -346,8 +346,7 @@ class PilotNode(object):
     rec=time.time()
     
     if self.FLAGS.network == 'depth_q_net' and not self.FLAGS.dont_show_depth and not self.finished:
-      self.depth_prediction = output.flatten()
-      self.depth_pub.publish(output.flatten())
+      self.depth_pub.publish(self.depth_prediction)
       
     # ADD EXPERIENCE REPLAY
     if ( not self.FLAGS.evaluate or self.FLAGS.validate_online) and not self.finished:
