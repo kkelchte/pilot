@@ -245,6 +245,7 @@ class Model(object):
       self.add_summary_var(name)
     self.add_summary_var('driving_time')      
     self.add_summary_var('imitation_loss')      
+    self.add_summary_var('depth_loss')      
     if self.FLAGS.plot_depth:
       name="depth_predictions"
       dep_images = tf.placeholder(tf.uint8, [1, 400, 400, 3])

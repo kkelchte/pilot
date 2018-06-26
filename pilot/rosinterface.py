@@ -79,6 +79,8 @@ class PilotNode(object):
     rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)
     self.supervised_vel=[]
     self.imitation_loss=[]
+    self.depth_prediction=[]
+    self.depth_loss=[]
 
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
@@ -223,7 +225,7 @@ class PilotNode(object):
     # clip left 45degree range from 0:45 reversed with right 45degree range from the last 45:
     ranges=list(reversed(ranges[:self.FLAGS.field_of_view/2]))+list(reversed(ranges[-self.FLAGS.field_of_view/2:]))
     # add some smoothing by averaging over 4 neighboring bins
-    ranges = [sum(ranges[i*4:i*4+4])/4 for i in range(int(len(ranges)/4))]
+    ranges = [sum(ranges[i*self.FLAGS.smooth_scan:i*self.FLAGS.smooth_scan+self.FLAGS.smooth_scan])/self.FLAGS.smooth_scan for i in range(int(len(ranges)/self.FLAGS.smooth_scan))]
     # make it a numpy array
     de = np.asarray(ranges).reshape((1,-1))
     if list(de.shape) != self.model.output_size: # reshape if necessary
@@ -258,6 +260,10 @@ class PilotNode(object):
     im = self.process_scan(msg)
     if len(im)!=0:
       self.depth = im
+      # calculate depth loss on the fly
+      if len(self.depth_prediction) != 0:
+        # print("pred: {0} trg: {1}".format(self.depth_prediction, self.depth))
+        self.depth_loss.append(np.mean((self.depth_prediction - self.depth.flatten())**2))
 
   def process_input(self, im):
     """Process the inputs: images, targets, auxiliary tasks
@@ -286,7 +292,7 @@ class PilotNode(object):
       # keep only depth prediction of action going to be performed
       output = output[best_output]
       action = float(actions[best_output])
-      print 'action: ',action
+      # print 'action: ',action
     else:
       # take action giving the lowest collision probability
       # if all actions are equally likeli to end with a bump, make straight the default:
@@ -312,14 +318,17 @@ class PilotNode(object):
         # print("random: {0}, epsilon: {1}, action:{2}".format(random_action,epsilon,action))
         if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
-    print "action ", action
 
     # Adjust speed in real_maze
     speed = self.FLAGS.speed
     if self.world_name ==  'real_maze':
-      speed_dict={-1:0.5*self.FLAGS.speed,
+      speed_dict={-1:0.2*self.FLAGS.speed,
                   0:self.FLAGS.speed,
-                  1:0.5*self.FLAGS.speed} 
+                  1:0.2*self.FLAGS.speed}
+      try:
+        speed = speed_dict[action]
+      except:
+        pass 
     ### SEND CONTROL (with possibly some noise)
     msg = Twist()
     msg.linear.x = speed
@@ -332,10 +341,12 @@ class PilotNode(object):
     ### keep track of imitation loss on the fly
     if len(self.supervised_vel) != 0:
       self.imitation_loss.append((self.supervised_vel[5]-action)**2)
-    
+
+
     rec=time.time()
     
     if self.FLAGS.network == 'depth_q_net' and not self.FLAGS.dont_show_depth and not self.finished:
+      self.depth_prediction = output.flatten()
       self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
@@ -475,6 +486,10 @@ class PilotNode(object):
       if len(self.imitation_loss)!=0:
         result_string='{0}, imitation_loss: {1:0.1f}'.format(result_string, np.mean(self.imitation_loss))
         sumvar['imitation_loss']=np.mean(self.imitation_loss)
+      # add depth loss
+      if len(self.depth_loss)!=0:
+        result_string='{0}, depth_loss: {1:0.3f}, depth_loss_var: {2:0.3f}'.format(result_string, np.mean(self.depth_loss), np.var(self.depth_loss))
+        sumvar['depth_loss']=np.mean(self.depth_loss)
       try:
         self.model.summarize(sumvar)
       except Exception as e:
@@ -515,3 +530,4 @@ class PilotNode(object):
       self.prev_random=False
       self.start_time=0
       self.imitation_loss=[]
+      self.depth_loss=[]
