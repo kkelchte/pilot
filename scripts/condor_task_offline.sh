@@ -121,7 +121,7 @@ fi
 echo "Universe         = vanilla" > $condor_file
 echo "RequestCpus      = 4"      >> $condor_file
 echo "Request_GPUs     = 1"      >> $condor_file
-echo "RequestMemory    = 5G"     >> $condor_file
+echo "RequestMemory    = 15G"     >> $condor_file
 echo "RequestDisk      = 50G"   >> $condor_file
 #blacklist="distributionversion == \"26\""
 # blacklist="(machine != \"andromeda.esat.kuleuven.be\")"

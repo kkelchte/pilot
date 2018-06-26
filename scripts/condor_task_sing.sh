@@ -152,11 +152,7 @@ blacklist=" && ( machineowner == \"Visics\")"
 #greenlist=""
 greenlist=" && ((machine == \"fluorite.esat.kuleuven.be\") || \
              (machine == \"jade.esat.kuleuven.be\") || \
-             (machine == \"malachite.esat.kuleuven.be\") || \
-	     (machine == \"vega.esat.kuleuven.be\")) " 
-#             (machine == \"iolite.esat.kuleuven.be\") || \
-#             (machine == \"hematite.esat.kuleuven.be\") || \
-#             (machine == \"amethyst.esat.kuleuven.be\") || \
+      	     (machine == \"malachite.esat.kuleuven.be\")) "
 
 # from umbriel this is due to driver version mismatch
 
@@ -181,7 +177,7 @@ echo "Requirements = (CUDAGlobalMemoryMb >= $GPU_MEM) && (CUDACapability >= 3.5)
 # default is 6h ~ 21600
 echo "+RequestWalltime = $WALLTIME"  >> $condor_file
 
-echo "Niceuser = true"           >> $condor_file
+# echo "Niceuser = true"           >> $condor_file
 
 echo "Initialdir       = $temp_dir"   >> $condor_file
 # echo "Initialdir       = /esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts"   >> $condor_file

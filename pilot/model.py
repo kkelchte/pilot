@@ -64,7 +64,7 @@ class Model(object):
       init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(self.FLAGS.checkpoint_path), variables_to_restore)
     
     # create saver for checkpoints
-    self.saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=1)
+    self.saver = tf.train.Saver(max_to_keep=25, keep_checkpoint_every_n_hours=1)
     
     # Add the loss function to the graph.
     self.define_loss()
@@ -133,7 +133,9 @@ class Model(object):
       else:
         if self.FLAGS.loss == 'ce':
           # cross entropy loss:
+          # self.loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.targets, logits=self.predictions_train,  dim=-1)
           self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
+          # self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
         else:
           self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.,reduction=tf.losses.Reduction.NONE,loss_collection='')
       self.max_loss = tf.placeholder(tf.float32)

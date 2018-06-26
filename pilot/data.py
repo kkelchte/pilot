@@ -25,107 +25,138 @@ import argparse
 FLAGS=None
 
 full_set = {}
-im_size=(250,250,3)
+im_size=(128,128,3)
 de_size = (55,74)
 collision_num=10 # number of frames before collision labelled with 10
 
+def load_run_info(coord, run_list, set_list, checklist):
+  """Load information from run with multiple threads"""
+  while not coord.should_stop():
+    try:
+      run_dir = run_list.pop()
+      
+      # get list of all image numbers available in listdir
+      imgs_jpg=listdir(join(run_dir,'RGB'))
+      num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg[::FLAGS.subsample]])
+      assert len(num_imgs)!=0 , IOError('no images in {0}: {1}'.format(run_dir,len(imgs_jpg)))
+      if not isfile(join(run_dir,'RGB','{0:010d}.jpg'.format(num_imgs[-1]))):
+        print('ERROR:',run_dir,' imgnum: ',num_imgs[-1])
+      # parse control data  
+      ctr_file = open(join(run_dir,FLAGS.control_file),'r')
+      control_file_list = ctr_file.readlines()[2:]
+      # cut last lines to avoid emtpy lines
+      while len(control_file_list[-1])<=1 : control_file_list=control_file_list[:-1]
+      control_parsed = [(int(ctr.strip().split(' ')[0]),float(ctr.strip().split(' ')[6])) for ctr in control_file_list]
+      def sync_control():
+        control_list = []
+        corresponding_imgs = []
+        ctr_ind, ctr_val = control_parsed.pop(0)
+        for ni in num_imgs:
+          while(ctr_ind < ni):
+            try:
+              ctr_ind, ctr_val = control_parsed.pop(0)
+            except (IndexError): # In case control has no more lines though RGB has still images, stop anyway:
+              return corresponding_imgs, control_list
+          # clip at -1 and 1
+          if abs(ctr_val) > 1: ctr_val = np.sign(ctr_val)
+          control_list.append(ctr_val)
+          corresponding_imgs.append(ni)
+        return corresponding_imgs, control_list
+      num_imgs, control_list = sync_control()
+      assert len(num_imgs) == len(control_list), "Length of number of images {0} is not equal to number of control {1}".format(len(num_imgs),len(control_list))
+      
+      # Load images in RAM and preprocess
+      imgs=[]
+      for num in num_imgs:
+        img_file = join(run_dir,'RGB', '{0:010d}.jpg'.format(num))
+        img = sio.imread(img_file)
+        scale_height = int(np.floor(img.shape[0]/im_size[0]))
+        scale_width = int(np.floor(img.shape[1]/im_size[1]))
+        img = img[::scale_height,::scale_width]
+        img = sm.resize(img,im_size,mode='constant').astype(float)
+        assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
+        imgs.append(img)
+
+      # Create collision list
+      collision_list=[]
+      if FLAGS.network == 'coll_q_net':
+        coll_file = open(join(run_dir,FLAGS.collision_file),'r')
+        coll_file_list = coll_file.readlines()
+        while len(coll_file_list[-1])<=1 : coll_file_list=coll_file_list[:-1]
+        collision_dict={int(coll.strip().split(' ')[0]):int(coll.strip().split(' ')[1]) for coll in coll_file_list}
+        collision_list=[collision_dict[num_img] for num_img in num_imgs]
+        assert len(num_imgs) == len(collision_list), "Length of number of images {0} is not equal to number of collision labels {1}".format(len(num_imgs),len(collision_list))
+     
+      # Add depth links if files exist
+      # depth_list = [] 
+      # try:
+      #   depths_jpg=listdir(join(run_dir,FLAGS.depth_directory))
+      #   if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
+      # except OSError as e:
+      #   # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
+      #   pass
+      # else:
+      #   num_depths=sorted([int(de[0:-4]) for de in depths_jpg])
+      #   smallest_depth = num_depths.pop(0)
+      #   for ni in num_imgs: #link the indices of rgb images with the smallest depth bigger than current index
+      #     while(ni > smallest_depth):
+      #       try:
+      #         smallest_depth = num_depths.pop(0)
+      #       except IndexError:
+      #         break
+      #     depth_list.append(smallest_depth)
+      #   num_imgs = num_imgs[:len(depth_list)]
+      #   control_list = control_list[:len(depth_list)]
+      #   assert len(num_imgs) == len(depth_list), "Length of input(imags,control,depth) is not equal"
+
+      # Add scan information if file exist
+      scan_list = []
+      if os.path.isfile(join(run_dir,'scan.txt')):
+        scans = open(join(run_dir,'scan.txt'),'r').readlines()[2:]
+        ranges = np.zeros((len(scans),int(FLAGS.field_of_view/FLAGS.smooth_scan)))
+        for si,s in enumerate(scans):
+          def check(r):
+            """clip at FLAGS.max_depth, set 0's to nan"""
+            return min(r,FLAGS.max_depth) if r!=0 else np.nan
+          # clip left FOV/2 range from 0:FOV/2 reversed with right FOV/2degree range from the last FOV/2:
+          scan=list(reversed([ check(float(r)) for r in s[12:-2].split(',')[0:FLAGS.field_of_view/2]]))+list(reversed([check(float(r)) for r in s[12:-2].split(',')[-FLAGS.field_of_view/2:]]))
+          # add some smoothing by averaging over 4 neighboring bins
+          ranges[si]=[np.nanmean(scan[i*FLAGS.smooth_scan:i*FLAGS.smooth_scan+FLAGS.smooth_scan]) for i in range(int(len(scan)/FLAGS.smooth_scan))]
+        scan_list=np.asarray(ranges)
+      # add all data to the dataset
+      set_list.append({'name':run_dir, 'num_imgs':num_imgs, 'controls':control_list, 'imgs':imgs, 'collisions':collision_list, 'scans':scan_list})
+      
+    except IndexError as e:
+      coord.request_stop()
+    except Exception as e:
+      print('Problem in loading data: ',e)
+      checklist.append(False)
+      coord.request_stop()
+    
 def load_set(data_type):
   """Load a type (train, val or test) of set in the set_list
   as a tuple: first tuple element the directory of the fligth 
   and the second the number of images taken in that flight
   """
-  set_list = []
   if not os.path.exists(join(datasetdir, data_type+'_set.txt')):
     print('Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
     return []
-
   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
-  lst_runs = [ l.strip() for l in f.readlines() if len(l) > 2]
-  
-  for run_dir in lst_runs:
-    print(run_dir)
-    
-    imgs_jpg=listdir(join(run_dir,'RGB'))
-    
-    # get list of all image numbers available in listdir
-    num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg])
-    assert len(num_imgs)!=0 , IOError('no images in {0}: {1}'.format(run_dir,len(imgs_jpg)))
-    if not isfile(join(run_dir,'RGB','{0:010d}.jpg'.format(num_imgs[-1]))):
-      print('ERROR:',run_dir,' imgnum: ',num_imgs[-1])
-    # parse control data  
-    ctr_file = open(join(run_dir,FLAGS.control_file),'r')
-    control_file_list = ctr_file.readlines()[2:]
-    # cut last lines to avoid emtpy lines
-    while len(control_file_list[-1])<=1 : control_file_list=control_file_list[:-1]
-    control_parsed = [(int(ctr.strip().split(' ')[0]),float(ctr.strip().split(' ')[6])) for ctr in control_file_list]
-    def sync_control():
-      control_list = []
-      corresponding_imgs = []
-      ctr_ind, ctr_val = control_parsed.pop(0)
-      for ni in num_imgs:
-        while(ctr_ind < ni):
-          try:
-            ctr_ind, ctr_val = control_parsed.pop(0)
-          except (IndexError): # In case control has no more lines though RGB has still images, stop anyway:
-            return corresponding_imgs, control_list
-        # clip at -1 and 1
-        if abs(ctr_val) > 1: ctr_val = np.sign(ctr_val)
-        control_list.append(ctr_val)
-        corresponding_imgs.append(ni)
-      return corresponding_imgs, control_list
-    num_imgs, control_list = sync_control()
-    assert len(num_imgs) == len(control_list), "Length of number of images {0} is not equal to number of control {1}".format(len(num_imgs),len(control_list))
-    
-    # Create collision list
-    collision_list=[]
-    if FLAGS.network == 'coll_q_net':
-      coll_file = open(join(run_dir,FLAGS.collision_file),'r')
-      coll_file_list = coll_file.readlines()
-      while len(coll_file_list[-1])<=1 : coll_file_list=coll_file_list[:-1]
-      collision_dict={int(coll.strip().split(' ')[0]):int(coll.strip().split(' ')[1]) for coll in coll_file_list}
-      collision_list=[collision_dict[num_img] for num_img in num_imgs]
-      assert len(num_imgs) == len(collision_list), "Length of number of images {0} is not equal to number of collision labels {1}".format(len(num_imgs),len(collision_list))
-   
-    # Add depth links if files exist
-    depth_list = [] 
-    try:
-      depths_jpg=listdir(join(run_dir,FLAGS.depth_directory))
-      if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
-    except OSError as e:
-      # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
-      pass
-    else:
-      num_depths=sorted([int(de[0:-4]) for de in depths_jpg])
-      smallest_depth = num_depths.pop(0)
-      for ni in num_imgs: #link the indices of rgb images with the smallest depth bigger than current index
-        while(ni > smallest_depth):
-          try:
-            smallest_depth = num_depths.pop(0)
-          except IndexError:
-            break
-        depth_list.append(smallest_depth)
-      num_imgs = num_imgs[:len(depth_list)]
-      control_list = control_list[:len(depth_list)]
-      assert len(num_imgs) == len(depth_list), "Length of input(imags,control,depth) is not equal"
-
-    # Add scan information if file exist
-    scan_list = []
-    if os.path.isfile(join(run_dir,'scan.txt')):
-      scans = open(join(run_dir,'scan.txt'),'r').readlines()[2:]
-      ranges = np.zeros((len(scans),int(FLAGS.field_of_view/FLAGS.smooth_scan)))
-      for si,s in enumerate(scans):
-        def check(r):
-          """clip at FLAGS.max_depth, set 0's to nan"""
-          return min(r,FLAGS.max_depth) if r!=0 else np.nan
-        # clip left FOV/2 range from 0:FOV/2 reversed with right FOV/2degree range from the last FOV/2:
-        scan=list(reversed([ check(float(r)) for r in s[12:-2].split(',')[0:FLAGS.field_of_view/2]]))+list(reversed([check(float(r)) for r in s[12:-2].split(',')[-FLAGS.field_of_view/2:]]))
-        # add some smoothing by averaging over 4 neighboring bins
-        ranges[si]=[np.nanmean(scan[i*FLAGS.smooth_scan:i*FLAGS.smooth_scan+FLAGS.smooth_scan]) for i in range(int(len(scan)/FLAGS.smooth_scan))]
-        
-    set_list.append({'name':run_dir, 'num_imgs':num_imgs, 'controls':control_list, 'depths':depth_list, 'collisions':collision_list, 'scans':ranges})
-  f.close()
-  if len(set_list)==0:
-    print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
+  run_list = [ l.strip() for l in f.readlines() if len(l) > 2]
+  f.close() 
+  set_list = []
+  checklist = []
+  try:
+    coord=tf.train.Coordinator()
+    threads = [threading.Thread(target=load_run_info, args=(coord, run_list, set_list, checklist)) for i in range(FLAGS.num_threads)]
+    for t in threads: t.start()
+    coord.join(threads, stop_grace_period_secs=5)
+  except RuntimeError as e:
+    print("threads are not stopping...",e)
+  else:
+    if len(checklist) != sum(checklist):
+      ok=False
+      print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
   return set_list
 
 def prepare_data(_FLAGS, size, size_depth=(55,74)):
@@ -146,12 +177,10 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   test_set=load_set('test')
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
   im_size=size
-  de_size = size_depth
-  # collision_info_3.txt --> collision_num = 3
   try:
     collision_num = int(FLAGS.collision_file.split('.')[0].split('_')[2])
   except:
-    collision_num = 10
+    collision_num = 5
   
 def generate_batch(data_type):
   """ 
@@ -191,7 +220,7 @@ def generate_batch(data_type):
     stime=time.time()
     
     count_tags={0:0,1:0}
-    for batch_num in range(FLAGS.batch_size):
+    for batch_item in range(FLAGS.batch_size):
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
       if FLAGS.normalize_data: 
@@ -228,88 +257,111 @@ def generate_batch(data_type):
       
       # if FLAGS.n_fc:
       #   frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
-      batch_indices.append((batch_num, run_ind, frame_ind))
-    # print("picking random indices duration: ",time.time()-stime)
-    def load_image_and_target(coord, batch_indices, batch, checklist):
-      while not coord.should_stop():
-        try:
-          loc_ind, run_ind, frame_ind = batch_indices.pop()
-          def load_rgb_depth_image(run_ind, frame_ind):
-            # load image
-            img_file = join(data_set[run_ind]['name'],'RGB', '{0:010d}.jpg'.format(data_set[run_ind]['num_imgs'][frame_ind]))
-            # print('img_file ',img_file)
-            # img = Image.open(img_file)
-            img = sio.imread(img_file)
-            scale_height = int(np.floor(img.shape[0]/im_size[0]))
-            scale_width = int(np.floor(img.shape[1]/im_size[1]))
-            img = img[::scale_height,::scale_width]
-            img = sm.resize(img,im_size,mode='constant').astype(float) #.astype(np.float32)
-            assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
-            de = []
-            try:
-              depth_file = join(data_set[run_ind]['name'],FLAGS.depth_directory, '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind+1]))
-            except:
-              pass
-            else:
-              # de = Image.open(depth_file)
-              de = sio.imread(depth_file)
-              scale_height = int(np.floor(de.shape[0]/de_size[0]))
-              scale_width = int(np.floor(de.shape[1]/de_size[1]))
-              de = de[::scale_height,::scale_width]
-              # clip depth image with small values as they are due to image processing
-              de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
-              de[de<10]=0
-              de = de * 1/255. * 5.
-            return img, de
-          # if FLAGS.n_fc: #concatenate features
-          #   ims = []
-          #   for frame in range(FLAGS.n_frames):
-          #     # target depth (de) is each time overwritten, only last frame is kept
-          #     image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
-          #     ims.append(image)
-          #   im = np.concatenate(ims, axis=2)
-          #   ctr = data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1]
-          # else:
-          im, de = load_rgb_depth_image(run_ind, frame_ind)
+      batch_indices.append((run_ind, frame_ind))
+    
+    for run_ind, frame_ind in batch_indices:
+      img = data_set[run_ind]['imgs'][frame_ind]
+      scan = []
+      try: #load next scan 
+        scan = data_set[run_ind]['scans'][frame_ind+1]
+      except:
+        pass
 
-          # load scan
-          scan = []
-          try: #load next scan 
-            scan = data_set[run_ind]['scans'][frame_ind+1]
-          except:
-            pass
-
-          ctr = data_set[run_ind]['controls'][frame_ind]
-          # clip control avoiding values larger than 1
-          ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
-          
-          if FLAGS.network == 'coll_q_net': 
-            col = data_set[run_ind]['collisions'][frame_ind]
-            batch.append({'img':im, 'ctr':ctr, 'depth':de, 'trgt':col})
-          else:
-            # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
-            batch.append({'img':im, 'ctr':ctr, 'depth':de if len(scan) == 0 else scan})
-          checklist.append(True)
-        except IndexError as e:
-          # print(e)
-          #print('batch_loaded, wait to stop', e)
-          coord.request_stop()
-        except Exception as e:
-          print('Problem in loading data: ',e)
-          checklist.append(False)
-          coord.request_stop()
-    try:
-      coord=tf.train.Coordinator()
-      #print(FLAGS.num_threads)
-      threads = [threading.Thread(target=load_image_and_target, args=(coord, batch_indices, batch, checklist)) for i in range(FLAGS.num_threads)]
-      for t in threads: t.start()
-      coord.join(threads, stop_grace_period_secs=5)
-    except RuntimeError as e:
-      print("threads are not stopping...",e)
-    else:
-      if len(checklist) != sum(checklist): ok=False
-    if ok: b+=1
+      ctr = data_set[run_ind]['controls'][frame_ind]
+      # clip control avoiding values larger than 1
+      ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
+      
+      if FLAGS.network == 'coll_q_net': 
+        col = data_set[run_ind]['collisions'][frame_ind]
+        batch.append({'img':img, 'ctr':ctr, 'trgt':col})
+      else:
+        # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
+        batch.append({'img':img, 'ctr':ctr, 'depth': scan})
+    b+=1
+    ok=True    
     yield b, ok, batch
+
+    # # print("picking random indices duration: ",time.time()-stime)
+    # def load_image_and_target(coord, batch_indices, batch, checklist):
+    #   while not coord.should_stop():
+    #     try:
+    #       loc_ind, run_ind, frame_ind = batch_indices.pop()
+    #       def load_rgb_depth_image(run_ind, frame_ind):
+    #         # load image
+    #         img_file = join(data_set[run_ind]['name'],'RGB', '{0:010d}.jpg'.format(data_set[run_ind]['num_imgs'][frame_ind]))
+    #         # print('img_file ',img_file)
+    #         # img = Image.open(img_file)
+    #         img = sio.imread(img_file)
+    #         scale_height = int(np.floor(img.shape[0]/im_size[0]))
+    #         scale_width = int(np.floor(img.shape[1]/im_size[1]))
+    #         img = img[::scale_height,::scale_width]
+    #         img = sm.resize(img,im_size,mode='constant').astype(float) #.astype(np.float32)
+    #         assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
+    #         de = []
+    #         try:
+    #           depth_file = join(data_set[run_ind]['name'],FLAGS.depth_directory, '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind+1]))
+    #         except:
+    #           pass
+    #         else:
+    #           # de = Image.open(depth_file)
+    #           de = sio.imread(depth_file)
+    #           scale_height = int(np.floor(de.shape[0]/de_size[0]))
+    #           scale_width = int(np.floor(de.shape[1]/de_size[1]))
+    #           de = de[::scale_height,::scale_width]
+    #           # clip depth image with small values as they are due to image processing
+    #           de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
+    #           de[de<10]=0
+    #           de = de * 1/255. * 5.
+    #         return img, de
+    #       # if FLAGS.n_fc: #concatenate features
+    #       #   ims = []
+    #       #   for frame in range(FLAGS.n_frames):
+    #       #     # target depth (de) is each time overwritten, only last frame is kept
+    #       #     image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
+    #       #     ims.append(image)
+    #       #   im = np.concatenate(ims, axis=2)
+    #       #   ctr = data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1]
+    #       # else:
+    #       im, de = load_rgb_depth_image(run_ind, frame_ind)
+
+    #       # load scan
+    #       scan = []
+    #       try: #load next scan 
+    #         scan = data_set[run_ind]['scans'][frame_ind+1]
+    #       except:
+    #         pass
+
+    #       ctr = data_set[run_ind]['controls'][frame_ind]
+    #       # clip control avoiding values larger than 1
+    #       ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
+          
+    #       if FLAGS.network == 'coll_q_net': 
+    #         col = data_set[run_ind]['collisions'][frame_ind]
+    #         batch.append({'img':im, 'ctr':ctr, 'depth':de, 'trgt':col})
+    #       else:
+    #         # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
+    #         batch.append({'img':im, 'ctr':ctr, 'depth':de if len(scan) == 0 else scan})
+    #       checklist.append(True)
+    #     except IndexError as e:
+    #       # print(e)
+    #       #print('batch_loaded, wait to stop', e)
+    #       coord.request_stop()
+    #     except Exception as e:
+    #       print('Problem in loading data: ',e)
+    #       checklist.append(False)
+    #       coord.request_stop()
+    # try:
+    #   coord=tf.train.Coordinator()
+    #   #print(FLAGS.num_threads)
+    #   threads = [threading.Thread(target=load_image_and_target, args=(coord, batch_indices, batch, checklist)) for i in range(FLAGS.num_threads)]
+    #   for t in threads: t.start()
+    #   coord.join(threads, stop_grace_period_secs=5)
+    # except RuntimeError as e:
+    #   print("threads are not stopping...",e)
+    # else:
+    #   if len(checklist) != sum(checklist): ok=False
+    # if ok: b+=1
+    # yield b, ok, batch
     
 #### FOR TESTING ONLY
   
@@ -317,7 +369,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
   parser.add_argument("--normalize_data", action='store_true', help="Define wether the collision tags 0 or 1 are normalized in a batch.")
-  parser.add_argument("--dataset", default="canyon_rl_turtle_collision_free", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="canyon_turtle_scan_pruned", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--action_bound", default=1, type=float, help="Bound the action space between -b and b")
@@ -331,24 +383,36 @@ if __name__ == '__main__':
   parser.add_argument("--field_of_view", default=104, type=int, help="The field of view of the camera cuts the depth scan in the range visible for the camera. Value should be even. Normal: 72 (-36:36), Wide-Angle: 120 (-60:60)")
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings.")
   parser.add_argument("--max_depth", default=6, type=float, help="clip depth loss with weigths to focus on correct depth range.")
+  parser.add_argument("--output_size",default=[1,26],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
 
   # parser.add_argument("--collision_file",default='collision_info.txt',type=str,help="define file with collision labels")
   
   FLAGS=parser.parse_args()  
 
-  prepare_data(FLAGS, (240,320,3))
+  prepare_data(FLAGS, (128,128,3))
 
   print 'run_dir: {}'.format(full_set['train'][0]['name'])
   print 'len images: {}'.format(len(full_set['train'][0]['num_imgs']))
   print 'len control: {}'.format(len(full_set['train'][0]['controls']))
-  print 'len depth: {}'.format(len(full_set['train'][0]['depths']))
+  print 'len depth: {}'.format(len(full_set['train'][0]['scans']))
   print 'len collisions: {}'.format(len(full_set['train'][0]['collisions']))
   
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
-    scans = [_['depth'] for _ in batch]
-
+    inputs = np.array([_['img'] for _ in batch])
+    actions = np.array([[_['ctr']] for _ in batch])
+    if FLAGS.network == 'depth_q_net':
+      targets = np.array([_['depth'] for _ in batch]).reshape((-1,FLAGS.output_size[0],FLAGS.output_size[1]))
+    else:
+      targets = np.array([_['trgt'] for _ in batch]).reshape((-1,1))
+    print '---------------------------inputs---------------------'
+    print inputs.shape
+    print '---------------------------actions---------------------'
+    print actions.shape
+    print '---------------------------targets---------------------'
+    print targets.shape
+    print targets    
     import pdb; pdb.set_trace()
     pass
     # actions=[_['ctr'] for _ in batch]
@@ -370,3 +434,5 @@ if __name__ == '__main__':
   for index, ok, batch in generate_batch('train'):
     pass
   print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
+
+
