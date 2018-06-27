@@ -319,13 +319,13 @@ class PilotNode(object):
         # print("random: {0}, epsilon: {1}, action:{2}".format(random_action,epsilon,action))
         if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
 
-
+    
     # Adjust speed in real_maze
     speed = self.FLAGS.speed
     if self.world_name ==  'real_maze':
-      speed_dict={-1:0.2*self.FLAGS.speed,
+      speed_dict={-1:0.7*self.FLAGS.speed,
                   0:self.FLAGS.speed,
-                  1:0.2*self.FLAGS.speed}
+                  1:0.7*self.FLAGS.speed}
       try:
         speed = speed_dict[action]
       except:
@@ -347,7 +347,8 @@ class PilotNode(object):
     rec=time.time()
     
     if self.FLAGS.network == 'depth_q_net' and not self.FLAGS.dont_show_depth and not self.finished:
-      self.depth_pub.publish(self.depth_prediction)
+      # self.depth_pub.publish(np.concatenate([np.array([action]),output.flatten()],axis=0))
+      self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
     if ( not self.FLAGS.evaluate or self.FLAGS.validate_online) and not self.finished:
