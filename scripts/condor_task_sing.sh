@@ -152,7 +152,6 @@ blacklist=" && ( machineowner == \"Visics\")"
 #greenlist=""
 greenlist=" && ((machine == \"fluorite.esat.kuleuven.be\") || \
              (machine == \"jade.esat.kuleuven.be\") || \
-             (machine == \"vladimir.esat.kuleuven.be\") || \
       	     (machine == \"malachite.esat.kuleuven.be\")) "
 
 # from umbriel this is due to driver version mismatch

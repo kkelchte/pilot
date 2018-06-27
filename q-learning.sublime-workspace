@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"ROS",
+				"ROS_HOSTNAME"
+			],
+			[
 				"dela",
 				"delays"
 			],
@@ -380,7 +384,16 @@
 			"file": "pilot/main.py",
 			"settings":
 			{
-				"buffer_size": 17113,
+				"buffer_size": 17116,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/esat/opal/kkelchte/docker_home/.entrypoint_xpra",
+			"settings":
+			{
+				"buffer_size": 2113,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -389,8 +402,25 @@
 			"file": "scripts/launch_condor.sh",
 			"settings":
 			{
-				"buffer_size": 10381,
+				"buffer_size": 10997,
 				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params_4096.yaml",
+			"settings":
+			{
+				"buffer_size": 42,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_slow.yaml",
+			"settings":
+			{
+				"buffer_size": 53,
 				"line_ending": "Unix"
 			}
 		},
@@ -398,7 +428,7 @@
 			"file": "pilot/rosinterface.py",
 			"settings":
 			{
-				"buffer_size": 23922,
+				"buffer_size": 24882,
 				"line_ending": "Unix"
 			}
 		},
@@ -406,7 +436,7 @@
 			"file": "pilot/model.py",
 			"settings":
 			{
-				"buffer_size": 12822,
+				"buffer_size": 12867,
 				"line_ending": "Unix"
 			}
 		},
@@ -472,13 +502,13 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/launch_condor.sh",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_coll_q_net_params_4096.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_coll_q_net_params_e2e.yaml",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/get_results.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/model.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/models/coll_q_net.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/launch_condor.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_sing.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_offline.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/offline.py",
@@ -603,7 +633,7 @@
 	],
 	"find":
 	{
-		"height": 40.0
+		"height": 24.0
 	},
 	"find_in_files":
 	{
@@ -617,6 +647,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"1.0",
 			"args_for_model",
 			"n",
 			"max_loss",
@@ -711,7 +742,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
@@ -720,15 +751,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 17113,
+						"buffer_size": 17116,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3451,
-								3451
+								1855,
+								1855
 							]
 						],
 						"settings":
@@ -738,27 +769,27 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1406.0,
+						"translation.y": 686.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "scripts/launch_condor.sh",
+					"file": "/esat/opal/kkelchte/docker_home/.entrypoint_xpra",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10381,
+						"buffer_size": 2113,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7157,
-								7157
+								1655,
+								1655
 							]
 						],
 						"settings":
@@ -774,19 +805,103 @@
 				},
 				{
 					"buffer": 3,
-					"file": "pilot/rosinterface.py",
+					"file": "scripts/launch_condor.sh",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 23922,
+						"buffer_size": 10997,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								16832,
-								16832
+								5688,
+								5688
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params_4096.yaml",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 42,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								41,
+								41
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/YAML/YAML.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_slow.yaml",
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 53,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/YAML/YAML.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "pilot/rosinterface.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 24882,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								12929,
+								12929
 							]
 						],
 						"settings":
@@ -796,19 +911,19 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4665.0,
+						"translation.y": 4125.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 7,
 					"file": "pilot/model.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 12822,
+						"buffer_size": 12867,
 						"regions":
 						{
 						},
@@ -829,11 +944,11 @@
 						"translation.y": 1215.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 8,
 					"file": "pilot/replay_buffer.py",
 					"semi_transient": false,
 					"settings":
@@ -859,7 +974,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 8,
 					"type": "text"
 				}
 			]
@@ -914,6 +1029,10 @@
 		"selected_items":
 		[
 			[
+				"lau",
+				"q-learning/scripts/launch_condor.sh"
+			],
+			[
 				"mo",
 				"q-learning/pilot/model.py"
 			],
@@ -924,10 +1043,6 @@
 			[
 				"coll",
 				"q-learning/pilot/models/coll_q_net.py"
-			],
-			[
-				"lau",
-				"q-learning/scripts/launch_condor.sh"
 			],
 			[
 				"rpel",
