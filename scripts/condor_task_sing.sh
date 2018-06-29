@@ -53,7 +53,8 @@ echo "CREATE_DS: ${CREATE_DS}"
 echo
 tput sgr 0 
 
-COMMAND=(python ${SCRIPT} -pe sing)
+COMMAND=(python ${SCRIPT} -pe sing --reuse_default_world) #Use default canyons just for now... (TO BE REMOVED)
+# COMMAND=(python ${SCRIPT} -pe sing)
 if [ ! -z "$TAG" ] ; then
   COMMAND+=(-t $TAG)
 fi
