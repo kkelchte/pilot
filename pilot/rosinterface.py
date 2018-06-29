@@ -318,9 +318,14 @@ class PilotNode(object):
         random= action==random_action #needed for random_action replay priority
         # print("random: {0}, epsilon: {1}, action:{2}".format(random_action,epsilon,action))
         if epsilon < 0.0000001: epsilon = 0 #avoid taking binomial of too small epsilon.
+        # clip action to -1, 0 or 1.
+        # action = 0 if np.abs(action) > 0.3 else np.sign(action) #added on 28/06/18
+        
 
     
     # Adjust speed in real_maze
+    
+
     speed = self.FLAGS.speed
     if self.world_name ==  'real_maze':
       speed_dict={-1:0.7*self.FLAGS.speed,
@@ -481,11 +486,11 @@ class PilotNode(object):
         result_string='{0}, min_delay: {1}, avg_delay: {2}, max_delay: {3}'.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       # add driving duration (collision free)
       if self.start_time!=0: 
-        result_string='{0}, driving_duration: {1:0.1f}'.format(result_string, driving_duration)
+        result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, driving_duration)
         sumvar['driving_time']=driving_duration
       # add imitation loss
       if len(self.imitation_loss)!=0:
-        result_string='{0}, imitation_loss: {1:0.1f}'.format(result_string, np.mean(self.imitation_loss))
+        result_string='{0}, imitation_loss: {1:0.3}'.format(result_string, np.mean(self.imitation_loss))
         sumvar['imitation_loss']=np.mean(self.imitation_loss)
       # add depth loss
       if len(self.depth_loss)!=0:
