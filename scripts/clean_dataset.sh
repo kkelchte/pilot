@@ -54,6 +54,7 @@ for d in 0*; do echo $d; for f in $(ls $d/RGB | tail -5); do rm $d/RGB/$f; done;
 
 # Check if it was successfull
 current_num="$(for d in 0* ; do ls $d/RGB; done | wc -l)"
+echo "$current_num vs $expected_num"
 if [ $current_num != $expected_num ] ; then
 	echo "Failed to extract collision free dataset."
 	exit 1

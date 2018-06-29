@@ -37,9 +37,9 @@
 
 
 for i in 0 1 2 ; do
-	for n in 900 700 500 ; do
-		./condor_task_offline.sh -q $((4*7*60*60)) -t depth_q_net_no_coll/ds${n}_${i}  -e true -w 'canyon' -n 20 -p "--loss absolute --learning_rate 0.1 --dataset canyon_ds_coll_free${n} --random_seed $((1534+i*13249))"
+	for n in 50 ; do
 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
+		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_norm_${i} -e true -w 'canyon' -n 20 -p "--normalize_data --network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
 		sleep 1
 	done
 done
