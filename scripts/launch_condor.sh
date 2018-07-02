@@ -23,28 +23,24 @@
 
 # ------------TRAIN OFFLINE----------
 # for i in 0 1 2 ; do
-# 	./condor_task_offline.sh -q $((4*7*60*60)) -t depth_q_net_no_coll/ds200_${i}  -e true -w 'canyon' -n 20 -p "--loss absolute --learning_rate 0.1 --dataset canyon_ds_coll_free200 --random_seed $((1534+i*13249))"	
-# 	./condor_task_offline.sh -q $((3*60*60)) -t coll_q_net/ds200_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds200 --random_seed $((14123+i*13249))"
-# 	./condor_task_offline.sh -q $((3*60*60)) -t coll_q_net/ds200_norm_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds200 --random_seed $((14123+i*13249)) --normalize_data"
-# 	./condor_task_offline.sh -q $((4*7*60*60)) -t depth_q_net_no_coll/ds100_${i}  -e true -w 'canyon' -n 20 -p "--loss absolute --learning_rate 0.1 --dataset canyon_ds_coll_free100 --random_seed $((1534+i*13249))"	
-# 	./condor_task_offline.sh -q $((3*60*60)) -t coll_q_net/ds100_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds100 --random_seed $((14123+i*13249))"
-# 	./condor_task_offline.sh -q $((3*60*60)) -t coll_q_net/ds100_norm_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds100 --random_seed $((14123+i*13249)) --normalize_data"
-# 	./condor_task_offline.sh -q $((4*7*60*60)) -t depth_q_net_no_coll/ds50_${i}  -e true -w 'canyon' -n 20 -p "--loss absolute --learning_rate 0.1 --dataset canyon_ds_coll_free50 --random_seed $((1534+i*13249))"	
-# 	./condor_task_offline.sh -q $((3*60*60)) -t coll_q_net/ds50_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds50 --random_seed $((14123+i*13249))"
-# 	./condor_task_offline.sh -q $((3*60*60)) -t coll_q_net/ds50_norm_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds50 --random_seed $((14123+i*13249)) --normalize_data"
-# 	sleep 0.5
+# 	for n in 500 700 ; do
+# 		./condor_task_offline.sh -q $((4*7*60*60)) -t depth_q_net_no_coll/ds${n}_${i} -e true -w 'canyon' -n 20 -p "--loss absolute --learning_rate 0.1 --dataset canyon_ds_coll_free${n} --random_seed $((1534+i*13249))"	
+# 		sleep 2
+# 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
+# 		sleep 2
+# 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_norm_${i} -e true -w 'canyon' -n 20 -p "--normalize_data --network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
+# 		sleep 2
+# 	done
 # done
 
-
-for i in 0 1 2 ; do
-	for n in 50 ; do
-		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
-		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_norm_${i} -e true -w 'canyon' -n 20 -p "--normalize_data --network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
-		sleep 1
-	done
-done
-
-
+# for i in 0 1 2 ; do
+# 	for n in 50 100 200 ; do
+# 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
+# 		sleep 2
+# 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_norm_${i} -e true -w 'canyon' -n 20 -p "--normalize_data --network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
+# 		sleep 2
+# 	done
+# done
 # ------------EVALUATE ONLINE----------
 # for i in 0 ; do
 # 	for n in 20 30 40 50 60 70 80 90 ; do
@@ -56,10 +52,18 @@ done
 # done
 
 # ------------REAL DATA-----------
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/ref_1 -p "--dataset maze_real_turtle_collision_free --random_seed $((13249))"
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/ref -p "--dataset maze_real_turtle --random_seed $((13249))"
-# ./condor_task_offline.sh -q $((7*60*60)) -t coll_q_net_real/ref  -p "--network coll_q_net --learning_rate 0.01 --loss mse --dataset maze_real_turtle --random_seed $((13249))"
 
+# for lr in 0.9 0.1 0.01 0.001 0.0001 ; do
+# 	for max_depth in 2 1.5 1 0.5 ; do
+# 		# extract strings without points for naming the files
+# 		LR="$(echo $lr | sed -e 's/\.//g')"
+# 		MD="$(echo $max_depth | sed -e 's/\.//g')"
+# 		./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/scratch_${LR}_${MD} -p "--learning_rate $lr --max_depth $max_depth --max_loss 0.5 --clip_loss_to_max --dataset real_maze --random_seed $((13249))"
+# 		sleep 1
+# 		./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/transfer_${LR}_${MD} -p "--learning_rate $lr --max_depth $max_depth --max_loss 0.5 --clip_loss_to_max --dataset real_maze --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
+# 		sleep 1
+# 	done
+# done	
 # ------------Transfer learning----------
 # for i in 0 1 2 ; do
 # 	./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/scratch_${i}_lr09_e2e -p "--max_loss 0.5 --clip_loss_to_max --learning_rate 0.9 --grad_mul_weight 1 --dataset maze_real_turtle_collision_free --random_seed $((13249+65456*i))"
@@ -102,15 +106,15 @@ done
 # done
 # for i in $(seq 0 55) ; do
 # # for i in 0 ; do
-	# WT=$((3*60*60*4))
+# WT=$((3*60*60*4))
 # 	# ME=$((3*5*100))
- # 	./condor_task_offline.sh -q $WT -t doshico_auxd_gm0001/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--grad_mul_weight 0.001 --batch_size 64 --max_episodes 20 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc --auxiliary_depth"
-	# ./condor_task_offline.sh -q $WT -t doshico_naux_gm0001/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--grad_mul_weight 0.001 --batch_size 64 --max_episodes 20 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc --auxiliary_depth"
- #        ./condor_task_offline.sh -q $WT -t doshico_fc_gm0001/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--grad_mul_weight 0.001 --batch_size 64 --max_episodes 20 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc --auxiliary_depth"
+# 	./condor_task_offline.sh -q $WT -t doshico_auxd_gm0001/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--grad_mul_weight 0.001 --batch_size 64 --max_episodes 20 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc --auxiliary_depth"
+# ./condor_task_offline.sh -q $WT -t doshico_naux_gm0001/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--grad_mul_weight 0.001 --batch_size 64 --max_episodes 20 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc --auxiliary_depth"
+#        ./condor_task_offline.sh -q $WT -t doshico_fc_gm0001/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--grad_mul_weight 0.001 --batch_size 64 --max_episodes 20 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc --auxiliary_depth"
 #       ./condor_task_offline.sh -q $WT -t doshico_auxd_gm01/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--grad_mul_weight 0.1 --batch_size 64 --max_episodes 20 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc --auxiliary_depth"
 #	./condor_task_offline.sh -q $WT -t doshico_auxd_gm05/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--grad_mul_weight 0.5 --batch_size 64 --max_episodes 20 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc --auxiliary_depth"
 # 	./condor_task_offline.sh -q $WT -t doshico_naux/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--batch_size 64 --max_episodes 34 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539)) --n_fc" 
 # 	./condor_task_offline.sh -q $WT -t doshico_fc/doshico_$i -m mobilenet_025 -e true -n 20 -w "esat_v1 esat_v2" -p "--batch_size 64 --max_episodes 50 --learning_rate 0.1 --dataset overview --random_seed $((3000*$i+1539))" 
 # done
 
-watch condor_q
+while [ true ] ; do clear; condor_q; sleep 2; done

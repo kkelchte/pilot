@@ -121,8 +121,8 @@ fi
 echo "Universe         = vanilla" > $condor_file
 echo "RequestCpus      = 4"      >> $condor_file
 echo "Request_GPUs     = 1"      >> $condor_file
-# echo "RequestMemory    = 15G"     >> $condor_file
-echo "RequestMemory    = 30G"     >> $condor_file
+echo "RequestMemory    = 15G"     >> $condor_file
+# echo "RequestMemory    = 30G"     >> $condor_file
 echo "RequestDisk      = 50G"   >> $condor_file
 #blacklist="distributionversion == \"26\""
 # blacklist="(machine != \"andromeda.esat.kuleuven.be\")"
@@ -132,6 +132,9 @@ blacklist="(machine != \"andromeda.esat.kuleuven.be\") && \
                     (machine != \"wasat.esat.kuleuven.be\") && \
                     (machine != \"unuk.esat.kuleuven.be\") && \
                     (machine != \"emerald.esat.kuleuven.be\") && \
+                    (machine != \"wulfenite.esat.kuleuven.be\") && \
+                    (machine != \"chokai.esat.kuleuven.be\") && \
+                    (machine != \"pyrite.esat.kuleuven.be\") && \
                     (machine != \"ymir.esat.kuleuven.be\") "
                     # (machine != \"pyrite.esat.kuleuven.be\") && \
                     # (machine != \"lesath.esat.kuleuven.be\") && \

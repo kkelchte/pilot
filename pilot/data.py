@@ -34,7 +34,7 @@ def load_run_info(coord, run_list, set_list, checklist):
   while not coord.should_stop():
     try:
       run_dir = run_list.pop()
-      
+      print run_dir
       # get list of all image numbers available in listdir
       imgs_jpg=listdir(join(run_dir,'RGB'))
       num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg[::FLAGS.subsample]])
@@ -115,8 +115,9 @@ def load_run_info(coord, run_list, set_list, checklist):
       scan_list = []
       if os.path.isfile(join(run_dir,'scan.txt')):
         if not os.path.isfile(join(run_dir,'scan.txt')):
-          print("error, could not find collision file in {}".format(run_dir))
+          print("error, could not find scan file in {}".format(run_dir))
         scans = open(join(run_dir,'scan.txt'),'r').readlines()[2:]
+        assert(len(scans) != 0)
         ranges = np.zeros((len(scans),int(FLAGS.field_of_view/FLAGS.smooth_scan)))
         for si,s in enumerate(scans):
           def check(r):
@@ -154,7 +155,7 @@ def load_set(data_type):
     coord=tf.train.Coordinator()
     threads = [threading.Thread(target=load_run_info, args=(coord, run_list, set_list, checklist)) for i in range(FLAGS.num_threads)]
     for t in threads: t.start()
-    coord.join(threads, stop_grace_period_secs=5)
+    coord.join(threads, stop_grace_period_secs=30)
   except RuntimeError as e:
     print("threads are not stopping...",e)
   else:
