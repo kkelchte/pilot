@@ -51,6 +51,7 @@ class PilotNode(object):
     self.model = model 
     self.ready=False 
     self.finished=True
+    self.training=False
     
     self.last_pose=[] # previous pose, used for accumulative distance
     self.depth = [] # field to keep the latest supervised depth
@@ -81,7 +82,8 @@ class PilotNode(object):
     self.imitation_loss=[]
     self.depth_prediction=[]
     self.depth_loss=[]
-
+    self.driving_duration=None
+    
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
       if 'compressed' in image_topic:
@@ -138,7 +140,7 @@ class PilotNode(object):
         
   def gt_callback(self, data):
     """Callback function that keeps track of positions for logging"""
-    if not self.ready: return
+    if not self.ready or self.training: return
     current_pos=[data.pose.pose.position.x,
                     data.pose.pose.position.y,
                     data.pose.pose.position.z]
@@ -290,7 +292,7 @@ class PilotNode(object):
        
     output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*actions)
     # output=np.asarray([1,0,1]).reshape((-1,1))
-    if not self.ready or self.finished: return
+    if not self.ready or self.finished or self.training: return
 
     ### EXTRACT CONTROL
     if self.FLAGS.network == 'depth_q_net':
@@ -415,10 +417,12 @@ class PilotNode(object):
       self.ready=False
       self.finished=True
       if self.start_time!=0: 
-        driving_duration = rospy.get_time() - self.start_time
+        self.driving_duration = rospy.get_time() - self.start_time
       # Train model from experience replay:
       losses_train = {}
       if self.replay_buffer.size()>self.FLAGS.batch_size and not self.FLAGS.evaluate and ((not self.FLAGS.prefill) or (self.FLAGS.prefill and self.replay_buffer.size() == self.FLAGS.buffer_size)):
+        self.training = True
+        print("training...")
         # add code for cleaning up buffer: adding target 1 for last frames before collision
         self.replay_buffer.label_collision(self.logfolder)
         self.replay_buffer.preprocess()
@@ -440,6 +444,7 @@ class PilotNode(object):
       # validate on validation buffer
       losses_test = {}
       if self.FLAGS.validate_online and self.validation_buffer.size()>self.FLAGS.batch_size:
+        self.training=True
         # add code for cleaning up buffer: adding target 1 for last frames before collision
         self.validation_buffer.label_collision(self.logfolder)
         for b in range(min(int(self.validation_buffer.size()/self.FLAGS.batch_size), self.FLAGS.grad_steps)): # sample max 10 batches from all experiences gathered.
@@ -496,9 +501,9 @@ class PilotNode(object):
       if len(self.time_delay) > 2: 
         result_string='{0}, min_delay: {1}, avg_delay: {2}, max_delay: {3}'.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
       # add driving duration (collision free)
-      if self.start_time!=0: 
-        result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, driving_duration)
-        sumvar['driving_time']=driving_duration
+      if self.driving_duration: 
+        result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)
+        sumvar['driving_time']=self.driving_duration
       # add imitation loss
       if len(self.imitation_loss)!=0:
         result_string='{0}, imitation_loss: {1:0.3}'.format(result_string, np.mean(self.imitation_loss))
@@ -548,3 +553,6 @@ class PilotNode(object):
       self.start_time=0
       self.imitation_loss=[]
       self.depth_loss=[]
+
+      self.training=False
+      self.driving_duration=None

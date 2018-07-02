@@ -34,7 +34,7 @@ def load_run_info(coord, run_list, set_list, checklist):
   while not coord.should_stop():
     try:
       run_dir = run_list.pop()
-      
+      print run_dir
       # get list of all image numbers available in listdir
       imgs_jpg=listdir(join(run_dir,'RGB'))
       num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg[::FLAGS.subsample]])
@@ -80,6 +80,8 @@ def load_run_info(coord, run_list, set_list, checklist):
       # Create collision list
       collision_list=[]
       if FLAGS.network == 'coll_q_net':
+        if not os.path.isfile(join(run_dir,FLAGS.collision_file)):
+          print("error, could not find collision file in {}".format(run_dir))
         coll_file = open(join(run_dir,FLAGS.collision_file),'r')
         coll_file_list = coll_file.readlines()
         while len(coll_file_list[-1])<=1 : coll_file_list=coll_file_list[:-1]
@@ -112,7 +114,10 @@ def load_run_info(coord, run_list, set_list, checklist):
       # Add scan information if file exist
       scan_list = []
       if os.path.isfile(join(run_dir,'scan.txt')):
+        if not os.path.isfile(join(run_dir,'scan.txt')):
+          print("error, could not find scan file in {}".format(run_dir))
         scans = open(join(run_dir,'scan.txt'),'r').readlines()[2:]
+        assert(len(scans) != 0)
         ranges = np.zeros((len(scans),int(FLAGS.field_of_view/FLAGS.smooth_scan)))
         for si,s in enumerate(scans):
           def check(r):
@@ -129,7 +134,7 @@ def load_run_info(coord, run_list, set_list, checklist):
     except IndexError as e:
       coord.request_stop()
     except Exception as e:
-      print('Problem in loading data: ',e)
+      print('Problem in loading data: {0} @ {1}'.format(e, run_dir))
       checklist.append(False)
       coord.request_stop()
     
@@ -150,7 +155,7 @@ def load_set(data_type):
     coord=tf.train.Coordinator()
     threads = [threading.Thread(target=load_run_info, args=(coord, run_list, set_list, checklist)) for i in range(FLAGS.num_threads)]
     for t in threads: t.start()
-    coord.join(threads, stop_grace_period_secs=5)
+    coord.join(threads, stop_grace_period_secs=30)
   except RuntimeError as e:
     print("threads are not stopping...",e)
   else:
@@ -176,11 +181,15 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   val_set=load_set('val')
   test_set=load_set('test')
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
+
+  print("Loaded data: {0} training, {1} validation, {2} test.".format(len(train_set),len(val_set),len(test_set)))
+
   im_size=size
   try:
     collision_num = int(FLAGS.collision_file.split('.')[0].split('_')[2])
   except:
     collision_num = 5
+
   
 def generate_batch(data_type):
   """ 

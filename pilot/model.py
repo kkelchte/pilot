@@ -135,7 +135,8 @@ class Model(object):
         if self.FLAGS.loss == 'ce':
           # cross entropy loss:
           # self.loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.targets, logits=self.predictions_train,  dim=-1)
-          self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))-tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
+          # avoid log(0) with tensorflow max (!)
+          self.loss = -tf.multiply(self.targets, tf.log(tf.clip_by_value(self.predictions_train,0.001,1)))-tf.multiply((1-self.targets),tf.log(tf.clip_by_value(1-self.predictions_train,0.001,1)))
           # self.loss = -tf.multiply(self.targets, tf.log(self.predictions_train))+tf.multiply((1-self.targets),tf.log(1-self.predictions_train))
         else:
           self.loss = tf.losses.mean_squared_error(self.predictions_train, self.targets, weights= 1.,reduction=tf.losses.Reduction.NONE,loss_collection='')
