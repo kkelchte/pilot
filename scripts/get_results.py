@@ -33,6 +33,7 @@ for folder in log_folders:
 		delays = [float(e.split(':')[1]) for lf in os.listdir(folder+'/xterm_python') for l in open(folder+'/xterm_python/'+lf,'r').readlines() for e in l.split(',') if 'avg_delay' in e ]
 		durations = [float(e.split(':')[1]) for lf in os.listdir(folder+'/xterm_python') for l in open(folder+'/xterm_python/'+lf,'r').readlines() for e in l.split(',') if 'driving_duration' in e ]
 		imitations = [float(e.split(':')[1]) for lf in os.listdir(folder+'/xterm_python') for l in open(folder+'/xterm_python/'+lf,'r').readlines() for e in l.split(',') if 'imitation_loss' in e ]
+		scans = [float(e.split(':')[1]) for lf in os.listdir(folder+'/xterm_python') for l in open(folder+'/xterm_python/'+lf,'r').readlines() for e in l.split(',') if 'depth_loss' in e ]
 	except:
 		print 'Failed to parse: '+folder
 	else:
@@ -47,22 +48,26 @@ for folder in log_folders:
 			pass
 		if len(distances) != 0 and len(delays) != 0:
 			if args.real:
-				print "{0}: avg coll free dis: {1:0.4f} (var: {2:0.4f}), avg coll free dur: {3:0.4f} (var: {4:0.4f}), avg imitation loss: {5:0.4f} (var: {6:0.4f})".format(os.path.basename(folder),
+				print "{0}: avg coll free dis: {1:0.4f} (var: {2:0.4f}), avg coll free dur: {3:0.4f} (var: {4:0.4f}), avg imitation loss: {5:0.4f} (var: {6:0.4f}), avg depth loss: {7:0.4f} (var: {8:0.4f})".format(os.path.basename(folder),
 					np.mean(distances),
 					np.var(distances),
 					np.mean(durations),
 					np.var(durations),
 					np.mean(imitations),
-					np.var(imitations)
+					np.var(imitations),
+					np.mean(scans),
+					np.var(scans)
 					)	
 				if args.overleaf:
-					print "{1:0.2f} ({2:0.1f}) & {3:0.2f} ({4:0.1f}) & {5:0.2f} ({6:0.1f})".format(os.path.basename(folder),
+					print "{1:0.2f} ({2:0.1f}) & {3:0.2f} ({4:0.1f}) & {5:0.2f} ({6:0.1f}) & {7:0.2E} ({8:0.1E})".format(os.path.basename(folder),
 						np.mean(distances),
 						np.var(distances),
 						np.mean(durations),
 						np.var(durations),
 						np.mean(imitations),
-						np.var(imitations)
+						np.var(imitations),
+						np.mean(scans),
+						np.var(scans)
 						)	
 
 			#print "average: "+str(np.mean(distances))+", min: "+str(np.min(distances))+", max "+str(np.max(distances))+", variance: "+str(np.var(distances))+", success_rate: "+str(success_rate)

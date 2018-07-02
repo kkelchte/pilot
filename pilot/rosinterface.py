@@ -106,6 +106,7 @@ class PilotNode(object):
     self.time_ctr_send=[]
     self.time_delay=[]
 
+
     # # create animation to display outputs:
     # fig=plt.figure()
     # self.outputs=np.asarray([0,0,0]).reshape((-1,1))
@@ -281,6 +282,12 @@ class PilotNode(object):
     actions=np.arange(-self.FLAGS.action_bound, self.FLAGS.action_bound+2./self.FLAGS.action_quantity, 2./(self.FLAGS.action_quantity-1)).reshape((-1,1))
     if self.FLAGS.action_smoothing: actions=np.array([a+np.random.uniform(low=-1./(self.FLAGS.action_quantity-1),high=1./(self.FLAGS.action_quantity-1)) for a in actions]).reshape((-1,1))
   
+    # TOBE REMOVED:
+    if rospy.has_param('action_amplitude'):
+      if self.FLAGS.action_amplitude != rospy.get_param('action_amplitude'):
+        self.FLAGS.action_amplitude = rospy.get_param('action_amplitude')
+        print('changed action amplitude to: {}'.format(self.FLAGS.action_amplitude))
+       
     output, _ = self.model.forward(np.asarray([im]*len(actions)), self.FLAGS.action_amplitude*actions)
     # output=np.asarray([1,0,1]).reshape((-1,1))
     if not self.ready or self.finished: return
@@ -288,6 +295,9 @@ class PilotNode(object):
     ### EXTRACT CONTROL
     if self.FLAGS.network == 'depth_q_net':
       # take action corresponding to the maximum minimum depth:
+      
+      # best_output=np.argmax([np.mean(o[o!=0]) for o in output]) # TOBE REMOVED!!
+
       best_output=np.argmax([np.amin(o[o!=0]) for o in output])
       # keep only depth prediction of action going to be performed
       self.depth_prediction= output[best_output]
@@ -321,28 +331,29 @@ class PilotNode(object):
         # clip action to -1, 0 or 1.
         # action = 0 if np.abs(action) > 0.3 else np.sign(action) #added on 28/06/18
         
+    # if len(self.supervised_vel) != 0: # TOBE REMOVED !!!
+    #   action = self.supervised_vel[5]
 
     
     # Adjust speed in real_maze
-    
-
     speed = self.FLAGS.speed
     if self.world_name ==  'real_maze':
-      speed_dict={-1:0.7*self.FLAGS.speed,
+      speed_dict={-1:0.6*self.FLAGS.speed,
                   0:self.FLAGS.speed,
-                  1:0.7*self.FLAGS.speed}
+                  1:0.6*self.FLAGS.speed}
       try:
-        speed = speed_dict[action]
+        speed = speed_dict[np.round(action)]
       except:
         pass 
     ### SEND CONTROL (with possibly some noise)
+
     msg = Twist()
     msg.linear.x = speed
     msg.linear.y = noise_sample[1]*self.FLAGS.sigma_y
     msg.linear.z = noise_sample[2]*self.FLAGS.sigma_z
     msg.angular.z = action
     self.action_pub.publish(msg)
-    
+  
 
     ### keep track of imitation loss on the fly
     if len(self.supervised_vel) != 0:
@@ -352,8 +363,8 @@ class PilotNode(object):
     rec=time.time()
     
     if self.FLAGS.network == 'depth_q_net' and not self.FLAGS.dont_show_depth and not self.finished:
-      # self.depth_pub.publish(np.concatenate([np.array([action]),output.flatten()],axis=0))
-      self.depth_pub.publish(output.flatten())
+      self.depth_pub.publish(np.concatenate([np.array([action]),output.flatten()],axis=0))
+      # self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
     if ( not self.FLAGS.evaluate or self.FLAGS.validate_online) and not self.finished:
@@ -416,7 +427,7 @@ class PilotNode(object):
           states, actions, targets = self.replay_buffer.sample_batch()
           losses = self.model.backward(states,
                                       actions.reshape(-1,1),
-                                      targets.reshape(-1,1) if self.FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.depth_input_size[0],self.model.depth_input_size[1]))
+                                      targets.reshape(-1,1) if self.FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.output_size[0],self.model.output_size[1]))
           for k in losses.keys():
             try:
               losses_train[k].extend(np.asarray([losses[k]]).flatten()) #in order to cope both with integers and lists
@@ -435,7 +446,7 @@ class PilotNode(object):
           states, actions, targets = self.validation_buffer.sample_batch()
           _, losses = self.model.forward(states,
                                       actions.reshape(-1,1),
-                                      targets.reshape(-1,1) if self.FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.depth_input_size[0],self.model.depth_input_size[1]))
+                                      targets.reshape(-1,1) if self.FLAGS.network == 'coll_q_net' else targets.reshape(-1,self.model.output_size[0],self.model.output_size[1]))
           for k in losses.keys():
             try:
               losses_test[k].extend(np.asarray([losses[k]]).flatten()) #in order to cope both with integers and lists
