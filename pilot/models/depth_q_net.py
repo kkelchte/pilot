@@ -260,6 +260,8 @@ def depth_q_net(inputs,
                 depth_multiplier=0.25,
                 dropout_keep_prob=0.5,
                 output_size=[55,74],
+                predict_action=False,
+                upscale_action=False,
                 scope='DpthQnet'):
   """depth_q_net model for regression of depth as q value.
   Args:
@@ -303,6 +305,9 @@ def depth_q_net(inputs,
 
       # print( str(net))
       with tf.variable_scope('q_depth'):
+        # if upscale_action:
+        #   actions=
+
         end_point = 'depth_fc_0'
         depth_feat = tf.concat([tf.reshape(net,[-1, int(depth_multiplier*1024)]),actions],axis=1)
         depth_feat=slim.fully_connected(depth_feat, 4096, tf.nn.relu)
@@ -311,12 +316,20 @@ def depth_q_net(inputs,
         # output height 55 width 74 [drone]
         # output: 26 [turtle]
         end_point = 'depth_fc_1'
-        depth_feat=slim.fully_connected(depth_feat, output_size[0]*output_size[1], tf.nn.relu)
-        end_points[end_point] = depth_feat
+        depth_out=slim.fully_connected(depth_feat, output_size[0]*output_size[1], tf.nn.relu)
+        end_points[end_point] = depth_out
 
         end_point = 'depth_reshaped'
-        depth_predictions=tf.reshape(depth_feat, [-1, output_size[0], output_size[1]])
+        depth_predictions=tf.reshape(depth_out, [-1, output_size[0], output_size[1]])
         end_points[end_point] = depth_predictions
+
+        if predict_action:
+          # output 1 for repredicting action
+          end_point = 'fc_a'
+          action_prediction=slim.fully_connected(depth_feat, 1, tf.nn.tanh)
+          end_points[end_point] = action_prediction
+
+
 
   return depth_predictions, end_points
 

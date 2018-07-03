@@ -260,6 +260,7 @@ def coll_q_net(inputs,
                 depth_multiplier=0.25,
                 dropout_keep_prob=0.5,
                 fc2_nodes=25,
+                predict_action=False,
                 scope='CollQnet'):
   """coll_q_net model for regression of depth as q value.
   Args:
@@ -318,6 +319,12 @@ def coll_q_net(inputs,
         end_point = 'q_coll_pred'
         coll_predictions=slim.fully_connected(q_coll_feat, 1, tf.nn.sigmoid)
         end_points[end_point] = coll_predictions
+
+        if predict_action:
+          # output 1 for repredicting action
+          end_point = 'fc_a'
+          action_prediction=slim.fully_connected(q_coll_feat, 1, tf.nn.tanh)
+          end_points[end_point] = action_prediction
 
   return coll_predictions, end_points
 

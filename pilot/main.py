@@ -160,6 +160,11 @@ def main(_):
   parser.add_argument("--max_loss", default=100, type=float, help= "Define the maximum loss before it is clipped.")
   parser.add_argument("--clip_loss_to_max",action='store_true', help="Over time, allow only smaller losses by clipping the maximum allowed loss to the lowest maximum loss.")
 
+  # repredict the output
+  parser.add_argument("--predict_action",action='store_true', help="In order to make the feature representation embed the action information, repredict the action at the output.")
+  # upscale the action so it can have a higher weight in the feature representation
+  parser.add_argument("--upscale_action",action='store_true', help="In order to make the feature representation more influenced of the different actions.")
+
   # ===========================
   #   Replay Parameters
   # ===========================

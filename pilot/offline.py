@@ -25,6 +25,7 @@ def run_episode(data_type, sumvar, model):
   start_data_time = time.time()
   tot_loss=[]
   output_loss=[]
+  action_loss=[]
   for index, ok, batch in data.generate_batch(data_type):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
@@ -43,6 +44,7 @@ def run_episode(data_type, sumvar, model):
       try:
         output_loss.extend(losses['o']) # for each element in the batch
         tot_loss.append(losses['t'])
+        action_loss.append(losses['a'])
       except KeyError:
         pass
       if index == 1 and data_type=='val' and FLAGS.plot_depth: 
@@ -58,6 +60,7 @@ def run_episode(data_type, sumvar, model):
     sumvar['Loss_'+data_type+'_output_max']=np.max(output_loss)   
     sumvar['Loss_'+data_type+'_output_var']=np.var(output_loss)   
   if len(depth_predictions) != 0: sumvar['depth_predictions']=depth_predictions
+  if len(action_loss) != 0: sumvar['Loss_'+data_type+'_action'] = np.mean(action_loss)
   print('>>{4}: {0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(data_type.upper(),tuple(time.localtime()[0:5]),
     tools.print_dur(data_loading_time),tools.print_dur(calculation_time), FLAGS.log_tag))
   if data_type == 'val' or data_type == 'test':

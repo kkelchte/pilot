@@ -98,7 +98,8 @@ class Model(object):
                         'actions':self.actions,
                         'depth_multiplier':self.FLAGS.depth_multiplier,
                         'dropout_keep_prob':self.FLAGS.dropout_keep_prob,
-                        'fc2_nodes':self.FLAGS.fc2_nodes} 
+                        'fc2_nodes':self.FLAGS.fc2_nodes,
+                        'predict_action':self.FLAGS.predict_action} 
         with slim.arg_scope(coll_q_net.coll_q_net_arg_scope(is_training=True,**args_for_scope)):
           self.predictions_train, self.endpoints = coll_q_net.coll_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(coll_q_net.coll_q_net_arg_scope(is_training=False, **args_for_scope)):
@@ -109,7 +110,8 @@ class Model(object):
                         'actions':self.actions,
                         'depth_multiplier':self.FLAGS.depth_multiplier,
                         'dropout_keep_prob':self.FLAGS.dropout_keep_prob,
-                        'output_size':self.output_size} 
+                        'output_size':self.output_size,
+                        'predict_action':self.FLAGS.predict_action} 
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=True,**args_for_scope)):
           self.predictions_train, self.endpoints = depth_q_net.depth_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=False, **args_for_scope)):
@@ -144,6 +146,11 @@ class Model(object):
       self.loss = tf.clip_by_value(self.loss, tf.constant(0.,dtype=tf.float32), self.max_loss)
       # self.loss = tf.clip_by_value(self.loss, tf.constant(0.,dtype=tf.float32), tf.constant(self.FLAGS.max_loss,dtype=tf.float32))
       tf.losses.add_loss(tf.reduce_mean(self.loss))
+      
+      # Add action prediction loss
+      if self.FLAGS.predict_action:
+        self.action_loss = tf.losses.mean_squared_error(self.endpoints['fc_a'], self.actions)
+        tf.losses.add_loss(tf.reduce_mean(self.action_loss))
       self.total_loss = tf.losses.get_total_loss()
       # self.total_loss = self.loss
       
@@ -184,6 +191,8 @@ class Model(object):
       feed_dict[self.targets]=targets
       feed_dict[self.max_loss]=self.FLAGS.max_loss
     
+    if self.FLAGS.predict_action: tensors.append(self.action_loss)
+
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
     output=results.pop(0)
@@ -191,7 +200,10 @@ class Model(object):
     
     if len(targets) != 0:
       losses['o']=results.pop(0) # output loss
-      
+    
+    if self.FLAGS.predict_action: 
+      losses['a'] = results.pop(0)
+
     return output, losses
 
   def backward(self, inputs, actions=[], targets=[]):
@@ -205,6 +217,7 @@ class Model(object):
     feed_dict[self.max_loss]=self.FLAGS.max_loss
     tensors.append(self.total_loss)
     
+    if self.FLAGS.predict_action: tensors.append(self.action_loss)
     #DEBUG
     # tensors.append(self.weights)
 
@@ -213,7 +226,7 @@ class Model(object):
     _ = results.pop(0) # train_op
     losses['o']=results.pop(0) # control loss or Q-loss 
     losses['t'] = results.pop(0) # total loss
-
+    if self.FLAGS.predict_action: losses['a'] = results.pop(0)
     return losses
 
   def save(self, logfolder):
@@ -229,7 +242,7 @@ class Model(object):
     self.summary_vars = {}
     self.summary_ops = {}
     for t in ['train', 'test', 'val']:
-      for l in ['total', 'output']:
+      for l in ['total', 'output','action']:
         name='Loss_{0}_{1}'.format(t,l)
         self.add_summary_var(name)
         if l == 'output':
