@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os
+import os, sys
 import numpy as np
 import tensorflow as tf
 import threading
@@ -126,7 +126,9 @@ def load_run_info(coord, run_list, set_list, checklist):
           # clip left FOV/2 range from 0:FOV/2 reversed with right FOV/2degree range from the last FOV/2:
           scan=list(reversed([ check(float(r)) for r in s[12:-2].split(',')[0:FLAGS.field_of_view/2]]))+list(reversed([check(float(r)) for r in s[12:-2].split(',')[-FLAGS.field_of_view/2:]]))
           # add some smoothing by averaging over 4 neighboring bins
-          ranges[si]=[np.nanmean(scan[i*FLAGS.smooth_scan:i*FLAGS.smooth_scan+FLAGS.smooth_scan]) for i in range(int(len(scan)/FLAGS.smooth_scan))]
+          raw_ranges=[np.nanmean(scan[i*FLAGS.smooth_scan:i*FLAGS.smooth_scan+FLAGS.smooth_scan]) for i in range(int(len(scan)/FLAGS.smooth_scan))]
+          # in case of nan --> set value to -1 as it will be ignored by the loss.
+          ranges[si]=[r if not np.isnan(r) else -1 for r in raw_ranges]
         scan_list=np.asarray(ranges)
       # add all data to the dataset
       set_list.append({'name':run_dir, 'num_imgs':num_imgs, 'controls':control_list, 'imgs':imgs, 'collisions':collision_list, 'scans':scan_list})
