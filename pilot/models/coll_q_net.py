@@ -261,6 +261,8 @@ def coll_q_net(inputs,
                 dropout_keep_prob=0.5,
                 fc2_nodes=25,
                 predict_action=False,
+                upscale_action=False,
+                add_inverted_action=False,
                 scope='CollQnet'):
   """coll_q_net model for regression of depth as q value.
   Args:
@@ -304,6 +306,13 @@ def coll_q_net(inputs,
 
       # print( str(net))
       with tf.variable_scope('q_coll'):
+        if add_inverted_action: actions=tf.concat([tf.reshape(actions,[-1,1]),-1*tf.reshape(actions,[-1,1])],axis=1)
+
+        if upscale_action:
+          end_point='action_up'
+          actions=slim.fully_connected(actions,int(depth_multiplier*1024/10),tf.nn.relu)
+          end_points[end_point] = actions
+        
         end_point = 'q_coll_fc_0'
         q_coll_feat = tf.concat([tf.reshape(net,[-1, int(depth_multiplier*1024)]),actions],axis=1)
         q_coll_feat=slim.fully_connected(q_coll_feat, 4096, tf.nn.relu)

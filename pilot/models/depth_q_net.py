@@ -262,6 +262,7 @@ def depth_q_net(inputs,
                 output_size=[55,74],
                 predict_action=False,
                 upscale_action=False,
+                add_inverted_action=False,
                 scope='DpthQnet'):
   """depth_q_net model for regression of depth as q value.
   Args:
@@ -305,8 +306,12 @@ def depth_q_net(inputs,
 
       # print( str(net))
       with tf.variable_scope('q_depth'):
-        # if upscale_action:
-        #   actions=
+        if add_inverted_action: 
+          actions=tf.concat([tf.reshape(actions,[-1,1]),-1*tf.reshape(actions,[-1,1])],axis=1)
+        if upscale_action:
+          end_point='action_up'
+          actions=slim.fully_connected(actions,int(depth_multiplier*1024/10),tf.nn.relu)
+          end_points[end_point] = actions
 
         end_point = 'depth_fc_0'
         depth_feat = tf.concat([tf.reshape(net,[-1, int(depth_multiplier*1024)]),actions],axis=1)

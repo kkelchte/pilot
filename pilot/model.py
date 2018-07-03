@@ -99,11 +99,13 @@ class Model(object):
                         'depth_multiplier':self.FLAGS.depth_multiplier,
                         'dropout_keep_prob':self.FLAGS.dropout_keep_prob,
                         'fc2_nodes':self.FLAGS.fc2_nodes,
-                        'predict_action':self.FLAGS.predict_action} 
+                        'predict_action':self.FLAGS.predict_action,
+                        'upscale_action':self.FLAGS.upscale_action,
+                        'add_inverted_action':self.FLAGS.add_inverted_action} 
         with slim.arg_scope(coll_q_net.coll_q_net_arg_scope(is_training=True,**args_for_scope)):
           self.predictions_train, self.endpoints = coll_q_net.coll_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(coll_q_net.coll_q_net_arg_scope(is_training=False, **args_for_scope)):
-          self.predictions_eval, _ = coll_q_net.coll_q_net(is_training=False, reuse = True,**args_for_model)
+          self.predictions_eval, self.endpoints_eval = coll_q_net.coll_q_net(is_training=False, reuse = True,**args_for_model)
       elif self.FLAGS.network=='depth_q_net':
         self.actions = tf.placeholder(tf.float32, shape = [None, self.action_dim])
         args_for_model={'inputs':self.inputs,
@@ -111,11 +113,13 @@ class Model(object):
                         'depth_multiplier':self.FLAGS.depth_multiplier,
                         'dropout_keep_prob':self.FLAGS.dropout_keep_prob,
                         'output_size':self.output_size,
-                        'predict_action':self.FLAGS.predict_action} 
+                        'predict_action':self.FLAGS.predict_action,
+                        'upscale_action':self.FLAGS.upscale_action,
+                        'add_inverted_action':self.FLAGS.add_inverted_action} 
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=True,**args_for_scope)):
           self.predictions_train, self.endpoints = depth_q_net.depth_q_net(is_training=True,**args_for_model)
         with slim.arg_scope(depth_q_net.depth_q_net_arg_scope(is_training=False, **args_for_scope)):
-          self.predictions_eval, _ = depth_q_net.depth_q_net(is_training=False, reuse = True,**args_for_model)
+          self.predictions_eval, self.endpoints_eval = depth_q_net.depth_q_net(is_training=False, reuse = True,**args_for_model)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
   
@@ -191,7 +195,8 @@ class Model(object):
       feed_dict[self.targets]=targets
       feed_dict[self.max_loss]=self.FLAGS.max_loss
     
-    if self.FLAGS.predict_action: tensors.append(self.action_loss)
+    if self.FLAGS.predict_action: 
+      tensors.append(self.action_loss)
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
@@ -217,7 +222,8 @@ class Model(object):
     feed_dict[self.max_loss]=self.FLAGS.max_loss
     tensors.append(self.total_loss)
     
-    if self.FLAGS.predict_action: tensors.append(self.action_loss)
+    if self.FLAGS.predict_action: 
+      tensors.append(self.action_loss)
     #DEBUG
     # tensors.append(self.weights)
 

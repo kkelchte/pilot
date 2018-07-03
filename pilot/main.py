@@ -58,7 +58,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   """
   print("Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['n_fc','discrete']
+  boollist=['n_fc','discrete','predict_action','upscale_action','add_inverted_action']
   intlist=['n_frames', 'num_outputs','fc2_nodes']
   floatlist=['depth_multiplier']
   stringlist=['network', 'data_format']
@@ -158,13 +158,16 @@ def main(_):
   parser.add_argument("--loss",default='absolute',type=str, help="Define the loss: mse, huber, ce or absolute")
 
   parser.add_argument("--max_loss", default=100, type=float, help= "Define the maximum loss before it is clipped.")
+  
   parser.add_argument("--clip_loss_to_max",action='store_true', help="Over time, allow only smaller losses by clipping the maximum allowed loss to the lowest maximum loss.")
 
   # repredict the output
   parser.add_argument("--predict_action",action='store_true', help="In order to make the feature representation embed the action information, repredict the action at the output.")
   # upscale the action so it can have a higher weight in the feature representation
-  parser.add_argument("--upscale_action",action='store_true', help="In order to make the feature representation more influenced of the different actions.")
-
+  parser.add_argument("--upscale_action",action='store_true', help="In order to make the feature representation more influenced of the different actions, feed the action first in a fc-layer so it becomes 1/10th of the imagenet feature.")
+  # add negative action so relu can not break it at the beginning
+  parser.add_argument("--add_inverted_action",action='store_true', help="In order to make the feature representation more influenced of the different actions, feed the action first in a fc-layer so it becomes 1/10th of the imagenet feature.")
+  
   # ===========================
   #   Replay Parameters
   # ===========================
