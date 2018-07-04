@@ -365,8 +365,8 @@ class PilotNode(object):
     rec=time.time()
     
     if self.FLAGS.network == 'depth_q_net' and not self.FLAGS.dont_show_depth and not self.finished:
-      self.depth_pub.publish(np.concatenate([np.array([action]),output.flatten()],axis=0))
-      # self.depth_pub.publish(output.flatten())
+      # self.depth_pub.publish(np.concatenate([np.array([action]),output.flatten()],axis=0))
+      self.depth_pub.publish(output.flatten())
       
     # ADD EXPERIENCE REPLAY
     if ( not self.FLAGS.evaluate or self.FLAGS.validate_online) and not self.finished:
