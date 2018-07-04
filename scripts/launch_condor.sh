@@ -53,17 +53,35 @@
 
 # ------------REAL DATA-----------
 
-# for lr in 0.9 0.1 0.01 0.001 0.0001 ; do
-# 	for max_depth in 2 1.5 1 0.5 ; do
+# for lr in 0.9 0.01 0.0001 ; do
+# 	for max_depth in 2 1 0.5 ; do
 # 		# extract strings without points for naming the files
 # 		LR="$(echo $lr | sed -e 's/\.//g')"
 # 		MD="$(echo $max_depth | sed -e 's/\.//g')"
-# 		./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/scratch_${LR}_${MD} -p "--learning_rate $lr --max_depth $max_depth --max_loss 0.5 --clip_loss_to_max --dataset real_maze --random_seed $((13249))"
+# 		./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/scratch_${LR}_${MD} -p "--learning_rate $lr --max_depth $max_depth --dataset real_maze --random_seed $((13249))"
 # 		sleep 1
-# 		./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/transfer_${LR}_${MD} -p "--learning_rate $lr --max_depth $max_depth --max_loss 0.5 --clip_loss_to_max --dataset real_maze --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
+# 		./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/transfer_${LR}_${MD} -p "--learning_rate $lr --max_depth $max_depth --dataset real_maze --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
+# 		sleep 1
+# 		./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/scratch_${LR}_${MD} -p "--learning_rate $lr --max_depth $max_depth --dataset real_maze_coll_free --random_seed $((13249))"
+# 		sleep 1
+# 		./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/transfer_${LR}_${MD} -p "--learning_rate $lr --max_depth $max_depth --dataset real_maze_coll_free --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
 # 		sleep 1
 # 	done
 # done	
+
+# subsample
+lr=0.9
+max_depth=2
+LR="$(echo $lr | sed -e 's/\.//g')"
+MD="$(echo $max_depth | sed -e 's/\.//g')"
+./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/scratch_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze --random_seed $((13249))"
+sleep 1
+./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/transfer_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
+sleep 1
+./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/scratch_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze_coll_free --random_seed $((13249))"
+sleep 1
+./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/transfer_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze_coll_free --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
+sleep 1
 # ------------Transfer learning----------
 # for i in 0 1 2 ; do
 # 	./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/scratch_${i}_lr09_e2e -p "--max_loss 0.5 --clip_loss_to_max --learning_rate 0.9 --grad_mul_weight 1 --dataset maze_real_turtle_collision_free --random_seed $((13249+65456*i))"
