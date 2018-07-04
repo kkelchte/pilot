@@ -4,6 +4,34 @@
 		"selected_items":
 		[
 			[
+				"max",
+				"max_episodes"
+			],
+			[
+				"add",
+				"add_inverted_action"
+			],
+			[
+				"up",
+				"upscale_action"
+			],
+			[
+				"data",
+				"data_type"
+			],
+			[
+				"action",
+				"action_loss"
+			],
+			[
+				"pred",
+				"predict_action"
+			],
+			[
+				"pre",
+				"predict_action"
+			],
+			[
 				"test",
 				"testloss"
 			],
@@ -106,10 +134,6 @@
 			[
 				"val",
 				"validation_buffer"
-			],
-			[
-				"max",
-				"max_loss"
 			],
 			[
 				"check",
@@ -228,10 +252,6 @@
 				"action_normalization"
 			],
 			[
-				"action",
-				"action_bound"
-			],
-			[
 				"rando",
 				"random_action"
 			],
@@ -244,24 +264,12 @@
 				"predictions_train"
 			],
 			[
-				"pred",
-				"predictions_train"
-			],
-			[
 				"E",
 				"EVALUATE"
 			],
 			[
 				"EV",
 				"EVALUATE_N"
-			],
-			[
-				"pre",
-				"predictions_train"
-			],
-			[
-				"data",
-				"dataset"
 			],
 			[
 				"depth_",
@@ -405,19 +413,56 @@
 			}
 		},
 		{
-			"file": "scripts/get_results_all.py",
+			"file": "pilot/main.py",
 			"settings":
 			{
-				"buffer_size": 6858,
+				"buffer_size": 18014,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/main.py",
+			"file": "pilot/models/depth_q_net.py",
 			"settings":
 			{
-				"buffer_size": 17116,
+				"buffer_size": 20070,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pilot/models/coll_q_net.py",
+			"settings":
+			{
+				"buffer_size": 20099,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/launch_condor.sh",
+			"settings":
+			{
+				"buffer_size": 12086,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pilot/model.py",
+			"settings":
+			{
+				"buffer_size": 13961,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pilot/offline.py",
+			"settings":
+			{
+				"buffer_size": 4066,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -426,6 +471,14 @@
 			"settings":
 			{
 				"buffer_size": 25847,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/clean_dataset.sh",
+			"settings":
+			{
+				"buffer_size": 3158,
 				"line_ending": "Unix"
 			}
 		}
@@ -476,17 +529,19 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/get_results.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/get_results_all.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_sing.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_offline.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/data.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/launch_condor.sh",
 		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/replay_buffer.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/model.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/rosinterface.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/main.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/data.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_offline.sh",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/clean_dataset.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_sing.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/prescript_sing.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/postscript_sing.sh",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
@@ -497,7 +552,6 @@
 		"/esat/opal/kkelchte/docker_home/.entrypoint_xpra",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_coll_q_net_params_4096.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_coll_q_net_params_e2e.yaml",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/get_results.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/models/coll_q_net.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/offline.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-06-14_unit_tests_simulation_supervised.md",
@@ -602,12 +656,11 @@
 		"/users/visics/kkelchte/condor/start_singularity.sh",
 		"/esat/qayd/kkelchte/docker_home/tensorflow/pilot/pilot/models/squeeze_net.py",
 		"/users/visics/kkelchte/condor/condor_task_sing_f27.sh",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/log/test_ssh_evaluate/condor/condor_test_ssh_evaluate__2017-12-20_1146.out",
-		"/esat/qayd/kkelchte/docker_home/.entrypoint_xpra"
+		"/esat/qayd/kkelchte/docker_home/tensorflow/log/test_ssh_evaluate/condor/condor_test_ssh_evaluate__2017-12-20_1146.out"
 	],
 	"find":
 	{
-		"height": 40.0
+		"height": 24.0
 	},
 	"find_in_files":
 	{
@@ -621,6 +674,19 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"3*60*60",
+			"condor_task_offline",
+			"depth_q_net_no_coll",
+			"2*60*60",
+			"-random_seed $((1534+i*13249))",
+			"/action/",
+			"action",
+			"learning_rate",
+			"${MD}",
+			"real_maze_no_coll",
+			"real_maze",
+			"depth_q_net_real",
+			"--max_loss 0.5 --clip_loss_to_max",
 			"imitation_loss",
 			"}({",
 			"imitations",
@@ -715,7 +781,7 @@
 	"groups":
 	[
 		{
-			"selected": 3,
+			"selected": 4,
 			"sheets":
 			[
 				{
@@ -743,53 +809,24 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "scripts/get_results_all.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 6858,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								928,
-								928
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 180.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
 					"file": "pilot/main.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 17116,
+						"buffer_size": 18014,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7590,
-								7590
+								10796,
+								10796
 							]
 						],
 						"settings":
@@ -799,14 +836,162 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1425.0,
+						"translation.y": 1751.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "pilot/models/depth_q_net.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 20070,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								17057,
+								17057
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2864.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
 					"buffer": 3,
+					"file": "pilot/models/coll_q_net.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 20099,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								15920,
+								15920
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3930.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "scripts/launch_condor.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12086,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2639,
+								2639
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 209.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "pilot/model.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 13961,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8611,
+								8611
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1530.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "pilot/offline.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4066,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1489,
+								1489
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 135.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
 					"file": "pilot/rosinterface.py",
 					"semi_transient": false,
 					"settings":
@@ -818,8 +1003,8 @@
 						"selection":
 						[
 							[
-								15366,
-								15366
+								14743,
+								14743
 							]
 						],
 						"settings":
@@ -832,7 +1017,36 @@
 						"translation.y": 4924.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "scripts/clean_dataset.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3158,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1914,
+								1914
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
 					"type": "text"
 				}
 			]
@@ -887,6 +1101,50 @@
 		"selected_items":
 		[
 			[
+				"get r",
+				"q-learning/scripts/get_results.py"
+			],
+			[
+				"cont ao",
+				"q-learning/scripts/condor_task_offline.sh"
+			],
+			[
+				"con ta s",
+				"q-learning/scripts/condor_task_sing.sh"
+			],
+			[
+				"lau",
+				"q-learning/scripts/launch_condor.sh"
+			],
+			[
+				"off",
+				"q-learning/pilot/offline.py"
+			],
+			[
+				"dep",
+				"q-learning/pilot/models/depth_q_net.py"
+			],
+			[
+				"coll",
+				"q-learning/pilot/models/coll_q_net.py"
+			],
+			[
+				"con ta",
+				"q-learning/scripts/condor_task_offline.sh"
+			],
+			[
+				"mod",
+				"q-learning/pilot/model.py"
+			],
+			[
+				"daa",
+				"q-learning/pilot/data.py"
+			],
+			[
+				"cl",
+				"q-learning/scripts/clean_dataset.sh"
+			],
+			[
 				"ma",
 				"q-learning/pilot/main.py"
 			],
@@ -919,10 +1177,6 @@
 				"simulation_supervised/simulation_supervised/python/run_script.py"
 			],
 			[
-				"con ta",
-				"q-learning/scripts/condor_task_offline.sh"
-			],
-			[
 				"data",
 				"q-learning/pilot/data.py"
 			],
@@ -939,20 +1193,8 @@
 				"q-learning/scripts/condor_task_sing.sh"
 			],
 			[
-				"lau",
-				"q-learning/scripts/launch_condor.sh"
-			],
-			[
 				"mo",
 				"q-learning/pilot/model.py"
-			],
-			[
-				"mod",
-				"q-learning/pilot/model.py"
-			],
-			[
-				"coll",
-				"q-learning/pilot/models/coll_q_net.py"
 			],
 			[
 				"rpel",
@@ -961,10 +1203,6 @@
 			[
 				"ros",
 				"q-learning/pilot/rosinterface.py"
-			],
-			[
-				"off",
-				"q-learning/pilot/offline.py"
 			],
 			[
 				"cont a off",
@@ -1037,10 +1275,6 @@
 			[
 				"wid",
 				"klaas_robots/urdf/wide_angle_camera.urdf.xacro"
-			],
-			[
-				"dep",
-				"q-learning/pilot/models/depth_q_net.py"
 			],
 			[
 				"sho sc",
@@ -1376,26 +1610,6 @@
 			],
 			[
 				"evalmodsh",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/evaluate_model.sh"
-			],
-			[
-				"laco",
-				"condor/launch_condor.sh"
-			],
-			[
-				"squee",
-				"docker_home/tensorflow/pilot/pilot/models/squeeze_net.py"
-			],
-			[
-				"genera",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/canyon_generator.py"
-			],
-			[
-				"delay",
-				"blogs/kkelchte.github.io/docs/delays.md"
-			],
-			[
-				"evalu",
 				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/evaluate_model.sh"
 			]
 		],

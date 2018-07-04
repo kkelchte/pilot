@@ -65,26 +65,10 @@ for folder in log_folders:
 						np.mean(durations),
 						np.var(durations),
 						np.mean(imitations),
-<<<<<<< HEAD
 						np.var(imitations),
 						np.mean(scans),
 						np.var(scans)
 						)	
-
-			#print "average: "+str(np.mean(distances))+", min: "+str(np.min(distances))+", max "+str(np.max(distances))+", variance: "+str(np.var(distances))+", success_rate: "+str(success_rate)
-			# print  "{8} arverage {0:0.2f} & var {3:0.2f} & success {4} / {5} & avg delay {6:.2E} & host {9}".format(np.mean(distances),
-			# 	np.min(distances),
-			# 	np.max(distances),
-			# 	np.var(distances),
-			# 	success_rate,
-			# 	len(distances),
-			# 	np.mean(delays),
-			# 	np.var(delays),
-			# 	os.path.basename(folder),
-			# 	hosts)
-=======
-						np.var(imitations)
-						)
 			else:	
 				print "average: "+str(np.mean(distances))+", min: "+str(np.min(distances))+", max "+str(np.max(distances))+", variance: "+str(np.var(distances))+", success_rate: "+str(success_rate)
 				print  "{8} arverage {0:0.2f} & var {3:0.2f} & success {4} / {5} & avg delay {6:.2E} & host {9}".format(np.mean(distances),
@@ -97,7 +81,6 @@ for folder in log_folders:
 					np.var(delays),
 					os.path.basename(folder),
 					hosts)
->>>>>>> fc1c11321ce8cc7308a238b6f72668c3b0fdfa01
 			# print  "{8} arverage {0:0.2f} & min {1:0.2f} & max {2:0.2f} & var {3:0.2f} & success {4} / {5} & avg delay {6:.2E} & var delay {7:.2E} & host {9}".format(np.mean(distances),
 			# 	np.min(distances),
 			# 	np.max(distances),

@@ -264,7 +264,7 @@ def generate_batch(data_type):
           raise NotImplementedError("[data.py]: normalization offline not implemented for network {}".format(FLAGS.network))
       else:
         # choose random index over image numbers: (-1 because future depth becomes target label)
-        frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-1))
+        frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.future_steps))
       
       # if FLAGS.n_fc:
       #   frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
@@ -274,7 +274,7 @@ def generate_batch(data_type):
       img = data_set[run_ind]['imgs'][frame_ind]
       scan = []
       try: #load next scan 
-        scan = data_set[run_ind]['scans'][frame_ind+1]
+        scan = data_set[run_ind]['scans'][frame_ind+FLAGS.future_steps]
       except:
         pass
 
