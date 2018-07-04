@@ -257,7 +257,7 @@ class Model(object):
             self.add_summary_var(name)
     for d in ['current','furthest']:
       for t in ['train', 'test']:
-        for w in ['','sandbox','forest','canyon','esat_corridor_v1', 'esat_corridor_v2','maze','real_maze']:
+        for w in ['','sandbox','forest','canyon','esat_v1', 'esat_v2','maze','real_maze']:
           name = 'Distance_{0}_{1}'.format(d,t)
           if len(w)!=0: name='{0}_{1}'.format(name,w)
           self.add_summary_var(name)
