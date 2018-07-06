@@ -279,6 +279,11 @@ class PilotNode(object):
     # save depth to keep images close.
     depth = copy.deepcopy(self.depth)
 
+    if rospy.has_param('action_quantity'): 
+      if self.FLAGS.action_quantity != rospy.get_param('action_quantity'):
+        self.FLAGS.action_quantity = rospy.get_param('action_quantity')
+        print('changed action quantity to: {}'.format(self.FLAGS.action_quantity))
+
     ### FORWARD 
     # feed in 3 actions corresponding to right, straight and left.
     actions=np.arange(-self.FLAGS.action_bound, self.FLAGS.action_bound+2./self.FLAGS.action_quantity, 2./(self.FLAGS.action_quantity-1)).reshape((-1,1))
