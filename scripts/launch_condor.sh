@@ -42,29 +42,30 @@
 # 	done
 # done
 
-sleep 2
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/U_${i} -p "--upscale_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+# sleep 2
+# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/U_${i} -p "--future_steps 2 --max_episodes 2000 --upscale_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
 
-sleep 2
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/UI_${i} -p "--upscale_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+# sleep 2
+# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/UI_${i} -p "--future_steps 2 --max_episodes 2000 --upscale_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
 
-sleep 2
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PU_${i} -p "--predict_action --upscale_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+# sleep 2
+# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PU_${i} -p "--future_steps 2 --max_episodes 2000 --predict_action --upscale_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
 
-sleep 2
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PUI_${i} -p "--predict_action --upscale_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+# sleep 2
+# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PUI_${i} -p "--future_steps 2 --max_episodes 2000 --predict_action --upscale_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
 
-sleep 2
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/ref_${i} -p "--loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+# sleep 2
+# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/ref_${i} -p "--future_steps 2 --max_episodes 2000 --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
 
-sleep 2
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/I_${i} -p "--add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+# sleep 2
+# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/I_${i} -p "--future_steps 2 --max_episodes 2000 --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
 
-sleep 2
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/P_${i} -p "--predict_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+# sleep 2
+# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/P_${i} -p "--future_steps 2 --max_episodes 2000 --predict_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
 
-sleep 2
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PI_${i} -p "--predict_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+# sleep 2
+# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PI_${i} -p "--future_steps 2 --max_episodes 2000 --predict_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
+
 
 # ------------EVALUATE ONLINE----------
 # for i in 0 ; do
@@ -94,16 +95,11 @@ sleep 2
 # 	done
 # done	
 
-# subsample
-# lr=0.9
-# max_depth=2
-# LR="$(echo $lr | sed -e 's/\.//g')"
-# MD="$(echo $max_depth | sed -e 's/\.//g')"
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/scratch_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze --random_seed $((13249))"
-# sleep 1
+./condor_task_offline.sh -q $((7*60*60)) -t coll_q_net_real/scratch_long_cont_further  -p "--checkpoint_path coll_q_net_real/scratch_long_cont --max_episodes 2000 --continue_training --load_config --loss ce --network coll_q_net --learning_rate 0.001 --max_depth 2 --dataset real_maze --random_seed $((13249))"
+sleep 1
 # ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/transfer_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
 # sleep 1
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/scratch_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze_coll_free --random_seed $((13249))"
+./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/scratch_e2e_01_cont -p "--checkpoint_path depth_q_net_no_coll_real/scratch_e2e_01 --continue_training --load_config --max_episodes 4000 --learning_rate 0.1 --dataset real_maze_coll_free --random_seed $((13249))"
 # sleep 1
 # ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/transfer_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze_coll_free --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
 # sleep 1
