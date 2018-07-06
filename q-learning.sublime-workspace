@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"depth",
+				"depth_q_net_no_coll_real"
+			],
+			[
 				"dosh",
 				"doshico"
 			],
@@ -280,10 +284,6 @@
 				"depth_q_learning"
 			],
 			[
-				"depth",
-				"depth_predictions_eval"
-			],
-			[
 				"depth_q",
 				"depth_q_learning"
 			],
@@ -411,7 +411,8 @@
 			"file": "scripts/launch_condor.sh",
 			"settings":
 			{
-				"buffer_size": 12108,
+				"buffer_size": 12182,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		}
@@ -723,23 +724,23 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 12108,
+						"buffer_size": 12182,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								7209,
+								7209
 							]
 						],
 						"settings":
 						{
 							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
-						"translation.x": 672.0,
-						"translation.y": 0.0,
+						"translation.x": 0.0,
+						"translation.y": 810.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
