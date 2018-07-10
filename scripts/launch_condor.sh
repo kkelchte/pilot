@@ -2,25 +2,6 @@
 # Script used to invoke the condor online (singularity) and offline tasks.
 
 
-
-
-#for i in 3 ; do
-#	./condor_task_offline.sh -q $((4*3*60*60)) -t depth_q_net_no_coll/dummy_${i} -p "--max_episodes 1 --learning_rate 0.1 --dataset canyon_turtle_collision_free" -e true -w 'canyon' -n 50 -q 14400
-#done
-
-# for  i in 0 1 2 3 4 5 6 7 8 9 ; do
-# ./condor_task_sing.sh -d true -q $((4*7*60*60)) -t rec_$i -p params.yaml -e true -w canyon -n 1200
-# 	sleep 0.5
-# done
-
-# for i in 0 1 2 3 4 ; do
-# 	./condor_task_offline.sh -q $((4*7*60*60)) -t depth_q_net_no_coll/ds490_${i}  -e true -w 'canyon' -n 50 -p "--learning_rate 0.1 --dataset canyon_turtle_collision_free --random_seed $((1534+i*13249))"
-# 	./condor_task_offline.sh -q $((4*7*60*60)) -t depth_q_net/ds490_${i}  -e true -w 'canyon' -n 50 -p "--learning_rate 0.1 --dataset canyon_turtle_scan_pruned --random_seed $((1534+i*13249))"
-# 	#./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds490_${i} -e true -w 'canyon' -n 50 -p "--normalized(????) --network coll_q_net --loss mse --learning_rate 0.01 --dataset canyon_turtle_scan_pruned --random_seed $((14123+i*13249))"
-# 	sleep 0.5
-# done
-
-
 # ------------TRAIN OFFLINE----------
 # for i in 0 1 2 ; do
 # 	for n in 500 700 ; do
@@ -28,53 +9,7 @@
 # 		sleep 2
 # 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
 # 		sleep 2
-# 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_norm_${i} -e true -w 'canyon' -n 20 -p "--normalize_data --network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
-# 		sleep 2
 # 	done
-# done
-
-# for i in 0 1 2 ; do
-# 	for n in 50 100 200 ; do
-# 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_${i} -e true -w 'canyon' -n 20 -p "--network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
-# 		sleep 2
-# 		./condor_task_offline.sh -q $((4*7*60*60)) -t coll_q_net/ds${n}_norm_${i} -e true -w 'canyon' -n 20 -p "--normalize_data --network coll_q_net --loss ce --learning_rate 0.01 --dataset canyon_ds${n} --random_seed $((14123+i*13249))"
-# 		sleep 2
-# 	done
-# done
-
-# sleep 2
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/U_${i} -p "--future_steps 2 --max_episodes 2000 --upscale_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
-
-# sleep 2
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/UI_${i} -p "--future_steps 2 --max_episodes 2000 --upscale_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
-
-# sleep 2
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PU_${i} -p "--future_steps 2 --max_episodes 2000 --predict_action --upscale_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
-
-# sleep 2
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PUI_${i} -p "--future_steps 2 --max_episodes 2000 --predict_action --upscale_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
-
-# sleep 2
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/ref_${i} -p "--future_steps 2 --max_episodes 2000 --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
-
-# sleep 2
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/I_${i} -p "--future_steps 2 --max_episodes 2000 --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
-
-# sleep 2
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/P_${i} -p "--future_steps 2 --max_episodes 2000 --predict_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
-
-# sleep 2
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/future_2/PI_${i} -p "--future_steps 2 --max_episodes 2000 --predict_action --add_inverted_action --loss absolute --learning_rate 0.9 --dataset real_maze_coll_free --random_seed $((1534+i*13249))"	
-
-
-# ------------EVALUATE ONLINE----------
-# for i in 0 ; do
-# 	for n in 20 30 40 50 60 70 80 90 ; do
-# 	# for n in 20 30 40 ; do
-# 		# ./condor_task_sing.sh -t coll_q_net/ds1400_${i}_${n}k_eva -m coll_q_net/ds1400_${i}_${n}k -n 50 -w 'canyon' -p "eva_params.yaml" -e -q 12000
-# 		./condor_task_sing.sh -t depth_q_net_no_coll/ds1500_${i}_${n}k_eva -m depth_q_net_no_coll/ds1500_${i}_${n}k -n 5 -w 'canyon' -p "eva_params.yaml" -e -q 12000
-# 	done
-# 	# ./condor_task_sing.sh -t coll_q_net/ds1500_4096_${i}_eva -m coll_q_net/ds1500_4096_${i} -n 10 -w 'canyon' -p "eva_params.yaml" -e -q 12000
 # done
 
 # ------------REAL DATA-----------
@@ -94,24 +29,6 @@
 # 		sleep 1
 # 	done
 # done	
-
-./condor_task_offline.sh -q $((7*60*60)) -t coll_q_net_real/scratch_long_cont_further  -p "--checkpoint_path coll_q_net_real/scratch_long_cont --max_episodes 2000 --continue_training --load_config --loss ce --network coll_q_net --learning_rate 0.001 --max_depth 2 --dataset real_maze --random_seed $((13249))"
-sleep 1
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/transfer_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
-# sleep 1
-./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/scratch_e2e_01_cont -p "--checkpoint_path depth_q_net_no_coll_real/scratch_e2e_01 --continue_training --load_config --max_episodes 4000 --learning_rate 0.1 --dataset real_maze_coll_free --random_seed $((13249))"
-# sleep 1
-# ./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/transfer_${LR}_${MD}_subsample -p "--subsample 2 --learning_rate $lr --max_depth $max_depth --dataset real_maze_coll_free --random_seed $((13249)) --continue_training --checkpoint_path depth_q_net_no_coll/ds900_0"
-# sleep 1
-# ------------Transfer learning----------
-# for i in 0 1 2 ; do
-# 	./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/scratch_${i}_lr09_e2e -p "--max_loss 0.5 --clip_loss_to_max --learning_rate 0.9 --grad_mul_weight 1 --dataset maze_real_turtle_collision_free --random_seed $((13249+65456*i))"
-# 	./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/scratch_${i}_lr09_e2e -p "--max_loss 0.5 --clip_loss_to_max --learning_rate 0.9 --grad_mul_weight 1 --dataset maze_real_turtle --random_seed $((13249+65456*i))"
-# 	./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_no_coll_real/transfer_${i} -p "--max_loss 0.5 --clip_loss_to_max --learning_rate 0.9 --continue_training --checkpoint_path depth_q_net_no_coll/ref_5 --dataset maze_real_turtle_collision_free --random_seed $((13249+65456*i))"
-# 	./condor_task_offline.sh -q $((7*60*60)) -t depth_q_net_real/transfer_${i}  -p "--max_loss 0.5 --clip_loss_to_max --learning_rate 0.9 --continue_training --checkpoint_path depth_q_net/base_4 --dataset maze_real_turtle --random_seed $((13249+65456*i))"
-# 	# ./condor_task_offline.sh -q $((7*60*60)) -t coll_q_net_real/ref  -p "--network coll_q_net --learning_rate 0.01 --loss mse --dataset maze_real_turtle --random_seed $((13249))"
-# done
-
 
 
 # ------------ONLINE-------------
