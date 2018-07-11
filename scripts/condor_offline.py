@@ -185,3 +185,4 @@ subprocess.call(shlex.split("condor_submit {0}".format(condor_file)))
 print("Submission done.")
 print("Monitor with: ")
 print("tail -f {0}/condor_{1}.out".format(condor_output_dir, description))
+sleep 1

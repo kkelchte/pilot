@@ -27,11 +27,15 @@
 # 4. others for offline training (see main.py) for online (see run_script.py)
 
 # ------------OFFLINE----------
-python condor_offline.py -t test_offline --not_nice --wall_time $((10*60)) --evaluate_after --dataset canyon_ds50 --max_episodes 5 
+# python condor_offline.py -t test_offline --not_nice --wall_time $((10*60)) --evaluate_after --dataset canyon_ds50 --max_episodes 5 
 
 
 # ------------ONLINE-------------
-python condor_online.py -t test_online --not_nice --wall_time $((60*60)) -e --reuse_default_world -n 20 -m depth_q_net_no_coll/ds900_0 
+# create dataset
+for i in $(seq 10) ; do
+	python condor_online.py -t rec_$i --wall_time $((3*200*60+60*15)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((3*200)) --paramfile params.yaml -ds
+done
 
 
-while [ true ] ; do clear; condor_q; sleep 2; done
+
+# while [ true ] ; do clear; condor_q; sleep 2; done

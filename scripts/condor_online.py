@@ -97,7 +97,7 @@ except: pass
 condor_submit = open(condor_file,'w')
 
 condor_submit.write("Universe         = vanilla\n")
-condor_submit.write("RequestCpus      = 4 \n")
+condor_submit.write("RequestCpus      = 7 \n")
 condor_submit.write("Request_GPUs     = 1 \n")
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
@@ -152,7 +152,7 @@ command="{0} --data_root {1} ".format(command, FLAGS.data_root)
 command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
 for e in others: command=" {0} {1}".format(command, e)
 
-executable.write("{0}  >> {1}/condor_{2}.dockout\n".format(command, condor_output_dir, description))
+executable.write("{0}  >> {1}/condor_{2}.dockout 2>&1\n".format(command, condor_output_dir, description))
 executable.write("echo \"[condor_shell_script] done: $(date +%F_%H:%M)\"\n")
 
 executable.close()
@@ -190,3 +190,5 @@ subprocess.call(shlex.split("condor_submit {0}".format(condor_file)))
 print("Submission done.")
 print("Monitor with: ")
 print("tail -f {0}/condor_{1}.dockout".format(condor_output_dir, description))
+
+sleep 1
