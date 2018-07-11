@@ -42,6 +42,7 @@ parser.add_argument("-pe","--python_environment",default='sing', type=str, help=
 #   Condor Machine Settings
 #===========================
 parser.add_argument("--gpumem",default=1900, type=int,help="define the number of gigs required in your GPU.")
+parser.add_argument("--cpus",default=9, type=int,help="define the number of cpu cores.")
 parser.add_argument("--rammem",default=15, type=int,help="define the number of gigs required in your RAM.")
 parser.add_argument("--diskmem",default=50, type=int,help="define the number of gigs required on your HD.")
 parser.add_argument("--wall_time",default=60*60*3, help="After training a new condor job can be submitted to evaluate the model after.")
@@ -97,7 +98,7 @@ except: pass
 condor_submit = open(condor_file,'w')
 
 condor_submit.write("Universe         = vanilla\n")
-condor_submit.write("RequestCpus      = 7 \n")
+condor_submit.write("RequestCpus      = {0} \n".format(FLAGS.cpus))
 condor_submit.write("Request_GPUs     = 1 \n")
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
