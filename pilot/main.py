@@ -173,7 +173,7 @@ def main(_):
   parser.add_argument("--sigma_x", default=0.0, type=float, help= "sigma_x is the amount of noise in the forward speed.")
   parser.add_argument("--sigma_y", default=0.0, type=float, help= "sigma_y is the amount of noise in the y direction.")
   parser.add_argument("--sigma_yaw", default=0.0, type=float, help= "sigma_yaw is the amount of noise added to the steering angle.")
-  parser.add_argument("--speed", default=0.5, type=float, help= "Define the forward speed of the quadrotor.")
+  parser.add_argument("--speed", default=1.3, type=float, help= "Define the forward speed of the quadrotor.")
   parser.add_argument("--alpha",default=0., type=float, help="Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy..")
   # parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   # parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
