@@ -23,6 +23,9 @@
 		},
 		{
 			"path": "/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor"
 		}
 	]
 }

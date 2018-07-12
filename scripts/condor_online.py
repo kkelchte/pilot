@@ -112,6 +112,7 @@ condor_submit.write("periodic_release = HoldReasonCode == 1 && HoldReasonSubCode
 
 
 blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
+			 && (machine != \"enal.esat.kuleuven.be\") \
 			 && (machine != \"kochab.esat.kuleuven.be\") "
 # blacklist=""
 # greenlist=" && (machine == \"fluorite.esat.kuleuven.be\") "
@@ -192,4 +193,4 @@ print("Submission done.")
 print("Monitor with: ")
 print("tail -f {0}/condor_{1}.dockout".format(condor_output_dir, description))
 
-sleep 1
+time.sleep(1)
