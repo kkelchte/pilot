@@ -167,8 +167,8 @@ class Model(object):
       self.train_op = slim.learning.create_train_op(self.total_loss, 
         self.optimizer, 
         global_step=self.global_step, 
-        gradient_multipliers={v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}, 
         clip_gradient_norm=self.FLAGS.clip_grad)
+      # gradient_multipliers={v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}, 
 
   def discretized(self, targets):
     '''discretize targets from a float value like 0.3 to an integer index
