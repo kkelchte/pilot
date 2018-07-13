@@ -10,17 +10,12 @@ import random
 from math import floor
 import tools
 from PIL import Image
-# import scipy.io as sio
-# import scipy.misc as sm
+
 import skimage.io as sio
 import skimage.transform as sm
 import matplotlib.pyplot as plt
 
 import argparse
-
-#import skimage
-#import skimage.transform
-#from skimage import io
 
 FLAGS=None
 
@@ -29,6 +24,32 @@ im_size=(128,128,3)
 de_size = (55,74)
 collision_num=10 # number of frames before collision labelled with 10
 
+def prepare_data(_FLAGS, size, size_depth=(55,74)):
+  global FLAGS, im_size, full_set, de_size, max_key, datasetdir, collision_num
+  '''Load lists of tuples refering to images from which random batches can be drawn'''
+  FLAGS=_FLAGS
+  # stime = time.time()
+  # some startup settings
+  # np.random.seed(FLAGS.random_seed)
+  # tf.set_random_seed(FLAGS.random_seed)
+  random.seed(FLAGS.random_seed)
+
+  if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
+  datasetdir = join(FLAGS.data_root, FLAGS.dataset)
+  
+  train_set = load_set('train')
+  val_set=load_set('val')
+  test_set=load_set('test')
+  full_set={'train':train_set, 'val':val_set, 'test':test_set}
+
+  print("Loaded data: {0} training, {1} validation, {2} test.".format(len(train_set),len(val_set),len(test_set)))
+
+  im_size=size
+  try:
+    collision_num = int(FLAGS.collision_file.split('.')[0].split('_')[2])
+  except:
+    collision_num = 5
+  
 def load_run_info(coord, run_list, set_list, checklist):
   """Load information from run with multiple threads"""
   while not coord.should_stop():
@@ -89,28 +110,6 @@ def load_run_info(coord, run_list, set_list, checklist):
         collision_list=[collision_dict[num_img] for num_img in num_imgs]
         assert len(num_imgs) == len(collision_list), "Length of number of images {0} is not equal to number of collision labels {1}".format(len(num_imgs),len(collision_list))
      
-      # Add depth links if files exist
-      # depth_list = [] 
-      # try:
-      #   depths_jpg=listdir(join(run_dir,FLAGS.depth_directory))
-      #   if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
-      # except OSError as e:
-      #   # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
-      #   pass
-      # else:
-      #   num_depths=sorted([int(de[0:-4]) for de in depths_jpg])
-      #   smallest_depth = num_depths.pop(0)
-      #   for ni in num_imgs: #link the indices of rgb images with the smallest depth bigger than current index
-      #     while(ni > smallest_depth):
-      #       try:
-      #         smallest_depth = num_depths.pop(0)
-      #       except IndexError:
-      #         break
-      #     depth_list.append(smallest_depth)
-      #   num_imgs = num_imgs[:len(depth_list)]
-      #   control_list = control_list[:len(depth_list)]
-      #   assert len(num_imgs) == len(depth_list), "Length of input(imags,control,depth) is not equal"
-
       # Add scan information if file exist
       scan_list = []
       if os.path.isfile(join(run_dir,'scan.txt')):
@@ -166,33 +165,6 @@ def load_set(data_type):
       print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
   return set_list
 
-def prepare_data(_FLAGS, size, size_depth=(55,74)):
-  global FLAGS, im_size, full_set, de_size, max_key, datasetdir, collision_num
-  '''Load lists of tuples refering to images from which random batches can be drawn'''
-  FLAGS=_FLAGS
-  # stime = time.time()
-  # some startup settings
-  # np.random.seed(FLAGS.random_seed)
-  # tf.set_random_seed(FLAGS.random_seed)
-  random.seed(FLAGS.random_seed)
-
-  if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
-  datasetdir = join(FLAGS.data_root, FLAGS.dataset)
-  
-  train_set = load_set('train')
-  val_set=load_set('val')
-  test_set=load_set('test')
-  full_set={'train':train_set, 'val':val_set, 'test':test_set}
-
-  print("Loaded data: {0} training, {1} validation, {2} test.".format(len(train_set),len(val_set),len(test_set)))
-
-  im_size=size
-  try:
-    collision_num = int(FLAGS.collision_file.split('.')[0].split('_')[2])
-  except:
-    collision_num = 5
-
-  
 def generate_batch(data_type):
   """ 
   input:
@@ -291,88 +263,6 @@ def generate_batch(data_type):
     b+=1
     ok=True    
     yield b, ok, batch
-
-    # # print("picking random indices duration: ",time.time()-stime)
-    # def load_image_and_target(coord, batch_indices, batch, checklist):
-    #   while not coord.should_stop():
-    #     try:
-    #       loc_ind, run_ind, frame_ind = batch_indices.pop()
-    #       def load_rgb_depth_image(run_ind, frame_ind):
-    #         # load image
-    #         img_file = join(data_set[run_ind]['name'],'RGB', '{0:010d}.jpg'.format(data_set[run_ind]['num_imgs'][frame_ind]))
-    #         # print('img_file ',img_file)
-    #         # img = Image.open(img_file)
-    #         img = sio.imread(img_file)
-    #         scale_height = int(np.floor(img.shape[0]/im_size[0]))
-    #         scale_width = int(np.floor(img.shape[1]/im_size[1]))
-    #         img = img[::scale_height,::scale_width]
-    #         img = sm.resize(img,im_size,mode='constant').astype(float) #.astype(np.float32)
-    #         assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
-    #         de = []
-    #         try:
-    #           depth_file = join(data_set[run_ind]['name'],FLAGS.depth_directory, '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind+1]))
-    #         except:
-    #           pass
-    #         else:
-    #           # de = Image.open(depth_file)
-    #           de = sio.imread(depth_file)
-    #           scale_height = int(np.floor(de.shape[0]/de_size[0]))
-    #           scale_width = int(np.floor(de.shape[1]/de_size[1]))
-    #           de = de[::scale_height,::scale_width]
-    #           # clip depth image with small values as they are due to image processing
-    #           de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
-    #           de[de<10]=0
-    #           de = de * 1/255. * 5.
-    #         return img, de
-    #       # if FLAGS.n_fc: #concatenate features
-    #       #   ims = []
-    #       #   for frame in range(FLAGS.n_frames):
-    #       #     # target depth (de) is each time overwritten, only last frame is kept
-    #       #     image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
-    #       #     ims.append(image)
-    #       #   im = np.concatenate(ims, axis=2)
-    #       #   ctr = data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1]
-    #       # else:
-    #       im, de = load_rgb_depth_image(run_ind, frame_ind)
-
-    #       # load scan
-    #       scan = []
-    #       try: #load next scan 
-    #         scan = data_set[run_ind]['scans'][frame_ind+1]
-    #       except:
-    #         pass
-
-    #       ctr = data_set[run_ind]['controls'][frame_ind]
-    #       # clip control avoiding values larger than 1
-    #       ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
-          
-    #       if FLAGS.network == 'coll_q_net': 
-    #         col = data_set[run_ind]['collisions'][frame_ind]
-    #         batch.append({'img':im, 'ctr':ctr, 'depth':de, 'trgt':col})
-    #       else:
-    #         # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
-    #         batch.append({'img':im, 'ctr':ctr, 'depth':de if len(scan) == 0 else scan})
-    #       checklist.append(True)
-    #     except IndexError as e:
-    #       # print(e)
-    #       #print('batch_loaded, wait to stop', e)
-    #       coord.request_stop()
-    #     except Exception as e:
-    #       print('Problem in loading data: ',e)
-    #       checklist.append(False)
-    #       coord.request_stop()
-    # try:
-    #   coord=tf.train.Coordinator()
-    #   #print(FLAGS.num_threads)
-    #   threads = [threading.Thread(target=load_image_and_target, args=(coord, batch_indices, batch, checklist)) for i in range(FLAGS.num_threads)]
-    #   for t in threads: t.start()
-    #   coord.join(threads, stop_grace_period_secs=5)
-    # except RuntimeError as e:
-    #   print("threads are not stopping...",e)
-    # else:
-    #   if len(checklist) != sum(checklist): ok=False
-    # if ok: b+=1
-    # yield b, ok, batch
     
 #### FOR TESTING ONLY
   

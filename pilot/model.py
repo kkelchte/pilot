@@ -156,7 +156,6 @@ class Model(object):
         self.action_loss = tf.losses.mean_squared_error(self.endpoints['fc_a'], self.actions)
         tf.losses.add_loss(tf.reduce_mean(self.action_loss))
       self.total_loss = tf.losses.get_total_loss()
-      # self.total_loss = self.loss
       
   def define_train(self):
     '''applying gradients to the weights from normal loss function
@@ -172,7 +171,6 @@ class Model(object):
       # name (or variable) to a scaling coefficient:
       # Take possible a smaller step (gradient multiplier) for the feature extracting part
       mobile_variables = [v for v in tf.global_variables() if (v.name.find('Adadelta')==-1 and v.name.find('BatchNorm')==-1 and v.name.find('Adam')==-1  and v.name.find('q_depth')==-1 and v.name.find('q_coll')==-1)]
-      # self.train_op = slim.learning.create_train_op(self.total_loss, 
       self.train_op = slim.learning.create_train_op(self.total_loss, 
         self.optimizer, 
         global_step=self.global_step, 

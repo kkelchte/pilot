@@ -4,6 +4,34 @@
 		"selected_items":
 		[
 			[
+				"depth",
+				"depths"
+			],
+			[
+				"dpeth",
+				"depths"
+			],
+			[
+				"num",
+				"num_depths"
+			],
+			[
+				"loa",
+				"load_data_in_ram"
+			],
+			[
+				"rgb",
+				"rgb_write_rate"
+			],
+			[
+				"rg",
+				"rgb_cb_rate"
+			],
+			[
+				"rgb_",
+				"rgb_cb_rate"
+			],
+			[
 				"cre",
 				"create_dataset"
 			],
@@ -66,10 +94,6 @@
 			[
 				"log",
 				"log_tag"
-			],
-			[
-				"depth",
-				"depth_q_net_no_coll_real"
 			],
 			[
 				"dosh",
@@ -170,10 +194,6 @@
 			[
 				"run",
 				"run_ind"
-			],
-			[
-				"num",
-				"num_imgs"
 			],
 			[
 				"output",
@@ -464,88 +484,45 @@
 	"buffers":
 	[
 		{
-			"file": "scripts/condor_online.py",
-			"settings":
-			{
-				"buffer_size": 9885,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
-			"settings":
-			{
-				"buffer_size": 15156,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
-			"settings":
-			{
-				"buffer_size": 22962,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "scripts/condor_offline.py",
-			"settings":
-			{
-				"buffer_size": 9920,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "scripts/launch.sh",
-			"settings":
-			{
-				"buffer_size": 1094,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/kinect_camera.urdf.xacro",
-			"settings":
-			{
-				"buffer_size": 3984,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-07-10_doshico_revisited.md",
 			"settings":
 			{
-				"buffer_size": 1417,
+				"buffer_size": 10234,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/models/depth_q_net.py",
+			"file": "/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py",
 			"settings":
 			{
-				"buffer_size": 20070,
+				"buffer_size": 16738,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/main.py",
+			"file": "scripts/condor_online.py",
 			"settings":
 			{
-				"buffer_size": 18160,
+				"buffer_size": 9886,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/index.md",
+			"file": "scripts/prescript_sing.sh",
 			"settings":
 			{
-				"buffer_size": 1676,
+				"buffer_size": 2419,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/postscript_sing.sh",
+			"settings":
+			{
+				"buffer_size": 423,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -583,16 +560,33 @@
 	},
 	"expanded_folders":
 	[
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised",
-		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor",
-		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description",
-		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf"
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor"
 	],
 	"file_history":
 	[
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_offline.sh",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/oracle_nn_drone_fsm.yaml",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/prescript_sing.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/postscript_sing.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/data.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/main.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/data.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/launch.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_online.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/kinect_camera.urdf.xacro",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_cam_and_kinect.urdf.xacro",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_cam_and_kinect.gazebo.xacro",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_kinect.urdf.xacro",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots/urdf/kinect_camera.urdf.xacro",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/index.md",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/models/depth_q_net.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_offline.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/fsm.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_offline.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/condor_task_sing.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/launch_condor.sh",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/launch_python/sing.sh",
@@ -601,16 +595,12 @@
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/clean_dataset.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/offline.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/model.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/models/depth_q_net.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/models/coll_q_net.py",
 		"/users/visics/kkelchte/public_html/index.html",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/get_results.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/get_results_all.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/data.py",
 		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/replay_buffer.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/prescript_sing.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/scripts/postscript_sing.sh",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params_4096.yaml",
 		"/esat/opal/kkelchte/docker_home/.entrypoint_graph",
@@ -621,10 +611,7 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_coll_q_net_params_e2e.yaml",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-06-14_unit_tests_simulation_supervised.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/models/mobile_net.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/index.md",
 		"/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots/urdf/wide_angle_camera.urdf.xacro",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/fsm.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/show_scan_prediction.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_simulation_script.py",
@@ -650,13 +637,10 @@
 		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_turtlebot.launch",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/launch/behaviorarbitration.launch",
 		"/users/visics/kkelchte/sublime_text_3/pilot_offline.sublime-project",
-		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_cam_and_kinect.gazebo.xacro",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/ou_noise.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/replay_buffer.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/data.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/model.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/show_depth_prediction.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/rosinterface.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/tools.py",
@@ -707,21 +691,11 @@
 		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/control_mapping.py",
 		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/CMakeLists.txt",
 		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/.gitignore",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py",
-		"/users/visics/kkelchte/condor/.tmp/run_variance_imgnet_dscr_9__2018-01-03_2220.sh",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/imgs/18-01-03-histograms_ctr_canyon_forest_sandbox.png",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/log/test_dscr_long/2017-12-27_1128/configuration.xml",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/log/test_dscr_onl/2018-01-03_1331_eval/ctr_log",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_net.py",
-		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/start_python_sing.sh",
-		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/evaluate_model.sh",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/gan_rl.md",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/docker_build.md",
-		"/users/visics/kkelchte/condor/start_singularity.sh"
+		"/esat/qayd/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py"
 	],
 	"find":
 	{
-		"height": 24.0
+		"height": 40.0
 	},
 	"find_in_files":
 	{
@@ -735,6 +709,10 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"FLAGS",
+			"network",
+			"img",
+			"}",
 			"```",
 			"ram",
 			"echo \"",
@@ -868,117 +846,119 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 4,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "scripts/condor_online.py",
+					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-07-10_doshico_revisited.md",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 9885,
+						"buffer_size": 10234,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								9877,
-								9877
+								9005,
+								9005
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 1890.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 15156,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								9162,
-								9162
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 2745.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 22962,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								22566,
-								22566
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 5595.0,
+						"translation.y": 1605.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
-					"file": "scripts/condor_offline.py",
+					"buffer": 1,
+					"file": "/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 9920,
+						"buffer_size": 16738,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								477,
-								477
+								6912,
+								6912
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
+							"history_list_is_closing": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "scripts/condor_online.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9886,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5946,
+								5946
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1035.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "scripts/prescript_sing.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2419,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								619,
+								619
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -989,19 +969,19 @@
 				},
 				{
 					"buffer": 4,
-					"file": "scripts/launch.sh",
+					"file": "scripts/postscript_sing.sh",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1094,
+						"buffer_size": 423,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								788,
-								788
+								332,
+								332
 							]
 						],
 						"settings":
@@ -1012,153 +992,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/kinect_camera.urdf.xacro",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3984,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/XML/XML.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-07-10_doshico_revisited.md",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1417,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1412,
-								1412
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
-					"type": "text"
-				},
-				{
-					"buffer": 7,
-					"file": "pilot/models/depth_q_net.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 20070,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								15183,
-								15183
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 4200.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 9,
-					"type": "text"
-				},
-				{
-					"buffer": 8,
-					"file": "pilot/main.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 18160,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								10655,
-								10655
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 2070.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 8,
-					"type": "text"
-				},
-				{
-					"buffer": 9,
-					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/index.md",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1676,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								171,
-								171
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 7,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -1166,7 +1000,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 24.0
+		"height": 26.0
 	},
 	"input":
 	{
@@ -1203,7 +1037,7 @@
 	"project": "q-learning.sublime-project",
 	"replace":
 	{
-		"height": 44.0
+		"height": 48.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1212,6 +1046,86 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"pos",
+				"q-learning/scripts/postscript_sing.sh"
+			],
+			[
+				"pr",
+				"q-learning/scripts/prescript_sing.sh"
+			],
+			[
+				"co on",
+				"q-learning/scripts/condor_online.py"
+			],
+			[
+				"con on",
+				"simulation_supervised/simulation_supervised/config/fsm/oracle_nn_drone_fsm.yaml"
+			],
+			[
+				"pre",
+				"q-learning/scripts/prescript_sing.sh"
+			],
+			[
+				"on",
+				"q-learning/scripts/condor_online.py"
+			],
+			[
+				"la",
+				"q-learning/scripts/launch.sh"
+			],
+			[
+				"off",
+				"pilot/pilot/offline.py"
+			],
+			[
+				"ma",
+				"q-learning/pilot/main.py"
+			],
+			[
+				"mai",
+				"q-learning/pilot/main.py"
+			],
+			[
+				"dor",
+				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
+			],
+			[
+				"kin",
+				"hector_quadrotor/hector_quadrotor_description/urdf/kinect_camera.urdf.xacro"
+			],
+			[
+				"kin ca",
+				"hector_quadrotor/hector_quadrotor_description/urdf/kinect_camera.urdf.xacro"
+			],
+			[
+				" qu wi ca",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_cam_and_kinect.urdf.xacro"
+			],
+			[
+				"qu wi ca",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_cam_and_kinect.gazebo.xacro"
+			],
+			[
+				" spa qu",
+				"hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch"
+			],
+			[
+				"dor si",
+				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
+			],
+			[
+				"qu wi ki",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_kinect.urdf.xacro"
+			],
+			[
+				"ki",
+				"hector_quadrotor/hector_quadrotor_description/urdf/kinect_camera.urdf.xacro"
+			],
+			[
+				"fsm",
+				"simulation_supervised/simulation_supervised_tools/python/fsm.py"
+			],
 			[
 				"cre",
 				"simulation_supervised/simulation_supervised_tools/python/create_dataset.py"
@@ -1223,10 +1137,6 @@
 			[
 				"ru",
 				"simulation_supervised/simulation_supervised/python/run_script.py"
-			],
-			[
-				"mai",
-				"q-learning/pilot/main.py"
 			],
 			[
 				"dep",
@@ -1247,10 +1157,6 @@
 			[
 				"con ta si",
 				"q-learning/scripts/condor_task_sing.sh"
-			],
-			[
-				"ma",
-				"q-learning/pilot/main.py"
 			],
 			[
 				"con ta off",
@@ -1283,10 +1189,6 @@
 			[
 				"con ta s",
 				"q-learning/scripts/condor_task_sing.sh"
-			],
-			[
-				"off",
-				"q-learning/pilot/offline.py"
 			],
 			[
 				"coll",
@@ -1325,10 +1227,6 @@
 				"q-learning/scripts/clean_dataset.sh"
 			],
 			[
-				"pre",
-				"q-learning/scripts/prescript_sing.sh"
-			],
-			[
 				"data",
 				"q-learning/pilot/data.py"
 			],
@@ -1355,10 +1253,6 @@
 			[
 				"cont a off",
 				"q-learning/scripts/condor_task_offline.sh"
-			],
-			[
-				"la",
-				"q-learning/scripts/launch_condor.sh"
 			],
 			[
 				"get re",
@@ -1411,10 +1305,6 @@
 			[
 				"sho sc",
 				"simulation_supervised/simulation_supervised_tools/python/visualizers/show_scan_prediction.py"
-			],
-			[
-				"fsm",
-				"simulation_supervised/simulation_supervised_tools/python/fsm.py"
 			],
 			[
 				" ma",
@@ -1667,62 +1557,6 @@
 			[
 				"runvariimgds9",
 				"condor/.tmp/run_variance_imgnet_dscr_9__2018-01-03_2220.sh"
-			],
-			[
-				"grid",
-				"blogs/kkelchte.github.io/docs/gridsearch.md"
-			],
-			[
-				"ouno",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/ou_noise.py"
-			],
-			[
-				"gener",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/canyon_generator.py"
-			],
-			[
-				"mobil",
-				"docker_home/tensorflow/pilot/pilot/models/mobile_net.py"
-			],
-			[
-				"starpy",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/start_python_sing.sh"
-			],
-			[
-				"condaoff",
-				"condor/condor_task_offline.sh"
-			],
-			[
-				"maip",
-				"docker_home/tensorflow/pilot/pilot/main.py"
-			],
-			[
-				"eval",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/evaluate_model.sh"
-			],
-			[
-				"doc",
-				"blogs/kkelchte.github.io/docs/docker_build.md"
-			],
-			[
-				"del",
-				"blogs/kkelchte.github.io/docs/delays.md"
-			],
-			[
-				"canyge",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/canyon_generator.py"
-			],
-			[
-				"contas",
-				"condor/condor_task_sing.sh"
-			],
-			[
-				"var",
-				"blogs/kkelchte.github.io/docs/variance.md"
-			],
-			[
-				"condtoff",
-				"condor/condor_task_offline.sh"
 			]
 		],
 		"width": 0.0
@@ -1752,7 +1586,7 @@
 	"show_minimap": false,
 	"show_open_files": false,
 	"show_tabs": true,
-	"side_bar_visible": true,
+	"side_bar_visible": false,
 	"side_bar_width": 302.0,
 	"status_bar_visible": true,
 	"template_settings":

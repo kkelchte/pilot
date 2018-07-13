@@ -42,7 +42,7 @@ parser.add_argument("-pe","--python_environment",default='sing', type=str, help=
 #   Condor Machine Settings
 #===========================
 parser.add_argument("--gpumem",default=1900, type=int,help="define the number of gigs required in your GPU.")
-parser.add_argument("--cpus",default=9, type=int,help="define the number of cpu cores.")
+parser.add_argument("--cpus",default=11, type=int,help="define the number of cpu cores.")
 parser.add_argument("--rammem",default=15, type=int,help="define the number of gigs required in your RAM.")
 parser.add_argument("--diskmem",default=50, type=int,help="define the number of gigs required on your HD.")
 parser.add_argument("--wall_time",default=60*60*3, help="After training a new condor job can be submitted to evaluate the model after.")
@@ -103,20 +103,19 @@ condor_submit.write("Request_GPUs     = 1 \n")
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
 
-condor_submit.write("Should_transfer_files = true\n")
-condor_submit.write("transfer_input_files = {0}/tensorflow/{1}/scripts/prescript_sing.sh,{0}/tensorflow/{1}/scripts/postscript_sing.sh\n".format(FLAGS.home, FLAGS.python_project+'/..'))
-condor_submit.write("+PreCmd = \"prescript_sing.sh\"\n")
-condor_submit.write("+PostCmd = \"postscript_sing.sh\"\n")
-condor_submit.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
-condor_submit.write("periodic_release = HoldReasonCode == 1 && HoldReasonSubCode == 0\n")
+# condor_submit.write("Should_transfer_files = true\n")
+# condor_submit.write("transfer_input_files = {0}/tensorflow/{1}/scripts/prescript_sing.sh,{0}/tensorflow/{1}/scripts/postscript_sing.sh\n".format(FLAGS.home, FLAGS.python_project+'/..'))
+# condor_submit.write("+PreCmd = \"prescript_sing.sh\"\n")
+# condor_submit.write("+PostCmd = \"postscript_sing.sh\"\n")
+# condor_submit.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
+condor_submit.write("periodic_release = HoldReasonCode == 1 && HoldReasonSubCode == 0 && HoldReasonCode = 26\n")
 
 
 blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
-			 && (machine != \"enal.esat.kuleuven.be\") \
 			 && (machine != \"kochab.esat.kuleuven.be\") "
 # blacklist=""
-# greenlist=" && (machine == \"fluorite.esat.kuleuven.be\") "
-greenlist=""
+greenlist=" && (machine == \"vladimir.esat.kuleuven.be\") "
+# greenlist=""
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
@@ -142,7 +141,7 @@ subprocess.call(shlex.split("chmod 711 {0}".format(condor_file)))
 executable = open(shell_file,'w')
 
 executable.write("#!/bin/bash \n")
-executable.write("echo started executable in singularity. \n")
+executable.write("echo started executable within singularity. \n")
 executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra \n")
 executable.write("roscd simulation_supervised/python \n")
 executable.write("echo PWD: $PWD \n")
@@ -169,23 +168,50 @@ sing = open(sing_file,'w')
 
 # create sing file to ls gluster directory : bug of current singularity + fedora 27 version
 sing.write("#!/bin/bash\n")
-# sing.write(echo \"exec \$1 in singularity image /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img\"
-sing.write("echo \"exec $1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img\"\n")
-# sing.write(cd /esat/opal/kkelchte/singularity_images\n")                                                           
+
+# Check if there is already a singularity running
+sing.write("sleep 3 \n")
+sing.write("echo check if Im already running on this machine \n")
+
+sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")
+sing.write("ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+sing.write("JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+sing.write("RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d '=' -f 2 | cut -d '@' -f 2 | cut -d '.' -f 1) \n")
+sing.write("Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d '/' -f 8) \n")
+
+sing.write("while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n")
+sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] two jobs are running on $RemoteHost, I better leave...\" \n")
+sing.write("  while [ $JobStatus = 2 ] ; do \n")
+sing.write("    ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
+sing.write("    JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+sing.write("    echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n")
+sing.write("    sleep 5 \n")
+sing.write("  done \n")
+sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n")
+sing.write("done \n")
+
+sing.write("echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running on $RemoteHost so continue...\" \n")
+sing.write("echo \"HOST: $RemoteHost\" \n")
+# sing.write("echo \"exec \$1 in singularity image /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img\"
+sing.write("echo \"exec $1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img\" \n")
+# sing.write("cd /esat/opal/kkelchte/singularity_images\n")
 sing.write("cd /gluster/visics/singularity\n")
 sing.write("pwd\n")
-# sing.write(ls /esat/opal/kkelchte/singularity_images\n")                                                              
+# sing.write(ls /esat/opal/kkelchte/singularity_images\n")
 sing.write("ls /gluster/visics/singularity\n")
 sing.write("sleep 1\n")
 # sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img \$1 \n")
 sing.write("/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img $1 \n")
+sing.write("echo \"[$(date +%F_%H:%M:%S)] $Command : leaving $RemoteHost.\" \n")
+# singularity tend to not always shut down properly so strong kill the condor node
+sing.write("kill -9 $(ps -ef | grep kkelchte | grep condor_pid_ns_init | grep $Command | cut -d ' ' -f 3) \n")
 
 sing.close()
 
 subprocess.call(shlex.split("chmod 711 {0}".format(sing_file)))
 
 ##########################################################################################################################
-# STEP 5 Submit
+# STEP 6 Submit
 
 subprocess.call(shlex.split("condor_submit {0}".format(condor_file)))
 

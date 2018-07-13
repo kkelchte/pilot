@@ -8,6 +8,9 @@
 			"path": "."
 		},
 		{
+			"path": "/esat/opal/kkelchte/docker_home/tensorflow/pilot"
+		},
+		{
 			"file_include_patterns":
 			[
 				".bashrc"

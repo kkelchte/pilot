@@ -32,10 +32,12 @@
 
 # ------------ONLINE-------------
 # create dataset
-for i in $(seq 10) ; do
-	python condor_online.py -t rec_20_$i --wall_time $((50*2*60+60*15)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((50)) --paramfile params.yaml -ds --save_only_success
+for i in $(seq 0 2) ; do
+# for i in 0 1 2 3 5 6 7 ; do
+	# python condor_online.py -t doshico_$i --wall_time $((2*24*60*60)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((10*3)) --paramfile params.yaml -ds --save_only_success
+	python condor_online.py -t test_$i --wall_time $((2*24*60*60)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((3)) --paramfile params.yaml -ds -e --save_only_success
 done
 
 
 
-# while [ true ] ; do clear; condor_q; sleep 2; done
+while [ true ] ; do clear; condor_q; sleep 2; done

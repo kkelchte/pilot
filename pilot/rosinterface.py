@@ -64,11 +64,9 @@ class PilotNode(object):
     self.start_time=0
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
-    # self.accumlosses = {} # gather losses and info over the run in a dictionary
     self.current_distance=0 # accumulative distance travelled from beginning of run used at evaluation
     self.furthest_point=0 # furthest point reached from spawning point at the beginning of run
     self.average_distances={'train':0, 'test':0} # running average over different runs
-    # self.nfc_images =[] #used by n_fc networks for building up concatenated frames
     self.exploration_noise = OUNoise(4, 0, self.FLAGS.ou_theta,1)
     if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
     self.action_pub=rospy.Publisher('/nn_vel', Twist, queue_size=1)
@@ -107,16 +105,6 @@ class PilotNode(object):
     self.time_im_received=[]
     self.time_ctr_send=[]
     self.time_delay=[]
-
-
-    # # create animation to display outputs:
-    # fig=plt.figure()
-    # self.outputs=np.asarray([0,0,0]).reshape((-1,1))
-    # output_plot=plt.plot(self.outputs)
-    # def update(frame_number):
-    #   output_plot
-    # animation.FuncAnimation(fig, update)
-    # plt.show()
 
     rospy.init_node('pilot', anonymous=True)  
     
@@ -171,7 +159,6 @@ class PilotNode(object):
       # Convert your ROS Image message to OpenCV2
       # changed to normal RGB order as i ll use matplotlib and PIL instead of opencv
       img =bridge.imgmsg_to_cv2(msg) 
-      # img =bridge.imgmsg_to_cv2(msg, 'rgb8') 
     except CvBridgeError as e:
       print(e)
     else:
@@ -191,7 +178,7 @@ class PilotNode(object):
       # 308x410 to 128x128
       img = img[::2,::3,:]
       size = self.model.input_size[1:]
-      img = sm.resize(img,size,mode='constant').astype(float) #.astype(np.float32)
+      img = sm.resize(img,size,mode='constant').astype(float)
       return img
 
   def process_depth(self, msg):
@@ -203,11 +190,8 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
-      # de=de*1/5.*255
-      # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
-
+      
       de = de[::6,::8]
-      # im = im[::8,::8]
       shp=de.shape
       # # assume that when value is not a number it is due to a too large distance (set to 5m)
       # # values can be nan for when they are closer than 0.5m but than the evaluate node should
@@ -215,8 +199,6 @@ class PilotNode(object):
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
       size = self.model.output_size #(55,74)
       de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
-
-      # de[de<0.001]=0      
       return de
 
   def process_scan(self, msg):
@@ -274,7 +256,6 @@ class PilotNode(object):
       Plot auxiliary predictions.
       Fill replay buffer.
     """
-    # btime=time.time()
     
     # save depth to keep images close.
     depth = copy.deepcopy(self.depth)
@@ -538,7 +519,6 @@ class PilotNode(object):
         f.write(result_string)
         f.write('\n')
         f.close()
-      # self.accumlosses = {}
       self.current_distance = 0
       self.last_pose = []
       self.furthest_point = 0
