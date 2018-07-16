@@ -17,12 +17,12 @@ Build basic NN model
 """
 class Model(object):
  
-  def __init__(self, FLAGS, session, prefix='model', device='/gpu:0', depth_input_size=(55,74)):
+  def __init__(self, FLAGS, session, prefix='model', device='/gpu:0'):
     '''initialize model
     '''
     self.sess = session
     self.action_dim = FLAGS.action_dim
-    self.depth_input_size = depth_input_size
+    self.output_size = FLAGS.output_size
     self.prefix = prefix
     self.device = device
     
@@ -48,7 +48,7 @@ class Model(object):
     #define the input size of the network input
     if self.FLAGS.network =='mobile':
       # Use NCHW instead of NHWC data input because this is faster on GPU.    
-      self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 
+      self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[self.FLAGS.depth_multiplier], 
           mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 3]
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
@@ -73,12 +73,13 @@ class Model(object):
     if not os.path.isfile(self.FLAGS.checkpoint_path+'/checkpoint'):
       self.FLAGS.checkpoint_path = self.FLAGS.checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(self.FLAGS.checkpoint_path)) if os.path.isdir(self.FLAGS.checkpoint_path+'/'+mpath) and not mpath[-3:]=='val' and os.path.isfile(self.FLAGS.checkpoint_path+'/'+mpath+'/checkpoint')][-1]
     
+
     if not self.FLAGS.scratch: 
       print('checkpoint: {}'.format(self.FLAGS.checkpoint_path))
       init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(self.FLAGS.checkpoint_path), variables_to_restore)
     
     # create saver for checkpoints
-    self.saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=1)
+    self.saver = tf.train.Saver(max_to_keep=50, keep_checkpoint_every_n_hours=1)
     
     # Add the loss function to the graph.
     self.define_loss()
@@ -103,9 +104,9 @@ class Model(object):
     with tf.device(self.device):
       self.inputs = tf.placeholder(tf.float32, shape = self.input_size)
       args_for_scope={'weight_decay': self.FLAGS.weight_decay,
-                      'stddev':self.FLAGS.init_scale,
-                      'initializer':self.FLAGS.initializer,
-                      'random_seed':self.FLAGS.random_seed}
+      'stddev':self.FLAGS.init_scale,
+      'initializer':self.FLAGS.initializer,
+      'random_seed':self.FLAGS.random_seed}
       if self.FLAGS.network=='mobile':
         if self.FLAGS.n_fc: # concatenate consecutive features from a shared feature extracting CNN network
           self.inputs = tf.placeholder(tf.float32, shape = (self.input_size[0],self.input_size[1],self.input_size[2],self.FLAGS.n_frames*self.input_size[3]))
@@ -116,12 +117,12 @@ class Model(object):
           with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= True, **args_for_scope)):
             self.outputs, self.aux_depth, self.endpoints = mobile_net.mobilenet_n(is_training=True, **args_for_model)
           with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= False, **args_for_scope)):
-            self.controls, self.pred_depth, _ = mobile_net.mobilenet_n(is_training=False, **args_for_model)
+            self.controls, self.pred_depth, self.endpoints_eval = mobile_net.mobilenet_n(is_training=False, **args_for_model)
         else: # Use only 1 frame to create a feature
           args_for_model={'inputs':self.inputs, 
                         'num_classes':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
                         'depth_multiplier':self.FLAGS.depth_multiplier,
-                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob} 
+                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob}
           with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=True,**args_for_scope)):
             self.outputs, self.endpoints = mobile_net.mobilenet_v1(is_training=True,**args_for_model)
             self.aux_depth = self.endpoints['aux_depth_reshaped']
@@ -167,8 +168,9 @@ class Model(object):
       self.train_op = slim.learning.create_train_op(self.total_loss, 
         self.optimizer, 
         global_step=self.global_step, 
-        clip_gradient_norm=self.FLAGS.clip_grad)
-      # gradient_multipliers={v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}, 
+        gradient_multipliers={v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}, 
+        clip_gradient_norm=self.FLAGS.clip_grad,
+        summarize_gradients=True)
 
   def discretized(self, targets):
     '''discretize targets from a float value like 0.3 to an integer index
@@ -188,7 +190,7 @@ class Model(object):
 
   def forward(self, inputs, auxdepth=False, targets=[], depth_targets=[]):
     '''run forward pass and return action prediction
-    inputs=batch of RGB iamges
+    inputs=batch of RGB images
     auxdepth = variable defining wether auxiliary depth should be predicted
     targets = supervised target control
     depth_targets = supervised target depth
@@ -267,11 +269,10 @@ class Model(object):
         self.add_summary_var(name)
     for d in ['current','furthest']:
       for t in ['train', 'test']:
-        for w in ['','sandbox','forest','canyon','esat_corridor_v1', 'esat_corridor_v2']:
+        for w in ['','sandbox','forest','canyon','esat_v1', 'esat_v2']:
           name = 'Distance_{0}_{1}'.format(d,t)
           if len(w)!=0: name='{0}_{1}'.format(name,w)
           self.add_summary_var(name)
-      
     if self.FLAGS.auxiliary_depth and self.FLAGS.plot_depth:
       name="depth_predictions"
       dep_images = tf.placeholder(tf.uint8, [1, 400, 400, 3])

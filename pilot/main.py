@@ -65,16 +65,16 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
     try :
       if child.attrib['name'] in boollist:
         FLAGS.__setattr__(child.attrib['name'], child.text=='True')
-        # print 'set:', child.attrib['name'], child.text=='True'
+        print 'set:', child.attrib['name'], child.text=='True'
       elif child.attrib['name'] in intlist:
         FLAGS.__setattr__(child.attrib['name'], int(child.text))
-        # print 'set:', child.attrib['name'], int(child.text)
+        print 'set:', child.attrib['name'], int(child.text)
       elif child.attrib['name'] in floatlist:
         FLAGS.__setattr__(child.attrib['name'], float(child.text))
-        # print 'set:', child.attrib['name'], float(child.text)
+        print 'set:', child.attrib['name'], float(child.text)
       elif child.attrib['name'] in stringlist:
         FLAGS.__setattr__(child.attrib['name'], str(child.text))
-        # print 'set:', child.attrib['name'], str(child.text)
+        print 'set:', child.attrib['name'], str(child.text)
     except : 
       print 'couldnt set:', child.attrib['name'], child.text
       pass
@@ -107,7 +107,6 @@ def main(_):
   parser.add_argument("--device", default='/gpu:0', type=str, help= "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--owr", action='store_true', help="Overwrite existing logfolder when it is not testing.")
-  parser.add_argument("--action_quantity",default=9, type=int, help="Define the number of actions in the output layer.")
   parser.add_argument("--action_bound", default=1.0, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
   parser.add_argument("--action_dim", default=1.0, type=float, help= "Define the dimension of the actions: 1dimensional as it only turns in yaw.")
   parser.add_argument("--real", action='store_true', help="Define settings in case of interacting with the real (bebop) drone.")
@@ -119,20 +118,25 @@ def main(_):
   #   Data Parameters
   # ===========================
   parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
-  parser.add_argument("--dataset", default="doshico", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--load_data_in_ram", action='store_true', help="Define wether the dataset is preloaded into RAM.")
+  parser.add_argument("--dataset", default="small", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--control_file", default='control_info.txt', type=str, help="Define the name of the file with the action labels.")
-
+  parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
+  parser.add_argument("--subsample", default=1, type=int, help="Subsample data over time: e.g. subsample 2 to get from 20fps to 10fps.")
+  
   # ===========================
   #   Model Parameters
   # ===========================
   parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
-  parser.add_argument("--network",default='mobile',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  parser.add_argument("--network",default='mobile',type=str, help="Define the type of network: mobile, ...")
+  parser.add_argument("--output_size",default=[55,74],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
   parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
   parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc.")
   parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
+  # parser.add_argument("--action_quantity",default=9, type=int, help="Define the number of actions in the output layer.")
   
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
@@ -147,25 +151,30 @@ def main(_):
   parser.add_argument("--grad_mul_weight", default=0, type=float, help="Specify the amount the gradients of prediction layers.")
   parser.add_argument("--dropout_keep_prob", default=0.5, type=float, help="Specify the probability of dropout to keep the activation.")
   parser.add_argument("--clip_grad", default=0, type=int, help="Specify the max gradient norm: default 0 is no clipping, recommended 4.")
+  parser.add_argument("--min_depth", default=0.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
+  parser.add_argument("--max_depth", default=5.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
   parser.add_argument("--optimizer", default='adadelta', type=str, help="Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
   # parser.add_argument("--no_batchnorm_learning",action='store_false', help="In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
-  parser.add_argument("--grad_mul", action='store_true',help="Specify whether the weights of the prediction layers should be learned faster.")
+  # parser.add_argument("--grad_mul", action='store_true',help="Specify whether the weights of the prediction layers should be learned faster.")
   parser.add_argument("--initializer",default='xavier',type=str, help="Define the initializer: xavier or uniform [-init_scale, init_scale]")
 
   parser.add_argument("--loss",default='mse',type=str, help="Define the loss: mse, huber or absolute")
+
+  parser.add_argument("--max_loss", default=100, type=float, help= "Define the maximum loss before it is clipped.")
+  
+  parser.add_argument("--clip_loss_to_max",action='store_true', help="Over time, allow only smaller losses by clipping the maximum allowed loss to the lowest maximum loss.")
 
   # ===========================
   #   Replay Parameters
   # ===========================
 
-  # parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, state/action/target_variance, random_action")
-  # parser.add_argument("--prioritized_keeping", action='store_true', help="In case of True, the replay buffer only keeps replay data that is most likely to be sampled.")
+  parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, state/action/target_variance, random_action")
+  parser.add_argument("--prioritized_keeping", action='store_true', help="In case of True, the replay buffer only keeps replay data that is most likely to be sampled.")
 
   # ===========================
   #   Rosinterface Parameters
   # ===========================
   parser.add_argument("--online", action='store_true', help="Training/evaluating online in simulation.")
-
   parser.add_argument("--buffer_size", default=1000, type=int, help="Define the number of experiences saved in the buffer.")
   parser.add_argument("--ou_theta", default=0.05, type=float, help= "Theta is the pull back force of the OU Noise.")
   parser.add_argument("--noise", default='ou', type=str, help="Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
@@ -173,16 +182,16 @@ def main(_):
   parser.add_argument("--sigma_x", default=0.0, type=float, help= "sigma_x is the amount of noise in the forward speed.")
   parser.add_argument("--sigma_y", default=0.0, type=float, help= "sigma_y is the amount of noise in the y direction.")
   parser.add_argument("--sigma_yaw", default=0.0, type=float, help= "sigma_yaw is the amount of noise added to the steering angle.")
-  parser.add_argument("--speed", default=1.3, type=float, help= "Define the forward speed of the quadrotor.")
+  parser.add_argument("--speed", default=0.5, type=float, help= "Define the forward speed of the quadrotor.")
   parser.add_argument("--alpha",default=0., type=float, help="Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy..")
-  # parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
-  # parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
-  # parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+  parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
+  parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
+  parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
 
   parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
-  parser.add_argument("--show_depth",action='store_false', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
+  parser.add_argument("--dont_show_depth",action='store_true', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 
-  # parser.add_argument("--grad_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
+  parser.add_argument("--grad_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
 
   FLAGS=parser.parse_args()
 
@@ -231,7 +240,7 @@ def main(_):
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
   config.gpu_options.allow_growth = True
-  # config.gpu_options.per_process_gpu_memory_fraction = 0.4 # use for debugging
+  # config.gpu_options.per_process_gpu_memory_fraction = 0.4
 
   # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
@@ -249,8 +258,8 @@ def main(_):
   signal.signal(signal.SIGINT, signal_handler)
   print('------------Press Ctrl+C to end the learning') 
   
-  if FLAGS.online:
-    print('Online---')
+  if FLAGS.online: # online training/evaluating
+    print('Online training.')
     import rosinterface
     rosnode = rosinterface.PilotNode(FLAGS, model, FLAGS.summary_dir+FLAGS.log_tag)
     while True:
@@ -265,6 +274,7 @@ def main(_):
   else:
     print('Offline training.')
     offline.run(FLAGS,model,start_ep)
+  
     
 if __name__ == '__main__':
   tf.app.run() 

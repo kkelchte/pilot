@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # for theta in [ 0.0015, 0.003, 0.006, 0.015, 0.03, 0.06, 0.15 ]:
     theta=0.15
     sigma=1
-    amp=0.01
+    amp=0.3
     print('theta: ', theta)
     ou = OUNoise(4,0,theta,sigma)
     states = []
