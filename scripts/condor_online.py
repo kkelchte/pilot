@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description="""Condor_offline submits a condor 
 # ==========================
 parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
 parser.add_argument("--data_root", default='pilot_data/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
-parser.add_argument("--code_root", default='~', type=str, help="Choose the directory to which tensorflow should save the summaries.")
+# parser.add_argument("--code_root", default='~', type=str, help="Choose the directory to which tensorflow should save the summaries.")
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Home will be set as environment variable and used to add to summary dir and datadir.")
 parser.add_argument("-t", "--log_tag", default='testing', type=str, help="LOGTAG: tag used to name logfolder.")
 
@@ -44,7 +44,7 @@ parser.add_argument("-pe","--python_environment",default='sing', type=str, help=
 parser.add_argument("--gpumem",default=1900, type=int,help="define the number of gigs required in your GPU.")
 parser.add_argument("--cpus",default=11, type=int,help="define the number of cpu cores.")
 parser.add_argument("--rammem",default=15, type=int,help="define the number of gigs required in your RAM.")
-parser.add_argument("--diskmem",default=50, type=int,help="define the number of gigs required on your HD.")
+parser.add_argument("--diskmem",default=100, type=int,help="define the number of gigs required on your HD.")
 parser.add_argument("--wall_time",default=60*60*3, help="After training a new condor job can be submitted to evaluate the model after.")
 parser.add_argument("--not_nice",action='store_true', help="In case you want higher priority.")
 
@@ -55,12 +55,13 @@ parser.add_argument("--not_nice",action='store_true', help="In case you want hig
 FLAGS, others = parser.parse_known_args()
 
 # 4 main directories have to be defined in order to make it also runnable from a read-only system-installed singularity image.
-if FLAGS.summary_dir[0] != '/':  # 1. Tensorflow log directory for saving tensorflow logs and xterm logs
-  FLAGS.summary_dir=FLAGS.home+'/'+FLAGS.summary_dir
-if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
-  FLAGS.data_root=FLAGS.home+'/'+FLAGS.data_root
-if FLAGS.code_root == '~': # 3. location for tensorflow code (and also catkin workspace though they are found with rospack)
-  FLAGS.code_root = FLAGS.home
+# --> does not work when data_root and summarydir is made temporarily in /tmp/home
+# if FLAGS.summary_dir[0] != '/':  # 1. Tensorflow log directory for saving tensorflow logs and xterm logs
+#   FLAGS.summary_dir=FLAGS.home+'/'+FLAGS.summary_dir
+# if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
+#   FLAGS.data_root=FLAGS.home+'/'+FLAGS.data_root
+# if FLAGS.code_root == '~': # 3. location for tensorflow code (and also catkin workspace though they are found with rospack)
+#   FLAGS.code_root = FLAGS.home
 
 # display and save all settings
 print("\nSettings:")
@@ -73,7 +74,7 @@ print("Others: {0}".format(others))
 description="{0}_{1}".format(FLAGS.log_tag.replace('/','_'),time.strftime("%Y-%m-%d_%I-%M-%S"))
 
 print description
-condor_output_dir=FLAGS.summary_dir+FLAGS.log_tag+"/condor"
+condor_output_dir=FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+"/condor"
 if os.path.isfile("{0}/online_{1}.log".format(condor_output_dir,description)):
     os.remove("{0}/online_{1}.log".format(condor_output_dir,description))
     os.remove("{0}/online_{1}.out".format(condor_output_dir,description))
@@ -108,14 +109,16 @@ condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
 # condor_submit.write("+PreCmd = \"prescript_sing.sh\"\n")
 # condor_submit.write("+PostCmd = \"postscript_sing.sh\"\n")
 # condor_submit.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
-condor_submit.write("periodic_release = HoldReasonCode == 1 && HoldReasonSubCode == 0 && HoldReasonCode = 26\n")
+condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCode == 0 ) || HoldReasonCode == 26\n")
 
 
 blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
+			&& (machine != \"virgo.esat.kuleuven.be\") \
+			&& (machine != \"estragon.esat.kuleuven.be\") \
 			 && (machine != \"kochab.esat.kuleuven.be\") "
 # blacklist=""
-greenlist=" && (machine == \"vladimir.esat.kuleuven.be\") "
-# greenlist=""
+# greenlist=" && (machine == \"vladimir.esat.kuleuven.be\") "
+greenlist=""
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
@@ -142,7 +145,9 @@ executable = open(shell_file,'w')
 
 executable.write("#!/bin/bash \n")
 executable.write("echo started executable within singularity. \n")
-executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra \n")
+executable.write("cd /tmp/home \n")
+executable.write("source .entrypoint_xpra \n")
+# executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra \n")
 executable.write("roscd simulation_supervised/python \n")
 executable.write("echo PWD: $PWD \n")
 
@@ -170,7 +175,7 @@ sing = open(sing_file,'w')
 sing.write("#!/bin/bash\n")
 
 # Check if there is already a singularity running
-sing.write("sleep 3 \n")
+sing.write("sleep 2 \n")
 sing.write("echo check if Im already running on this machine \n")
 
 sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")
@@ -185,23 +190,54 @@ sing.write("  while [ $JobStatus = 2 ] ; do \n")
 sing.write("    ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
 sing.write("    JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
 sing.write("    echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n")
-sing.write("    sleep 5 \n")
+sing.write("    sleep $(( RANDOM % 30 )) \n")
 sing.write("  done \n")
 sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n")
 sing.write("done \n")
 
 sing.write("echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running on $RemoteHost so continue...\" \n")
 sing.write("echo \"HOST: $RemoteHost\" \n")
-# sing.write("echo \"exec \$1 in singularity image /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img\"
-sing.write("echo \"exec $1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img\" \n")
-# sing.write("cd /esat/opal/kkelchte/singularity_images\n")
-sing.write("cd /gluster/visics/singularity\n")
+sing.write("echo \"exec $1 in singularity image /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_drone_ws.img\"\n")
+# sing.write("echo \"exec $1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img\" \n")
+sing.write("cd /esat/opal/kkelchte/singularity_images\n")
+# sing.write("cd /gluster/visics/singularity\n")
 sing.write("pwd\n")
-# sing.write(ls /esat/opal/kkelchte/singularity_images\n")
-sing.write("ls /gluster/visics/singularity\n")
+sing.write(" ls /esat/opal/kkelchte/singularity_images\n")
+# sing.write("ls /gluster/visics/singularity\n")
 sing.write("sleep 1\n")
-# sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow.img \$1 \n")
-sing.write("/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img $1 \n")
+
+###### Copy docker_home to local tmp
+sing.write("echo 'make home in tmp' \n")
+sing.write("mkdir -p /tmp/home \n")
+sing.write("cd /tmp/home \n")
+sing.write("echo 'cp entrypoint_xpra' \n")
+sing.write("cp {0}/.entrypoint_xpra . \n".format(FLAGS.home))
+sing.write("echo 'make data and tensorflow dir' \n")
+sing.write("mkdir {0} \n".format(FLAGS.data_root))
+sing.write("mkdir -p {0} \n".format(FLAGS.summary_dir))
+sing.write("echo 'cp checkpoint' \n")
+if '--checkpoint_path' in others:
+	checkpoint_path=others[others.index('--checkpoint_path')+1]
+else:
+	checkpoint_path='mobilenet_025'
+sing.write("cp -r {1}/{2}/{0} {2}/ \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# this could be speeded by only copying the checkpoint file in the checkpoint_path/2018*/ folder
+sing.write("echo 'cp tensorflow pilot project' \n")
+sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
+sing.write("echo 'cp simulation_supervised' \n")
+sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
+######
+
+sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_drone_ws.img $1 \n")
+# sing.write("/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img $1 \n")
+
+###### Copy data and log back to opal
+sing.write("echo 'copy pilot data back' \n")
+sing.write("cp -r /tmp/home/{1}/* {0}/{1}/ \n".format(FLAGS.home, FLAGS.data_root))
+sing.write("echo 'copy tensorflow log back' \n")
+sing.write("cp -r /tmp/home/{1}/* {0}/{1}/ \n".format(FLAGS.home, FLAGS.summary_dir))
+#####
+
 sing.write("echo \"[$(date +%F_%H:%M:%S)] $Command : leaving $RemoteHost.\" \n")
 # singularity tend to not always shut down properly so strong kill the condor node
 sing.write("kill -9 $(ps -ef | grep kkelchte | grep condor_pid_ns_init | grep $Command | cut -d ' ' -f 3) \n")

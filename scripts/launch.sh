@@ -32,12 +32,13 @@
 
 # ------------ONLINE-------------
 # create dataset
-for i in $(seq 0 2) ; do
-# for i in 0 1 2 3 5 6 7 ; do
-	# python condor_online.py -t doshico_$i --wall_time $((2*24*60*60)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((10*3)) --paramfile params.yaml -ds --save_only_success
-	python condor_online.py -t test_$i --wall_time $((2*24*60*60)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((3)) --paramfile params.yaml -ds -e --save_only_success
+for i in 3 5 ; do
+# for i in $(seq 0 9) ; do
+# for i in 0 ; do
+	python condor_online.py -t rec_$i --wall_time $((2*24*60*60)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((15*3)) --paramfile params.yaml -ds --save_only_success
+	# python condor_online.py -t test_$i --wall_time $((2*24*60*60)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((2)) --paramfile params.yaml -ds -e --save_only_success
 done
 
 
 
-while [ true ] ; do clear; condor_q; sleep 2; done
+# while [ true ] ; do clear; condor_q; sleep 2; done
