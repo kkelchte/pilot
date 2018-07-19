@@ -26,11 +26,12 @@ parser = argparse.ArgumentParser(description="""Condor_offline submits a condor 
 # ==========================
 #   General Settings
 # ==========================
-parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
-parser.add_argument("--data_root", default='pilot_data/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
+parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
+parser.add_argument("--data_root", default='pilot_data/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
 # parser.add_argument("--code_root", default='~', type=str, help="Choose the directory to which tensorflow should save the summaries.")
-parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Home will be set as environment variable and used to add to summary dir and datadir.")
+parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to source of code on Opal from which necessary libs are copied to /tmp/home.")
 parser.add_argument("-t", "--log_tag", default='testing', type=str, help="LOGTAG: tag used to name logfolder.")
+parser.add_argument("--dont_submit",action='store_true', help="In case you dont want to submit the job.")
 
 # ==========================
 #   Tensorflow Settings
@@ -83,7 +84,8 @@ if os.path.isfile("{0}/online_{1}.log".format(condor_output_dir,description)):
 temp_dir=condor_output_dir+"/.tmp"
 if os.path.isdir(temp_dir):	shutil.rmtree(temp_dir)
 
-condor_file="{0}/online_{1}.condor".format(condor_output_dir,description)
+condor_file="{0}/online.condor".format(condor_output_dir)
+# condor_file="{0}/online_{1}.condor".format(condor_output_dir,description)
 shell_file="{0}/run_{1}.sh".format(temp_dir,description)
 sing_file="{0}/sing_{1}.sh".format(temp_dir,description)
 
@@ -119,7 +121,7 @@ blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 # blacklist=""
 # greenlist=" && (machine == \"vladimir.esat.kuleuven.be\") "
 greenlist=""
-condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
+condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
 if not FLAGS.not_nice: condor_submit.write("Niceuser = true \n")
@@ -220,7 +222,7 @@ if '--checkpoint_path' in others:
 	checkpoint_path=others[others.index('--checkpoint_path')+1]
 else:
 	checkpoint_path='mobilenet_025'
-sing.write("cp -r {1}/{2}/{0} {2}/ \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("cp -r {1}/{2}/{0} {2} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
 # this could be speeded by only copying the checkpoint file in the checkpoint_path/2018*/ folder
 sing.write("echo 'cp tensorflow pilot project' \n")
 sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
@@ -240,7 +242,7 @@ sing.write("cp -r /tmp/home/{1}/* {0}/{1}/ \n".format(FLAGS.home, FLAGS.summary_
 
 sing.write("echo \"[$(date +%F_%H:%M:%S)] $Command : leaving $RemoteHost.\" \n")
 # singularity tend to not always shut down properly so strong kill the condor node
-sing.write("kill -9 $(ps -ef | grep kkelchte | grep condor_pid_ns_init | grep $Command | cut -d ' ' -f 3) \n")
+# sing.write("kill -9 $(ps -ef | grep kkelchte | grep condor_pid_ns_init | grep $Command | cut -d ' ' -f 3) \n")
 
 sing.close()
 
@@ -248,11 +250,12 @@ subprocess.call(shlex.split("chmod 711 {0}".format(sing_file)))
 
 ##########################################################################################################################
 # STEP 6 Submit
-
-subprocess.call(shlex.split("condor_submit {0}".format(condor_file)))
-
-print("Submission done.")
-print("Monitor with: ")
-print("tail -f {0}/condor_{1}.dockout".format(condor_output_dir, description))
-
-time.sleep(1)
+if not FLAGS.dont_submit:
+  subprocess.call(shlex.split("condor_submit {0}".format(condor_file)))
+  print("Submission done.")
+  print("Monitor with: ")
+  print("tail -f {0}/condor_{1}.dockout".format(condor_output_dir, description))
+  time.sleep(1)
+else:
+  print("Job was not submitted.")
+  

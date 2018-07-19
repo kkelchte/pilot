@@ -1,0 +1,10 @@
+{
+    "action": {
+        "today": "ask for hand"
+    }, 
+    "boy": "klaas", 
+    "girl": [
+        "mufasa", 
+        "coco"
+    ]
+}

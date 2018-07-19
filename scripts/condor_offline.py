@@ -26,16 +26,17 @@ parser = argparse.ArgumentParser(description="""Condor_offline submits a condor 
 # ==========================
 #   General Settings
 # ==========================
-parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
-parser.add_argument("--data_root", default='pilot_data/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
-parser.add_argument("--code_root", default='~', type=str, help="Choose the directory to which tensorflow should save the summaries.")
-parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Home will be set as environment variable and used to add to summary dir and datadir.")
+parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
+parser.add_argument("--data_root", default='pilot_data/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
+# parser.add_argument("--code_root", default='~', type=str, help="Choose the directory to which tensorflow should save the summaries.")
+parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to location with tensorflow code and data root.")
 parser.add_argument("-t", "--log_tag", default='testing', type=str, help="LOGTAG: tag used to name logfolder.")
+parser.add_argument("--dont_submit",action='store_true', help="In case you dont want to submit the job.")
 
 # ==========================
 #   Tensorflow Settings
 # ==========================
-parser.add_argument("-pp","--python_project",default='q-learning/pilot', type=str, help="Define in which python project the executable should be started with ~/tenorflow/PROJECT_NAME/main.py: q-learning/pilot, pilot/pilot, ddpg, ....")
+parser.add_argument("-pp","--python_project",default='pilot/pilot', type=str, help="Define in which python project the executable should be started with ~/tenorflow/PROJECT_NAME/main.py: q-learning/pilot, pilot/pilot, ddpg, ....")
 parser.add_argument("-ps","--python_script",default='main.py', type=str, help="Define which python module should be started within the project: e.g. main.py or data.py.")
 
 #===========================
@@ -55,12 +56,12 @@ parser.add_argument("--not_nice",action='store_true', help="In case you want hig
 FLAGS, others = parser.parse_known_args()
 
 # 4 main directories have to be defined in order to make it also runnable from a read-only system-installed singularity image.
-if FLAGS.summary_dir[0] != '/':  # 1. Tensorflow log directory for saving tensorflow logs and xterm logs
-  FLAGS.summary_dir=FLAGS.home+'/'+FLAGS.summary_dir
-if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
-  FLAGS.data_root=FLAGS.home+'/'+FLAGS.data_root
-if FLAGS.code_root == '~': # 3. location for tensorflow code (and also catkin workspace though they are found with rospack)
-  FLAGS.code_root = FLAGS.home
+# if FLAGS.summary_dir[0] != '/':  # 1. Tensorflow log directory for saving tensorflow logs and xterm logs
+#   FLAGS.summary_dir=FLAGS.home+'/'+FLAGS.summary_dir
+# if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
+#   FLAGS.data_root=FLAGS.home+'/'+FLAGS.data_root
+# if FLAGS.code_root == '~': # 3. location for tensorflow code (and also catkin workspace though they are found with rospack)
+#   FLAGS.code_root = FLAGS.home
 
 
 
@@ -75,7 +76,7 @@ print("Others: {0}".format(others))
 description="{0}_{1}".format(FLAGS.log_tag.replace('/','_'),time.strftime("%Y-%m-%d_%I-%M-%S"))
 
 print description
-condor_output_dir=FLAGS.summary_dir+FLAGS.log_tag+"/condor"
+condor_output_dir=FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+"/condor"
 if os.path.isfile("{0}/offline_{1}.log".format(condor_output_dir,description)):
     os.remove("{0}/offline_{1}.log".format(condor_output_dir,description))
     os.remove("{0}/offline_{1}.out".format(condor_output_dir,description))
@@ -84,7 +85,8 @@ if os.path.isfile("{0}/offline_{1}.log".format(condor_output_dir,description)):
 temp_dir=condor_output_dir+"/.tmp"
 if os.path.isdir(temp_dir):	shutil.rmtree(temp_dir)
 
-condor_file="{0}/offline_{1}.condor".format(condor_output_dir,description)
+condor_file="{0}/offline.condor".format(condor_output_dir)
+# condor_file="{0}/offline_{1}.condor".format(condor_output_dir,description)
 shell_file="{0}/run_{1}.sh".format(temp_dir,description)
 
 try:
@@ -116,7 +118,7 @@ blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 #             (machine != \"chokai.esat.kuleuven.be\") && \
 #             (machine != \"pyrite.esat.kuleuven.be\") && \
 #             (machine != \"ymir.esat.kuleuven.be\") "
-condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) {1} \n".format(FLAGS.gpumem, blacklist))
+condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} \n".format(FLAGS.gpumem, blacklist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
 if not FLAGS.not_nice: condor_submit.write("Niceuser = true \n")
@@ -143,9 +145,9 @@ executable.write("#!/bin/bash \n")
 executable.write("echo started executable in virtualenv.\n")
 executable.write("export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.0/lib64 \n")
 executable.write("source /users/visics/kkelchte/tensorflow/bin/activate \n")
-executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages:{0}tensorflow/{1} \n".format(FLAGS.code_root, FLAGS.python_project+'/..'))
+executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages:{0}/tensorflow/{1} \n".format(FLAGS.home, FLAGS.python_project+'/..'))
 executable.write("export HOME={0}\n".format(FLAGS.home))
-command="python {0}/tensorflow/{1}/{2}".format(FLAGS.code_root,FLAGS.python_project,FLAGS.python_script)
+command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,FLAGS.python_script)
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
 command="{0} --log_tag {1}/{2} ".format(command, FLAGS.log_tag, time.strftime("%Y-%m-%d_%I%M"))
@@ -167,7 +169,7 @@ if FLAGS.evaluate_after: # create default run_script call for evaluating with re
 
 	executable.write("if [ $( ls {0}/{1}/2018* | grep my-model | wc -l ) -gt 2 ] ; then \n".format(FLAGS.summary_dir, FLAGS.log_tag))
 	executable.write("  echo \" $(date +%F_%H:%M) [condor_shell_script] Submit condor online job for evaluation \" \n")
-	executable.write("  ssh opal {0}/tensorflow/{1}/../scripts/condor_online.py {2} \n".format(FLAGS.code_root, FLAGS.python_project, command_online))
+	executable.write("  ssh opal {0}/tensorflow/{1}/../scripts/condor_online.py {2} \n".format(FLAGS.home, FLAGS.python_project, command_online))
 	executable.write("else \n")
 	executable.write("  echo \"Training model {0} offline has failed.\" \n".format(FLAGS.log_tag))
 	executable.write("fi \n")
@@ -179,10 +181,12 @@ subprocess.call(shlex.split("chmod 711 {0}".format(shell_file)))
 
 ##########################################################################################################################
 # STEP 5 Submit
-
-subprocess.call(shlex.split("condor_submit {0}".format(condor_file)))
-
-print("Submission done.")
-print("Monitor with: ")
-print("tail -f {0}/condor_{1}.out".format(condor_output_dir, description))
-time.sleep(1)
+if not FLAGS.dont_submit:
+  subprocess.call(shlex.split("condor_submit {0}".format(condor_file)))
+  print("Submission done.")
+  print("Monitor with: ")
+  print("tail -f {0}/condor_{1}.out".format(condor_output_dir, description))
+  time.sleep(1)
+else:
+  print("Job was not submitted.")
+  

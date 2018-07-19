@@ -122,6 +122,7 @@ def load_run_info(coord, run_list, set_list, checklist):
       # get list of all image numbers available in listdir
       imgs_jpg=listdir(join(run_dir,'RGB'))
       num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg[::FLAGS.subsample]])
+      # print("{}".format(num_imgs))
       assert len(num_imgs)!=0 , IOError('no images in {0}: {1}'.format(run_dir,len(imgs_jpg)))
       if not isfile(join(run_dir,'RGB','{0:010d}.jpg'.format(num_imgs[-1]))):
         print('ERROR:',run_dir,' imgnum: ',num_imgs[-1])
@@ -131,6 +132,7 @@ def load_run_info(coord, run_list, set_list, checklist):
       # cut last lines to avoid emtpy lines
       while len(control_file_list[-1])<=1 : control_file_list=control_file_list[:-1]
       control_parsed = [(int(ctr.strip().split(' ')[0]),float(ctr.strip().split(' ')[6])) for ctr in control_file_list]
+      # print("{}".format(control_parsed))
       def sync_control():
         control_list = []
         corresponding_imgs = []
@@ -163,15 +165,15 @@ def load_run_info(coord, run_list, set_list, checklist):
           imgs.append(img)
      
       # Add depth links if files exist
-      num_depths = [] 
+      depth_list = [] 
       try:
         depths_jpg=listdir(join(run_dir,FLAGS.depth_directory))
         if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
       except OSError as e:
-        # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
+        print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
         pass
       else:
-        num_depths=sorted([int(de[0:-4]) for de in depths_jpg])
+        num_depths=sorted([int(de[0:-4]) for de in depths_jpg[::FLAGS.subsample]])
         smallest_depth = num_depths.pop(0)
         for ni in num_imgs: #link the indices of rgb images with the smallest depth bigger than current index
           while(ni > smallest_depth):
@@ -179,31 +181,33 @@ def load_run_info(coord, run_list, set_list, checklist):
               smallest_depth = num_depths.pop(0)
             except IndexError:
               break
-          num_depths.append(smallest_depth)
-        num_imgs = num_imgs[:len(num_depths)]
-        control_list = control_list[:len(num_depths)]
-        assert len(num_imgs) == len(num_depths), "Length of input(images,control,depth) is not equal"
+          depth_list.append(smallest_depth)
+        num_imgs = num_imgs[:len(depth_list)]
+        control_list = control_list[:len(depth_list)]
+        # print("{}".format(num_imgs))
+        # print("{}".format(control_list))
+        # print("{}".format(depth_list))
+        assert len(num_imgs) == len(depth_list), "Length of input(images,control,depth) is not equal"
 
       # Load depth in RAM and preprocess
       depths=[]
       if FLAGS.load_data_in_ram:
-        for num in num_depths:
-          img_file = join(run_dir,'Depth', '{0:010d}.jpg'.format(num))
-          img = sio.imread(img_file)
-          scale_height = int(np.floor(img.shape[0]/de_size[0]))
-          scale_width = int(np.floor(img.shape[1]/de_size[1]))
-          img = img[::scale_height,::scale_width]
-          img = sm.resize(img,de_size,mode='constant').astype(float)
-          img = sm.resize(img,de_size,order=1,mode='constant', preserve_range=True)
-          img[img<10]=0 # clip depth at 10/255m
-          img = img * (1/255. * 5.) # scale to range 0:5
+        for num in depth_list:
+          depth_file = join(run_dir,'Depth', '{0:010d}.jpg'.format(num))
+          de = sio.imread(depth_file)
+          scale_height = int(np.floor(de.shape[0]/de_size[0]))
+          scale_width = int(np.floor(de.shape[1]/de_size[1]))
+          de = de[::scale_height,::scale_width]
+          de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
+          de[de<10]=0
+          de = de * (1/255. * 5.)
           # clip to minimum and maximum depth
-          img = np.minimum(np.maximum(img, FLAGS.min_depth),FLAGS.max_depth)
-          assert len(img) != 0, '[data] Loading depth failed: {}'.format(img_file)
-          depths.append(img)
+          de = np.minimum(np.maximum(de, FLAGS.min_depth),FLAGS.max_depth)
+          assert len(de) != 0, '[data] Loading depth failed: {}'.format(depth_file)
+          depths.append(de)
 
       # add all data to the dataset
-      set_list.append({'name':run_dir, 'controls':control_list, 'num_imgs':num_imgs, 'imgs':imgs, 'num_depths':num_depths, 'depths':depths})
+      set_list.append({'name':run_dir, 'controls':control_list, 'num_imgs':num_imgs, 'imgs':imgs, 'num_depths':depth_list, 'depths':depths})
       
     except IndexError as e:
       coord.request_stop()
@@ -276,7 +280,7 @@ def generate_batch(data_type):
               assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
               de = []
               try:
-                depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['depths'][frame_ind]))
+                depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['num_depths'][frame_ind]))
               except:
                 pass
               else:
@@ -291,7 +295,7 @@ def generate_batch(data_type):
                 de = de * (1/255. * 5.)
                 de = np.minimum(np.maximum(de, FLAGS.min_depth),FLAGS.max_depth)
 
-                if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['depths'][frame_ind], data_set[run_ind]['name']))
+                if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['num_depths'][frame_ind], data_set[run_ind]['name']))
               return img, de
             if FLAGS.n_fc: #concatenate features
               ims = []
@@ -354,7 +358,7 @@ def generate_batch(data_type):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  parser.add_argument("--dataset", default="doshico", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="new_dataset", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
@@ -377,19 +381,27 @@ if __name__ == '__main__':
 
   prepare_data(FLAGS, (128,128,3))
 
-  print 'run_dir: {}'.format(full_set['train'][0]['name'])
-  print 'len images: {}'.format(len(full_set['train'][0]['num_imgs']))
-  print 'len control: {}'.format(len(full_set['train'][0]['controls']))
-  print 'len depth: {}'.format(len(full_set['train'][0]['num_depths']))
-  
+  for dt in 'train', 'val', 'test':
+    print("------------------------")
+    print("Datatype: {}".format(dt))
+    print("Number of runs: {}".format(len(full_set[dt])))
+    print("Number of images: {}".format(sum([ len(s['num_imgs']) for s in full_set[dt]])))
+    print("Number of depths: {}".format(sum([ len(s['num_depths']) for s in full_set[dt]])))
+    print("Number of controls: {}".format(sum([ len(s['controls']) for s in full_set[dt]])))
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
+    print("Batch: {}".format(index))
     inputs = np.array([_['img'] for _ in batch])
     actions = np.array([[_['ctr']] for _ in batch])
     target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
-      
-    print("avg: {0},var: {1}".format(np.mean(actions), np.var(actions)))
+    
+    print("batchsize: {}".format(len(batch)))
+    print("images size: {}".format(inputs.shape))
+    print("actions size: {}".format(actions.shape))
+    print("depths size: {}".format(target_depth.shape if FLAGS.auxiliary_depth else 0))
 
+    # import pdb; pdb.set_trace()  
+    
   print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
   
