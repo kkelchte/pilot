@@ -45,7 +45,7 @@
 
 # -----------DAG-----------------
 # Create Dataset
-python dag_create_data.py -t rec_dd --destination doshico_drone --number_of_recorders 10 --number_of_runs $((3*15)) -w sandbox -w canyon -w forest --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
-# python dag_create_data.py -t rec_dt --destination doshico_turtle --number_of_recorders 10 --number_of_runs $((3*15)) -w sandbox -w canyon -w forest --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e
+# python dag_create_data.py -t rec_dd --destination doshico_drone --number_of_recorders 10 --number_of_runs $((3*15)) -w sandbox -w canyon -w forest --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
+python dag_create_data.py -t rec_dt --destination doshico_turtle --number_of_recorders 10 --number_of_runs $((3*15)) -w sandbox -w canyon -w forest --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e
 
 # while [ true ] ; do clear; condor_q; sleep 2; done

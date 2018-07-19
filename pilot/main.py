@@ -117,7 +117,7 @@ def main(_):
   # ===========================
   #   Data Parameters
   # ===========================
-  parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
+  # parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
   parser.add_argument("--load_data_in_ram", action='store_true', help="Define wether the dataset is preloaded into RAM.")
   parser.add_argument("--dataset", default="small", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")

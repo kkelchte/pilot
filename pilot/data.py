@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 import argparse
 
-import h5py
+# import h5py
 
 FLAGS=None
 
@@ -48,44 +48,44 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
   datasetdir = join(FLAGS.data_root, FLAGS.dataset)
   
-  train_set = load_set('train') if not FLAGS.hdf5 else load_set_hdf5('train')
-  val_set=load_set('val') if not FLAGS.hdf5 else load_set_hdf5('val')
-  test_set=load_set('val')
+  train_set = load_set('train') #if not FLAGS.hdf5 else load_set_hdf5('train')
+  val_set=load_set('val') #if not FLAGS.hdf5 else load_set_hdf5('val')
+  test_set=load_set('test')
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
 
   im_size=size
   de_size = size_depth
   
-def load_set_hdf5(data_type):
-  """Load a type (train, val or test) of set in the set_list
-  as a tuple: first tuple element the directory of the fligth 
-  and the second the number of images taken in that flight
-  """
-  set_list = []
-  if not os.path.exists(join(datasetdir, data_type+'_set.txt')):
-    print('Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
-    return []
+# def load_set_hdf5(data_type):
+#   """Load a type (train, val or test) of set in the set_list
+#   as a tuple: first tuple element the directory of the fligth 
+#   and the second the number of images taken in that flight
+#   """
+#   set_list = []
+#   if not os.path.exists(join(datasetdir, data_type+'_set.txt')):
+#     print('Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
+#     return []
 
-  # open text file with list of data directories corresponding to the datatype
-  f = open(join(datasetdir, data_type+'_set.txt'), 'r')
-  runs={} #dictionary with for each parent directory a list of all folders related to this datatype
-  for r in sorted([ l.strip() for l in f.readlines() if len(l) > 2]):
-    if os.path.dirname(r) in runs.keys():
-      runs[os.path.dirname(r)].append(os.path.basename(r))  
-    else :
-      runs[os.path.dirname(r)] = [os.path.basename(r)]     
-  for directory in runs.keys():
-    data_file = h5py.File(directory+'/data.hdf5', 'r')
-    for run in data_file.keys():
-      set_list.append({'name':directory+'/'+str(run), 
-                       'images':data_file[run]['RGB'][:],
-                       'depths':data_file[run]['Depth'][:],
-                       'controls':data_file[run]['control_info'][:]})
-    data_file.close()
-  f.close()
-  if len(set_list)==0:
-    print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
-  return set_list
+#   # open text file with list of data directories corresponding to the datatype
+#   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
+#   runs={} #dictionary with for each parent directory a list of all folders related to this datatype
+#   for r in sorted([ l.strip() for l in f.readlines() if len(l) > 2]):
+#     if os.path.dirname(r) in runs.keys():
+#       runs[os.path.dirname(r)].append(os.path.basename(r))  
+#     else :
+#       runs[os.path.dirname(r)] = [os.path.basename(r)]     
+#   for directory in runs.keys():
+#     data_file = h5py.File(directory+'/data.hdf5', 'r')
+#     for run in data_file.keys():
+#       set_list.append({'name':directory+'/'+str(run), 
+#                        'images':data_file[run]['RGB'][:],
+#                        'depths':data_file[run]['Depth'][:],
+#                        'controls':data_file[run]['control_info'][:]})
+#     data_file.close()
+#   f.close()
+#   if len(set_list)==0:
+#     print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
+#   return set_list
 
 def load_set(data_type):
   """Load a type (train, val or test) in the set_list
