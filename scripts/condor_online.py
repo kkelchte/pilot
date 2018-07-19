@@ -121,6 +121,7 @@ blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 # blacklist=""
 # greenlist=" && (machine == \"vladimir.esat.kuleuven.be\") "
 greenlist=""
+condor_submit.write("match_list_length = 4 \n")
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
@@ -182,15 +183,16 @@ sing.write("echo check if Im already running on this machine \n")
 
 sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")
 sing.write("ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
-sing.write("JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+sing.write("JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
 sing.write("RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d '=' -f 2 | cut -d '@' -f 2 | cut -d '.' -f 1) \n")
 sing.write("Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d '/' -f 8) \n")
 
 sing.write("while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n")
 sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] two jobs are running on $RemoteHost, I better leave...\" \n")
+sing.write("  ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
 sing.write("  while [ $JobStatus = 2 ] ; do \n")
 sing.write("    ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
-sing.write("    JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+sing.write("    JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
 sing.write("    echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n")
 sing.write("    sleep $(( RANDOM % 30 )) \n")
 sing.write("  done \n")

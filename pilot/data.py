@@ -365,7 +365,7 @@ if __name__ == '__main__':
   parser.add_argument("--action_bound", default=1, type=float, help="Bound the action space between -b and b")
   parser.add_argument("--auxiliary_depth", action='store_true', help="Define wether network is trained with auxiliary depth prediction.")
   parser.add_argument("--n_fc", action='store_true', help="Define wether network uses 3 concatenated consecutive frames.")
-  parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
+  parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type. [not working in singularity]")
   parser.add_argument("--load_data_in_ram", action='store_true', help="Define wether dataset is loaded into RAM.")
   parser.add_argument("--min_depth", default=0.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
   parser.add_argument("--max_depth", default=5.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")

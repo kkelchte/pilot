@@ -4,8 +4,9 @@
 
 # OVERVIEW OF PARAMETERS
 
-# 0. dag_create_data
+# 0. dag_create_data / dag_train_and_evaluate
 # --number_of_recorders
+# --number_of_models
 # --destination
 
 # 1. directory and logging
@@ -46,6 +47,11 @@
 # -----------DAG-----------------
 # Create Dataset
 # python dag_create_data.py -t rec_dd --destination doshico_drone --number_of_recorders 10 --number_of_runs $((3*15)) -w sandbox -w canyon -w forest --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
-python dag_create_data.py -t rec_dt --destination doshico_turtle --number_of_recorders 10 --number_of_runs $((3*15)) -w sandbox -w canyon -w forest --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e
+python dag_create_data.py -t rec_dt --destination doshico_turtle --number_of_recorders 10 --number_of_runs $((3*15)) -w sandbox -w canyon -w forest --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success --evaluation
+
+# Train and evaluate model
+python dag_train_and_evaluate.py -t test_train_eva_drone --number_of_models 2 --dataset doshico_drone --paramfile eva_params.yaml -w sandbox -w canyon -w forest --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation
+python dag_train_and_evaluate.py -t test_train_eva_turtle --number_of_models 2 --dataset doshico_turtle --paramfile eva_params.yaml -w sandbox -w canyon -w forest --robot turtle_sim --fsm nn_turtle_fsm --evaluation
+
 
 # while [ true ] ; do clear; condor_q; sleep 2; done
