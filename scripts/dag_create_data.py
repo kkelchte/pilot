@@ -31,6 +31,7 @@ parser.add_argument("--number_of_recorders", default=10, type=int, help="Define 
 parser.add_argument("--destination", default="dag_dataset", type=str, help="Define the name of the new dataset.")
 parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to source of code on Opal.")
+parser.add_argument("--wall_time_rec", default=3*60*60, type=int, help="Maximum time job is allowed to take.")
 
 
 FLAGS, others = parser.parse_known_args()
@@ -43,13 +44,13 @@ print("Others: {0}".format(others))
 ##########################################################################################################################
 # STEP 2 For each recorder launch condor_online without submitting
 for rec in range(FLAGS.number_of_recorders):
-  command = "python condor_online.py -t {0}/{1} --dont_submit --summary_dir {2} --data_location {0}_{1}".format(FLAGS.log_tag, rec, FLAGS.summary_dir)
+  command = "python condor_online.py -t {0}/{1} --dont_submit --summary_dir {2} --data_location {0}_{1} --wall_time {3}".format(FLAGS.log_tag, rec, FLAGS.summary_dir, FLAGS.wall_time_rec)
   for e in others: command=" {0} {1}".format(command, e)
   subprocess.call(shlex.split(command)) 
 
 ##########################################################################################################################
-# STEP 3 Add condor_offline cleanup data
-command="python condor_offline.py -t {0}/clean --dont_submit -pp pilot/scripts -ps clean_dataset.py --startswith {0} --destination {1} --home {3}".format(FLAGS.log_tag, FLAGS.destination, FLAGS.summary_dir, FLAGS.home)
+# STEP 3 Add condor_offline cleanup data: note that cleanup data should never take more than 10 minutes...
+command="python condor_offline.py -t {0}/clean --dont_submit -pp pilot/scripts -ps clean_dataset.py --startswith {0} --destination {1} --home {3} --wall_time {4}".format(FLAGS.log_tag, FLAGS.destination, FLAGS.summary_dir, FLAGS.home, 60*10)
 for e in others: command=" {0} {1}".format(command, e)
 subprocess.call(shlex.split(command)) 
 

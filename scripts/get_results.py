@@ -37,10 +37,54 @@ if len(log_folders)==0:
 	print "Woops, could not find anything "+log_root+FLAGS.mother_dir+" that startswith "+FLAGS.startswith+" and endswith "+FLAGS.endswith
 	sys.exit(1)
 
-# STEP 2: define information to parse: xterm_python, tf_log 
+# STEP 2: define information to parse: tf_log, log_named and runs
+tf_params=['Distance_current', 'Distance_furthest', 'avg_delay', 'driving_duration', 'imitation_loss']
+
+# STEP 3: parse each run into results dictionary
+# results[worldname]{tf_params[0]:[], ... , run_index:[], run_img: ['/path/to/img'],successes: [True,False,None]}
+# results['total']{tf_params[0]:[], ... , run_index:[], run_img: ['/path/to/img'],successes: [True,False,None]}
+results = {}
 for folder in log_folders:
 	print folder
-	
+	# get tensorflow log folders within evaluation log folder
+	tf_folders = [folder+'/'+f for f in os.listdir(folder) if f.startswith('201') and os.path.isdir(folder+'/'+f)]	
+	for tf_folder in tf_folders:
+		tf_log = open(tf_folder+'/tf_log', 'r').readlines()[1:]
+		log_named = open(tf_folder+'/log_named', 'r').readlines()
+		for l_i, l in enumerate(tf_log):
+			# get world name:
+			worldname=l.split(',')[1].split('_')[3].split(':')[0]
+			# create new dict if worldname not yet in results
+			if worldname not in results.keys(): results[worldname]={}
+			
+			def add(res, wn, k, v):
+				"""Append a value to the worldname (wn) dictionary in resuts (res)
+				if it gives a key error, create a new list.
+				"""
+				try:
+					res[wn][k].append(v)
+				except KeyError:
+					res[wn][k]=[v]
+			
+			# add each parameter within the line to the results
+			for p in tf_params:
+				value = [float(v.split(':')[1]) for v in l.split(',') if p in v ]
+				assert(len(value) == 1)
+				add(results, worldname, p, value)
+			# get run index 
+			run=int(l.split(',')[0].split(' ')[2])-1
+			add(results, worldname, 'run_index', run)
+			# parse success from log_named
+			if log_named[l_i].split(' ')[1][:-1]==worldname:
+				add(results, worldname, 'success', log_named[l_i].split(' ')[0]=='success')
+
+				add()
+				try:
+					results[worldname]['run_index'].append(run)
+				except KeyError: # incase of first value of parameter added
+					results[worldname]['run_index']=[run]
+					results[worldname]['']=[run]
+
 	try:
 		distances = [float(e.split(':')[1]) for lf in os.listdir(folder+'/xterm_python') for l in open(folder+'/xterm_python/'+lf,'r').readlines() for e in l.split(',') if 'Distance_furthest' in e ]
 		delays = [float(e.split(':')[1]) for lf in os.listdir(folder+'/xterm_python') for l in open(folder+'/xterm_python/'+lf,'r').readlines() for e in l.split(',') if 'avg_delay' in e ]

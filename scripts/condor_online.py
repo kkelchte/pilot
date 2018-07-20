@@ -122,7 +122,8 @@ blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 # greenlist=" && (machine == \"vladimir.esat.kuleuven.be\") "
 greenlist=""
 condor_submit.write("match_list_length = 4 \n")
-condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
+condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
+# condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
 if not FLAGS.not_nice: condor_submit.write("Niceuser = true \n")

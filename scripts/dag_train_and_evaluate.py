@@ -55,7 +55,7 @@ for model in range(FLAGS.number_of_models):
 
 ##########################################################################################################################
 # STEP 4 Call a python script that parses the results and prints some stats
-command="python condor_offline.py -t {0}/results --dont_submit -pp pilot/scripts -ps get_results.py --motherdir {0} --endswith _eva--home {3}".format(FLAGS.log_tag, FLAGS.destination, FLAGS.summary_dir, FLAGS.home)
+command="python condor_offline.py -t {0}/results --dont_submit -pp pilot/scripts -ps get_results.py --motherdir {0} --endswith _eva --home {3}".format(FLAGS.log_tag, FLAGS.destination, FLAGS.summary_dir, FLAGS.home)
 for e in others: command=" {0} {1}".format(command, e)
 subprocess.call(shlex.split(command)) 
 
