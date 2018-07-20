@@ -45,7 +45,9 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   FLAGS=_FLAGS
   random.seed(FLAGS.random_seed)
 
-  if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
+  if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
+    FLAGS.data_root=os.environ['HOME']+'/'+FLAGS.data_root
+  # if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
   datasetdir = join(FLAGS.data_root, FLAGS.dataset)
   
   train_set = load_set('train') #if not FLAGS.hdf5 else load_set_hdf5('train')
@@ -359,7 +361,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
   parser.add_argument("--dataset", default="new_dataset", type=str, help="pick the dataset in data_root from which your movies can be found.")
-  parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
+  parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--action_bound", default=1, type=float, help="Bound the action space between -b and b")

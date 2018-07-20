@@ -37,7 +37,7 @@ parser.add_argument("--wall_time_rec", default=3*60*60, type=int, help="Maximum 
 FLAGS, others = parser.parse_known_args()
 
 # display and save all settings
-print("\nSettings:")
+print("\nDAG CREATE DATA settings:")
 for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 

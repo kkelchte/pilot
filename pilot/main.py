@@ -120,7 +120,7 @@ def main(_):
   # parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
   parser.add_argument("--load_data_in_ram", action='store_true', help="Define wether the dataset is preloaded into RAM.")
   parser.add_argument("--dataset", default="small", type=str, help="pick the dataset in data_root from which your movies can be found.")
-  parser.add_argument("--data_root", default="~/pilot_data",type=str, help="Define the root folder of the different datasets.")
+  parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--control_file", default='control_info.txt', type=str, help="Define the name of the file with the action labels.")
   parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
@@ -193,7 +193,9 @@ def main(_):
 
   parser.add_argument("--grad_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
 
-  FLAGS=parser.parse_args()
+  # FLAGS=parser.parse_args()
+  FLAGS, others = parser.parse_known_args()
+
 
   np.random.seed(FLAGS.random_seed)
   tf.set_random_seed(FLAGS.random_seed)

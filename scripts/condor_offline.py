@@ -66,7 +66,7 @@ FLAGS, others = parser.parse_known_args()
 
 
 # display and save all settings
-print("\nSettings:")
+print("\nCONDOR OFFLINE settings:")
 for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
@@ -105,6 +105,8 @@ condor_submit.write("RequestCpus      = 4 \n")
 condor_submit.write("Request_GPUs     = 1 \n")
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
+
+condor_submit.write("match_list_length = 4 \n")
 
 blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 		 	&& (machine != \"kochab.esat.kuleuven.be\") "

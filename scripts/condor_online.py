@@ -36,7 +36,7 @@ parser.add_argument("--dont_submit",action='store_true', help="In case you dont 
 # ==========================
 #   Tensorflow Settings
 # ==========================
-parser.add_argument("-pp","--python_project",default='q-learning/pilot', type=str, help="Define in which python project the executable should be started with ~/tenorflow/PROJECT_NAME/main.py: q-learning/pilot, pilot/pilot, ddpg, ....")
+parser.add_argument("-pp","--python_project",default='pilot/pilot', type=str, help="Define in which python project the executable should be started with ~/tenorflow/PROJECT_NAME/main.py: q-learning/pilot, pilot/pilot, ddpg, ....")
 parser.add_argument("-pe","--python_environment",default='sing', type=str, help="Define which environment should be loaded in shell when launching tensorlfow. Possibilities: sing, docker, virtualenv.")
 
 #===========================
@@ -65,7 +65,7 @@ FLAGS, others = parser.parse_known_args()
 #   FLAGS.code_root = FLAGS.home
 
 # display and save all settings
-print("\nSettings:")
+print("\nCONDOR ONLINE settings:")
 for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
@@ -106,6 +106,8 @@ condor_submit.write("Request_GPUs     = 1 \n")
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
 
+condor_submit.write("match_list_length = 4 \n")
+
 # condor_submit.write("Should_transfer_files = true\n")
 # condor_submit.write("transfer_input_files = {0}/tensorflow/{1}/scripts/prescript_sing.sh,{0}/tensorflow/{1}/scripts/postscript_sing.sh\n".format(FLAGS.home, FLAGS.python_project+'/..'))
 # condor_submit.write("+PreCmd = \"prescript_sing.sh\"\n")
@@ -116,12 +118,12 @@ condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCo
 
 blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 			&& (machine != \"virgo.esat.kuleuven.be\") \
-			&& (machine != \"estragon.esat.kuleuven.be\") \
+      && (machine != \"estragon.esat.kuleuven.be\") \
+			&& (machine != \"vladimir.esat.kuleuven.be\") \
 			 && (machine != \"kochab.esat.kuleuven.be\") "
 # blacklist=""
 # greenlist=" && (machine == \"vladimir.esat.kuleuven.be\") "
 greenlist=""
-condor_submit.write("match_list_length = 4 \n")
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
@@ -225,7 +227,9 @@ if '--checkpoint_path' in others:
 	checkpoint_path=others[others.index('--checkpoint_path')+1]
 else:
 	checkpoint_path='mobilenet_025'
-sing.write("cp -r {1}/{2}/{0} {2} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("mkdir -p {0}/{1}{2} \n".format(FLAGS.home, FLAGS.summary_dir, checkpoint_path))
+sing.write("cp {1}/{2}{0}/*/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
 # this could be speeded by only copying the checkpoint file in the checkpoint_path/2018*/ folder
 sing.write("echo 'cp tensorflow pilot project' \n")
 sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
@@ -238,9 +242,9 @@ sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_image
 
 ###### Copy data and log back to opal
 sing.write("echo 'copy pilot data back' \n")
-sing.write("cp -r /tmp/home/{1}/* {0}/{1}/ \n".format(FLAGS.home, FLAGS.data_root))
+sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.data_root))
 sing.write("echo 'copy tensorflow log back' \n")
-sing.write("cp -r /tmp/home/{1}/* {0}/{1}/ \n".format(FLAGS.home, FLAGS.summary_dir))
+sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.summary_dir))
 #####
 
 sing.write("echo \"[$(date +%F_%H:%M:%S)] $Command : leaving $RemoteHost.\" \n")
