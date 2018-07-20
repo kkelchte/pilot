@@ -273,7 +273,7 @@ class PilotNode(object):
       # Get necessary labels, if label is missing wait...
       def check_field(target_name):
         if len (target_name) == 0:
-          print('Waiting for {}'.format(target_name))
+          print('Waiting for target {}'.format(target_name))
           return False
         else:
           return True
