@@ -273,6 +273,9 @@ class Model(object):
           name = 'Distance_{0}_{1}'.format(d,t)
           if len(w)!=0: name='{0}_{1}'.format(name,w)
           self.add_summary_var(name)
+    self.add_summary_var('driving_time')      
+    self.add_summary_var('imitation_loss')      
+    self.add_summary_var('depth_loss')
     if self.FLAGS.auxiliary_depth and self.FLAGS.plot_depth:
       name="depth_predictions"
       dep_images = tf.placeholder(tf.uint8, [1, 400, 400, 3])

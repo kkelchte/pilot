@@ -170,9 +170,10 @@ def load_run_info(coord, run_list, set_list, checklist):
       depth_list = [] 
       try:
         depths_jpg=listdir(join(run_dir,FLAGS.depth_directory))
-        if len(depths_jpg)==0: raise OSError('Depth folder is empty') 
+        if len(depths_jpg)==0: 
+          raise OSError('Depth folder is empty') 
       except OSError as e:
-        print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
+        # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
         pass
       else:
         num_depths=sorted([int(de[0:-4]) for de in depths_jpg[::FLAGS.subsample]])

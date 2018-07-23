@@ -54,7 +54,6 @@ class PilotNode(object):
     self.training=False
     
     self.last_pose=[] # previous pose, used for accumulative distance
-    self.start_time=0
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
     self.accumlosses = {} # gather losses and info over the run in a dictionary
@@ -73,7 +72,8 @@ class PilotNode(object):
 
     # extract imitation loss from supervised velocity
     rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)
-    self.supervised_vel=[]
+    
+    self.start_time = 0
     self.imitation_loss=[]
     self.depth_prediction=[]
     self.depth_loss=[]
@@ -100,7 +100,6 @@ class PilotNode(object):
     # Add some lines to debug delays:
     self.time_im_received=[]
     self.time_ctr_send=[]
-    self.time_delay=[]
 
     rospy.init_node('pilot', anonymous=True)  
     
@@ -139,15 +138,6 @@ class PilotNode(object):
       data.pose.pose.orientation.w)
     self.last_pose = transformations.quaternion_matrix(quaternion) # orientation of current frame relative to global frame
     self.last_pose[0:3,3]=current_pos
-  
-  def supervised_callback(self, data):
-    """Save supervised velocity command to calculate an imitation loss on the fly."""
-    self.supervised_vel=[data.linear.x, 
-                        data.linear.y, 
-                        data.linear.z, 
-                        data.angular.x, 
-                        data.angular.y,
-                        data.angular.z]
 
   def process_rgb(self, msg):
     """ Convert RGB serial data to opencv image of correct size"""
@@ -223,7 +213,7 @@ class PilotNode(object):
   
   def image_callback(self, msg):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
-    rec=time.time()
+    self.time_im_received.append(time.time())
     im = self.process_rgb(msg)
     if len(im)!=0: 
       if self.FLAGS.n_fc: # when features are concatenated, multiple images should be kept.
@@ -261,19 +251,19 @@ class PilotNode(object):
     if self.FLAGS.evaluate: ### EVALUATE
       trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
       trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-      control, losses, aux_results = self.model.forward([inpt], auxdepth=self.FLAGS.show_depth,targets=trgt, depth_targets=trgt_depth)
+      control, losses, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
       for k in ['c', 't', 'd']: 
         if k in losses.keys(): 
           try:
             self.accumlosses[k] += losses[k]
           except KeyError:
             self.accumlosses[k] = losses[k]
-      if self.FLAGS.show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
+      if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
     else: ###TRAINING
       # Get necessary labels, if label is missing wait...
       def check_field(target_name):
         if len (target_name) == 0:
-          print('Waiting for target {}'.format(target_name))
+          # print('Waiting for target {}'.format(target_name))
           return False
         else:
           return True
@@ -286,8 +276,8 @@ class PilotNode(object):
           return
         else: 
           trgt_depth = copy.deepcopy(self.target_depth)
-      control, losses, aux_results = self.model.forward([inpt], auxdepth=self.FLAGS.show_depth)
-      if self.FLAGS.show_depth and self.FLAGS.auxiliary_depth: aux_depth = aux_results['d']
+      control, losses, aux_results = self.model.forward([inpt], auxdepth=not self.FLAGS.dont_show_depth)
+      if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth: aux_depth = aux_results['d']
     
     ### SEND CONTROL
     if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
@@ -313,19 +303,13 @@ class PilotNode(object):
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
     self.action_pub.publish(msg)
-    
-    # write control to log
-    f=open(self.logfolder+'/ctr_log','a')
-    f.write("{0} {1} {2} {3} {4} {5} \n".format(msg.linear.x,msg.linear.y, msg.linear.z, msg.angular.x, msg.angular.y, msg.angular.z))
-    f.close()
+    self.time_ctr_send.append(time.time())
 
-    if not self.finished:
-      rec=time.time()
-      self.time_ctr_send.append(rec)
-      delay=self.time_ctr_send[-1]-self.time_im_received[-1]
-      self.time_delay.append(delay)  
-    
-    if self.FLAGS.show_depth and len(aux_depth) != 0 and not self.finished:
+    ### keep track of imitation loss on the fly
+    if len(self.target_control) != 0:
+      self.imitation_loss.append((self.target_control[5]-action)**2)
+
+    if not self.FLAGS.dont_show_depth and len(aux_depth) != 0 and not self.finished:
       aux_depth = aux_depth.flatten()
       self.depth_pub.publish(aux_depth)
       aux_depth = []
@@ -359,6 +343,8 @@ class PilotNode(object):
 
       self.ready=False
       self.finished=True
+      if self.start_time!=0: 
+        self.driving_duration = rospy.get_time() - self.start_time
       
       # Train model from experience replay:
       # Train the model with batchnormalization out of the image callback loop
@@ -403,7 +389,26 @@ class PilotNode(object):
         result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
       if self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:
         sumvar["depth_predictions"]=depth_predictions
-      result_string='{0}, delays: {1:0.3f} | {2:0.3f} | {3:0.3f} | '.format(result_string, np.min(self.time_delay[1:]), np.mean(self.time_delay[1:]), np.max(self.time_delay))
+      # add driving duration (collision free)
+      if self.driving_duration: 
+        result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)
+        sumvar['driving_time']=self.driving_duration
+      # add imitation loss
+      if len(self.imitation_loss)!=0:
+        result_string='{0}, imitation_loss: {1:0.3}'.format(result_string, np.mean(self.imitation_loss))
+        sumvar['imitation_loss']=np.mean(self.imitation_loss)
+      # add depth loss
+      if len(self.depth_loss)!=0:
+        result_string='{0}, depth_loss: {1:0.3f}, depth_loss_var: {2:0.3f}'.format(result_string, np.mean(self.depth_loss), np.var(self.depth_loss))
+        sumvar['depth_loss']=np.mean(self.depth_loss)
+      if len(self.time_ctr_send) > 10 and len(self.time_im_received) > 10:
+        # calculate control-rates and rgb-rates from differences
+        avg_ctr_rate = 1/np.mean([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
+        std_ctr_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
+        avg_im_rate = 1/np.mean([self.time_im_received[i+1]-self.time_im_received[i] for i in range(1,len(self.time_im_received)-1)]) #skip first image delay as network still needs to 'startup'
+        std_im_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
+
+        result_string='{0}, control_rate: {1:0.3f}, image_rate: {2:0.3f} , control_delay_std: {1:0.3f}, image_delay_std: {2:0.3f} '.format(result_string, avg_ctr_rate, avg_im_rate, std_ctr_delays, std_im_delays)
       try:
         self.model.summarize(sumvar)
       except Exception as e:
@@ -438,7 +443,12 @@ class PilotNode(object):
         print('model saved [run {0}]'.format(self.runs['train']))
       self.time_im_received=[]
       self.time_ctr_send=[]
-      self.time_delay=[]
+
+
+      self.start_time=0
+      self.imitation_loss=[]
+      self.depth_loss=[]
+      self.driving_duration=None
     
       
 

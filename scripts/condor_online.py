@@ -227,18 +227,21 @@ if '--checkpoint_path' in others:
 	checkpoint_path=others[others.index('--checkpoint_path')+1]
 else:
 	checkpoint_path='mobilenet_025'
-sing.write("mkdir -p {0}/{1}{2} \n".format(FLAGS.home, FLAGS.summary_dir, checkpoint_path))
-sing.write("cp {1}/{2}{0}/*/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-# this could be speeded by only copying the checkpoint file in the checkpoint_path/2018*/ folder
+sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
+if checkpoint_path != 'mobilenet_025':
+  sing.write("cp {1}/{2}{0}/*/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+  sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+else:
+  sing.write("cp {1}/{2}{0}/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
 sing.write("echo 'cp tensorflow pilot project' \n")
+sing.write("ls {0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
 sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
 sing.write("echo 'cp simulation_supervised' \n")
 sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 ######
 
-sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_drone_ws.img $1 \n")
-# sing.write("/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_turtle3.img $1 \n")
+# sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_drone_ws.img $1 \n")
+sing.write("/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_drone_ws.img $1 \n")
 
 ###### Copy data and log back to opal
 sing.write("echo 'copy pilot data back' \n")

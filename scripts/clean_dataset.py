@@ -52,7 +52,7 @@ parser.add_argument("--test_len", default=10, type=int, help="length of the test
 
 FLAGS, others = parser.parse_known_args()
 
-min_rgb={'default':10,'sandbox':45, 'canyon':350, 'forest':350}
+min_rgb={'default':10,'sandbox':10, 'canyon':100, 'forest':100}
 max_rgb={'default':2000,'sandbox':380, 'canyon':400, 'forest': 1100}
 
 min_distance={'default':1,'sandbox':1, 'canyon':3, 'forest': 3}
@@ -224,7 +224,8 @@ stats["total"]={}
 for w in '', 'canyon', 'forest', 'sandbox':
   num_runs=len([r for r in total_set if w in r])
   num_rgb=sum([len(os.listdir(r+'/RGB')) for r in total_set if w in r])
-  stats["total"][w]={"RGB":num_rgb, "runs":num_runs}
+  w_key = w if len(w) != 0 else 'all'
+  stats["total"][w_key]={"RGB":num_rgb, "runs":num_runs}
 
 # select from total list
 if len(total_set) < FLAGS.val_len + FLAGS.test_len + 10:
@@ -256,7 +257,8 @@ for data in "train", "val", "test":
   for w in '', 'canyon', 'forest', 'sandbox':
     num_runs=len([r for r in data_set[data] if w in r])
     num_rgb=sum([len(os.listdir(r+'/RGB')) for r in data_set[data] if w in r])
-    stats[data][w]={"RGB":num_rgb, "runs":num_runs}
+    w_key = w if len(w) != 0 else 'all'
+    stats[data][w_key]={"RGB":num_rgb, "runs":num_runs}
 # write stats file
 with open(dataset+'/stats.json','w') as out:
   json.dump(stats,out,indent=2, sort_keys=True)

@@ -88,13 +88,13 @@ def main(_):
   #   Training Parameters
   # ==========================
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
-  parser.add_argument("--learning_rate", default=0.5, type=float, help="Start learning rate.")
+  parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=16,type=int,help="Define the size of minibatches.")
 
   # ==========================
   #   Offline Parameters
   # ==========================
-  parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
+  parser.add_argument("--max_episodes",default=600,type=int,help="The maximum number of episodes (~runs through all the training data.)")
 
   # ===========================
   #   Utility Parameters
