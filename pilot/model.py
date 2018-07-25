@@ -164,11 +164,18 @@ class Model(object):
       # Create the train_op and scale the gradients by providing a map from variable
       # name (or variable) to a scaling coefficient:
       # Take possible a smaller step (gradient multiplier) for the feature extracting part
-      mobile_variables = [v for v in tf.global_variables() if (v.name.find('Adadelta')==-1 and v.name.find('BatchNorm')==-1 and v.name.find('Adam')==-1  and v.name.find('q_depth')==-1 and v.name.find('q_coll')==-1)]
+      gradient_multipliers={}
+      mobile_variables = [v for v in tf.global_variables() if (v.name.find('Adadelta')==-1 and v.name.find('BatchNorm')==-1 and v.name.find('Adam')==-1  and v.name.find('control')==-1 and v.name.find('aux_depth')==-1)]
+      gradient_multipliers = {v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}
+
+      if self.FLAGS.no_batchnorm_learning:
+        batchnorm_variables = [v for v in tf.global_variables() if v.name.find('BatchNorm')!=-1]
+        gradient_multipliers = {v.name: 0 for v in mobile_variables}
+      
       self.train_op = slim.learning.create_train_op(self.total_loss, 
         self.optimizer, 
         global_step=self.global_step, 
-        gradient_multipliers={v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}, 
+        gradient_multipliers=gradient_multipliers, 
         clip_gradient_norm=self.FLAGS.clip_grad,
         summarize_gradients=True)
 

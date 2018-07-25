@@ -52,10 +52,11 @@
 # python dag_create_data.py -t test_rec_turtle --wall_time_rec $((3*15*10*60)) --destination doshico_turtle --not_nice --number_of_recorders 2 --number_of_runs 3 -w sandbox -w canyon -w forest --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success --evaluation
 
 # Train and evaluate model
-# python dag_train_and_evaluate.py -t test_train_eva_drone --wall_time_train $((30*60)) --wall_time_eva $((30*60)) --not_nice --number_of_models 1 --dataset doshico_drone --max_episodes 3 --paramfile eva_params.yaml --number_of_runs 3 -w sandbox -w canyon -w forest --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation
-#python dag_train_and_evaluate.py -t doshico_drone --wall_time_train $((15*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 10 --dataset doshico_drone --max_episodes 1000 --paramfile eva_params.yaml --number_of_runs 50 -w esat_v1 -w esat_v2 -w sandbox -w canyon -w forest --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation
-python dag_train_and_evaluate.py -t doshico_turtle --wall_time_train $((15*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 10 --dataset doshico_turtle --max_episodes 600 --paramfile eva_params.yaml --number_of_runs 50 -w esat_v1 -w esat_v2 -w sandbox -w canyon -w forest --robot turtle_sim --fsm nn_turtle_fsm --evaluation
-# python dag_train_and_evaluate.py -t test_train_eva_turtle --number_of_models 1 --dataset doshico_turtle --paramfile eva_params.yaml -w sandbox -w canyon -w forest --robot turtle_sim --fsm nn_turtle_fsm --evaluation
+#python dag_train_and_evaluate.py -t doshico_drone --wall_time_train $((15*60*60)) --wall_time_eva $((5*60*60)) --number_of_models 20 --dataset doshico_drone --max_episodes 100 --paramfile eva_params.yaml --number_of_runs 50 -w esat_v1 -w esat_v2 -w sandbox -w canyon -w forest --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --n_fc --no_batchnorm_learning --speed 1.3
+python dag_train_and_evaluate.py -t doshico_turtle --wall_time_train $((15*60*60)) --wall_time_eva $((5*60*60)) --number_of_models 20 --dataset doshico_turtle --max_episodes 100 --paramfile eva_params.yaml --number_of_runs 50 -w esat_v1 -w esat_v2 -w sandbox -w canyon -w forest --robot turtle_sim --fsm nn_turtle_fsm --evaluation --n_fc --no_batchnorm_learning --speed 0.8
+
+# python dag_train_and_evaluate.py -t canyon_drone --wall_time_train $((15*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 10 --dataset canyon_drone --max_episodes 50 --paramfile eva_params.yaml --number_of_runs 10 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --scratch
+# python dag_train_and_evaluate.py -t forest_drone --wall_time_train $((15*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 10 --dataset forest_drone --max_episodes 50 --paramfile eva_params.yaml --number_of_runs 10 -w forest --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --scratch
 
 
 # while [ true ] ; do clear; condor_q; sleep 2; done

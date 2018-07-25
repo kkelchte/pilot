@@ -88,8 +88,8 @@ def main(_):
   #   Training Parameters
   # ==========================
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
-  parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
-  parser.add_argument("--batch_size",default=16,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--learning_rate", default=0.5, type=float, help="Start learning rate.")
+  parser.add_argument("--batch_size",default=32,type=int,help="Define the size of minibatches.")
 
   # ==========================
   #   Offline Parameters
@@ -148,14 +148,13 @@ def main(_):
   parser.add_argument("--control_weight", default=1.0, type=float, help="Define the weight applied to the control loss.")
   parser.add_argument("--weight_decay",default=0.00004,type=float, help= "Weight decay of inception network")
   parser.add_argument("--init_scale", default=0.0005, type=float, help= "Std of uniform initialization")
-  parser.add_argument("--grad_mul_weight", default=0, type=float, help="Specify the amount the gradients of prediction layers.")
+  parser.add_argument("--grad_mul_weight", default=0.001, type=float, help="Specify the amount the gradients of prediction layers.")
   parser.add_argument("--dropout_keep_prob", default=0.5, type=float, help="Specify the probability of dropout to keep the activation.")
   parser.add_argument("--clip_grad", default=0, type=int, help="Specify the max gradient norm: default 0 is no clipping, recommended 4.")
   parser.add_argument("--min_depth", default=0.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
   parser.add_argument("--max_depth", default=5.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
   parser.add_argument("--optimizer", default='adadelta', type=str, help="Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
-  # parser.add_argument("--no_batchnorm_learning",action='store_false', help="In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
-  # parser.add_argument("--grad_mul", action='store_true',help="Specify whether the weights of the prediction layers should be learned faster.")
+  parser.add_argument("--no_batchnorm_learning",action='store_false', help="In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
   parser.add_argument("--initializer",default='xavier',type=str, help="Define the initializer: xavier or uniform [-init_scale, init_scale]")
 
   parser.add_argument("--loss",default='mse',type=str, help="Define the loss: mse, huber or absolute")

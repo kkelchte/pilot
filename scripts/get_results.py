@@ -49,12 +49,19 @@ for folder in log_folders:
 	print folder
 	# get tensorflow log folders within evaluation log folder
 	tf_folders = [folder+'/'+f for f in os.listdir(folder) if f.startswith('201') and os.path.isdir(folder+'/'+f)]	
+	if len(tf_folders) == 0:
+		print("Empty logfolder: {}".format(folder))
+		continue
 	for tf_folder in tf_folders:
-		tf_log = open(tf_folder+'/tf_log', 'r').readlines()[1:]
-		log_named = open(tf_folder+'/log_named', 'r').readlines()
+		try:
+			tf_log = open(tf_folder+'/tf_log', 'r').readlines()[1:]
+			log_named = open(tf_folder+'/log_named', 'r').readlines()
+		except IOError:
+			print("Failed to read tf_folder: {}".format(tf_folder))
+			continue
 		for l_i, l in enumerate(tf_log):
 			# get world name:
-			worldname=l.split(',')[1].split('_')[3].split(':')[0]
+			worldname=l.split(',')[1].split('_')[-1].split(':')[0]
 			# create new dict if worldname not yet in results
 			if worldname not in results.keys(): results[worldname]={}
 			
