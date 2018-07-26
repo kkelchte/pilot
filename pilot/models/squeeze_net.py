@@ -1,87 +1,59 @@
-"""
-Code based on inception net from SLIM and https://github.com/vonclites/squeezenet/blob/master/squeezenet.py
-"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import tensorflow as tf
-import numpy as np
-
-from tensorflow.contrib.framework import add_arg_scope
-from tensorflow.contrib.layers.python.layers import utils
-slim = tf.contrib.slim
-
-FLAGS = tf.app.flags.FLAGS
-
-tf.app.flags.DEFINE_string("initializer", 'xavier', "Define the initializer: xavier or uniform [-init_scale, init_scale]")
-
 @add_arg_scope
 def fire_module(inputs,
                 squeeze_depth,
                 expand_depth,
                 reuse=None,
-                scope=None,
-                outputs_collections=None):
-    with tf.variable_scope(scope, 'fire', [inputs], reuse=reuse) as sc:
-        with slim.arg_scope([slim.conv2d, slim.max_pool2d],
-                            outputs_collections=None):
-            net = squeeze(inputs, squeeze_depth)
-            outputs = expand(net, expand_depth)
-        return utils.collect_named_outputs(outputs_collections,
-                                           sc.original_name_scope, outputs)
+                scope=None):
+  with tf.variable_scope(scope, 'fire', [inputs], reuse=reuse):
+    with arg_scope([conv2d, max_pool2d]):
+        net = _squeeze(inputs, squeeze_depth)
+        net = _expand(net, expand_depth)
+      return net
 
-def squeeze(inputs, num_outputs):
-    return slim.conv2d(inputs, num_outputs, [1, 1], stride=1, scope='squeeze')
 
-def expand(inputs, num_outputs):
-    with tf.variable_scope('expand'):
-        e1x1 = slim.conv2d(inputs, num_outputs, [1, 1], stride=1, scope='1x1')
-        e3x3 = slim.conv2d(inputs, num_outputs, [3, 3], scope='3x3')
-    return tf.concat(3, [e1x1, e3x3])
+def _squeeze(inputs, num_outputs):
+  return conv2d(inputs, num_outputs, [1, 1], stride=1, scope='squeeze')
 
-def squeezenet(inputs,
-               is_training=True,
-               batch_norm_decay=0.999,
-               num_classes=1000):
-    """Original squeezenet architecture for 224x224 inputs."""
-    with slim.arg_scope(squeezenet_arg_scope(is_training, batch_norm_decay)):
-        with tf.variable_scope('squeezenet', values=[inputs]) as sc:
-            end_point_collection = sc.original_name_scope + '_end_points'
-            with slim.arg_scope([fire_module, slim.conv2d,
-                                 slim.max_pool2d, slim.avg_pool2d],
-                                outputs_collections=[end_point_collection]):
-                net = slim.conv2d(inputs, 96, [7, 7], stride=2, scope='conv1')
-                net = slim.max_pool2d(net, [3, 3], stride=2, scope='maxpool1')
-                net = fire_module(net, 16, 64, scope='fire2')
-                net = fire_module(net, 16, 64, scope='fire3')
-                net = fire_module(net, 32, 128, scope='fire4')
-                net = slim.max_pool2d(net, [3, 3], stride=2, scope='maxpool4')
-                net = fire_module(net, 32, 128, scope='fire5')
-                net = fire_module(net, 48, 192, scope='fire6')
-                net = fire_module(net, 48, 192, scope='fire7')
-                net = fire_module(net, 64, 256, scope='fire8')
-                net = slim.max_pool2d(net, [3, 3], stride=2, scope='maxpool8')
-                net = fire_module(net, 64, 256, scope='fire9')
-                net = slim.dropout(net, is_training=is_training, scope='drop9')
-                net = slim.conv2d(net, num_classes, [1, 1], stride=1, scope='conv10')
-                net = slim.avg_pool2d(net, [13, 13], stride=1, scope='avgpool10')
-                logits = tf.squeeze(net, [1, 2], name='logits')
-                outputs = utils.collect_named_outputs(end_point_collection,
-                                                     sc.name + '/logits',
-                                                     logits)
-            end_points = utils.convert_collection_to_dict(end_point_collection)
-            return outputs, end_points
 
-squeezenet.default_image_size=224
+def _expand(inputs, num_outputs):
+  with tf.variable_scope('expand'):
+    e1x1 = conv2d(inputs, num_outputs, [1, 1], stride=1, scope='1x1')
+    e3x3 = conv2d(inputs, num_outputs, [3, 3], scope='3x3')
+  return tf.concat([e1x1, e3x3], 1)
 
-def squeezenet_arg_scope(is_training, decay):
-  weights_init = tf.contrib.layers.xavier_initializer(seed=FLAGS.random_seed) if FLAGS.initializer=='xavier' else tf.truncated_normal_initializer(stddev=stddev, seed=FLAGS.random_seed)
+class Squeezenet(object):
+  """Original squeezenet architecture for 224x224 images."""
+  name = 'squeezenet'
 
-  with slim.arg_scope([slim.conv2d], normalizer_fn=slim.batch_norm,
-    weights_initializer=weights_init):
-    with slim.arg_scope([slim.batch_norm], 
-                        is_training=is_training,
-                        decay=decay) as sc:
-      return sc
+  def __init__(self, args):
+    self._num_classes = args.num_classes
+    self._weight_decay = args.weight_decay
+    self._batch_norm_decay = args.batch_norm_decay
+    self._is_built = False
+
+  def build(self, x, is_training):
+    self._is_built = True
+    with tf.variable_scope(self.name, values=[x]):
+      with arg_scope(_arg_scope(is_training,
+                                self._weight_decay,
+                                self._batch_norm_decay)):
+        return self._squeezenet(x, self._num_classes)
+
+  @staticmethod
+  def _squeezenet(images, num_classes=1000):
+    net = conv2d(images, 96, [7, 7], stride=2, scope='conv1')
+    net = max_pool2d(net, [3, 3], stride=2, scope='maxpool1')
+    net = fire_module(net, 16, 64, scope='fire2')
+    net = fire_module(net, 16, 64, scope='fire3')
+    net = fire_module(net, 32, 128, scope='fire4')
+    net = max_pool2d(net, [3, 3], stride=2, scope='maxpool4')
+    net = fire_module(net, 32, 128, scope='fire5')
+    net = fire_module(net, 48, 192, scope='fire6')
+    net = fire_module(net, 48, 192, scope='fire7')
+    net = fire_module(net, 64, 256, scope='fire8')
+    net = max_pool2d(net, [3, 3], stride=2, scope='maxpool8')
+    net = fire_module(net, 64, 256, scope='fire9')
+    net = conv2d(net, num_classes, [1, 1], stride=1, scope='conv10')
+    net = avg_pool2d(net, [13, 13], stride=1, scope='avgpool10')
+    logits = tf.squeeze(net, [2], name='logits')
+    return logits 

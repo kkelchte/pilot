@@ -260,7 +260,7 @@ def generate_batch(data_type):
       run_ind = random.choice(range(len(data_set)))
       # choose random index over image numbers:
       frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])))
-      if FLAGS.n_fc:
+      if '_nfc' in FLAGS.network:
         frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
       batch_indices.append((batch_num, run_ind, frame_ind))
     
@@ -300,7 +300,7 @@ def generate_batch(data_type):
 
                 if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['num_depths'][frame_ind], data_set[run_ind]['name']))
               return img, de
-            if FLAGS.n_fc: #concatenate features
+            if '_nfc' in FLAGS.network:
               ims = []
               for frame in range(FLAGS.n_frames):
                 # target depth (de) is each time overwritten, only last frame is kept
@@ -367,7 +367,7 @@ if __name__ == '__main__':
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--action_bound", default=1, type=float, help="Bound the action space between -b and b")
   parser.add_argument("--auxiliary_depth", action='store_true', help="Define wether network is trained with auxiliary depth prediction.")
-  parser.add_argument("--n_fc", action='store_true', help="Define wether network uses 3 concatenated consecutive frames.")
+  # parser.add_argument("--n_fc", action='store_true', help="Define wether network uses 3 concatenated consecutive frames.")
   parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type. [not working in singularity]")
   parser.add_argument("--load_data_in_ram", action='store_true', help="Define wether dataset is loaded into RAM.")
   parser.add_argument("--min_depth", default=0.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")

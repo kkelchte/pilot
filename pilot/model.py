@@ -3,7 +3,9 @@ import tensorflow as tf
 import os
 import tensorflow.contrib.slim as slim
 import models.mobile_net as mobile_net
+import models.mobile_nfc_net as mobile_nfc_net
 import models.depth_q_net as depth_q_net
+import models.small_net as small_net
 
 from tensorflow.contrib.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
@@ -17,14 +19,14 @@ Build basic NN model
 """
 class Model(object):
  
-  def __init__(self, FLAGS, session, prefix='model', device='/gpu:0'):
+  def __init__(self, FLAGS, session, prefix='model'):
     '''initialize model
     '''
     self.sess = session
     self.action_dim = FLAGS.action_dim
     self.output_size = FLAGS.output_size
     self.prefix = prefix
-    self.device = device
+    self.device = FLAGS.device
     
     self.FLAGS=FLAGS
 
@@ -46,12 +48,18 @@ class Model(object):
       assert len(self.boundaries) == FLAGS.action_quantity-1  
     
     #define the input size of the network input
-    if self.FLAGS.network =='mobile':
-      # Use NCHW instead of NHWC data input because this is faster on GPU.    
-      self.input_size = [None, mobile_net.mobilenet_v1.default_image_size[self.FLAGS.depth_multiplier], 
-          mobile_net.mobilenet_v1.default_image_size[FLAGS.depth_multiplier], 3]
+    if self.FLAGS.network == 'mobile':
+      self.input_size = [mobile_net.default_image_size[FLAGS.depth_multiplier], 
+          mobile_net.default_image_size[FLAGS.depth_multiplier], 3]
+    elif self.FLAGS.network =='mobile_nfc':
+      self.input_size = [mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 
+          mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 3*self.FLAGS.n_frames]
+    elif self.FLAGS.network == 'small':
+      self.input_size = small_net.default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
+    self.input_size=[None]+self.input_size
+
     self.define_network()
         
     # Only feature extracting part is initialized from pretrained model
@@ -103,34 +111,32 @@ class Model(object):
     '''
     with tf.device(self.device):
       self.inputs = tf.placeholder(tf.float32, shape = self.input_size)
-      args_for_scope={'weight_decay': self.FLAGS.weight_decay,
-      'stddev':self.FLAGS.init_scale,
-      'initializer':self.FLAGS.initializer,
-      'random_seed':self.FLAGS.random_seed}
+      args={'inputs':self.inputs,
+            'weight_decay': self.FLAGS.weight_decay,
+            'stddev':self.FLAGS.init_scale,
+            'initializer':self.FLAGS.initializer,
+            'random_seed':self.FLAGS.random_seed,
+            'num_classes':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
+            'dropout_keep_prob':self.FLAGS.dropout_keep_prob}
       if self.FLAGS.network=='mobile':
-        if self.FLAGS.n_fc: # concatenate consecutive features from a shared feature extracting CNN network
-          self.inputs = tf.placeholder(tf.float32, shape = (self.input_size[0],self.input_size[1],self.input_size[2],self.FLAGS.n_frames*self.input_size[3]))
-          args_for_model={'inputs':self.inputs, 
-                        'num_classes':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
-                        'depth_multiplier':self.FLAGS.depth_multiplier,
-                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob} 
-          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= True, **args_for_scope)):
-            self.outputs, self.aux_depth, self.endpoints = mobile_net.mobilenet_n(is_training=True, **args_for_model)
-          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training= False, **args_for_scope)):
-            self.controls, self.pred_depth, self.endpoints_eval = mobile_net.mobilenet_n(is_training=False, **args_for_model)
-        else: # Use only 1 frame to create a feature
-          args_for_model={'inputs':self.inputs, 
-                        'num_classes':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
-                        'depth_multiplier':self.FLAGS.depth_multiplier,
-                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob}
-          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=True,**args_for_scope)):
-            self.outputs, self.endpoints = mobile_net.mobilenet_v1(is_training=True,**args_for_model)
-            self.aux_depth = self.endpoints['aux_depth_reshaped']
-          with slim.arg_scope(mobile_net.mobilenet_v1_arg_scope(is_training=False, **args_for_scope)):
-            self.controls, _ = mobile_net.mobilenet_v1(is_training=False, reuse = True,**args_for_model)
-            self.pred_depth = _['aux_depth_reshaped']
+        args['depth_multiplier']=self.FLAGS.depth_multiplier
+        self.outputs, self.endpoints = mobile_net.mobilenet(is_training=True,**args)
+        self.controls, self.endpoints_eval  = mobile_net.mobilenet(is_training=False, reuse = True,**args)
+      elif self.FLAGS.network=='mobile_nfc':
+        args['depth_multiplier']=self.FLAGS.depth_multiplier
+        args['n_frames']=self.FLAGS.n_frames
+        self.outputs, self.endpoints = mobile_nfc_net.mobilenet_nfc(is_training=True, **args)
+        self.controls, self.endpoints_eval = mobile_nfc_net.mobilenet_nfc(is_training=False, **args)
+      elif self.FLAGS.network=='small':
+        self.outputs, self.endpoints = small_net.smallnet(is_training=True,**args)
+        self.controls, self.endpoints_eval = small_net.smallnet(is_training=False, reuse = True,**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
+      try:
+        self.aux_depth = self.endpoints['aux_depth_reshaped']
+        self.pred_depth = self.endpoints_eval['aux_depth_reshaped']
+      except KeyError:
+        pass
   
   def define_loss(self):
     '''tensor for calculating the loss

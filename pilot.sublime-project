@@ -5,7 +5,7 @@
 			"path": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised"
 		},
 		{
-			"path": "/esat/opal/kkelchte/docker_home/tensorflow/pilot"
+			"path": "."
 		},
 		{
 			"file_include_patterns":
@@ -37,6 +37,9 @@
 				"**/**"
 			],
 			"path": "/esat/opal/kkelchte/docker_home"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis"
 		}
 	]
 }
