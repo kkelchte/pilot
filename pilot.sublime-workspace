@@ -4,6 +4,18 @@
 		"selected_items":
 		[
 			[
+				"num",
+				"num_classes"
+			],
+			[
+				"input",
+				"input_size"
+			],
+			[
+				"n",
+				"n_fc"
+			],
+			[
 				"small",
 				"smallnet"
 			],
@@ -110,10 +122,6 @@
 			[
 				"data",
 				"dataset"
-			],
-			[
-				"num",
-				"number_of_models"
 			],
 			[
 				"smalles",
@@ -472,54 +480,61 @@
 	"buffers":
 	[
 		{
-			"file": "pilot/offline.py",
+			"file": "scripts/evaluate_in_singularity.sh",
 			"settings":
 			{
-				"buffer_size": 3948,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/tf_cnnvis.py",
-			"settings":
-			{
-				"buffer_size": 16623,
+				"buffer_size": 314,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/model.py",
+			"file": "/esat/opal/kkelchte/docker_home/.entrypoint_graph",
 			"settings":
 			{
-				"buffer_size": 14601,
+				"buffer_size": 1409,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/test_train_evaluate.sh",
+			"settings":
+			{
+				"buffer_size": 1151,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/models/mobile_net.py",
+			"file": "pilot/main.py",
 			"settings":
 			{
-				"buffer_size": 21278,
+				"buffer_size": 17130,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/models/small_net.py",
+			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 			"settings":
 			{
-				"buffer_size": 2710,
+				"buffer_size": 24223,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/condor_offline.py",
+			"settings":
+			{
+				"buffer_size": 10386,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/models/squeeze_net.py",
+			"file": "scripts/condor_online.py",
 			"settings":
 			{
-				"buffer_size": 2254,
-				"encoding": "UTF-8",
+				"buffer_size": 14974,
 				"line_ending": "Unix"
 			}
 		}
@@ -535,6 +550,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"Package Conl",
+				"Install Package Control"
+			]
 		],
 		"width": 392.0
 	},
@@ -558,33 +577,41 @@
 	[
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models"
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts"
 	],
 	"file_history":
 	[
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/requirements.txt",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_net.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/rosinterface.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/data.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/test.sh",
 		"/users/visics/kkelchte/.bashrc",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/rosinterface.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/model.py",
+		"/esat/opal/kkelchte/docker_home/.entrypoint_xpra",
+		"/esat/opal/kkelchte/docker_home/.entrypoint_graph",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/get_results.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/tf_cnnvis.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/esat_v1.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/esat_v2.yaml",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/squeeze_net.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/data.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_nfc_net.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_net.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/small_net.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/requirements.txt",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train_and_evaluate.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_offline.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/forest.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/fsm.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/esat_v2.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/esat_v1.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/canyon.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/sandbox.yaml",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_create_data.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/clean_dataset.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/model.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/nn_drone_fsm.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/parameters/turtle_canyon.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/parameters/turtle_sandbox.yaml",
@@ -594,8 +621,6 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/parameters/turtle_esat_v2.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/oracle_nn_drone_fsm.yaml",
-		"/esat/opal/kkelchte/docker_home/.entrypoint_xpra",
-		"/esat/opal/kkelchte/docker_home/.entrypoint_graph",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/src/teleop_autopilot_behaviour_arbitration.cpp",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
 		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch",
@@ -684,12 +709,7 @@
 		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/data_param.yaml",
 		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/ground_truth_listener.py",
 		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/control_mapping.py",
-		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/CMakeLists.txt",
-		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/.gitignore",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py",
-		"/users/visics/kkelchte/condor/.tmp/run_variance_imgnet_dscr_9__2018-01-03_2220.sh",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/imgs/18-01-03-histograms_ctr_canyon_forest_sandbox.png",
-		"/esat/qayd/kkelchte/docker_home/tensorflow/log/test_dscr_long/2017-12-27_1128/configuration.xml"
+		"/esat/qayd/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/CMakeLists.txt"
 	],
 	"find":
 	{
@@ -707,6 +727,24 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"ulimit",
+			"n_fc",
+			"mobile_net",
+			"n_fc",
+			"mobile",
+			"')",
+			"VALID",
+			"args_for_model",
+			"mobilenet_v1_arg_scope",
+			"None",
+			"smallnet",
+			"mobilenet_v1",
+			"default_image_size",
+			"mobilenet_v1.default_image_size",
+			"mobilenet_v1.",
+			"default_image_size",
+			"mobile_net",
+			"args_for_model={'inputs':self.inputs, \n                        'num_classes':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,\n                        'depth_multiplier':self.FLAGS.depth_multiplier,\n                        'dropout_keep_prob':self.FLAGS.dropout_keep_prob} \n          ",
 			"squeezenet",
 			"squeeze",
 			"[self.FLAGS.depth_multiplier]",
@@ -811,146 +849,24 @@
 			[
 				{
 					"buffer": 0,
-					"file": "pilot/offline.py",
+					"file": "scripts/evaluate_in_singularity.sh",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3948,
+						"buffer_size": 314,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3105,
-								3105
+								177,
+								177
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 750.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/tf_cnnvis.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 16623,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								5260,
-								5260
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1741.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "pilot/model.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 14601,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								6626,
-								6626
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1305.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "pilot/models/mobile_net.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 21278,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								15161,
-								15161
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 3997.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "pilot/models/small_net.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2710,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								530,
-								530
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -960,20 +876,76 @@
 					"type": "text"
 				},
 				{
-					"buffer": 5,
-					"file": "pilot/models/squeeze_net.py",
+					"buffer": 1,
+					"file": "/esat/opal/kkelchte/docker_home/.entrypoint_graph",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2254,
+						"buffer_size": 1409,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1354,
-								1354
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "scripts/test_train_evaluate.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1151,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								679,
+								679
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "pilot/main.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 17130,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5613,
+								5613
 							]
 						],
 						"settings":
@@ -983,7 +955,95 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1286.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 24223,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5969,
+								5969
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1500.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "scripts/condor_offline.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 10386,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4763,
+								4763
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1050.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "scripts/condor_online.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 14974,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8336,
+								8336
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1826.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 3,
@@ -1041,6 +1101,86 @@
 		"selected_items":
 		[
 			[
+				".en",
+				"docker_home/.entrypoint_graph"
+			],
+			[
+				"run",
+				"simulation_supervised/simulation_supervised/python/run_script.py"
+			],
+			[
+				"tets",
+				"pilot/scripts/test.sh"
+			],
+			[
+				".bash",
+				"kkelchte/.bashrc"
+			],
+			[
+				".e",
+				"docker_home/.entrypoint_xpra"
+			],
+			[
+				"con onl",
+				"pilot/scripts/condor_online.py"
+			],
+			[
+				"con off",
+				"pilot/scripts/condor_offline.py"
+			],
+			[
+				"mod",
+				"pilot/pilot/model.py"
+			],
+			[
+				"main",
+				"pilot/pilot/main.py"
+			],
+			[
+				"rosi",
+				"pilot/pilot/rosinterface.py"
+			],
+			[
+				"la",
+				"pilot/scripts/launch.sh"
+			],
+			[
+				"en",
+				"docker_home/.entrypoint_graph"
+			],
+			[
+				"mai",
+				"pilot/pilot/main.py"
+			],
+			[
+				"get",
+				"pilot/scripts/get_results.py"
+			],
+			[
+				"ma",
+				"pilot/pilot/main.py"
+			],
+			[
+				"esa",
+				"simulation_supervised/simulation_supervised/config/environment/esat_v2.yaml"
+			],
+			[
+				"lau",
+				"pilot/scripts/launch.sh"
+			],
+			[
+				"tf cnn",
+				"tf_cnnvis/tf_cnnvis/tf_cnnvis.py"
+			],
+			[
+				"off",
+				"pilot/pilot/offline.py"
+			],
+			[
+				"data",
+				"pilot/pilot/data.py"
+			],
+			[
 				"mob",
 				"pilot/pilot/models/mobile_net.py"
 			],
@@ -1061,16 +1201,8 @@
 				"pilot/pilot/models/mobile_net.py"
 			],
 			[
-				".bash",
-				"kkelchte/.bashrc"
-			],
-			[
 				".bah",
 				"kkelchte/.bashrc"
-			],
-			[
-				"off",
-				"pilot/pilot/offline.py"
 			],
 			[
 				"resu",
@@ -1078,18 +1210,6 @@
 			],
 			[
 				"da",
-				"pilot/pilot/data.py"
-			],
-			[
-				"mod",
-				"pilot/pilot/model.py"
-			],
-			[
-				"ma",
-				"pilot/pilot/main.py"
-			],
-			[
-				"data",
 				"pilot/pilot/data.py"
 			],
 			[
@@ -1125,24 +1245,12 @@
 				"simulation_supervised/simulation_supervised_tools/python/fsm.py"
 			],
 			[
-				"run",
-				"simulation_supervised/simulation_supervised/python/run_script.py"
-			],
-			[
 				"clea",
 				"pilot/scripts/clean_dataset.py"
 			],
 			[
-				"get",
-				"pilot/scripts/get_results.py"
-			],
-			[
 				"cle",
 				"pilot/scripts/clean_dataset.py"
-			],
-			[
-				"rosi",
-				"pilot/pilot/rosinterface.py"
 			],
 			[
 				"co of",
@@ -1163,10 +1271,6 @@
 			[
 				"turs",
 				"simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch"
-			],
-			[
-				"mai",
-				"pilot/pilot/main.py"
 			],
 			[
 				"nn dro fsm",
@@ -1221,10 +1325,6 @@
 				"simulation_supervised/simulation_supervised_tools/python/fsm.py"
 			],
 			[
-				".e",
-				"docker_home/.entrypoint_xpra"
-			],
-			[
 				"co ",
 				"pilot/scripts/condor_online.py"
 			],
@@ -1235,10 +1335,6 @@
 			[
 				"con on",
 				"simulation_supervised/simulation_supervised/config/fsm/oracle_nn_drone_fsm.yaml"
-			],
-			[
-				"la",
-				"pilot/scripts/launch.sh"
 			],
 			[
 				"for ge",
@@ -1287,10 +1383,6 @@
 			[
 				"shode",
 				"simulation_supervised/simulation_supervised_tools/python/show_depth_prediction.py"
-			],
-			[
-				"lau",
-				"q-learning/scripts/launch_condor.sh"
 			],
 			[
 				"mode",
@@ -1519,38 +1611,6 @@
 			[
 				"var",
 				"blogs/kkelchte.github.io/docs/variance.md"
-			],
-			[
-				"condtoff",
-				"condor/condor_task_offline.sh"
-			],
-			[
-				"evamod",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/evaluate_model.sh"
-			],
-			[
-				"condtaoff",
-				"condor/condor_task_offline.sh"
-			],
-			[
-				"main",
-				"pilot/main.py"
-			],
-			[
-				"evalmodsh",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/evaluate_model.sh"
-			],
-			[
-				"laco",
-				"condor/launch_condor.sh"
-			],
-			[
-				"squee",
-				"docker_home/tensorflow/pilot/pilot/models/squeeze_net.py"
-			],
-			[
-				"genera",
-				"docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/canyon_generator.py"
 			]
 		],
 		"width": 0.0
@@ -1580,7 +1640,7 @@
 	"show_minimap": false,
 	"show_open_files": false,
 	"show_tabs": true,
-	"side_bar_visible": false,
+	"side_bar_visible": true,
 	"side_bar_width": 207.0,
 	"status_bar_visible": true,
 	"template_settings":

@@ -216,7 +216,7 @@ class PilotNode(object):
     self.time_im_received.append(time.time())
     im = self.process_rgb(msg)
     if len(im)!=0: 
-      if self.FLAGS.n_fc: # when features are concatenated, multiple images should be kept.
+      if 'nfc' in self.FLAGS.network: # when features are concatenated, multiple images should be kept.
         self.nfc_images.append(im)
         if len(self.nfc_images) < self.FLAGS.n_frames: return
         else:
