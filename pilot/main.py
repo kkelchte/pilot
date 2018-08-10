@@ -73,11 +73,18 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
         FLAGS.__setattr__(child.attrib['name'], float(child.text))
         print 'set:', child.attrib['name'], float(child.text)
       elif child.attrib['name'] in stringlist:
+        # Temporary hack to load models from doshico
+        # if not FLAGS.network != 'mobile_nfc': 
         FLAGS.__setattr__(child.attrib['name'], str(child.text))
         print 'set:', child.attrib['name'], str(child.text)
+      # Temporary hack to load models from doshico
+      elif child.attrib['name'] == 'n_fc':
+        FLAGS.network='mobile_nfc'
+        print 'set: network to mobile_nfc'
     except : 
       print 'couldnt set:', child.attrib['name'], child.text
       pass
+
   return FLAGS
 
 # Use the main method for starting the training procedure and closing it in the end.
