@@ -116,14 +116,16 @@ condor_submit.write("match_list_length = 4 \n")
 condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCode == 0 ) || HoldReasonCode == 26\n")
 
 
-blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
-			&& (machine != \"virgo.esat.kuleuven.be\") \
-      && (machine != \"estragon.esat.kuleuven.be\") \
-			&& (machine != \"vladimir.esat.kuleuven.be\") \
-			 && (machine != \"kochab.esat.kuleuven.be\") "
+blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
+            && (machine != \"estragon.esat.kuleuven.be\") \
+            && (machine != \"vladimir.esat.kuleuven.be\") \
+            && (machine != \"cancer.esat.kuleuven.be\") \
+            && (machine != \"libra.esat.kuleuven.be\") \
+            && (machine != \"kochab.esat.kuleuven.be\") "
+      # && (machine != \"andromeda.esat.kuleuven.be\") \
 # blacklist=""
-# greenlist=" && (machine == \"vladimir.esat.kuleuven.be\") "
-greenlist=""
+# greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
+# greenlist=""
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
@@ -164,8 +166,10 @@ command="{0} --data_root {1} ".format(command, FLAGS.data_root)
 command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
 for e in others: command=" {0} {1}".format(command, e)
 
-executable.write("{0}  >> {1}/condor_{2}.dockout 2>&1\n".format(command, condor_output_dir, description))
-executable.write("echo \"[condor_shell_script] done: $(date +%F_%H:%M)\"\n")
+executable.write("{0} \n".format(command))
+
+# executable.write("{0}  >> {1}/condor_{2}.dockout 2>&1\n".format(command, condor_output_dir, description))
+# executable.write("echo \"[condor_shell_script] done: $(date +%F_%H:%M)\"\n")
 
 executable.close()
 
@@ -223,6 +227,8 @@ sing.write("cd $sing_loc\n")
 sing.write("pwd\n")
 sing.write("ls\n")
 sing.write("sleep 1\n")
+sing.write("echo 'copy singularity image to /tmp'\n")
+sing.write("cp $sing_loc/$sing_image /tmp\n")
 
 ###### Copy docker_home to local tmp
 sing.write("echo 'make home in tmp' \n")
@@ -253,7 +259,14 @@ sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 
 # sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_drone_ws.img $1 \n")
 # sing.write("/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_drone_ws.img $1 \n")
-sing.write("/usr/bin/singularity exec --nv $sing_loc/$sing_image $1 \n")
+# sing.write("/usr/bin/singularity exec --nv $sing_loc/$sing_image $1 \n")
+sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 \n")
+sing.write("echo 'check exit code'\n")
+sing.write("retVal=$? \n")
+sing.write("if [ $retVal -ne 0 ]; then \n")
+sing.write("    echo Error \n")
+sing.write("    exit $retVal \n")
+sing.write("fi \n")
 
 ###### Copy data and log back to opal
 sing.write("echo 'copy pilot data back' \n")

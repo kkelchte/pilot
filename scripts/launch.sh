@@ -45,8 +45,12 @@
 
 # -----------DAG-----------------
 # Create Dataset
-python dag_create_data.py -t test_drone --wall_time_rec $((3*15*10*60)) --destination test_drone --number_of_recorders 3 --number_of_runs $((15)) -w sandbox -w canyon -w forest --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
-python dag_create_data.py -t test_turtle --wall_time_rec $((3*15*10*60)) --destination test_turtle --number_of_recorders 3 --number_of_runs $((15)) -w sandbox -w canyon -w forest --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e
+# python dag_create_data.py -t sandbox_drone --wall_time_rec $((4*60*60)) --destination sandbox_drone --number_of_recorders 10 --number_of_runs $((50)) -w sandbox --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
+python dag_create_data.py -t canyon_drone --wall_time_rec $((4*60*60)) --destination canyon_drone --number_of_recorders 10 --number_of_runs $((50)) -w canyon --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
+python dag_create_data.py -t forest_drone --wall_time_rec $((4*60*60)) --destination forest_drone --number_of_recorders 10 --number_of_runs $((50)) -w forest --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
+# python dag_create_data.py -t test_drone --wall_time_rec $((4*60*60)) --destination test_drone --number_of_recorders 1 --number_of_runs $((10)) -w forest --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
+# python dag_create_data.py -t test_turtle --wall_time_rec $((3*15*10*60)) --destination test_turtle --number_of_recorders 1 --number_of_runs $((15)) -w sandbox -w canyon -w forest --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e
+
 
 # python dag_create_data.py -t rec_dt_san --wall_time_rec $((3*15*10*60)) --destination doshico_turtle --number_of_recorders 10 --number_of_runs $((5*15)) -w sandbox --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success --evaluation
 # test:
