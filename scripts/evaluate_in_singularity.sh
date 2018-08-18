@@ -3,4 +3,4 @@
 cd /esat/opal/kkelchte/docker_home
 source .entrypoint_graph
 roscd simulation_supervised/python
-python run_script.py -pe sing -pp pilot/pilot -m testing -p eva_params.yaml -n 2 --robot drone_sim -g
+python run_script.py -pe sing -pp pilot/pilot -m sandbox_drone/0 -w sandbox -p eva_params.yaml -n 2 --robot drone_sim -g --fsm oracle_nn_drone_fsm -e

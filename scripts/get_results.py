@@ -97,9 +97,10 @@ for folder in log_folders:
 			# parse current condor host from events.file.name
 			host=[f.split('.')[4] for f in os.listdir(tf_folder) if f.startswith('events')][0]
 			add(results, os.path.basename(folder), 'host', host)
+			add(results, os.path.basename(folder), 'worldnames', worldname)
 
 			
-# STEP 4: write results in json file
+# STEP 5: write results in json file
 # write results file
 with open(log_root+FLAGS.mother_dir+'/results.json','w') as out:
   json.dump(results,out,indent=2, sort_keys=True)

@@ -61,8 +61,8 @@ try:
   os.makedirs(dag_dir)
 except OSError:
   print("Found existing log folder: {0}/{1}{2}".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-with open(dag_dir+"/dag_file",'w') as df:
-  df.write("# File name: dag_file \n")
+with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
+  df.write("# File name: dag_file_"+FLAGS.log_tag+" \n")
   for rec in range(FLAGS.number_of_recorders):
     df.write("JOB r{0} {1}/{2}{3}/{0}/condor/online.condor \n".format(rec, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("JOB clean {0}/{1}{2}/clean/condor/offline.condor \n".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
@@ -75,12 +75,12 @@ with open(dag_dir+"/dag_file",'w') as df:
   df.write("Retry clean 4 \n")
 ##########################################################################################################################
 # STEP 5 submit DAG file
-subprocess.call(shlex.split("condor_submit_dag {0}".format(dag_dir+"/dag_file")))
+subprocess.call(shlex.split("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag)))
 print("Submission done.")
 print("Monitor with: ")
-print("tail -f {0}/dag_file.nodes.log".format(dag_dir))
+print("tail -f {0}/dag_file_{1}.nodes.log".format(dag_dir,FLAGS.log_tag))
 print("or: ")
-print("tail -f {0}/dag_file.dagman.out".format(dag_dir))
+print("tail -f {0}/dag_file_{1}.dagman.out".format(dag_dir,FLAGS.log_tag))
 time.sleep(1)
 
 

@@ -125,8 +125,8 @@ blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
       # && (machine != \"andromeda.esat.kuleuven.be\") \
 # blacklist=""
 # greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
-# greenlist=""
-condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
+greenlist=""
+condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
@@ -253,6 +253,7 @@ else:
 sing.write("echo 'cp tensorflow pilot project' \n")
 sing.write("ls {0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
 sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
+sing.write("cp -r {0}/tensorflow/tf_cnnvis tensorflow/ \n".format(FLAGS.home))
 sing.write("echo 'cp simulation_supervised' \n")
 sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 ######

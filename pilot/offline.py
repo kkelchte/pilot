@@ -49,6 +49,8 @@ def run_episode(data_type, sumvar, model):
         pass
       if index == 1 and data_type=='val' and FLAGS.plot_depth: 
           depth_predictions = tools.plot_depth(inputs, target_depth, model)
+      # elif index == 1 and data_type=='val' and FLAGS.visualize_activations:
+      # activations = tools.visualize_activations(FLAGS,model) 
     else:
       print('Failed to run {}.'.format(data_type))
     calculation_time+=(time.time()-start_calc_time)
@@ -98,10 +100,20 @@ def run(_FLAGS, model, start_ep=0):
     if (ep%20==0 and ep!=0) or ep==FLAGS.max_episodes-1:
       print('saved checkpoint')
       model.save(FLAGS.summary_dir+FLAGS.log_tag)
-  # ------------ test
-  sumvar = run_episode('test', {}, model)  
-  # ----------- write summary
-  try:
-    model.summarize(sumvar)
-  except Exception as e:
-    print('failed to summarize {}'.format(e))
+  if FLAGS.max_episodes != 0:
+    # ------------ test
+    sumvar = run_episode('test', {}, model)  
+    # ----------- write summary
+    try:
+      model.summarize(sumvar)
+    except Exception as e:
+      print('failed to summarize {}'.format(e))
+
+  if FLAGS.visualize_saliency_of_output:
+    tools.visualize_saliency_of_output(FLAGS, model)
+
+  if FLAGS.visualize_deep_dream_of_output:
+    tools.deep_dream_of_extreme_control(FLAGS, model)
+
+  if FLAGS.visualize_activations:
+    tools.visualize_activations(FLAGS,model) 

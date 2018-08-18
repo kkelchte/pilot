@@ -280,13 +280,15 @@ class PilotNode(object):
       if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth: aux_depth = aux_results['d']
     
     ### SEND CONTROL
-    if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
-      action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control[0,0]
-    else:
-      action = control[0,0]
+    control = control[0,0]
     if self.FLAGS.discrete:
-      # print control
       control = self.model.bin_vals[np.argmax(control)]
+    
+    if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
+      action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
+    else:
+      action = control
+    
     msg = Twist()
     if self.FLAGS.noise == 'ou':
       noise = self.exploration_noise.noise()
@@ -316,9 +318,11 @@ class PilotNode(object):
       
     # ADD EXPERIENCE REPLAY
     if not self.FLAGS.evaluate and trgt != -100:
-      aux_info = {}
-      if self.FLAGS.auxiliary_depth: aux_info['target_depth']=trgt_depth
-      self.replay_buffer.add(im,[trgt],aux_info=aux_info)
+      experience={'state':im,
+                  'action':action,
+                  'trgt':trgt}
+      if self.FLAGS.auxiliary_depth: experience['target_depth']=trgt_depth
+      self.replay_buffer.add(experience)
 
   def supervised_callback(self, data):
     """Get target control from the /supervised_vel node"""

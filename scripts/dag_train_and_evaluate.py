@@ -61,6 +61,12 @@ command="python condor_offline.py -t {0}/results --dont_submit -pp pilot/scripts
 for e in others: command=" {0} {1}".format(command, e)
 subprocess.call(shlex.split(command)) 
 
+##########################################################################################################################
+# STEP 5 Call a python script that creates a report
+command="python condor_offline.py -t {0}/report --dont_submit -pp pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 10*60, FLAGS.summary_dir)
+for e in others: command=" {0} {1}".format(command, e)
+subprocess.call(shlex.split(command)) 
+
 
 ##########################################################################################################################
 # STEP 5 Create DAG file that links the different jobs
@@ -69,18 +75,20 @@ try:
   os.makedirs(dag_dir)
 except OSError:
   print("Found existing log folder: {0}/{1}{2}".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-with open(dag_dir+"/dag_file",'w') as df:
-  df.write("# File name: dag_file \n")
+with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
+  df.write("# File name: dag_file_"+FLAGS.log_tag+" \n")
   for model in range(FLAGS.number_of_models):
     df.write("JOB m{0}_train {1}/{2}{3}/{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
     df.write("JOB m{0}_eva {1}/{2}{3}/{0}_eva/condor/online.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("JOB results {1}/{2}{3}/results/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
+  df.write("JOB report {1}/{2}{3}/report/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("\n")
   for model in range(FLAGS.number_of_models):
     df.write("PARENT m{0}_train CHILD m{0}_eva\n".format(model))
   eva_jobs=""  
   for model in range(FLAGS.number_of_models): eva_jobs="{0} m{1}_eva".format(eva_jobs, model)
   df.write("PARENT {0} CHILD results\n".format(eva_jobs))
+  df.write("PARENT results CHILD report\n")
   df.write("\n")
   for model in range(FLAGS.number_of_models): 
     df.write("Retry m{0}_train 2 \n".format(model))
@@ -89,12 +97,12 @@ with open(dag_dir+"/dag_file",'w') as df:
 
 ##########################################################################################################################
 # STEP 6 submit DAG file
-subprocess.call(shlex.split("condor_submit_dag {0}".format(dag_dir+"/dag_file")))
+subprocess.call(shlex.split("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag)))
 print("Submission done.")
 print("Monitor with: ")
-print("tail -f {0}/dag_file.nodes.log".format(dag_dir))
+print("tail -f {0}/dag_file_{1}.nodes.log".format(dag_dir, FLAGS.log_tag))
 print("or: ")
-print("tail -f {0}/dag_file.dagman.out".format(dag_dir))
+print("tail -f {0}/dag_file_{1}.dagman.out".format(dag_dir, FLAGS.log_tag))
 time.sleep(1)
 
 

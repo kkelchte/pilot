@@ -12,7 +12,7 @@ source /users/visics/kkelchte/tensorflow/bin/activate
 export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages
 export HOME=/esat/opal/kkelchte/docker_home
 
-python ~/tensorflow/pilot/pilot/main.py --max_episodes 5 --load_data_in_ram --network mobile_nfc
+python ~/tensorflow/pilot/pilot/main.py --max_episodes 5 --load_data_in_ram --network mobile --discrete
 ret=$?
 if [ $ret -ne 0 ]; then
      #Handle failure

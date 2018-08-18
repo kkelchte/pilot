@@ -120,7 +120,7 @@ blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 #             (machine != \"chokai.esat.kuleuven.be\") && \
 #             (machine != \"pyrite.esat.kuleuven.be\") && \
 #             (machine != \"ymir.esat.kuleuven.be\") "
-condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} \n".format(FLAGS.gpumem, blacklist))
+condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} \n".format(FLAGS.gpumem, blacklist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
 if not FLAGS.not_nice: condor_submit.write("Niceuser = true \n")
@@ -147,7 +147,7 @@ executable.write("#!/bin/bash \n")
 executable.write("echo started executable in virtualenv.\n")
 executable.write("export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.0/lib64 \n")
 executable.write("source /users/visics/kkelchte/tensorflow/bin/activate \n")
-executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages:{0}/tensorflow/{1} \n".format(FLAGS.home, FLAGS.python_project+'/..'))
+executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/tf_cnnvis \n".format(FLAGS.home, FLAGS.python_project+'/..'))
 executable.write("export HOME={0}\n".format(FLAGS.home))
 command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,FLAGS.python_script)
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)

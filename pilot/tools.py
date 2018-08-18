@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
+import os,sys,time
+
 FLAGS = tf.app.flags.FLAGS
 
 """ 
@@ -63,3 +65,251 @@ def plot_depth(inputs, depth_targets, model):
       plt.axis('off')
   buf=fig2buf(fig)
   return np.asarray([buf])
+
+
+"""
+Plot activations
+"""
+
+def load_images(file_names, im_size):
+  """
+  Load a series of images defined in a list of full paths.
+  Returns a numpy array of preprocessed images.
+  """
+  import skimage.io as sio
+  import skimage.transform as sm
+
+  # load images in numpy array inputs
+  inputs=[]
+  for img_file in file_names:
+      img = sio.imread(img_file)
+      scale_height = int(np.floor(img.shape[0]/im_size[0]))
+      scale_width = int(np.floor(img.shape[1]/im_size[1]))
+      img = sm.resize(img[::scale_height,::scale_width],im_size,mode='constant').astype(float)
+      inputs.append(img)
+  return np.asarray(inputs)
+
+def deprocess_image(x):
+    # normalize tensor: center on 0., ensure std is 0.1
+    x -= x.mean()
+    x /= (x.std() + 1e-5)
+    x *= 0.1
+
+    # clip to [0, 1]
+    x += 0.5
+    x = np.clip(x, 0, 1)
+
+    # convert to RGB array
+    x *= 1
+    #     x = x.transpose((1, 2, 0))
+    x = np.clip(x, 0, 1).astype('float')
+    return x
+
+def visualize_saliency_of_output(FLAGS, model, input_images=[]):
+  """
+  Extract the salience map of the output control node(s) for a predefined set of visualization images.
+  You can define the input_images as a list, if nothing is defined it uses the predefined images.
+  It saves the images in FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps/....png'.
+  FLAGS: the settings defined in main.py
+  model: the loaded pilot-model object
+  input_images: a list of strings with absolute paths to images used to extract the maps 
+  overlay: plot activations in overlay over input image 
+  """
+  if len(input_images) == 0:
+    # use predefined images
+    img_dir='/esat/opal/kkelchte/docker_home/pilot_data/visualization_images'
+    input_images=sorted([img_dir+'/'+f for f in os.listdir(img_dir)])
+
+  print("[tools.py]: extracting saliency maps of {0} in {1}".format([os.path.basename(i) for i in input_images], os.path.dirname(input_images[0])))
+  
+  
+  inputs = load_images(input_images, model.input_size[1:])
+  
+  # extract deconvolution
+  import tf_cnnvis
+  # layers = ['c']
+  # layers=['MobilenetV1_1/MobilenetV1/Conv2d_0/Conv2D']
+  # layers=['MobilenetV1_1/AvgPool_1a/AvgPool']
+  # layers=['MobilenetV1/control/Conv2d_1c_1x1/Conv2D']
+  layers=['MobilenetV1_1/control/Conv2d_1c_1x1/Conv2D']
+  # layers=['MobilenetV1_1/control/Conv2d_1c_1x1/Conv2D','MobilenetV1_1/AvgPool_1a/AvgPool']
+
+
+  # results = tf_cnnvis.activation_visualization(sess_graph_path = model.sess, 
+  #                                               value_feed_dict = {model.inputs : inputs}, 
+  #                                               layers=layers)
+  results = tf_cnnvis.deconv_visualization(sess_graph_path = model.sess, 
+                                                value_feed_dict = {model.inputs : inputs}, 
+                                                layers=layers)
+
+  # Normalize deconvolution within 0:1 range
+  num_rows=0
+  # Loop over layers
+  for k in results.keys():
+    # Loop over channels
+    for c in range(len(results[k])):
+      num_rows+=1
+      # Loop over images
+      for i in range(results[k][c].shape[0]):
+        results[k][c][i]=deprocess_image(results[k][c][i])
+        # # shift to the right so everything is positive
+        # results[k][c][i]=results[k][c][i]+np.abs(np.amin(results[k][c][i]))
+        # # scale so the max is 1
+        # if not np.amax(results[k][c][i]) == 0:
+        #   results[k][c][i]=results[k][c][i]/np.amax(results[k][c][i])
+
+  if num_rows > 6:
+    print("[tools.py]: There are too many columns to create a proper image.")
+    return
+
+  # create one combined image with each input image on each column
+  fig, axes = plt.subplots(2*num_rows+1,min(len(input_images),5),figsize=(23, 4*(2*len(results.keys())+1)))
+  # fig, axes = plt.subplots(num_columns+1,min(len(input_images),5),figsize=(23, 4*(2*len(results.keys())+1)))
+  # add original images in first row
+  for i in range(axes.shape[1]):
+    axes[0, i].set_title(os.path.basename(input_images[i]).split('.')[0])
+    axes[0, i].imshow(inputs[i])
+    axes[0, i].axis('off')
+  
+  # add deconvolutions over the columns
+  row_index = 1
+  for k in results.keys(): # go over layers
+    for c in range(len(results[k])): # add each channel in 2 new column
+      for i in range(axes.shape[1]): # fill row going over input images
+        axes[row_index, i].set_title(k.split('/')[1]+'/'+k.split('/')[2]+'_'+str(c))
+        axes[row_index, i].imshow(results[k][c][i])
+        axes[row_index, i].axis('off')
+        axes[row_index+1,i].imshow((results[k][c][i]+inputs[i])/2)
+        axes[row_index+1,i].axis('off')
+      row_index+=2
+      # row_index+=1
+  # plt.show()
+  plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
+
+def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=100,step_size=10):
+  """
+  Function that for each of the input image adjust a number of iterations.
+  It creates an image corresponding to strong left and strong right turn.
+  For continuous control it uses gradient ascent and descent.
+  For discrete control it uses the two extreme nodes for gradient ascent.
+  In the end an image is created by substracting the two extreme-control images.
+  """
+  if len(input_images) == 0:
+    # use predefined images
+    img_dir='/esat/opal/kkelchte/docker_home/pilot_data/visualization_images'
+    input_images=sorted([img_dir+'/'+f for f in os.listdir(img_dir)])
+
+  print("[tools.py]: extracting deep dream maps of {0} in {1}".format([os.path.basename(i) for i in input_images], os.path.dirname(input_images[0])))
+  
+  inputs = load_images(input_images, model.input_size[1:])
+  
+  # collect gradients for controls
+  control_ops=[]
+  for i in model.sess.graph.get_operations():
+    if 'control' in i.name and  i.type.lower() == 'conv2d': 
+      control_ops.append(i.name)
+  # overwrite control as we are only interested in this one:
+  control_ops=['MobilenetV1_1/control/Conv2d_1c_1x1/Conv2D']
+  print("[tools.py]: found control ops: {}".format(control_ops))
+  grads={}
+  for o in control_ops:
+    with tf.device('/cpu:0'):
+      op = model.sess.graph.get_operation_by_name(o)
+      if len(op.outputs) != 1: print("Found multiple channels in {}".format(op.name))
+      layer_loss=tf.reduce_mean(op.outputs[0], axis=(1,2))
+      gradients = tf.gradients(layer_loss, model.inputs)[0]
+      # print layer_loss.shape
+      # import pdb; pdb.set_trace()
+      # TODO add discrete compatibility avoiding the dimension reduction
+      # masking different channels?
+      gradients /= (tf.sqrt(tf.reduce_mean(tf.square(gradients))) + 1e-5)
+      grads[op.name]=gradients
+
+  # apply gradient ascent for all outputs and each input image
+  # if number of outputs ==1 apply gradient descent for contrast
+  if len(grads.keys())== 1:
+    opposite_results={}
+  else:
+    opposite_results=None
+
+  import copy
+  results = {}
+  for gk in grads.keys(): 
+    results[gk]=copy.deepcopy(inputs)
+    if isinstance(opposite_results,dict): opposite_results[gk]=copy.deepcopy(inputs)
+
+  for step in range(num_iterations):
+    if step%10==0: print "{0} step: {1}".format(time.ctime(), step)
+    for i,gk in enumerate(sorted(grads.keys())):
+      results[gk] += step_size * model.sess.run(grads[gk], {model.inputs: results[gk]})
+      if isinstance(opposite_results,dict):
+        opposite_results[gk] -= step_size * model.sess.run(grads[gk], {model.inputs: opposite_results[gk]})
+
+  # Normalize results within 0:1 range
+  for gk in results.keys():
+    for i in range(results[gk].shape[0]):
+      results[gk][i]=deprocess_image(results[gk][i])
+      if isinstance(opposite_results,dict):
+        opposite_results[gk][i]=deprocess_image(opposite_results[gk][i])
+
+  # combine adjust input images in one overview image
+  # one column for each input image
+  # one row with each extreme control for separate and difference images
+  num_rows=1+len(results.keys())+1 if not isinstance(opposite_results,dict) else 1+2+1
+  fig, axes = plt.subplots(num_rows ,min(len(input_images),5),figsize=(23, 4*(len(grads.keys())+1)))
+  # add original images in first row
+  for i in range(axes.shape[1]):
+    axes[0, i].set_title(os.path.basename(input_images[i]).split('.')[0])
+    axes[0, i].imshow(inputs[i])
+    axes[0, i].axis('off')
+
+  # add for each filter the modified input
+  row_index=1
+  for gk in results.keys():
+    for i in range(axes.shape[1]):
+      axes[row_index, i].set_title(gk.split('/')[1]+'/'+gk.split('/')[2])   
+      axes[row_index, i].imshow(results[gk][i])
+      axes[row_index, i].axis('off')
+    row_index+=1
+
+  if isinstance(opposite_results,dict):
+    for gk in opposite_results.keys():
+        for i in range(axes.shape[1]):
+          axes[row_index, i].set_title(gk.split('/')[1]+'/'+gk.split('/')[2])   
+          axes[row_index, i].imshow(opposite_results[gk][i])
+          axes[row_index, i].axis('off')
+        row_index+=1
+    
+    # add difference
+    for gk in opposite_results.keys():
+        for i in range(axes.shape[1]):
+          axes[row_index, i].set_title(gk.split('/')[1]+'/'+gk.split('/')[2])   
+          axes[row_index, i].imshow(deprocess_image((opposite_results[gk][i]-results[gk][i])**2))
+          axes[row_index, i].axis('off')
+        row_index+=1
+
+  plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/control_dream_maps.jpg',bbox_inches='tight')
+  # plt.show()
+
+def visualize_activations(FLAGS,model,input_images=[],layers = ['c']):
+  """
+  Use cnn_vis to extract the activations on the input images.
+  """
+  if len(input_images) == 0:
+    # use predefined images
+    img_dir='/esat/opal/kkelchte/docker_home/pilot_data/visualization_images'
+    input_images=sorted([img_dir+'/'+f for f in os.listdir(img_dir)])
+  inputs = load_images(input_images, model.input_size[1:])
+  
+  import tf_cnnvis
+  
+  results = tf_cnnvis.activation_visualization(sess_graph_path = model.sess, 
+                                          value_feed_dict = {model.inputs : inputs}, 
+                                          layers=layers)
+  
+  # combine activations in one subplot 
+  # --> number is currently too large to create reasonable subplot
+
+
+  # fig.canvas.tostring_rgb and then numpy.fromstring
+

@@ -102,6 +102,9 @@ def main(_):
   #   Offline Parameters
   # ==========================
   parser.add_argument("--max_episodes",default=600,type=int,help="The maximum number of episodes (~runs through all the training data.)")
+  parser.add_argument("--visualize_saliency_of_output",action='store_true',help="Visualize saliency maps of the output.")
+  parser.add_argument("--visualize_deep_dream_of_output",action='store_true',help="Visualize gradient ascent maps for different extreme controls.")
+  parser.add_argument("--visualize_activations",action='store_true',help="Visualize activation.")
 
   # ===========================
   #   Utility Parameters
@@ -143,7 +146,7 @@ def main(_):
   parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
   parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
-  # parser.add_argument("--action_quantity",default=9, type=int, help="Define the number of actions in the output layer.")
+  parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
@@ -204,6 +207,8 @@ def main(_):
 
   # FLAGS=parser.parse_args()
   FLAGS, others = parser.parse_known_args()
+
+  # if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
 
   np.random.seed(FLAGS.random_seed)
   tf.set_random_seed(FLAGS.random_seed)

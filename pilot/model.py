@@ -46,6 +46,7 @@ class Model(object):
         self.boundaries.append(b)
         b=round(b+bin_width,4)
       assert len(self.boundaries) == FLAGS.action_quantity-1  
+      print("[model.py]: Divided {0} discrete actions over {1}".format(FLAGS.action_quantity, self.bin_vals))
     
     #define the input size of the network input
     if self.FLAGS.network == 'mobile':
@@ -110,7 +111,7 @@ class Model(object):
     '''build the network and set the tensors
     '''
     with tf.device(self.device):
-      self.inputs = tf.placeholder(tf.float32, shape = self.input_size)
+      self.inputs = tf.placeholder(tf.float32, shape = self.input_size, name = 'Inputs')
       args={'inputs':self.inputs,
             'weight_decay': self.FLAGS.weight_decay,
             'stddev':self.FLAGS.init_scale,
@@ -149,6 +150,7 @@ class Model(object):
         # outputs expects to be real numbers (logits) not probabilities as it computes a softmax internally for efficiency
         self.targets = tf.placeholder(tf.int32, [None, self.action_dim])
         one_hot=tf.squeeze(tf.one_hot(self.targets, self.FLAGS.action_quantity),[1])
+        # self.loss = tf.nn.softmax_cross_entropy_with_logits(labels=one_hot, logits=self.outputs)
         self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=self.outputs, weights=self.FLAGS.control_weight)
         #loss = tf loss (discretized(self.targets), self.outputs)
       if self.FLAGS.auxiliary_depth:
