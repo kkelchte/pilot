@@ -94,6 +94,7 @@ with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
     df.write("Retry m{0}_train 2 \n".format(model))
     df.write("Retry m{0}_eva 3 \n".format(model))
   df.write("Retry results 2 \n")
+  df.write("Retry report 3 \n")
 
 ##########################################################################################################################
 # STEP 6 submit DAG file

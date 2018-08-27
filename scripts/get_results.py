@@ -32,7 +32,7 @@ for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
 log_root = FLAGS.home+'/'+FLAGS.summary_dir
-log_folders = sorted([ log_root+FLAGS.mother_dir+'/'+d if len(FLAGS.mother_dir) != 0 else log_root+d for d in os.listdir(log_root+FLAGS.mother_dir) if d.startswith(FLAGS.startswith) and d.endswith(FLAGS.endswith)])
+log_folders = sorted([ log_root+FLAGS.mother_dir+'/'+d if len(FLAGS.mother_dir) != 0 else log_root+d for d in os.listdir(log_root+FLAGS.mother_dir) if d.startswith(FLAGS.startswith) and d.endswith(FLAGS.endswith) and os.path.isdir(log_root+FLAGS.mother_dir+'/'+d)])
 
 if len(log_folders)==0:
 	print "Woops, could not find anything "+log_root+FLAGS.mother_dir+" that startswith "+FLAGS.startswith+" and endswith "+FLAGS.endswith
@@ -48,7 +48,7 @@ results = {}
 for folder in log_folders:
 	print folder
 	# get tensorflow log folders within evaluation log folder
-	tf_folders = [folder+'/'+f for f in os.listdir(folder) if f.startswith('201') and os.path.isdir(folder+'/'+f)]	
+	tf_folders = [folder+'/'+f for f in os.listdir(folder) if f.startswith('201') and os.path.isdir(folder+'/'+f)]
 	if len(tf_folders) == 0:
 		print("Empty logfolder: {}".format(folder))
 		continue
@@ -102,6 +102,9 @@ for folder in log_folders:
 			
 # STEP 5: write results in json file
 # write results file
+if os.path.isfile(log_root+FLAGS.mother_dir+'/results.json'):
+	os.rename(log_root+FLAGS.mother_dir+'/results.json', log_root+FLAGS.mother_dir+'/_old_results.json')
+
 with open(log_root+FLAGS.mother_dir+'/results.json','w') as out:
   json.dump(results,out,indent=2, sort_keys=True)
 

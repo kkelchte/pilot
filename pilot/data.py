@@ -1,4 +1,9 @@
 #!/usr/bin/python
+# Block all numpy-scipy incompatibility warnings (could be removed at following scipy update (>1.1))
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+
 import os, sys
 import numpy as np
 import tensorflow as tf
@@ -45,6 +50,9 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   FLAGS=_FLAGS
   random.seed(FLAGS.random_seed)
 
+  im_size=size
+  de_size = size_depth
+
   if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
     FLAGS.data_root=os.environ['HOME']+'/'+FLAGS.data_root
   # if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
@@ -55,8 +63,6 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   test_set=load_set('test')
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
 
-  im_size=size
-  de_size = size_depth
   
 # def load_set_hdf5(data_type):
 #   """Load a type (train, val or test) of set in the set_list
@@ -165,7 +171,6 @@ def load_run_info(coord, run_list, set_list, checklist):
           img = sm.resize(img,im_size,mode='constant').astype(float)
           assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
           imgs.append(img)
-     
       # Add depth links if files exist
       depth_list = [] 
       try:
@@ -237,9 +242,12 @@ def generate_batch(data_type):
   # stick to 100, otherwise one epoch takes too long and the training is not updated
   # regularly enough.
   max_num_of_batch = {'train':100, 'val':10, 'test':1000}
+  # max_num_of_batch = {'train':1, 'val':1, 'test':1000}
   number_of_batches = min(int(number_of_frames/FLAGS.batch_size),max_num_of_batch[data_type])
-  if number_of_batches == 0:
+  if number_of_batches == 0:  
     print('Only {0} frames to fill {1} batch size, so set batch_size to {2}'.format(number_of_frames, FLAGS.batch_size, number_of_frames))
+    FLAGS.batch_size = number_of_frames
+  
   b=0
   while b < number_of_batches:
     if b>0 and b%10==0:
@@ -255,15 +263,30 @@ def generate_batch(data_type):
     # list of samples to fill batch for threads to know what sample to load
     stime=time.time()
     
-    for batch_num in range(FLAGS.batch_size):
+    # keep track of the distribution of controls
+    count_controls={-1:0, 0:0, 1:0}
+    batch_num=0
+    while batch_num < FLAGS.batch_size:
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
-      # choose random index over image numbers:
-      frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])))
-      if '_nfc' in FLAGS.network:
-        frame_ind = random.choice(range(len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames))
-      batch_indices.append((batch_num, run_ind, frame_ind))
-    
+      options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
+      if FLAGS.normalize_over_actions and count_controls[0] >= FLAGS.batch_size/3.: # if '0' is full
+        # take out all frames with 0 in control
+        options = [i for i in options if np.abs(data_set[run_ind]['controls'][i]) > 0.3]
+      if FLAGS.normalize_over_actions and count_controls[-1] >= FLAGS.batch_size/3.: # if '-1' is full
+        # take out all frames with -1 in control
+        options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==-1)]
+      if FLAGS.normalize_over_actions and count_controls[1] >= FLAGS.batch_size/3.: # if '-1' is full
+        # take out all frames with -1 in control
+        options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==+1)]
+      if not len(options) == 0: # in case there are still frames left...
+        frame_ind = random.choice(options)
+        batch_num += 1
+        batch_indices.append((batch_num, run_ind, frame_ind))
+        ctr = data_set[run_ind]['controls'][frame_ind]
+        ctr_index = 0 if np.abs(ctr) < 0.3 else np.sign(ctr)
+        count_controls[ctr_index]+=1
+    # print count_controls
     if not FLAGS.load_data_in_ram:
       # load data multithreaded style into RAM
       def load_image_and_target(coord, batch_indices, batch, checklist):
@@ -273,7 +296,7 @@ def generate_batch(data_type):
             def load_rgb_depth_image(run_ind, frame_ind):
               # load image
               img_file = join(data_set[run_ind]['name'],'RGB', '{0:010d}.jpg'.format(data_set[run_ind]['num_imgs'][frame_ind]))
-              # print('img_file ',img_file)
+              # print('img_file {}'.format(img_file))
               # img = Image.open(img_file)
               img = sio.imread(img_file)
               scale_height = int(np.floor(img.shape[0]/im_size[0]))
@@ -361,7 +384,7 @@ def generate_batch(data_type):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  parser.add_argument("--dataset", default="new_dataset", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="small", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
@@ -379,6 +402,7 @@ if __name__ == '__main__':
   parser.add_argument("--network",default='mobile',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--normalize_over_actions", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
   
   FLAGS=parser.parse_args()  
 

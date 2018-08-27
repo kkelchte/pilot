@@ -251,7 +251,7 @@ def mobilenet_v1_base(inputs,
 
 
 def mobilenet(inputs,
-                 num_classes=1000,
+                 num_outputs=1000,
                  is_training=True,
                  min_depth=8,
                  conv_defs=None,
@@ -270,7 +270,7 @@ def mobilenet(inputs,
   """Mobilenet v1 model for classification.
   Args:
     inputs: a tensor of shape [batch_size, height, width, channels].
-    num_classes: number of predicted classes.
+    num_outputs: number of predicted classes.
     is_training: whether is training or not.
     min_depth: Minimum depth value (number of channels) for all convolution ops.
       Enforced when depth_multiplier < 1, and not an active constraint when
@@ -284,7 +284,7 @@ def mobilenet(inputs,
     scope: Optional variable_scope.
   Returns:
     logits: the pre-softmax activations, a tensor of size
-      [batch_size, num_classes]
+      [batch_size, num_outputs]
     end_points: a dictionary from components of the network to the corresponding
       activation.
   Raises:
@@ -301,7 +301,7 @@ def mobilenet(inputs,
                                             initializer=initializer,
                                             random_seed=random_seed,
                                             data_format=data_format)):
-    with tf.variable_scope(scope, 'MobilenetV1', [inputs, num_classes],
+    with tf.variable_scope(scope, 'MobilenetV1', [inputs, num_outputs],
                            reuse=reuse) as scope:
       with slim.arg_scope([slim.batch_norm, slim.dropout],
                           is_training=is_training):
@@ -337,21 +337,19 @@ def mobilenet(inputs,
           aux_logits=tf.reshape(aux_logits, [-1, 55, 74])
           end_points[end_point] = aux_logits
 
-
-
         with tf.variable_scope('control'): 
           # 1 x 1 x 1024
-          logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
-          # logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=tf.tanh,
+          logits = slim.conv2d(net, num_outputs, [1, 1], activation_fn=None,
+          # logits = slim.conv2d(net, num_outputs, [1, 1], activation_fn=tf.tanh,
                                normalizer_fn=None, scope='Conv2d_1c_1x1')
-          if spatial_squeeze:
-            logits = tf.squeeze(logits, [1,2], name='SpatialSqueeze')
-          end_points['Logits'] = logits
+    if spatial_squeeze:
+      logits = tf.squeeze(logits, [1,2], name='outputs')
+    end_points['outputs'] = logits
       
 
       # if prediction_fn:
       #   end_points['Predictions'] = prediction_fn(logits, scope='Predictions')
-  return logits, end_points
+  return end_points
 
 default_image_size={}
 default_image_size[1] = 224

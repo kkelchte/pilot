@@ -251,7 +251,7 @@ def mobilenet_v1_base(inputs,
 
 
 def mobilenet_v1(inputs,
-                 num_classes=1000,
+                 num_outputs=1000,
                  is_training=True,
                  min_depth=8,
                  conv_defs=None,
@@ -270,7 +270,7 @@ def mobilenet_v1(inputs,
   """Mobilenet v1 model for classification.
   Args:
     inputs: a tensor of shape [batch_size, height, width, channels].
-    num_classes: number of predicted classes.
+    num_outputs: number of predicted classes.
     is_training: whether is training or not.
     min_depth: Minimum depth value (number of channels) for all convolution ops.
       Enforced when depth_multiplier < 1, and not an active constraint when
@@ -284,7 +284,7 @@ def mobilenet_v1(inputs,
     scope: Optional variable_scope.
   Returns:
     logits: the pre-softmax activations, a tensor of size
-      [batch_size, num_classes]
+      [batch_size, num_outputs]
     end_points: a dictionary from components of the network to the corresponding
       activation.
   Raises:
@@ -301,7 +301,7 @@ def mobilenet_v1(inputs,
                                             initializer=initializer,
                                             random_seed=random_seed,
                                             data_format=data_format)):
-    with tf.variable_scope(scope, 'MobilenetV1', [inputs, num_classes],
+    with tf.variable_scope(scope, 'MobilenetV1', [inputs, num_outputs],
                            reuse=reuse) as scope:
       with slim.arg_scope([slim.batch_norm, slim.dropout],
                           is_training=is_training):
@@ -341,8 +341,8 @@ def mobilenet_v1(inputs,
 
         with tf.variable_scope('control'): 
           # 1 x 1 x 1024
-          logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=None,
-          # logits = slim.conv2d(net, num_classes, [1, 1], activation_fn=tf.tanh,
+          logits = slim.conv2d(net, num_outputs, [1, 1], activation_fn=None,
+          # logits = slim.conv2d(net, num_outputs, [1, 1], activation_fn=tf.tanh,
                                normalizer_fn=None, scope='Conv2d_1c_1x1')
           if spatial_squeeze:
             logits = tf.squeeze(logits, [1,2], name='SpatialSqueeze')
@@ -354,34 +354,34 @@ def mobilenet_v1(inputs,
   return logits, end_points
 
 def mobilenet_nfc(inputs,
-                 num_classes=1000,
+                 num_outputs=1000,
             		 n_frames=3,
                  is_training=True,
                  depth_multiplier=0.25,
             		 dropout_keep_prob=0.5,
                  weight_decay=0.00004,
                  stddev=0.09,
+                 reuse=None,
                  regularize_depthwise=False,
                  initializer='xavier',
                  random_seed=123,
                  data_format='NHWC'):
   features = []
   for i in range(n_frames):
-    _, endpoints = mobilenet_v1(inputs[:,:,:,i*3:(i+1)*3], num_classes=num_classes, 
-      is_training=is_training, reuse=(i!=0 and is_training) or not is_training,
+    _, endpoints = mobilenet_v1(inputs[:,:,:,i*3:(i+1)*3], num_outputs=num_outputs, 
+      is_training=is_training, reuse=(i!=0 and is_training) or not is_training or reuse,
       depth_multiplier = depth_multiplier, dropout_keep_prob=1,
       weight_decay=weight_decay, stddev=stddev, regularize_depthwise=regularize_depthwise,
       initializer=initializer,random_seed=random_seed, data_format=data_format)
     net = tf.squeeze(endpoints['AvgPool_1a'], [1,2])
     features.append(net)
-  with tf.variable_scope('concatenated_feature', reuse=not is_training): 
-    control_input=tf.concat(features, axis=1)
-    if is_training:
-      control_input = slim.dropout(control_input, keep_prob=dropout_keep_prob, scope='Dropout_1b')  
-  with tf.variable_scope('control', reuse=not is_training):
-    control_input = slim.fully_connected(control_input, 50, tf.nn.relu, normalizer_fn=None, scope='H_fc_control')
-    outputs = slim.fully_connected(control_input, 1, None, normalizer_fn=None, scope='Fc_control')
-  return outputs, endpoints
+  control_input=tf.concat(features, axis=1)
+  if is_training:
+    control_input = slim.dropout(control_input, keep_prob=dropout_keep_prob, scope='Dropout_1b')  
+  control_input = slim.fully_connected(control_input, 50, tf.nn.relu, normalizer_fn=None, reuse=not is_training, scope='H_fc_control')
+  outputs = slim.fully_connected(control_input, 1, None, normalizer_fn=None, reuse=not is_training, scope='outputs')
+  endpoints['outputs'] = outputs
+  return endpoints
 
 
 

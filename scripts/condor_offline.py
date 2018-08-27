@@ -32,6 +32,7 @@ parser.add_argument("--data_root", default='pilot_data/', type=str, help="Choose
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to location with tensorflow code and data root.")
 parser.add_argument("-t", "--log_tag", default='testing', type=str, help="LOGTAG: tag used to name logfolder.")
 parser.add_argument("--dont_submit",action='store_true', help="In case you dont want to submit the job.")
+parser.add_argument("--dont_copy",action='store_true', help="Avoid the copy of the dataset to the tmp folder in case it cant be loaded in ram.")
 
 # ==========================
 #   Tensorflow Settings
@@ -144,10 +145,27 @@ subprocess.call(shlex.split("chmod 711 {0}".format(condor_file)))
 executable = open(shell_file,'w')
 
 executable.write("#!/bin/bash \n")
-executable.write("echo started executable in virtualenv.\n")
-executable.write("export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.0/lib64 \n")
-executable.write("source /users/visics/kkelchte/tensorflow/bin/activate \n")
-executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/tf_cnnvis \n".format(FLAGS.home, FLAGS.python_project+'/..'))
+executable.write("echo started executable for condor_offline.\n")
+if '--dataset' in others and not '--load_data_in_ram' in others and not FLAGS.dont_copy:
+  executable.write("echo \"Copy dataset to /tmp\" \n")
+  executable.write("while read line ; do \n")
+  executable.write("  cp -r $line /tmp\n")
+  executable.write("  echo /tmp/$(basename $line) >> /tmp/train_set.txt\n")
+  executable.write("done < {0}/{1}{2}/train_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+  executable.write("while read line ; do \n")
+  executable.write("  cp -r $line /tmp\n")
+  executable.write("  echo /tmp/$(basename $line) >> /tmp/val_set.txt\n")
+  executable.write("done < {0}/{1}{2}/val_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+  executable.write("while read line ; do \n")
+  executable.write("  cp -r $line /tmp\n")
+  executable.write("  echo /tmp/$(basename $line) >> /tmp/test_set.txt\n")
+  executable.write("done < {0}/{1}{2}/test_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+  FLAGS.data_root='/tmp'
+  others[others.index('--dataset')+1]='.'
+
+executable.write("export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.1/lib64 \n")
+executable.write("source /users/visics/kkelchte/tensorflow_1.8/bin/activate \n")
+executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/tf_cnnvis \n".format(FLAGS.home, FLAGS.python_project+'/..'))
 executable.write("export HOME={0}\n".format(FLAGS.home))
 command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,FLAGS.python_script)
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
@@ -157,6 +175,12 @@ command="{0} --log_tag {1}/{2} ".format(command, FLAGS.log_tag, time.strftime("%
 for e in others: command=" {0} {1}".format(command, e)
 print("Command: {0}".format(command))
 executable.write("{0}\n".format(command))
+executable.write("retVal=$? \n")
+executable.write("echo \"check exit code: $retVal\" \n")
+executable.write("if [ $retVal -ne 0 ]; then \n")
+executable.write("    echo Error \n")
+executable.write("    exit $retVal \n")
+executable.write("fi \n")
 executable.write("echo \"[condor_script] done: $(date +%F_%H:%M)\"\n")
 
 if FLAGS.evaluate_after: # create default run_script call for evaluating with reuse_default canyons on turtle with 20 runs
@@ -184,6 +208,7 @@ subprocess.call(shlex.split("chmod 711 {0}".format(shell_file)))
 
 ##########################################################################################################################
 # STEP 5 Submit
+print("for more information: \n cd {0}".format(condor_output_dir))
 if not FLAGS.dont_submit:
   subprocess.call(shlex.split("condor_submit {0}".format(condor_file)))
   print("Submission done.")
@@ -192,4 +217,4 @@ if not FLAGS.dont_submit:
   time.sleep(1)
 else:
   print("Job was not submitted.")
-  
+    

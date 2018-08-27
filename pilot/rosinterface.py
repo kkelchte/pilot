@@ -56,7 +56,7 @@ class PilotNode(object):
     self.last_pose=[] # previous pose, used for accumulative distance
     self.world_name = ''
     self.runs={'train':0, 'test':0} # number of online training run (used for averaging)
-    self.accumlosses = {} # gather losses and info over the run in a dictionary
+    # self.accumlosses = {} # gather losses and info over the run in a dictionary
     self.current_distance=0 # accumulative distance travelled from beginning of run used at evaluation
     self.furthest_point=0 # furthest point reached from spawning point at the beginning of run
     self.average_distances={'train':0, 'test':0} # running average over different runs
@@ -66,6 +66,8 @@ class PilotNode(object):
     self.exploration_noise = OUNoise(4, 0, self.FLAGS.ou_theta,1)
     if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
     self.action_pub=rospy.Publisher('/nn_vel', Twist, queue_size=1)
+
+    self.model.reset_metrics()
 
     rospy.Subscriber('/nn_start', Empty, self.ready_callback)
     rospy.Subscriber('/nn_stop', Empty, self.finished_callback)
@@ -251,13 +253,7 @@ class PilotNode(object):
     if self.FLAGS.evaluate: ### EVALUATE
       trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
       trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-      control, losses, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
-      for k in ['c', 't', 'd']: 
-        if k in losses.keys(): 
-          try:
-            self.accumlosses[k] += losses[k]
-          except KeyError:
-            self.accumlosses[k] = losses[k]
+      control, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
       if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
     else: ###TRAINING
       # Get necessary labels, if label is missing wait...
@@ -276,13 +272,11 @@ class PilotNode(object):
           return
         else: 
           trgt_depth = copy.deepcopy(self.target_depth)
-      control, losses, aux_results = self.model.forward([inpt], auxdepth=not self.FLAGS.dont_show_depth)
+      control, aux_results = self.model.forward([inpt], auxdepth=not self.FLAGS.dont_show_depth)
       if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth: aux_depth = aux_results['d']
     
     ### SEND CONTROL
-    control = control[0,0]
-    if self.FLAGS.discrete:
-      control = self.model.bin_vals[np.argmax(control)]
+    control = control[0]
     
     if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
       action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
@@ -384,13 +378,16 @@ class PilotNode(object):
         sumvar[name]=vals[d]
         result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
       for k in losses_train.keys():
-        name={'t':'Loss_train_total','c':'Loss_train_control','d':'Loss_train_depth'}
+        name={'total':'Loss_train_total'}
         sumvar[name[k]]=np.mean(losses_train[k])
         result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
-      for k in self.accumlosses.keys():
-        name={'t':'Loss_test_total','c':'Loss_test_control','d':'Loss_test_depth'}
-        sumvar[name[k]]=self.accumlosses[k]
-        result_string='{0}, {1}:{2}'.format(result_string, name[k], self.accumlosses[k]) 
+      
+      # get all metrics of this episode and add them to var
+      results = self.model.get_metrics()
+      for k in results.keys(): 
+        sumvar[k] = results[k]
+        result_string='{0}, {1}:{2}'.format(result_string, k, results[k])
+      
       if self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:
         sumvar["depth_predictions"]=depth_predictions
       # add driving duration (collision free)
@@ -435,7 +432,7 @@ class PilotNode(object):
         f.write(result_string)
         f.write('\n')
         f.close()
-      self.accumlosses = {}
+      # self.accumlosses = {}
       self.current_distance = 0
       self.last_pose = []
       self.nfc_images = []
@@ -448,7 +445,8 @@ class PilotNode(object):
       self.time_im_received=[]
       self.time_ctr_send=[]
 
-
+      self.model.reset_metrics()
+      
       self.start_time=0
       self.imitation_loss=[]
       self.depth_loss=[]

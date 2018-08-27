@@ -3,6 +3,11 @@
 DNN policy trained in simulation supervised fashion offline from a dataset
 Author: Klaas Kelchtermans (based on code of Patrick Emami)
 """
+# Block all numpy-scipy incompatibility warnings (could be removed at following scipy update (>1.1))
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+
 #from lxml import etree as ET
 import xml.etree.cElementTree as ET
 import tensorflow as tf
@@ -21,8 +26,6 @@ import time
 import signal
 import argparse
 
-# Block all the ugly printing...
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from model import Model
 import tools
@@ -44,7 +47,9 @@ def save_config(FLAGS, logfolder, file_name = "configuration"):
   flags_dict=FLAGS.__dict__
   for f in flags_dict:
     # print f, flags_dict[f]
-    ET.SubElement(flg, f, name=f).text = str(flags_dict[f])
+    e = ET.SubElement(flg, f, name=f) 
+    e.text = str(flags_dict[f])
+    e.tail = "\n  "
   tree = ET.ElementTree(root)
   tree.write(os.path.join(logfolder,file_name+".xml"), encoding="us-ascii", xml_declaration=True, method="xml")
 
@@ -95,7 +100,7 @@ def main(_):
   #   Training Parameters
   # ==========================
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
-  parser.add_argument("--learning_rate", default=0.5, type=float, help="Start learning rate.")
+  parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=32,type=int,help="Define the size of minibatches.")
 
   # ==========================
@@ -105,6 +110,8 @@ def main(_):
   parser.add_argument("--visualize_saliency_of_output",action='store_true',help="Visualize saliency maps of the output.")
   parser.add_argument("--visualize_deep_dream_of_output",action='store_true',help="Visualize gradient ascent maps for different extreme controls.")
   parser.add_argument("--visualize_activations",action='store_true',help="Visualize activation.")
+  parser.add_argument("--histogram_of_activations",action='store_true',help="Summarize all activations in a histogram.")
+  parser.add_argument("--histogram_of_weights",action='store_true',help="Summarize all weights in a histogram.")
 
   # ===========================
   #   Utility Parameters
@@ -135,12 +142,13 @@ def main(_):
   parser.add_argument("--control_file", default='control_info.txt', type=str, help="Define the name of the file with the action labels.")
   parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
   parser.add_argument("--subsample", default=1, type=int, help="Subsample data over time: e.g. subsample 2 to get from 20fps to 10fps.")
+  parser.add_argument("--normalize_over_actions", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
   
   # ===========================
   #   Model Parameters
   # ===========================
   parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
-  parser.add_argument("--network",default='mobile',type=str, help="Define the type of network (anything in models folder without _net.py): mobile, mobile_nfc, small, squeeze, ...")
+  parser.add_argument("--network",default='mobile',type=str, help="Define the type of network (anything in models folder without _net.py): mobile, mobile_nfc, alex, squeeze, ...")
   parser.add_argument("--output_size",default=[55,74],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
   # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
   parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
@@ -159,7 +167,7 @@ def main(_):
   parser.add_argument("--weight_decay",default=0.00004,type=float, help= "Weight decay of inception network")
   parser.add_argument("--init_scale", default=0.0005, type=float, help= "Std of uniform initialization")
   parser.add_argument("--grad_mul_weight", default=0.001, type=float, help="Specify the amount the gradients of prediction layers.")
-  parser.add_argument("--dropout_keep_prob", default=0.5, type=float, help="Specify the probability of dropout to keep the activation.")
+  parser.add_argument("--dropout_rate", default=0.5, type=float, help="Specify the probability of dropout to keep the activation.")
   parser.add_argument("--clip_grad", default=0, type=int, help="Specify the max gradient norm: default 0 is no clipping, recommended 4.")
   parser.add_argument("--min_depth", default=0.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
   parser.add_argument("--max_depth", default=5.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
@@ -206,9 +214,11 @@ def main(_):
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings")
 
   # FLAGS=parser.parse_args()
-  FLAGS, others = parser.parse_known_args()
-
-  # if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
+  try:
+    FLAGS, others = parser.parse_known_args()
+  except:
+    sys.exit(2)
+  if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
 
   np.random.seed(FLAGS.random_seed)
   tf.set_random_seed(FLAGS.random_seed)
@@ -226,20 +236,33 @@ def main(_):
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
       shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
   else :
+    # check if previous run is there
+    found_previous_run=False
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
-      checkpoints=[fs for fs in os.listdir(FLAGS.summary_dir+FLAGS.log_tag) if fs.endswith('.meta')]
+      found_previous_run=True
+      previous_run = FLAGS.summary_dir+FLAGS.log_tag
+    elif FLAGS.log_tag.split('/')[-1].startswith('2018'): # In case the last part of the log_tag is a date (running on condor)
+      run_dir=os.path.dirname(FLAGS.summary_dir+FLAGS.log_tag)
+      previous_runs = sorted([run_dir+'/'+d for d in os.listdir(run_dir) if os.path.isdir(run_dir+'/'+d) and d.startswith('2018')])
+      found_previous_run = len(previous_runs) >= 1
+      if found_previous_run: 
+        previous_run = previous_runs[-1] 
+    
+    if found_previous_run:
+      # extract previous run
+      checkpoints=[fs for fs in os.listdir(previous_run) if fs.endswith('.meta')]
       if len(checkpoints) != 0:
         # if a checkpoint is found in current folder, use this folder as checkpoint path.
-        #raise NameError( 'Logfolder already exists, overwriting alert: '+ FLAGS.summary_dir+FLAGS.log_tag )
+        #raise NameError( 'Logfolder already exists, overwriting alert: '+ previous_run )
         FLAGS.load_config = True
         FLAGS.scratch = False
         FLAGS.continue_training = True
-        FLAGS.checkpoint_path = FLAGS.log_tag
-        checkpoint_model=open(FLAGS.summary_dir+FLAGS.log_tag+'/checkpoint').readlines()[0]
+        FLAGS.checkpoint_path = previous_run[len(FLAGS.summary_dir):] #cut off summary_dir to get previous log_tag
+        checkpoint_model=open(previous_run+'/checkpoint').readlines()[0]
         start_ep=int(int(checkpoint_model.split('-')[-1][:-2])/100)
         print("Found model: {0} trained for {1} episodes".format(FLAGS.log_tag,start_ep))
       else:
-        shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
+        shutil.rmtree(previous_run,ignore_errors=False)
   if not os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag): 
     os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
     
@@ -255,7 +278,7 @@ def main(_):
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
   config.gpu_options.allow_growth = True
-  # config.gpu_options.per_process_gpu_memory_fraction = 0.4
+  # config.gpu_options.per_process_gpu_memory_fraction = 0.1
 
   # config.gpu_options.allow_growth = False
   sess = tf.Session(config=config)
