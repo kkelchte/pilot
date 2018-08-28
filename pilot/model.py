@@ -137,11 +137,15 @@ class Model(object):
       elif self.FLAGS.network.startswith('alex'):
         args={'inputs':self.inputs,
               'num_outputs':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
+              'verbose':True,
               'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
-              'reuse':None if mode == 'train' else True}
+              'reuse':None if mode == 'train' else True,
+              'is_training': mode == 'train'}
         versions={'alex': alex_net,
             'alex_v1': alex_net_v1,
-            'alex_v2': alex_net_v2}
+            'alex_v2': alex_net_v2,
+            'alex_v3': alex_net_v3,
+            'alex_v4': alex_net_v4}
         self.endpoints[mode] = versions[self.FLAGS.network].alexnet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
@@ -285,7 +289,7 @@ class Model(object):
       # Create the train_op and scale the gradients by providing a map from variable
       # name (or variable) to a scaling coefficient:
       # Take possible a smaller step (gradient multiplier) for the feature extracting part
-      gradient_multipliers={}
+      # gradient_multipliers={}
       # mobile_variables = [v for v in tf.global_variables() if (v.name.find('Adadelta')==-1 and v.name.find('BatchNorm')==-1 and v.name.find('Adam')==-1  and v.name.find('control')==-1 and v.name.find('aux_depth')==-1)]
       # gradient_multipliers = {v.name: self.FLAGS.grad_mul_weight for v in mobile_variables}
 
@@ -293,11 +297,15 @@ class Model(object):
       #   batchnorm_variables = [v for v in tf.global_variables() if v.name.find('BatchNorm')!=-1]
       #   gradient_multipliers = {v.name: 0 for v in mobile_variables}
       
-      self.train_op = slim.learning.create_train_op(self.total_loss, 
-        self.optimizer, 
-        global_step=self.global_step, 
-        gradient_multipliers=gradient_multipliers, 
-        clip_gradient_norm=self.FLAGS.clip_grad)
+      update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+      with tf.control_dependencies(update_ops):
+        self.train_op = self.optimizer.minimize(self.total_loss,
+                                                global_step=self.global_step)
+      # self.train_op = slim.learning.create_train_op(self.total_loss, 
+      #   self.optimizer, 
+      #   global_step=self.global_step, 
+      #   gradient_multipliers=gradient_multipliers, 
+      #   clip_gradient_norm=self.FLAGS.clip_grad)
 
   def forward(self, inputs, auxdepth=False, targets=[], depth_targets=[]):
     '''run forward pass and return action prediction

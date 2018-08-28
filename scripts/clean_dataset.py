@@ -162,8 +162,12 @@ for w in '', 'canyon', 'forest', 'sandbox':
   
 
 if sum([len(runs[d]) for d in runs.keys()]) < FLAGS.minimum_number_of_success:
-  print("Had only {0} success runs instead of {1} so shutting down.".format(sum([len(runs[d]) for d in runs.keys()]), FLAGS.minimum_number_of_success))
-  sys.exit(2)
+  # print("Had only {0} success runs instead of {1} so shutting down.".format(sum([len(runs[d]) for d in runs.keys()]), FLAGS.minimum_number_of_success))
+  p_msg = subprocess.Popen(shlex.split("echo {0} : {1} stopped with only {2} successful runs.".format(time.strftime("%Y-%m-%d_%I:%M:%S"), FLAGS.destination, sum([len(runs[d]) for d in runs.keys()]))), stdout=subprocess.PIPE)
+  p_mail = subprocess.Popen(shlex.split("mailx -s create_data_{0} klaas.kelchtermans@esat.kuleuven.be".format(FLAGS.destination)),stdin=p_msg.stdout, stdout=subprocess.PIPE)
+  print(p_mail.communicate())
+
+  sys.exit(0)
 
 # 4. Merge datasets together.
 print("\n {0} Clean dataset.py: merging data in {1}.".format(time.strftime("%Y-%m-%d_%I%M"), FLAGS.destination))
@@ -262,6 +266,10 @@ for data in "train", "val", "test":
 # write stats file
 with open(dataset+'/stats.json','w') as out:
   json.dump(stats,out,indent=2, sort_keys=True)
+
+p_msg = subprocess.Popen(shlex.split("echo {0} : create_data_{1} successfully finished.".format(time.strftime("%Y-%m-%d_%I:%M:%S"), FLAGS.destination)), stdout=subprocess.PIPE)
+p_mail = subprocess.Popen(shlex.split("mailx -s create_data_{0} -a {1} klaas.kelchtermans@esat.kuleuven.be".format(FLAGS.destination, dataset+'/stats.json')),stdin=p_msg.stdout, stdout=subprocess.PIPE)
+print(p_mail.communicate())
 
 
 print("\n {0} Clean dataset.py: finished.".format(time.strftime("%Y-%m-%d_%I%M")))

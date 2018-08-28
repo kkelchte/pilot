@@ -9,6 +9,7 @@ def alexnet(inputs,
             num_outputs=1,
             dropout_rate=0,
             reuse=None,
+            is_training=False,
             verbose=False):
     """A basic alex net."""
     end_points={}

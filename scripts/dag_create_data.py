@@ -72,7 +72,7 @@ with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
   df.write("PARENT {0} CHILD clean\n".format(recs))
   df.write("\n")
   for rec in range(FLAGS.number_of_recorders): df.write("Retry r{0} 4 \n".format(rec))
-  df.write("Retry clean 4 \n")
+  df.write("Retry clean 2 \n")
 ##########################################################################################################################
 # STEP 5 submit DAG file
 subprocess.call(shlex.split("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag)))
