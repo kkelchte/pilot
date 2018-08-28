@@ -5,6 +5,8 @@ import argparse
 import shutil
 import subprocess, shlex
 import json
+
+import skimage.io as sio
 '''
 Clean_dataset.py: 
 used in DAG form with condor_online jobs to clean up a dataset after its created.
@@ -147,6 +149,26 @@ for d_i, d in enumerate(runs.keys()):
         except: pass
         try: os.remove("{0}/Depth/{1:010d}.jpg".format(r,i))
         except: pass
+    # go over images and get index from which variance over images is 0 as last index
+    # delete all following images
+    for cam in ['RGB', 'Depth']:
+      last_index=0
+      variances=[]
+      for f in sorted(os.listdir(r+'/'+cam)):
+        # looking for last index
+        if last_index == 0:
+          variances.append(np.var(np.asarray(sio.imread(r+'/'+cam+'/'+f))))
+          # if you have 3 consecutive empty frames, this will be the last index.
+          if len(variances) >= 3 and variances[-1]==variances[-2]==variances[-3]==0:
+            last_index = int(f.split('.')[0])
+        else: # removing others
+          try:
+            os.remove(r+'/'+cam+'/'+f)
+          except:
+            pass
+      print("Removed from index "+str(last_index)+" "+cam+" images due to no variance.")
+
+
   # remove the runs that were deleted in reverse order not to mess up the indices
   for r_i in reversed(to_be_removed_from_runs): del runs[d][r_i]
 
@@ -235,14 +257,17 @@ for w in '', 'canyon', 'forest', 'sandbox':
 if len(total_set) < FLAGS.val_len + FLAGS.test_len + 10:
   FLAGS.val_len = 1
   FLAGS.test_len = 1
-for vn in range(FLAGS.val_len):
-  selected=np.random.choice(total_set)
-  total_set.remove(selected)
-  val_set.append(selected)
-for tn in range(FLAGS.test_len):
-  selected=np.random.choice(total_set)
-  total_set.remove(selected)
-  test_set.append(selected)
+try:
+  for vn in range(FLAGS.val_len):
+    selected=np.random.choice(total_set)
+    total_set.remove(selected)
+    val_set.append(selected)
+  for tn in range(FLAGS.test_len):
+    selected=np.random.choice(total_set)
+    total_set.remove(selected)
+    test_set.append(selected)
+except ValueError:
+  pass
 train_set=total_set
 # write away:
 train_file=open(dataset+'/train_set.txt','w')
