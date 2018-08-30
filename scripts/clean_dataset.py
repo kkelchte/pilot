@@ -97,7 +97,7 @@ for d_i, d in enumerate(runs.keys()):
       minimum = FLAGS.min_distance
     else:
       minimum=min_distance[world_name]
-    print("travelled_distance: {}".format(travelled_distance))
+    # print("travelled_distance: {}".format(travelled_distance))
     if travelled_distance < minimum:
       # remove run folder
       print('removed: {0} due to no far enough flying distance: {1:0.2f} < {2:0.2f}'.format(r, travelled_distance, minimum))
@@ -166,7 +166,7 @@ for d_i, d in enumerate(runs.keys()):
             os.remove(r+'/'+cam+'/'+f)
           except:
             pass
-      print("Removed from index "+str(last_index)+" "+cam+" images due to no variance.")
+      if last_index != 0: print("Removed from index "+str(last_index)+" "+cam+" images due to no variance.")
 
 
   # remove the runs that were deleted in reverse order not to mess up the indices

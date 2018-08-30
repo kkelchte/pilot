@@ -49,11 +49,11 @@ def alexnet(inputs,
 
     # TOWER THREE
     end_point = 'conv_3'
-    l3=tf.layers.conv2d(p2, 128, kernel_size=[3,3], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    l3=tf.layers.conv2d(p2, 64, kernel_size=[3,3], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     if verbose: print("shape l3: {}".format(l3.shape))
     end_points[end_point]=l3
     end_point = 'conv_4'
-    l4=tf.layers.conv2d(l3, 128, kernel_size=[3,3], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    l4=tf.layers.conv2d(l3, 64, kernel_size=[3,3], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     if verbose: print("shape l4: {}".format(l4.shape))
     end_points[end_point]=l4
     end_point = 'conv_5'
@@ -61,10 +61,10 @@ def alexnet(inputs,
     if verbose: print("shape l5: {}".format(l5.shape))
     end_points[end_point]=l5
     end_point = 'pool_5'
-    p5=tf.layers.max_pooling2d(l5, pool_size=3, strides=2, padding='valid', name=end_point)
+    p5=tf.layers.max_pooling2d(l5, pool_size=3, strides=1 , padding='valid', name=end_point)
     if verbose: print("shape p5: {}".format(p5.shape))
     end_points[end_point]=p5
-    p5 = tf.reshape(p5, (-1,1,6*6*64))
+    p5 = tf.reshape(p5, (-1,1,4*4*64))
     
     if dropout_rate != 0:
         end_point = 'dropout_5'
@@ -72,7 +72,7 @@ def alexnet(inputs,
         end_points[end_point]=p5
     
     end_point = 'fc_6'
-    l6=tf.layers.conv1d(p5, filters=2048, kernel_size=1, strides=1, padding='valid', activation=tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    l6=tf.layers.conv1d(p5, filters=1024, kernel_size=1, strides=1, padding='valid', activation=tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     if verbose: print("shape l6: {}".format(l6.shape))
     end_points[end_point]=l6
     
@@ -82,7 +82,7 @@ def alexnet(inputs,
         end_points[end_point]=l6
     
     end_point = 'fc_7'
-    l7=tf.layers.conv1d(l6, filters=2048, kernel_size=1, strides=1, padding='valid', activation=tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    l7=tf.layers.conv1d(l6, filters=1024, kernel_size=1, strides=1, padding='valid', activation=tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     if verbose: print("shape l7: {}".format(l7.shape))
     end_points[end_point]=l7
 
@@ -94,6 +94,8 @@ def alexnet(inputs,
     outputs = tf.squeeze(l8, [1], name=end_point)
     if verbose: print("shape outputs: {}".format(outputs.shape))
     end_points[end_point]=outputs
+    
+    # import pdb; pdb.set_trace()
     
     return end_points
 

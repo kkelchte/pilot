@@ -43,7 +43,12 @@ class Model(object):
       self.input_size = [mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 
           mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 3*self.FLAGS.n_frames]
     elif self.FLAGS.network.startswith('alex'):
-      self.input_size = alex_net.default_image_size
+      versions={'alex': alex_net,
+            'alex_v1': alex_net_v1,
+            'alex_v2': alex_net_v2,
+            'alex_v3': alex_net_v3,
+            'alex_v4': alex_net_v4}
+      self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
     

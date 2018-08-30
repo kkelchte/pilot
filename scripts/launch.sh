@@ -33,17 +33,35 @@
 
 # ------------CREATE DATA-------
 
-# Create Dataset
+
+# BASIC CORRIDOR
 # python dag_create_data.py -t bended_corridor_drone --wall_time_rec $((60*60)) --destination corridor_drone --number_of_recorders 5 --number_of_runs 10 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --corridor_bends 10
 # python dag_create_data.py -t straight_corridor_drone --wall_time_rec $((60*60)) --destination corridor_drone --number_of_recorders 5 --number_of_runs 10 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
 
 
-# python dag_create_data.py -t sandbox_drone --wall_time_rec $((4*60*60)) --destination sandbox_drone --number_of_recorders 10 --number_of_runs $((50)) -w sandbox --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
-# python dag_create_data.py -t canyon_drone --wall_time_rec $((4*60*60)) --destination canyon_drone --number_of_recorders 10 --number_of_runs $((50)) -w canyon --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
-# python dag_create_data.py -t forest_drone --wall_time_rec $((4*60*60)) --destination forest_drone --number_of_recorders 10 --number_of_runs $((50)) -w forest --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
-# python dag_create_data.py -t esat_drone --wall_time_rec $((4*60*60)) --destination esat_drone --number_of_recorders 1 --number_of_runs $((10)) -w esat_v1  -w esat_v2 --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
-# python dag_create_data.py -t test_drone --wall_time_rec $((4*60*60)) --destination test_drone --number_of_recorders 1 --number_of_runs $((10)) -w forest --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
-# python dag_create_data.py -t test_turtle --wall_time_rec $((3*15*10*60)) --destination test_turtle --number_of_recorders 1 --number_of_runs $((15)) -w sandbox -w canyon -w forest --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e
+
+# PRIMAL EXPERIMENT:
+# --> straight_segment
+# python dag_create_data.py -t straight_corridor --wall_time_rec $((60*60)) --destination straight_corridor --number_of_recorders 1 --number_of_runs 50 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3
+# --> bended_segment
+python dag_create_data.py -t bend_corridor --wall_time_rec $((2*60*60)) --destination bend_corridor --number_of_recorders 2  --number_of_runs 50 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success  -e --max_depth_rgb_difference 3 --corridor_length 1 --corridor_bends 1
+# --> radiator_right
+python dag_create_data.py -t radiator_right --wall_time_rec $((2*60*60)) --destination radiator_right --number_of_recorders 1  --number_of_runs 50 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success  -e --max_depth_rgb_difference 3 --corridor_type empty --corridor_length 1 --extension_config radiator_right --x_var 0.5 --x_pos 0.5 --y_var 2 --yaw_var 0.785 --yaw_or 1.178
+# --> radiator_left
+python dag_create_data.py -t radiator_left --wall_time_rec $((2*60*60)) --destination radiator_left --number_of_recorders 1  --number_of_runs 50 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success  -e --max_depth_rgb_difference 3 --corridor_type empty --corridor_length 1 --extension_config radiator_left --x_var 0.5 --x_pos -0.5 --y_var 2 --yaw_var 0.785 --yaw_or 1.96
+# --> poster_right
+python dag_create_data.py -t poster_right --wall_time_rec $((2*60*60)) --destination poster_right --number_of_recorders 1  --number_of_runs 50 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success  -e --max_depth_rgb_difference 3 --corridor_type empty --corridor_length 1 --extension_config poster_right --x_var 0.5 --x_pos 0.5 --y_var 2 --yaw_var 0.785 --yaw_or 1.178
+# --> poster_left
+python dag_create_data.py -t poster_left --wall_time_rec $((2*60*60)) --destination poster_left --number_of_recorders 1  --number_of_runs 50 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success  -e --max_depth_rgb_difference 3 --corridor_type empty --corridor_length 1 --extension_config poster_left --x_var 0.5 --x_pos -0.5 --y_var 2 --yaw_var 0.785 --yaw_or 1.96
+# --> direct_corridor
+#python dag_create_data.py -t direct_corridor --wall_time_rec $((60*60)) --destination direct_corridor --number_of_recorders 5 --number_of_runs 100 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --corridor_bends 5 --extension_config primal_exp
+# --> vary_corridor
+#for texture in Grey White Red Black Bricks Grass WoodFloor ; do
+#  for light in default spot diffuse directional ; do
+#    python dag_create_data.py -t vary_corridor_${texture}_${light} --wall_time_rec $((60*60)) --destination vary_corridor_${texture}_${light} -number_of_recorders 5 --number_of_runs 50 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --extension_config vary_primal_exp --corridor_bends 5 --texture Gazebo/$texture --ligths ${light}_light
+#  done 
+#done
+
 
 
 # ------------TRAIN_OFFLINE_AND_EVALUATE_ONLINE----------
