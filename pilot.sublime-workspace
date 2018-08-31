@@ -4,6 +4,30 @@
 		"selected_items":
 		[
 			[
+				"start",
+				"starting_height"
+			],
+			[
+				"last",
+				"last_position"
+			],
+			[
+				"la",
+				"last_position"
+			],
+			[
+				"corridor",
+				"corridor_type"
+			],
+			[
+				"corr",
+				"corridor_type"
+			],
+			[
+				"cor",
+				"corridor_type"
+			],
+			[
 				"text",
 				"texture"
 			],
@@ -42,10 +66,6 @@
 			[
 				"ex",
 				"extensions"
-			],
-			[
-				"corr",
-				"corridors"
 			],
 			[
 				"mak",
@@ -174,10 +194,6 @@
 			[
 				"otu",
 				"output_dir"
-			],
-			[
-				"cor",
-				"corridor_length"
 			],
 			[
 				"type",
@@ -484,10 +500,6 @@
 				"val_len"
 			],
 			[
-				"start",
-				"startswith"
-			],
-			[
 				"dest",
 				"destination"
 			],
@@ -502,36 +514,16 @@
 			[
 				"Tra",
 				"travelled_distance"
-			],
-			[
-				"m",
-				"min_depth_rgb_difference"
-			],
-			[
-				"num_",
-				"num_depth"
-			],
-			[
-				"mi",
-				"minimum"
 			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/extension_generator.py",
+			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-08-28_factoring_control.md",
 			"settings":
 			{
-				"buffer_size": 15180,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/floor.yaml",
-			"settings":
-			{
-				"buffer_size": 143,
+				"buffer_size": 9286,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -586,20 +578,27 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/demo_empty_sing",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/corridor_generator.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/extension_generator.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/blocked_hole_left.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/blocked_hole_right.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/blocked_hole_segment.world",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/combined.yaml",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/world_generator.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/ceiling.yaml",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/clean_dataset.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/floor.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/passway_door.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/passway_arc.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/combined.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/radiator_left.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/radiator_right.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/radiator.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/extension_generator.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/corridor_generator.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/world_generator.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/templates/floor.xml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/blocked_hole_segment.world",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/test.yaml",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
 		"/users/visics/kkelchte/PenO/Rubric",
@@ -611,7 +610,6 @@
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/alex_net_v4.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/templates/panel.xml",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_create_data.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/clean_dataset.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/segment.world",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/new.world",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/canyon.world",
@@ -620,7 +618,6 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/behavior_arbitration.py",
 		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/canyon_generator.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/empty_world.world",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv1.world",
@@ -665,7 +662,6 @@
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/squeeze_net.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/small_net.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/requirements.txt",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/forest.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/fsm.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/canyon.yaml",
@@ -680,7 +676,6 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/parameters/turtle_esat_v2.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/oracle_nn_drone_fsm.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/src/teleop_autopilot_behaviour_arbitration.cpp",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
 		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/.tmp/monitor",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/.tmp/simple.sh",
@@ -710,10 +705,7 @@
 		"/users/visics/kkelchte/sublime_text_3/pilot_offline.sublime-project",
 		"/esat/opal/kkelchte/docker_home/tensorflow/log/test_train_online/xterm_python_2018-04-03_12-35",
 		"/esat/opal/kkelchte/docker_home/tensorflow/log/test_train_online/xterm_python_2018-04-03_12-32",
-		"/esat/opal/kkelchte/docker_home/tensorflow/log/test_train_online/xterm_log/run_0_2018-04-03_12-06",
-		"/esat/opal/kkelchte/docker_home/tensorflow/log/test_train_online/xterm_python_2018-04-03_12-06",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/main.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/q-learning/pilot/data.py"
+		"/esat/opal/kkelchte/docker_home/tensorflow/log/test_train_online/xterm_log/run_0_2018-04-03_12-06"
 	],
 	"find":
 	{
@@ -731,6 +723,15 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"passway",
+			"control",
+			"Black",
+			"DarkGrey",
+			"Gazebo/White",
+			"ceiling",
+			"ceiling_straight",
+			"combined_corridor",
+			"corridor_bends",
 			"direct_corridor",
 			"inside_back",
 			"<name>Gazebo/Black</name>",
@@ -849,16 +850,7 @@
 			"reuse_default_world",
 			"<visual name=\"visual\">",
 			"<link name=\"link\">",
-			"><",
-			"<visual name=\"visual\">\n            <material>\n              <script>\n                <name>Gazebo/Grey</name>\n                <uri>file://media/materials/scripts/gazebo.material</uri>\n              </script>\n            </material>\n            <geometry>\n              <box>",
-			"><",
-			"<visual name=\"visual\"><material><script><name>Gazebo/Grey</name><uri>file://media/materials/scripts/gazebo.material</uri></script></material><geometry><box><size>0.02 0.305467987857 4</size></box></geometry></visual>",
-			"<visual name=\"visual\">",
-			"time",
-			"models",
-			"canyon",
-			"4",
-			"--gpumem 3000"
+			"><"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -876,64 +868,32 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 0,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/extension_generator.py",
+					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-08-28_factoring_control.md",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 15180,
+						"buffer_size": 9286,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								9124,
-								9124
+								8643,
+								8643
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 300.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/floor.yaml",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 143,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								143,
-								143
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/YAML/YAML.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1184.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -995,8 +955,76 @@
 		"selected_items":
 		[
 			[
+				"deme",
+				"simulation_supervised/simulation_supervised/python/demo_empty_sing"
+			],
+			[
+				"run sc",
+				"simulation_supervised/simulation_supervised/python/run_script.py"
+			],
+			[
+				"dro ",
+				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
+			],
+			[
+				"dem e",
+				"simulation_supervised/simulation_supervised/python/demo_empty_sing"
+			],
+			[
+				"2018",
+				"kkelchte.github.io/docs/2018-08-28_factoring_control.md"
+			],
+			[
+				"wor",
+				"simulation_supervised/simulation_supervised_tools/python/generators/world_generator.py"
+			],
+			[
+				"dron",
+				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
+			],
+			[
+				"run",
+				"simulation_supervised/simulation_supervised/python/run_script.py"
+			],
+			[
+				"cre",
+				"simulation_supervised/simulation_supervised_tools/python/create_dataset.py"
+			],
+			[
+				"clea",
+				"pilot/scripts/clean_dataset.py"
+			],
+			[
 				"com",
 				"simulation_supervised/simulation_supervised_demo/extensions/config/combined.yaml"
+			],
+			[
+				"blo ho",
+				"simulation_supervised/simulation_supervised_demo/worlds/blocked_hole_segment.world"
+			],
+			[
+				"combi",
+				"simulation_supervised/simulation_supervised_demo/extensions/config/combined.yaml"
+			],
+			[
+				"blo",
+				"simulation_supervised/simulation_supervised_demo/extensions/config/blocked_hole_right.yaml"
+			],
+			[
+				"corr",
+				"simulation_supervised/simulation_supervised_tools/python/generators/corridor_generator.py"
+			],
+			[
+				"cei",
+				"simulation_supervised/simulation_supervised_demo/extensions/config/ceiling.yaml"
+			],
+			[
+				"cle",
+				"pilot/scripts/clean_dataset.py"
+			],
+			[
+				"la",
+				"pilot/scripts/launch.sh"
 			],
 			[
 				"ext",
@@ -1015,20 +1043,12 @@
 				"simulation_supervised/simulation_supervised_demo/extensions/config/radiator_right.yaml"
 			],
 			[
-				"combi",
-				"simulation_supervised/simulation_supervised_demo/extensions/config/combined.yaml"
-			],
-			[
 				"lau",
 				"pilot/scripts/launch.sh"
 			],
 			[
 				"con on",
 				"pilot/scripts/condor_online.py"
-			],
-			[
-				"blo",
-				"simulation_supervised/simulation_supervised_demo/worlds/blocked_hole_segment.world"
 			],
 			[
 				"__ini",
@@ -1059,16 +1079,8 @@
 				"pilot/scripts/dag_create_data.py"
 			],
 			[
-				"cle",
-				"pilot/scripts/clean_dataset.py"
-			],
-			[
 				"co on",
 				"pilot/scripts/condor_online.py"
-			],
-			[
-				"la",
-				"pilot/scripts/launch.sh"
 			],
 			[
 				"seg",
@@ -1115,10 +1127,6 @@
 				"simulation_supervised/simulation_supervised_demo/extensions/config/empty.yaml"
 			],
 			[
-				"run",
-				"simulation_supervised/simulation_supervised/python/run_script.py"
-			],
-			[
 				"cany gen",
 				"simulation_supervised/simulation_supervised_tools/python/generators/canyon_generator.py"
 			],
@@ -1151,10 +1159,6 @@
 				"pilot/scripts/dag_train_and_evaluate.py"
 			],
 			[
-				"run sc",
-				"simulation_supervised/simulation_supervised/python/run_script.py"
-			],
-			[
 				"sav",
 				"pilot/scripts/save_results_as_pdf.py"
 			],
@@ -1177,10 +1181,6 @@
 			[
 				"data",
 				"pilot/pilot/data.py"
-			],
-			[
-				"corr",
-				"simulation_supervised/simulation_supervised_tools/python/generators/corridor_generator.py"
 			],
 			[
 				"can gg",
@@ -1347,10 +1347,6 @@
 				"pilot/scripts/condor_online.py"
 			],
 			[
-				"clea",
-				"pilot/scripts/clean_dataset.py"
-			],
-			[
 				"tets",
 				"pilot/scripts/test.sh"
 			],
@@ -1393,10 +1389,6 @@
 			[
 				"resu",
 				"pilot/scripts/get_results.py"
-			],
-			[
-				"cre",
-				"simulation_supervised/simulation_supervised_tools/python/create_dataset.py"
 			],
 			[
 				"es v2 y",
@@ -1473,38 +1465,6 @@
 			[
 				"dro",
 				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
-			],
-			[
-				"ros",
-				"pilot/pilot/rosinterface.py"
-			],
-			[
-				"fsm",
-				"simulation_supervised/simulation_supervised_tools/python/fsm.py"
-			],
-			[
-				"co ",
-				"pilot/scripts/condor_online.py"
-			],
-			[
-				"co",
-				"pilot/scripts/condor_online.py"
-			],
-			[
-				"for ge",
-				"simulation_supervised/simulation_supervised_tools/python/generators/forest_generator.py"
-			],
-			[
-				"rep",
-				"pilot/pilot/replay_buffer.py"
-			],
-			[
-				"sta",
-				"simulation_supervised/simulation_supervised/scripts/start_python_sing.sh"
-			],
-			[
-				"start_",
-				"simulation_supervised/simulation_supervised/scripts/start_python.sh"
 			]
 		],
 		"width": 0.0
@@ -1534,7 +1494,7 @@
 	"show_minimap": false,
 	"show_open_files": false,
 	"show_tabs": true,
-	"side_bar_visible": true,
+	"side_bar_visible": false,
 	"side_bar_width": 349.0,
 	"status_bar_visible": true,
 	"template_settings":
