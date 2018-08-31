@@ -24,11 +24,19 @@ def squeezenet(inputs,
   end_points[end_point]=pad_1
   
   end_point = 'conv_1'
-  l1 = tf.layers.conv2d(pad_1, 96, kernel_size=[7,7], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l1 = tf.layers.conv2d(pad_1, 96, kernel_size=[7,7], strides=2, padding='valid', activation=None, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l1: {}".format(l1.shape))
   end_points[end_point]=l1
+
+  end_point='bn_1'
+  bn1 = tf.layers.batch_normalization(l1, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn1
+  end_point='relu_1'
+  relu1 = tf.nn.relu(bn1, name=end_point)
+  end_points[end_point]=relu1    
+  
   end_point = 'pool_1'
-  p1=tf.layers.max_pooling2d(l1, pool_size=3, strides=2, padding='valid',name=end_point)
+  p1=tf.layers.max_pooling2d(relu1, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p1: {}".format(p1.shape))
   end_points[end_point]=p1
   
@@ -95,7 +103,11 @@ def squeezenet(inputs,
   if verbose: print("shape l4_c: {}".format(l4_c.shape))
   end_points[end_point]=l4_c
  
-  p4=tf.layers.max_pooling2d(l4_c, pool_size=3, strides=2, padding='valid',name=end_point)
+  end_point='bn_4'
+  bn4 = tf.layers.batch_normalization(l4_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn4
+  
+  p4=tf.layers.max_pooling2d(bn4, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p4: {}".format(p4.shape))
   end_points[end_point]=p4
   
@@ -183,7 +195,11 @@ def squeezenet(inputs,
   if verbose: print("shape l8_c: {}".format(l8_c.shape))
   end_points[end_point]=l8_c
 
-  p8=tf.layers.max_pooling2d(l8_c, pool_size=3, strides=2, padding='valid',name=end_point)
+  end_point='bn_8'
+  bn8 = tf.layers.batch_normalization(l8_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn8
+
+  p8=tf.layers.max_pooling2d(bn8, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p8: {}".format(p8.shape))
   end_points[end_point]=p8
   
@@ -227,4 +243,5 @@ def squeezenet(inputs,
   return end_points 
 
 default_image_size=[224,224,3]
+
 

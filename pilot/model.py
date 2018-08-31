@@ -42,12 +42,14 @@ class Model(object):
     elif self.FLAGS.network =='mobile_nfc':
       self.input_size = [mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 
           mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 3*self.FLAGS.n_frames]
-    elif self.FLAGS.network.startswith('alex'):
+    elif self.FLAGS.network.startswith('alex') or self.FLAGS.network.startswith('squeeze'):
       versions={'alex': alex_net,
-            'alex_v1': alex_net_v1,
-            'alex_v2': alex_net_v2,
-            'alex_v3': alex_net_v3,
-            'alex_v4': alex_net_v4}
+                'alex_v1': alex_net_v1,
+                'alex_v2': alex_net_v2,
+                'alex_v3': alex_net_v3,
+                'alex_v4': alex_net_v4,
+                'squeeze': squeeze_net,
+                'squeeze_v1': squeeze_net_v1}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
@@ -152,6 +154,16 @@ class Model(object):
             'alex_v3': alex_net_v3,
             'alex_v4': alex_net_v4}
         self.endpoints[mode] = versions[self.FLAGS.network].alexnet(**args)
+      elif self.FLAGS.network.startswith('squeeze'):
+        args={'inputs':self.inputs,
+              'num_outputs':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
+              'verbose':True,
+              'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
+              'reuse':None if mode == 'train' else True,
+              'is_training': mode == 'train'}
+        versions={'squeeze': squeeze_net,
+            'squeeze_v1': squeeze_net_v1}
+        self.endpoints[mode] = versions[self.FLAGS.network].squeezenet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
 

@@ -79,6 +79,17 @@ for d_i, d in enumerate(runs.keys()):
     # if r_i%10==0:
     #   print("run: {0}/{1}".format(r_i+1,len(runs[d])))
     print("run: {0}/{1} {2}".format(r_i+1,len(runs[d]), r))
+
+    ## Ensure control_info.txt exists
+    if not os.path.isfile("{0}/control_info.txt".format(r)):
+      # remove run folder
+      print('removed: {0} due to no control info.'.format(r))
+      shutil.rmtree(r)
+      to_be_removed_from_runs.append(r_i)
+      continue
+    # get controls
+    controls={int(l.strip().split(' ')[0]): [float(v) for v in l.strip().split(' ')[1:]] for l in open(r+'/control_info.txt','r').readlines()[2:]}
+
     # get positions
     # positions={int(l.split('[')[0]):np.array([float(l.split('[')[1][:-2].split(',')[0]),float(l.split('[')[1][:-2].split(',')[1]),float(l.split('[')[1][:-2].split(',')[2])]) for l in open(r+'/position_info.txt','r').readlines()[2:]}
     positions={int(l.split('[')[0]):np.array([float(l.split('[')[1][:-2].split(',')[0]),float(l.split('[')[1][:-2].split(',')[1])]) for l in open(r+'/position_info.txt','r').readlines()[2:]}
@@ -89,14 +100,17 @@ for d_i, d in enumerate(runs.keys()):
       world_name='default'
     ## Parse total flying distance and remove folder if it is too low
     travelled_distance = 0
-    last_position=np.array([0,0])
+    # last_position=np.array([0,0])
+    last_position = []
     for p in positions.keys():
-      travelled_distance+=(np.sqrt((positions[p]-last_position)**2).mean())
+      if len(last_position) != 0:
+        travelled_distance+=(np.sqrt(np.sum((positions[p]-last_position)**2)))
       last_position = positions[p]
     if FLAGS.min_distance!= -1:
       minimum = FLAGS.min_distance
     else:
-      minimum=min_distance[world_name]
+      minimum=min_distance[world_name]    
+
     # print("travelled_distance: {}".format(travelled_distance))
     if travelled_distance < minimum:
       # remove run folder
@@ -120,47 +134,58 @@ for d_i, d in enumerate(runs.keys()):
       to_be_removed_from_runs.append(r_i)
       continue
 
-    ## Ensure control_info.txt exists
-    if not os.path.isfile("{0}/control_info.txt".format(r)):
-      # remove run folder
-      print('removed: {0} due to no control info.'.format(r))
-      shutil.rmtree(r)
-      to_be_removed_from_runs.append(r_i)
-      continue
-
+    
     # Delete images taken without flying for more than 0.25m
     # parse first image taken at 0.25m from startingposition (0,0)
-    travelled_distance = 0
-    last_position=np.array([0,0])
-    index=0
-    while travelled_distance < 0.25:
-      try:
-        travelled_distance+=(np.sqrt((positions[index]-last_position)**2).mean())
+    # travelled_distance = 0
+    # # last_position=np.array([0,0]) 
+    # last_position=[]
+    # init_or = 999
+    # index=0
+    # while travelled_distance < 0.25:
+    #   try:
+    #     if len(last_position) != 0:
+    #       travelled_distance+=(np.sqrt(np.sum((positions[index]-last_position)**2)))
+    #     last_position=positions[index]
+    #   except:
+    #     pass
+    #   index+=1
+    # See where control index starts
+    index = 0
+    started=False
+    while not started :
+      try: #check if control has a forward speed or yaw turn
+        started = controls[index][0] != 0 or controls[index][5] != 0
       except:
-          pass
-      else:
-        last_position=positions[index]
-      index+=1
-    # remove all images before
-    for i in positions.keys():
+        pass
+      index += 1
+
+    # remove all images before this index
+    for i in controls.keys():
       if i < index:
         # print("removing image:{0}/RGB/{1:010d}.jpg".format(r,i))
         try: os.remove("{0}/RGB/{1:010d}.jpg".format(r,i))
         except: pass
         try: os.remove("{0}/Depth/{1:010d}.jpg".format(r,i))
         except: pass
+    
     # go over images and get index from which variance over images is 0 as last index
     # delete all following images
     for cam in ['RGB', 'Depth']:
       last_index=0
-      variances=[]
+      variances={}
       for f in sorted(os.listdir(r+'/'+cam)):
         # looking for last index
         if last_index == 0:
-          variances.append(np.var(np.asarray(sio.imread(r+'/'+cam+'/'+f))))
-          # if you have 3 consecutive empty frames, this will be the last index.
-          if len(variances) >= 3 and variances[-1]==variances[-2]==variances[-3]==0:
+          # calculate variance of image and save it in dict
+          variances[r+'/'+cam+'/'+f] = np.var(np.asarray(sio.imread(r+'/'+cam+'/'+f)))
+          # check 3 previous files
+          if len(variances) >= 3 and variances[sorted(variances.keys())[-1]]==variances[sorted(variances.keys())[-2]]==variances[sorted(variances.keys())[-3]]==0:
             last_index = int(f.split('.')[0])
+            # remove last 3 files
+            os.remove(sorted(variances.keys())[-1])
+            os.remove(sorted(variances.keys())[-2])
+            os.remove(sorted(variances.keys())[-3])
         else: # removing others
           try:
             os.remove(r+'/'+cam+'/'+f)

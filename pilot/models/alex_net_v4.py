@@ -1,5 +1,5 @@
 """
-Version of Alexnet with smaller input size to decrease dimension
+Version of Alexnet with smaller input size and less weights
 """
 
 import tensorflow as tf
@@ -94,8 +94,6 @@ def alexnet(inputs,
     outputs = tf.squeeze(l8, [1], name=end_point)
     if verbose: print("shape outputs: {}".format(outputs.shape))
     end_points[end_point]=outputs
-    
-    # import pdb; pdb.set_trace()
     
     return end_points
 
