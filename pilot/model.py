@@ -84,15 +84,17 @@ class Model(object):
     if self.FLAGS.checkpoint_path[0]!='/':
       self.FLAGS.checkpoint_path = self.FLAGS.summary_dir+self.FLAGS.checkpoint_path
     if not os.path.isfile(self.FLAGS.checkpoint_path+'/checkpoint'):
-      self.FLAGS.checkpoint_path = self.FLAGS.checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(self.FLAGS.checkpoint_path)) if os.path.isdir(self.FLAGS.checkpoint_path+'/'+mpath) and not mpath[-3:]=='val' and os.path.isfile(self.FLAGS.checkpoint_path+'/'+mpath+'/checkpoint')][-1]
-    
+      try:
+        self.FLAGS.checkpoint_path = self.FLAGS.checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(self.FLAGS.checkpoint_path)) if os.path.isdir(self.FLAGS.checkpoint_path+'/'+mpath) and not mpath[-3:]=='val' and os.path.isfile(self.FLAGS.checkpoint_path+'/'+mpath+'/checkpoint')][-1]
+      except:
+        pass  
 
     if not self.FLAGS.scratch: 
       print('checkpoint: {}'.format(self.FLAGS.checkpoint_path))
       try:
         init_assign_op, init_feed_dict = slim.assign_from_checkpoint(tf.train.latest_checkpoint(self.FLAGS.checkpoint_path), variables_to_restore)
-      except:
-        print("Failed to initialize network {0} with checkpoint {1} so training from scratch.".format(FLAGS.network, FLAGS.checkpoint_path))
+      except Exception as e:
+        print("Failed to initialize network {0} with checkpoint {1} so training from scratch: {2}".format(FLAGS.network, FLAGS.checkpoint_path, e.message))
         FLAGS.scratch = True
 
     # create saver for checkpoints

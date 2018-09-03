@@ -33,6 +33,7 @@ parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=st
 parser.add_argument("-t", "--log_tag", default='testing', type=str, help="LOGTAG: tag used to name logfolder.")
 parser.add_argument("--dont_submit",action='store_true', help="In case you dont want to submit the job.")
 parser.add_argument("--dont_copy",action='store_true', help="Avoid the copy of the dataset to the tmp folder in case it cant be loaded in ram.")
+parser.add_argument("--dont_summarize_locally",action='store_true', help="Keep tensorflow/log on Opal.")
 
 # ==========================
 #   Tensorflow Settings
@@ -145,7 +146,8 @@ subprocess.call(shlex.split("chmod 711 {0}".format(condor_file)))
 executable = open(shell_file,'w')
 
 executable.write("#!/bin/bash \n")
-executable.write("echo started executable for condor_offline.\n")
+executable.write("echo \"[condor_script] started executable for condor_offline: $(date +%F_%H:%M)\" \n")
+
 if '--dataset' in others and not '--load_data_in_ram' in others and not FLAGS.dont_copy:
   executable.write("echo \"Copy dataset to /tmp\" \n")
   executable.write("while read line ; do \n")
@@ -163,10 +165,42 @@ if '--dataset' in others and not '--load_data_in_ram' in others and not FLAGS.do
   FLAGS.data_root='/tmp'
   others[others.index('--dataset')+1]='.'
 
+
+# create temporary log directory
+executable.write("mkdir -p /tmp/{0}{1} \n".format(FLAGS.summary_dir, FLAGS.log_tag))
+# adjust data_root to absolute path (as home environment will be set to /tmp)
+if FLAGS.data_root != '/tmp': FLAGS.data_root = '{0}/{1}'.format(FLAGS.home, FLAGS.data_root)
+# check if there is a previous checkpoint saved in summary_dir
+# if os.path.isdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag): # log_tag is still motherdir/run_number (without date tag)
+try:
+  # search for checkpoint and config file in current directory and sub directories
+  date_dirs = [FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d for d in ['.']+sorted(os.listdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag)) if os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/checkpoint') and os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/configuration.xml')]
+  checkpoint_file=date_dirs[-1]+'/checkpoint'
+  conf_file=date_dirs[-1]+'/configuration.xml'
+  if date_dirs[-1].split('/')[-1].startswith('2018'): # incase model is saved in date-tagged folder
+    date_tag=date_dirs[-1].split('/')[-1]
+    executable.write("mkdir -p /tmp/{0}{1}/{2} \n".format(FLAGS.summary_dir, FLAGS.log_tag, date_tag))
+    for f in [checkpoint_file, conf_file]: executable.write("cp {0} /tmp/{1}{2}/{3} \n".format(f, FLAGS.summary_dir, FLAGS.log_tag, date_tag))
+  else:
+    for f in [checkpoint_file, conf_file]: executable.write("cp {0} /tmp/{1}{2} \n".format(f, FLAGS.summary_dir, FLAGS.log_tag))
+except:
+  print("Did not find previous checkpoint in {0}".format(FLAGS.summary_dir+FLAGS.log_tag))
+  # in case no previous moodel is found copy checkpoint path
+  if '--checkpoint_path' in others:
+    checkpoint_path=others[others.index('--checkpoint_path')+1]
+  else:
+    checkpoint_path='mobilenet_025'
+  executable.write('mkdir -p /tmp/{0}{1} \n'.format(FLAGS.summary_dir,checkpoint_path))
+  executable.write('cp {0}/{1}{2}/checkpoint /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
+
+
+
+executable.write('export HOME=/tmp \n')
+# executable.write("export HOME={0}\n".format(FLAGS.home))
+
 executable.write("export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.1/lib64 \n")
 executable.write("source /users/visics/kkelchte/tensorflow_1.8/bin/activate \n")
 executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/tf_cnnvis \n".format(FLAGS.home, FLAGS.python_project+'/..'))
-executable.write("export HOME={0}\n".format(FLAGS.home))
 command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,FLAGS.python_script)
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
@@ -177,6 +211,14 @@ print("Command: {0}".format(command))
 executable.write("{0}\n".format(command))
 executable.write("retVal=$? \n")
 executable.write("echo \"check exit code: $retVal\" \n")
+
+executable.write("echo \"[condor_script] change checkpoint with sed\"\n")
+executable.write("sed -i 's/\/tmp/{0}/' /tmp/{1}{2}/checkpoint \n".format(FLAGS.home.replace('/','\/'), FLAGS.summary_dir, FLAGS.log_tag))
+
+
+executable.write("echo \"[condor_script] copy back $(date +%F_%H:%M)\"\n")
+executable.write("cp -r /tmp/{0}* {1}/{0} \n".format(FLAGS.summary_dir, FLAGS.home))
+
 executable.write("if [ $retVal -ne 0 ]; then \n")
 executable.write("    echo Error \n")
 executable.write("    exit $retVal \n")

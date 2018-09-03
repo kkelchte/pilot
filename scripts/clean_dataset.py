@@ -1,4 +1,9 @@
 #!/usr/bin/python
+# Block all numpy-scipy incompatibility warnings (could be removed at following scipy update (>1.1))
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+
 import numpy as np
 import os,sys, time
 import argparse
@@ -7,6 +12,19 @@ import subprocess, shlex
 import json
 
 import skimage.io as sio
+
+class bcolors:
+  """ Colors to print in terminal with color!
+  """
+  HEADER = '\033[95m'
+  OKBLUE = '\033[94m'
+  OKGREEN = '\033[92m'
+  WARNING = '\033[93m'
+  FAIL = '\033[91m'
+  ENDC = '\033[0m'
+  BOLD = '\033[1m'
+  UNDERLINE = '\033[4m'
+
 '''
 Clean_dataset.py: 
 used in DAG form with condor_online jobs to clean up a dataset after its created.
@@ -54,10 +72,10 @@ parser.add_argument("--test_len", default=10, type=int, help="length of the test
 
 FLAGS, others = parser.parse_known_args()
 
-min_rgb={'default':10,'sandbox':10, 'canyon':100, 'forest':100}
-max_rgb={'default':5000,'sandbox':2000, 'canyon':3000, 'forest': 3000}
+min_rgb={'default':10,'sandbox':10, 'canyon':100, 'forest':100, 'corridor': 5}
+max_rgb={'default':5000,'sandbox':2000, 'canyon':3000, 'forest': 3000, 'corridor': 500}
 
-min_distance={'default':1,'sandbox':1, 'canyon':3, 'forest': 3}
+min_distance={'default':1,'sandbox':1, 'canyon':3, 'forest': 3, 'corridor': 0.5}
 
 if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
   FLAGS.data_root=os.environ['HOME']+'/'+FLAGS.data_root
@@ -83,7 +101,7 @@ for d_i, d in enumerate(runs.keys()):
     ## Ensure control_info.txt exists
     if not os.path.isfile("{0}/control_info.txt".format(r)):
       # remove run folder
-      print('removed: {0} due to no control info.'.format(r))
+      print('{2}removed: {0} due to no control info. {1}'.format(r,bcolors.ENDC,bcolors.OKBLUE))
       shutil.rmtree(r)
       to_be_removed_from_runs.append(r_i)
       continue
@@ -114,26 +132,10 @@ for d_i, d in enumerate(runs.keys()):
     # print("travelled_distance: {}".format(travelled_distance))
     if travelled_distance < minimum:
       # remove run folder
-      print('removed: {0} due to no far enough flying distance: {1:0.2f} < {2:0.2f}'.format(r, travelled_distance, minimum))
+      print('{3}removed: {0} due to no far enough flying distance: {1:0.2f} < {2:0.2f} {4}'.format(r, travelled_distance, minimum,bcolors.OKBLUE,bcolors.ENDC))
       shutil.rmtree(r)
       to_be_removed_from_runs.append(r_i)
       continue
-
-    ## Ensure number of RGB and Depth images is within range and don't differ too much
-    num_rgb=len([f for f in os.listdir(r+'/RGB') if f.endswith('jpg')])
-    num_depth=len([f for f in os.listdir(r+'/Depth') if f.endswith('jpg')])
-    
-    rgb_min=FLAGS.min_rgb if FLAGS.min_rgb != -1 else min_rgb[world_name] 
-    rgb_max=FLAGS.max_rgb if FLAGS.max_rgb != -1 else max_rgb[world_name]
-
-
-    if (num_rgb < rgb_min) or (num_rgb > rgb_max) or (abs(num_depth-num_rgb) > FLAGS.max_depth_rgb_difference and FLAGS.max_depth_rgb_difference != -1):
-      # remove run folder
-      print("Removed {5} due to: {2} > {0} imgs > {1} or {3} < {4}".format(num_rgb, rgb_min, rgb_max, abs(num_depth-num_rgb),  FLAGS.max_depth_rgb_difference,r))
-      shutil.rmtree(r)
-      to_be_removed_from_runs.append(r_i)
-      continue
-
     
     # Delete images taken without flying for more than 0.25m
     # parse first image taken at 0.25m from startingposition (0,0)
@@ -168,6 +170,8 @@ for d_i, d in enumerate(runs.keys()):
         except: pass
         try: os.remove("{0}/Depth/{1:010d}.jpg".format(r,i))
         except: pass
+    if index != 0: print(bcolors.OKGREEN+"Removed all before index "+str(index)+" due to no control."+bcolors.ENDC)
+
     
     # go over images and get index from which variance over images is 0 as last index
     # delete all following images
@@ -191,7 +195,23 @@ for d_i, d in enumerate(runs.keys()):
             os.remove(r+'/'+cam+'/'+f)
           except:
             pass
-      if last_index != 0: print("Removed from index "+str(last_index)+" "+cam+" images due to no variance.")
+    if last_index != 0: print(bcolors.OKGREEN+"Removed from index "+str(last_index)+" "+cam+" images due to no variance."+bcolors.ENDC)
+
+
+    ## Ensure number of RGB and Depth images is within range and don't differ too much
+    num_rgb=len([f for f in os.listdir(r+'/RGB') if f.endswith('jpg')])
+    num_depth=len([f for f in os.listdir(r+'/Depth') if f.endswith('jpg')])
+    
+    rgb_min=FLAGS.min_rgb if FLAGS.min_rgb != -1 else min_rgb[world_name] 
+    rgb_max=FLAGS.max_rgb if FLAGS.max_rgb != -1 else max_rgb[world_name]
+
+
+    if (num_rgb < rgb_min) or (num_rgb > rgb_max) or (abs(num_depth-num_rgb) > FLAGS.max_depth_rgb_difference and FLAGS.max_depth_rgb_difference != -1):
+      # remove run folder
+      print("{6} Removed {5} due to: {2} > {0} imgs > {1} or {3} < {4} {7}".format(num_rgb, rgb_min, rgb_max, abs(num_depth-num_rgb),  FLAGS.max_depth_rgb_difference,r,bcolors.OKBLUE,bcolors.ENDC))
+      shutil.rmtree(r)
+      to_be_removed_from_runs.append(r_i)
+      continue
 
 
   # remove the runs that were deleted in reverse order not to mess up the indices

@@ -120,7 +120,7 @@ def main(_):
   parser.add_argument("--load_config", action='store_true',help="Load flags from the configuration file found in the checkpoint path.")
   parser.add_argument("--verbose", action='store_false', help="Print output of ros verbose or not.")
   parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
-  parser.add_argument("--log_tag", default='testing', type=str, help="Add log_tag to overcome overwriting of other log files.")
+  parser.add_argument("-t","--log_tag", default='testing', type=str, help="Add log_tag to overcome overwriting of other log files.")
   parser.add_argument("--device", default='/gpu:0', type=str, help= "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--owr", action='store_true', help="Overwrite existing logfolder when it is not testing.")
@@ -251,7 +251,7 @@ def main(_):
     if found_previous_run:
       # extract previous run
       checkpoints=[fs for fs in os.listdir(previous_run) if fs.endswith('.meta')]
-      if len(checkpoints) != 0:
+      if os.path.isfile(previous_run+'/checkpoint') and os.path.isfile(previous_run+'/configuration.xml'): 
         # if a checkpoint is found in current folder, use this folder as checkpoint path.
         #raise NameError( 'Logfolder already exists, overwriting alert: '+ previous_run )
         FLAGS.load_config = True
@@ -260,7 +260,7 @@ def main(_):
         FLAGS.checkpoint_path = previous_run[len(FLAGS.summary_dir):] #cut off summary_dir to get previous log_tag
         checkpoint_model=open(previous_run+'/checkpoint').readlines()[0]
         start_ep=int(int(checkpoint_model.split('-')[-1][:-2])/100)
-        print("Found model: {0} trained for {1} episodes".format(FLAGS.log_tag,start_ep))
+        print("Found model: {0} trained for {1} episodes in {2}".format(FLAGS.log_tag,start_ep, previous_run))
       else:
         shutil.rmtree(previous_run,ignore_errors=False)
   if not os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag): 

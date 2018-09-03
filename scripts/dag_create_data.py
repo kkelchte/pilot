@@ -49,8 +49,8 @@ for rec in range(FLAGS.number_of_recorders):
   subprocess.call(shlex.split(command)) 
 
 ##########################################################################################################################
-# STEP 3 Add condor_offline cleanup data: note that cleanup data should never take more than 10 minutes...
-command="python condor_offline.py -t {0}/clean --dont_submit -pp pilot/scripts -ps clean_dataset.py --startswith {0} --destination {1} --home {3} --wall_time {4}".format(FLAGS.log_tag, FLAGS.destination, FLAGS.summary_dir, FLAGS.home, 60*10)
+# STEP 3 Add condor_offline cleanup data: note that cleanup data should never take more than 3hours...
+command="python condor_offline.py -t {0}/clean --dont_submit -pp pilot/scripts -ps clean_dataset.py --startswith {0} --destination {1} --home {3} --wall_time {4}".format(FLAGS.log_tag, FLAGS.destination, FLAGS.summary_dir, FLAGS.home, 3*60*60)
 for e in others: command=" {0} {1}".format(command, e)
 subprocess.call(shlex.split(command)) 
 
