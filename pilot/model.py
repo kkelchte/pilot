@@ -61,6 +61,17 @@ class Model(object):
     self.endpoints={}
     for mode in ['train', 'eval']:
       self.define_network(mode)
+      params=0
+      for t in tf.trainable_variables():
+        if len(t.shape) == 4:
+          params+=t.shape[0]*t.shape[1]*t.shape[3]
+        elif len(t.shape) == 3:
+          params+=t.shape[1]*t.shape[2]
+        elif len(t.shape) == 1:
+          params+=t.shape[0]        
+        # print t.name
+      print("total number of parameters: {0}".format(params))
+      # import pdb; pdb.set_trace()
         
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)

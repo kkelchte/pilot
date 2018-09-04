@@ -27,6 +27,7 @@ def squeezenet(inputs,
   l1 = tf.layers.conv2d(pad_1, 96, kernel_size=[7,7], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l1: {}".format(l1.shape))
   end_points[end_point]=l1
+
   end_point = '1_pool'
   p1=tf.layers.max_pooling2d(l1, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p1: {}".format(p1.shape))
@@ -95,6 +96,7 @@ def squeezenet(inputs,
   if verbose: print("shape l4_c: {}".format(l4_c.shape))
   end_points[end_point]=l4_c
  
+  end_point = '4_pool'
   p4=tf.layers.max_pooling2d(l4_c, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p4: {}".format(p4.shape))
   end_points[end_point]=p4
@@ -183,6 +185,7 @@ def squeezenet(inputs,
   if verbose: print("shape l8_c: {}".format(l8_c.shape))
   end_points[end_point]=l8_c
 
+  end_point = '8_pool'
   p8=tf.layers.max_pooling2d(l8_c, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p8: {}".format(p8.shape))
   end_points[end_point]=p8
@@ -210,7 +213,7 @@ def squeezenet(inputs,
 
   # TOWER 10 Conv2d and avgpool
   end_point = '10_conv'
-  l10 = tf.layers.conv2d(l9_c, num_outputs, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l10 = tf.layers.conv2d(l9_c, num_outputs, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.tanh if num_outputs == 1 else tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l10: {}".format(l10.shape))
   end_points[end_point]=l10
 

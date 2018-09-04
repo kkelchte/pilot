@@ -32,12 +32,12 @@ def squeezenet(inputs,
   end_point='1_bn'
   bn1 = tf.layers.batch_normalization(l1, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
   end_points[end_point]=bn1
+  
   end_point='1_relu'
   relu1 = tf.nn.relu(bn1, name=end_point)
   end_points[end_point]=relu1    
   
   end_point = '1_pool'
-  
   p1=tf.layers.max_pooling2d(relu1, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p1: {}".format(p1.shape))
   end_points[end_point]=p1
@@ -108,6 +108,8 @@ def squeezenet(inputs,
   end_point='4_bn'
   bn4 = tf.layers.batch_normalization(l4_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
   end_points[end_point]=bn4  
+  
+  end_point='4_pool'
   p4=tf.layers.max_pooling2d(bn4, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p4: {}".format(p4.shape))
   end_points[end_point]=p4
@@ -200,6 +202,7 @@ def squeezenet(inputs,
   bn8 = tf.layers.batch_normalization(l8_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
   end_points[end_point]=bn8
 
+  end_point='8_pool'
   p8=tf.layers.max_pooling2d(bn8, pool_size=3, strides=2, padding='valid',name=end_point)
   if verbose: print("shape p8: {}".format(p8.shape))
   end_points[end_point]=p8
@@ -227,7 +230,7 @@ def squeezenet(inputs,
 
   # TOWER 10 Conv2d and avgpool
   end_point = '10_conv'
-  l10 = tf.layers.conv2d(l9_c, num_outputs, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l10 = tf.layers.conv2d(l9_c, num_outputs, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.tanh if num_outputs == 1 else tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l10: {}".format(l10.shape))
   end_points[end_point]=l10
 

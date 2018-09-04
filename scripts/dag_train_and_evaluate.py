@@ -40,6 +40,7 @@ parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to source of code on Opal.")
 parser.add_argument("--wall_time_train", default=3*60*60, type=int, help="Maximum time job is allowed to train.")
 parser.add_argument("--wall_time_eva", default=3*60*60, type=int, help="Maximum time job is allowed to evaluate.")
+parser.add_argument("--dont_retry", action='store_true', help="Don't retry if job ends with exit code != 1 --> usefull for debugging as previous log-files are overwritten.")
 
 
 FLAGS, others = parser.parse_known_args()
@@ -98,11 +99,12 @@ with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
   df.write("PARENT {0} CHILD results\n".format(eva_jobs))
   df.write("PARENT results CHILD report\n")
   df.write("\n")
-  for model in range(FLAGS.number_of_models): 
-    df.write("Retry m{0}_train 2 \n".format(model))
-    df.write("Retry m{0}_eva 3 \n".format(model))
-  df.write("Retry results 2 \n")
-  df.write("Retry report 3 \n")
+  if not FLAGS.dont_retry:
+    for model in range(FLAGS.number_of_models): 
+      df.write("Retry m{0}_train 2 \n".format(model))
+      df.write("Retry m{0}_eva 3 \n".format(model))
+    df.write("Retry results 2 \n")
+    df.write("Retry report 3 \n")
 
 ##########################################################################################################################
 # STEP 6 submit DAG file

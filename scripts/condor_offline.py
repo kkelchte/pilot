@@ -212,9 +212,10 @@ executable.write("{0}\n".format(command))
 executable.write("retVal=$? \n")
 executable.write("echo \"check exit code: $retVal\" \n")
 
+executable.write("if [ -e /tmp/{0}{1}/checkpoint ] ; then \n".format(FLAGS.summary_dir, FLAGS.log_tag))
 executable.write("echo \"[condor_script] change checkpoint with sed\"\n")
 executable.write("sed -i 's/\/tmp/{0}/' /tmp/{1}{2}/checkpoint \n".format(FLAGS.home.replace('/','\/'), FLAGS.summary_dir, FLAGS.log_tag))
-
+executable.write("fi \n") 
 
 executable.write("echo \"[condor_script] copy back $(date +%F_%H:%M)\"\n")
 executable.write("cp -r /tmp/{0}* {1}/{0} \n".format(FLAGS.summary_dir, FLAGS.home))

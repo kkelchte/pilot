@@ -32,6 +32,7 @@ parser.add_argument("--destination", default="dag_dataset", type=str, help="Defi
 parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to source of code on Opal.")
 parser.add_argument("--wall_time_rec", default=3*60*60, type=int, help="Maximum time job is allowed to take.")
+parser.add_argument("--dont_retry", action='store_true', help="Don't retry if job ends with exit code != 1 --> usefull for debugging as previous log-files are overwritten.")
 
 
 FLAGS, others = parser.parse_known_args()
@@ -70,9 +71,10 @@ with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
   recs=""  
   for rec in range(FLAGS.number_of_recorders): recs="{0} r{1}".format(recs, rec)
   df.write("PARENT {0} CHILD clean\n".format(recs))
-  df.write("\n")
-  for rec in range(FLAGS.number_of_recorders): df.write("Retry r{0} 4 \n".format(rec))
-  df.write("Retry clean 2 \n")
+  if not FLAGS.dont_retry:
+    df.write("\n")
+    for rec in range(FLAGS.number_of_recorders): df.write("Retry r{0} 4 \n".format(rec))
+    df.write("Retry clean 2 \n")
 ##########################################################################################################################
 # STEP 5 submit DAG file
 subprocess.call(shlex.split("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag)))

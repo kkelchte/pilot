@@ -97,4 +97,6 @@ def alexnet(inputs,
     
     return end_points
 
+# default_image_size=[227,227,3]
+# default_image_size=[127,127,3]
 default_image_size=[127,127,1]
