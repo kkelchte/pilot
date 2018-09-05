@@ -4,6 +4,7 @@
 #
 #
 
+############################# TRAIN SEPARATE
 #world=radiator
 #world=corridor
 #world=floor
@@ -11,20 +12,29 @@
 #world=ceiling
 #world=blocked_hole
 #world=doorway
-#world=arc
-world=all_factors
+world=arc
+
+name='mobile'
+tag=${name}_factored_scratch/${world}
+
+############################# TRAIN COMBINED
+# world=all_factors
 
 #world=combined_corridor
 
-name=mobile
+#name=mobile
 #name=squeeze_v1
 #name=alex_v3
 #name=alex_v4
 
-echo "$(date +%H:%M:%S) ---------- $world / $name"
+# tag=${world}/${name}
 
-mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/${world}/${name}
-python /esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py --log_tag ${world}/${name} \
+
+echo "$(date +%H:%M:%S) ---------- $tag "
+
+
+mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/
+python /esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py --log_tag $tag \
                                                                       --dataset ${world} \
                                                                       --max_episodes 1000 \
                                                                       --network $name \
@@ -33,7 +43,7 @@ python /esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py --log_tag 
                                                                       --visualize_deep_dream_of_output \
                                                                       --visualize_saliency_of_output \
                                                                       --histogram_of_weights \
-                                                                      --histogram_of_activations >> /esat/opal/kkelchte/docker_home/tensorflow/log/${world}/${name}_output 2>&1
+                                                                      --histogram_of_activations >> /esat/opal/kkelchte/docker_home/tensorflow/log/${tag}_output 2>&1
 
 echo "$(date +%H:%M:%S) ---------- done "
 

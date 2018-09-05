@@ -140,7 +140,7 @@ def add_figure(report, line_index, image_path):
     line_index+=1
     report.insert(line_index, "\\includegraphics[width=\\textwidth]{"+image_path+"}\n")
     line_index+=1
-    report.insert(line_index, "\\caption{"+image_path.split('/')[-3].replace('_',' ')+": "+os.path.basename(image_path).replace('_',' ').split('.')[0]+"} \n")
+    report.insert(line_index, "\\caption{"+image_path.split('/')[-3].replace('_',' ')+"/"+image_path.split('/')[-2].replace('_',' ')+": "+os.path.basename(image_path).replace('_',' ').split('.')[0]+"} \n")
     line_index+=1   
     report.insert(line_index, "\\end{figure} \n")
     line_index+=1

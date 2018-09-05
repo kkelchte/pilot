@@ -235,7 +235,7 @@ def main(_):
   if FLAGS.log_tag == 'testing' or FLAGS.owr:
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
       shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
-  else :
+  elif not FLAGS.continue_training : # in case we are training from scratch/checkpoint and not evaluating
     # check if previous run is there
     found_previous_run=False
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):

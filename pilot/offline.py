@@ -77,7 +77,7 @@ def run(_FLAGS, model, start_ep=0):
   while ep<FLAGS.max_episodes-1 and not FLAGS.testing:
     ep+=1
 
-    print('start episode: {}'.format(ep))
+    print('\n {0} : start episode: {1}'.format(FLAGS.log_tag, ep))
     # reset running metric variables
     model.reset_metrics()    
 
