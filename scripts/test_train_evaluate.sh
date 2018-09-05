@@ -18,6 +18,7 @@ if [ $ret -ne 0 ]; then
      #Handle failure
      exit
 fi
+
 # 2. Evaluate trained model in singularity 
 singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_writable.img /esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/evaluate_in_singularity.sh
 

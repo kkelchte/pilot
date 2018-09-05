@@ -9,6 +9,7 @@
 # --number_of_models
 # --destination
 # --dont_retry
+# --copy_dataset
 
 # 1. directory and logging
 # --summary_dir
@@ -106,11 +107,19 @@
 # done
 
 
-# primal test before big batch
-world='combined_corridor'
-net='mobile'
-python dag_train_and_evaluate.py -t test_${world}_${net}_imgnet_2 --dont_copy --not_nice --wall_time_train $((6*60*60)) --wall_time_eva $((40*60)) --number_of_models 1 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 3 --network $net --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+# test with preload data in canyon
+# python dag_train_and_evaluate.py -t test_canyon_tiny_mobile --not_nice --wall_time_train $((6*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 2 --load_data_in_ram --network mobile --normalize_over_actions --learning_rate 0.1 --dataset canyon_drone_tiny --max_episodes 300 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3
 
+# test with data overnet in canyon
+# python dag_train_and_evaluate.py -t test_canyon_tiny_mobile_nopreload --not_nice --wall_time_train $((6*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 1 --network mobile --normalize_over_actions --learning_rate 0.1 --dataset canyon_drone_tiny --max_episodes 300 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3
+
+# test with copying data in canyon
+python dag_train_and_evaluate.py -t test_canyon_tiny_mobile_copy_data --not_nice --copy_dataset --wall_time_train $((6*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 1 --network mobile --normalize_over_actions --learning_rate 0.1 --dataset canyon_drone_tiny --max_episodes 300 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3
+
+# primal test before big batch
+# world='combined_corridor'
+# net='mobile'
+# python dag_train_and_evaluate.py -t test_${world}_${net}_dont_copy --not_nice --wall_time_train $((6*60*60)) --wall_time_eva $((6*60*60)) --number_of_models 1 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 100 --network $net --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 
 
 

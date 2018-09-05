@@ -4,33 +4,42 @@
 #
 #
 
-# world=radiator
-# world=corridor
-# world=floor
-# world=poster
-# world=ceiling
-# world=blocked_hole
-# world=doorway
+#world=radiator
+#world=corridor
+#world=floor
+#world=poster
+#world=ceiling
+#world=blocked_hole
+#world=doorway
+#world=arc
+world=all_factors
 
-world=arc
+#world=combined_corridor
 
-name=mobile_factored
+name=mobile
+#name=squeeze_v1
+#name=alex_v3
+#name=alex_v4
 
-echo "$(date +%H:%M:%S) ---------- $name / $world "
+echo "$(date +%H:%M:%S) ---------- $world / $name"
 
-mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/${name}/${world}
-python /esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py --log_tag ${name}/${world} \
+mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/${world}/${name}
+python /esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py --log_tag ${world}/${name} \
                                                                       --dataset ${world} \
-                                                                      --load_data_in_ram \
-                                                                      --max_episodes 100 \
-                                                                      --discrete \
+                                                                      --max_episodes 1000 \
+                                                                      --network $name \
+                                                								      --discrete \
                                                                       --normalize_over_actions  \
                                                                       --visualize_deep_dream_of_output \
                                                                       --visualize_saliency_of_output \
                                                                       --histogram_of_weights \
-                                                                      --histogram_of_activations >> /esat/opal/kkelchte/docker_home/tensorflow/log/${name}/${world}_output 2>&1
+                                                                      --histogram_of_activations >> /esat/opal/kkelchte/docker_home/tensorflow/log/${world}/${name}_output 2>&1
 
 echo "$(date +%H:%M:%S) ---------- done "
 
 # TODO
 # python /esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/save_results_as_pdf.py --mother_dir ${name}
+
+
+# TODO
+# singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_writable.img /esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/evaluate_in_singularity.sh >> /esat/opal/kkelchte/docker_home/tensorflow/log/${world}/${name}_output 2>&1

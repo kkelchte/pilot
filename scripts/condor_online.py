@@ -121,8 +121,10 @@ blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
             && (machine != \"vladimir.esat.kuleuven.be\") \
             && (machine != \"cancer.esat.kuleuven.be\") \
             && (machine != \"libra.esat.kuleuven.be\") \
-            && (machine != \"kochab.esat.kuleuven.be\") "
-      # && (machine != \"andromeda.esat.kuleuven.be\") \
+            && (machine != \"kochab.esat.kuleuven.be\") \
+            && (machine != \"bandai.esat.kuleuven.be\") \
+            && (machine != \"spinel.esat.kuleuven.be\") \
+            && (machine != \"andromeda.esat.kuleuven.be\")"
 # blacklist=""
 # greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
 greenlist=""

@@ -32,7 +32,7 @@ parser.add_argument("--data_root", default='pilot_data/', type=str, help="Choose
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to location with tensorflow code and data root.")
 parser.add_argument("-t", "--log_tag", default='testing', type=str, help="LOGTAG: tag used to name logfolder.")
 parser.add_argument("--dont_submit",action='store_true', help="In case you dont want to submit the job.")
-parser.add_argument("--dont_copy",action='store_true', help="Avoid the copy of the dataset to the tmp folder in case it cant be loaded in ram.")
+parser.add_argument("--copy_dataset",action='store_true', help="Copy the dataset to the tmp folder in case it cant be loaded in ram.")
 parser.add_argument("--dont_summarize_locally",action='store_true', help="Keep tensorflow/log on Opal.")
 
 # ==========================
@@ -148,7 +148,7 @@ executable = open(shell_file,'w')
 executable.write("#!/bin/bash \n")
 executable.write("echo \"[condor_script] started executable for condor_offline: $(date +%F_%H:%M)\" \n")
 
-if '--dataset' in others and not '--load_data_in_ram' in others and not FLAGS.dont_copy:
+if '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
   executable.write("echo \"Copy dataset to /tmp\" \n")
   executable.write("while read line ; do \n")
   executable.write("  cp -r $line /tmp\n")
@@ -205,7 +205,8 @@ command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,F
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
 # command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
-command="{0} --log_tag {1}/{2} ".format(command, FLAGS.log_tag, time.strftime("%Y-%m-%d_%I%M"))
+FLAGS.log_tag=FLAGS.log_tag+'/'+time.strftime("%Y-%m-%d_%I%M")
+command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
 for e in others: command=" {0} {1}".format(command, e)
 print("Command: {0}".format(command))
 executable.write("{0}\n".format(command))

@@ -128,7 +128,7 @@ def load_run_info(coord, run_list, set_list, checklist):
       run_dir = run_list.pop()
       print run_dir
       # get list of all image numbers available in listdir
-      imgs_jpg=listdir(join(run_dir,'RGB'))
+      imgs_jpg=[f for f in listdir(join(run_dir,'RGB')) if not f.startswith('.')]
       num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg[::FLAGS.subsample]])
       # print("{}".format(num_imgs))
       assert len(num_imgs)!=0 , IOError('no images in {0}: {1}'.format(run_dir,len(imgs_jpg)))
