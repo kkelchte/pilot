@@ -87,12 +87,12 @@ class PilotNode(object):
         rospy.Subscriber(image_topic, CompressedImage, self.compressed_image_callback)
       else:
         rospy.Subscriber(image_topic, Image, self.image_callback)
-    if rospy.has_param('depth_image'):
-      depth_topic = rospy.get_param('depth_image')
-      if 'scan' in depth_topic:
-        rospy.Subscriber(depth_topic, LaserScan, self.scan_depth_callback)
-      else:
-        rospy.Subscriber(depth_topic, Image, self.depth_callback)
+    # if rospy.has_param('depth_image'):
+    #   depth_topic = rospy.get_param('depth_image')
+    #   if 'scan' in depth_topic:
+    #     rospy.Subscriber(depth_topic, LaserScan, self.scan_depth_callback)
+    #   else:
+    #     rospy.Subscriber(depth_topic, Image, self.depth_callback)
     if not self.FLAGS.real: # initialize the replay buffer
       self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed)
       self.accumloss = 0
@@ -185,7 +185,7 @@ class PilotNode(object):
       # # values can be nan for when they are closer than 0.5m but than the evaluate node should
       # # kill the run anyway.
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
-      size = self.model.output_size #(55,74)
+      size = (55,74)
       # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
       
       de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
@@ -254,6 +254,7 @@ class PilotNode(object):
       trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
       trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
       control, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
+      print 'control ',control
       if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
     else: ###TRAINING
       # Get necessary labels, if label is missing wait...

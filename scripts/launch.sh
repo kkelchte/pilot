@@ -113,7 +113,8 @@
 # net='mobile'
 # python dag_train_and_evaluate.py -t test_${world}_${net}_dont_copy --not_nice --wall_time_train $((6*60*60)) --wall_time_eva $((6*60*60)) --number_of_models 1 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 100 --network $net --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 
-python condor_offline.py --copy_dataset --not_nice -t test_offline_copy_data --wall_time $((3*60*60)) --dataset test_tar --max_episodes 30 --discrete 
+python condor_offline.py -t ensemble_radiator --wall_time $((3*60*60)) --dataset radiator --max_episodes 600 --discrete --load_data_in_ram --n_factors 1
+python condor_offline.py -t ensemble_radiator_poster --wall_time $((3*60*60)) --dataset radiator_poster --max_episodes 600 --discrete --load_data_in_ram --n_factors 2
 
 
 

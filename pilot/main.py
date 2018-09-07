@@ -149,12 +149,14 @@ def main(_):
   # ===========================
   parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
   parser.add_argument("--network",default='mobile',type=str, help="Define the type of network (anything in models folder without _net.py): mobile, mobile_nfc, alex, squeeze, ...")
-  parser.add_argument("--output_size",default=[55,74],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
+  # parser.add_argument("--output_size",default=[55,74],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
+  parser.add_argument("--n_factors",default=8,type=int, help="Specify the number of control factors resulting in num_outputs = n_factors x action_quantity.")
   # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
   parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
   parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
+  parser.add_argument("--single_loss_training", action='store_true',help="Train expert only on data relevant for this expert.")
   
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
