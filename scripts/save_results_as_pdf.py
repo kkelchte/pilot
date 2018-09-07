@@ -79,7 +79,7 @@ for m in offline_models:
     print("[save_results_as_pdf]: could not find offline tf_log in {0}/{1}".format(FLAGS.mother_dir, m))
     continue
   else:
-    for line in tf_log:
+    for line in tf_log[:-1]: # the last line contains the test results.
       # ['Loss_val_total : 4.69217729568', 'Loss_train_control : 4.55608940125', 'Loss_train_total : 4.61403799057', 'Loss_val_control : 4.63422870636']
       if '[' in line: # DEPRECATED --> TOBE REMOVED
         for v in line.split('[\'')[1].split('\']')[0].split('\', \''):
@@ -97,8 +97,17 @@ for m in offline_models:
             save_append(offline_results[m], key, val)         
           except:
             pass
+    # add test results
+    for v in tf_log[-1].split(', '):
+      if 'val' in v:
+        try:
+          key = v.split(' :')[0].replace('val','test')
+          val = float(v.split(':')[1])
+          save_append(offline_results[m], key, val)
+        except:
+          pass
 # create matplotlib images of offline data
-graph_keys=list(set([k for m in offline_results.keys() for k in offline_results[m].keys()]))
+graph_keys=list(set([k for m in offline_results.keys() for k in offline_results[m].keys() if not 'run' in k]))
 if len(graph_keys) > 3:
   fig, axes = plt.subplots(int(np.ceil(len(graph_keys)/3.)), 3, figsize=(23, 5*int(np.ceil(len(graph_keys)/3.))))
 else:
@@ -131,6 +140,40 @@ line_index+=1
 report.insert(line_index, "\\includegraphics[width=1.2\\textwidth]{"+mother_dir+'/report/offline_results.jpg'+"}\n")
 line_index+=1
 report.insert(line_index, "\\end{figure} \n")
+line_index+=1
+
+# create table with all final results of offline training
+# continue graph_keys but only accuracies for in the table of offline results
+graph_keys=[k for k in graph_keys if 'accuracy' in k]
+start_table="\\begin{tabular}{|l|"+len(graph_keys)*'c'+"|}\n"
+report.insert(line_index, start_table)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1 # add first row with all keys
+table_row="model "
+for k in graph_keys: table_row="{0} & {1} ".format(table_row, k.replace('_',' '))
+table_row="{0} \\\\ \n".format(table_row)
+report.insert(line_index, table_row)
+line_index+=1
+report.insert(line_index, "\\hline \n")
+line_index+=1
+for m in offline_results.keys(): # fill a row for each model
+  table_row=m.replace('_',' ')
+  for k in graph_keys:
+    try: # get last value of list
+      table_row="{0} & {1:.2f} \% ".format(table_row, 100*offline_results[m][k][-1])
+    except KeyError:
+      table_row="{0} & {1} ".format(table_row, '-')
+  table_row="{0} \\\\ \n".format(table_row)
+  report.insert(line_index, table_row)
+  line_index+=1
+# close table
+report.insert(line_index, "\\hline \n")
+line_index+=1
+# insert 
+report.insert(line_index, "\\end{tabular} \n")
+line_index+=1
+report.insert(line_index, "\n")
 line_index+=1
 
 # In case there are saliency maps or deep dream maps in the offline folder, add them to the report
@@ -216,8 +259,11 @@ else:
       """takes the row-results, 
       checks for a key and a list of results,
       returns the mean and std (func) of the list as string."""
-      if key in row.keys(): 
-        return "{0:0.2f} ({1:0.2f})".format(np.mean(row[key]), np.std(row[key]))
+      if key in row.keys():
+        if k == 'success': # show percentage
+          return "{0:0.0f} \% ({1:0.2f})".format(np.mean(row[key])*100, np.std(row[key]))
+        else:
+          return "{0:0.2f} ({1:0.2f})".format(np.mean(row[key]), np.std(row[key]))
       else:
         return ''
     
@@ -305,6 +351,6 @@ p_mail = subprocess.Popen(shlex.split("mailx -s {0} -a {1} klaas.kelchtermans@es
 print(p_mail.communicate())
 
 # Step 6: put report also in archive
-shutil.copyfile(mother_dir+'/report/report.pdf', '{0}/{1}archive/{2}_{3}.pdf'.format(FLAGS.home,FLAGS.summary_dir, time.strftime("%Y-%m-%d_%I%M"), FLAGS.mother_dir) )
+shutil.copyfile(mother_dir+'/report/report.pdf', '{0}/{1}archive/{2}_{3}.pdf'.format(FLAGS.home,FLAGS.summary_dir, time.strftime("%Y-%m-%d_%I%M"), FLAGS.mother_dir.replace('/','_')) )
 
 

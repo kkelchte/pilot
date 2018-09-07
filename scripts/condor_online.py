@@ -116,16 +116,12 @@ condor_submit.write("match_list_length = 4 \n")
 condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCode == 0 ) || HoldReasonCode == 26\n")
 
 
-blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
-            && (machine != \"estragon.esat.kuleuven.be\") \
-            && (machine != \"vladimir.esat.kuleuven.be\") \
-            && (machine != \"cancer.esat.kuleuven.be\") \
-            && (machine != \"libra.esat.kuleuven.be\") \
-            && (machine != \"kochab.esat.kuleuven.be\") \
-            && (machine != \"bandai.esat.kuleuven.be\") \
-            && (machine != \"spinel.esat.kuleuven.be\") \
-            && (machine != \"andromeda.esat.kuleuven.be\")"
-# blacklist=""
+# blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
+#             && (machine != \"estragon.esat.kuleuven.be\") \
+#             && (machine != \"vladimir.esat.kuleuven.be\") \
+#             && (machine != \"cancer.esat.kuleuven.be\") \
+#             && (machine != \"libra.esat.kuleuven.be\") "
+blacklist=""
 # greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
 greenlist=""
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
@@ -255,12 +251,18 @@ if '--checkpoint_path' in others:
 else:
 	checkpoint_path='mobilenet_025'
 sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
-if checkpoint_path != 'mobilenet_025':
-  sing.write("cp {1}/{2}{0}/*/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-  sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-else:
-  sing.write("cp {1}/{2}{0}/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("echo 'cp tensorflow pilot project' \n")
+# if checkpoint_path != 'mobilenet_025':
+sing.write("if [ -e {1}/{2}{0}/checkpoint ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("cp {1}/{2}{0}/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("else \n")
+sing.write("cp {1}/{2}{0}/*/checkpoint {2}{0} || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("fi \n")
+sing.write("if [ -e {1}/{2}{0}/configuration.xml ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("cp {1}/{2}{0}/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("else \n")
+sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0}  || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("fi \n")
+sing.write("echo 'cp tensorflow {0} project' \n".format(FLAGS.python_project))
 sing.write("ls {0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
 sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
 sing.write("cp -r {0}/tensorflow/tf_cnnvis tensorflow/ \n".format(FLAGS.home))

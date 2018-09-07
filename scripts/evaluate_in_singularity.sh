@@ -10,9 +10,9 @@ roscd simulation_supervised/python
 # world=corridor
 world=esatv1
 
-# for model in combined_corridor/squeeze_v1 ; do
+for model in combined_corridor/mobile_scratch ; do
 # for model in combined_corridor/alex_v4 combined_corridor/mobile ; do
-for model in combined_corridor/alex_v4 combined_corridor/mobile combined_corridor/squeeze_v1 all_factors/mobile ; do
+# for model in combined_corridor/alex_v4 combined_corridor/mobile combined_corridor/squeeze_v1 all_factors/mobile ; do
   echo "$(date +%H:%M:%S) Evaluating model $model"
   python run_script.py -t ${model}_eva -pe sing -pp pilot/pilot -m $model -w $world --reuse_default_world -p eva_params.yaml -n 3 --robot drone_sim --fsm oracle_nn_drone_fsm -e
 done

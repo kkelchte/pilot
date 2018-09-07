@@ -149,21 +149,32 @@ executable.write("#!/bin/bash \n")
 executable.write("echo \"[condor_script] started executable for condor_offline: $(date +%F_%H:%M)\" \n")
 
 if '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
-  executable.write("echo \"Copy dataset to /tmp\" \n")
-  executable.write("while read line ; do \n")
-  executable.write("  cp -r $line /tmp\n")
-  executable.write("  echo /tmp/$(basename $line) >> /tmp/train_set.txt\n")
-  executable.write("done < {0}/{1}{2}/train_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
-  executable.write("while read line ; do \n")
-  executable.write("  cp -r $line /tmp\n")
-  executable.write("  echo /tmp/$(basename $line) >> /tmp/val_set.txt\n")
-  executable.write("done < {0}/{1}{2}/val_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
-  executable.write("while read line ; do \n")
-  executable.write("  cp -r $line /tmp\n")
-  executable.write("  echo /tmp/$(basename $line) >> /tmp/test_set.txt\n")
-  executable.write("done < {0}/{1}{2}/test_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+  dataset=others[others.index('--dataset')+1]
+  if os.path.isfile('{0}/{1}{2}.tar.gz'.format(FLAGS.home, FLAGS.data_root, dataset)):
+    executable.write("echo \"Copy compressed dataset to /tmp $(date +%H:%M:%S)\" \n")
+    executable.write("cp {0}/{1}{2}.tar.gz /tmp\n".format(FLAGS.home, FLAGS.data_root, dataset))
+    executable.write("echo \"extract dataset to /tmp $(date +%H:%M:%S)\" \n")
+    # extraction of 10 g took around 3min on opal
+    executable.write("tar -xzf /tmp/{0}.tar.gz -C /tmp \n".format(dataset))
+    executable.write("sed -i 's/esat\/opal\/kkelchte\/docker_home\/pilot_data/tmp/' /tmp/{0}/*.txt \n".format(dataset))
+  else:      
+    executable.write("echo \"Copy dataset as separate files to /tmp. $(date +%H:%M:%S)\" \n")
+    executable.write("while read line ; do \n")
+    executable.write("  cp -r $line /tmp\n")
+    executable.write("  echo /tmp/$(basename $line) >> /tmp/train_set.txt\n")
+    executable.write("done < {0}/{1}{2}/train_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+    executable.write("while read line ; do \n")
+    executable.write("  cp -r $line /tmp\n")
+    executable.write("  echo /tmp/$(basename $line) >> /tmp/val_set.txt\n")
+    executable.write("done < {0}/{1}{2}/val_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+    executable.write("while read line ; do \n")
+    executable.write("  cp -r $line /tmp\n")
+    executable.write("  echo /tmp/$(basename $line) >> /tmp/test_set.txt\n")
+    executable.write("done < {0}/{1}{2}/test_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+    others[others.index('--dataset')+1]='.'
+  executable.write("echo \"Finished data copy $(date +%H:%M:%S)\" \n")  
   FLAGS.data_root='/tmp'
-  others[others.index('--dataset')+1]='.'
+
 
 
 # create temporary log directory
