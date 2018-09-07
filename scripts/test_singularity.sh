@@ -102,7 +102,7 @@ fi
 
 echo "##########################   test: tensorflow  ###########################################################"
 
-export PYTHONPATH=$PYTHONPATH:$HOME/tensorflow/pilot
+export PYTHONPATH=$PYTHONPATH:$HOME/tensorflow/ensemble_v0
 
 # add cuda libraries for tensorflow, could be included in docker build...
 # export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/cuda-8.0/lib64:/usr/local/cudnn/lib64:$LD_LIBRARY_PATH
