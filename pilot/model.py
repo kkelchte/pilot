@@ -348,14 +348,18 @@ class Model(object):
     '''
     with tf.device(self.device):
       if not self.FLAGS.discrete:
-        if self.FLAGS.single_loss_training:
-          # weights has the same shape of targets (batchsize x num_outputs)
-          # if target is 999 set weight to zero 
-          self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
-        else:
-          self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.FLAGS.control_weight)
+        self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
       else:
-        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'], weights=self.FLAGS.control_weight)
+        if self.FLAGS.single_loss_training:
+          if self.FLAGS.loss == 'ce':
+            loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['outputs']))
+            loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['outputs']))
+            self.loss = tf.reduce_mean(loss)
+            tf.losses.add_loss(tf.reduce_mean(self.loss))
+          else:
+            self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
+        else:
+          self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'])
       # tf.losses.add_loss(self.loss)
       if self.FLAGS.auxiliary_depth:
         weights = self.FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
@@ -373,10 +377,10 @@ class Model(object):
         self.accuracy={}
         for mode in ['train', 'val']: #following modes offline training
           # keep running variables for both validation and training data
-          self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['outputs'], name="mse_"+mode)
-          # self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['digit'] if self.FLAGS.discrete else endpoints['outputs'], name="mse_"+mode)
+          self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights, name="mse_"+mode)
+          # self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['digit'] if self.FLAGS.discrete else endpoints['outputs'], weights=self.weights, name="mse_"+mode)
           if self.FLAGS.auxiliary_depth:
-            self.mse_depth[mode] = tf.metrics.mean_squared_error(self.depth_targets, endpoints['aux_depth_reshaped'], name="mse_depth_"+mode)
+            self.mse_depth[mode] = tf.metrics.mean_squared_error(self.depth_targets, endpoints['aux_depth_reshaped'], weights=self.weights, name="mse_depth_"+mode)
           # add an accuracy metric
           if self.FLAGS.discrete: 
             self.accuracy[mode] = tf.metrics.accuracy(self.one_hot_to_control(self.targets), endpoints['control'], name='accuracy_'+mode)
@@ -438,8 +442,15 @@ class Model(object):
     if len(targets) != 0 and len(factors) != 0: # if target control is available, calculate loss
       tensors.append(self.mse['val']) # 1 is required to get the update operation
       # tensors.append(self.mse['val'][1]) # 1 is required to get the update operation
-      feed_dict[self.targets]= self.adjust_targets(targets,factors) # if not self.FLAGS.discrete else self.continuous_to_discrete(targets)
-      # if self.FLAGS.discrete: tensors.append(self.accuracy['val'][1])
+      new_targets = self.adjust_targets(targets,factors)
+      feed_dict[self.targets]=new_targets  
+      if self.FLAGS.single_loss_training:
+        weights = np.zeros(new_targets.shape)
+        weights[new_targets != 999] = 1
+      else:
+        weights = np.ones(new_targets.shape)
+      feed_dict[self.weights] = weights
+
       if self.FLAGS.discrete: tensors.append(self.accuracy['val'])
       
     if len(depth_targets) != 0 and self.FLAGS.auxiliary_depth:# if target depth is available, calculate loss
@@ -490,11 +501,11 @@ class Model(object):
     if self.FLAGS.single_loss_training:
       weights = np.zeros(new_targets.shape)
       weights[new_targets != 999] = 1
-      feed_dict[self.weights] = weights
+    else:
+      weights = np.ones(new_targets.shape)
+    
+    feed_dict[self.weights] = weights
 
-      print new_targets
-      print weights
-      import pdb; pdb.set_trace()
     
     # append loss
     tensors.append(self.total_loss)
@@ -525,16 +536,7 @@ class Model(object):
     
     losses={'total':results.pop(0)}
 
-    # mse_train (count and total)
-    # print "target: ", targets
-    # print "eval output: ", self.sess.run(self.endpoints['eval']['outputs'], feed_dict=feed_dict)
-    # print "train output: ", self.sess.run(self.endpoints['train']['outputs'], feed_dict=feed_dict)
-    # print "loss: ", self.sess.run(self.loss, feed_dict=feed_dict)
-    # print "total loss: ",self.sess.run(self.total_loss, feed_dict=feed_dict)
-    # print "metrics: "
-    # for v in self.metric_variables:
-    #   print("{0} : {1}".format(v.name, self.sess.run(v)))
-    
+        
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):
       for e in sorted(self.endpoints['eval'].keys()):
         res = results.pop(0)
