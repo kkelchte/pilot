@@ -520,27 +520,19 @@
 	"buffers":
 	[
 		{
-			"file": "pilot.sublime-project",
-			"settings":
-			{
-				"buffer_size": 760,
-				"line_ending": "Unix"
-			}
-		},
-		{
 			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 20323,
+				"buffer_size": 20651,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "scripts/condor_offline.py",
+			"file": "scripts/evaluate_in_singularity.sh",
 			"settings":
 			{
-				"buffer_size": 14744,
+				"buffer_size": 963,
 				"line_ending": "Unix"
 			}
 		}
@@ -584,25 +576,26 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_offline.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/evaluate_in_singularity.sh",
+		"/users/visics/kkelchte/.bashrc",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train_and_evaluate.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot.sublime-project",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_net.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/squeeze_net.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/model.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/data.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/evaluate_in_singularity.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/test_train_evaluate.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/opal_launch.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train_and_evaluate.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_create_data.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_offline.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/save_results_as_pdf.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-08-13_debug_ros_gazebo_on_condor.md",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py",
-		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/extension_generator.py",
@@ -650,7 +643,6 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/spot_light",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/diffuse_light",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/default_light",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot.sublime-project",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/template/report.tex",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/directional_light",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/empty.yaml",
@@ -729,6 +721,7 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"10*60",
 			"--wall_time_train",
 			"15",
 			"number_of_runs 5",
@@ -855,8 +848,7 @@
 			"texture",
 			"picked_tiles",
 			"10",
-			"background",
-			"done < "
+			"background"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -874,53 +866,24 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 1,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "pilot.sublime-project",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 760,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								130,
-								130
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
 					"file": "scripts/launch.sh",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 20323,
+						"buffer_size": 20651,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								9311,
-								9311
+								1045,
+								1045
 							]
 						],
 						"settings":
@@ -929,41 +892,39 @@
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
-						"translation.x": 0.0,
-						"translation.y": 1035.0,
+						"translation.x": 1010.0,
+						"translation.y": 360.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 2,
-					"file": "scripts/condor_offline.py",
+					"buffer": 1,
+					"file": "scripts/evaluate_in_singularity.sh",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 14744,
+						"buffer_size": 963,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4703,
-								4703
+								294,
+								963
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 739.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -1021,6 +982,18 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"dag",
+				"pilot/scripts/dag_train_and_evaluate.py"
+			],
+			[
+				".ba",
+				"kkelchte/.bashrc"
+			],
+			[
+				"eva ",
+				"pilot/scripts/evaluate_in_singularity.sh"
+			],
 			[
 				"con of",
 				"pilot/scripts/condor_offline.py"
@@ -1090,10 +1063,6 @@
 				"pilot/scripts/condor_offline.py"
 			],
 			[
-				"dag",
-				"pilot/scripts/dag_train_and_evaluate.py"
-			],
-			[
 				"con on",
 				"pilot/scripts/condor_online.py"
 			],
@@ -1108,10 +1077,6 @@
 			[
 				"eva pa",
 				"simulation_supervised/simulation_supervised/python/eva_params.yaml"
-			],
-			[
-				".ba",
-				"kkelchte/.bashrc"
 			],
 			[
 				"run",
@@ -1528,10 +1493,6 @@
 			[
 				"on co",
 				"pilot/scripts/condor_online.py"
-			],
-			[
-				"tets",
-				"pilot/scripts/test.sh"
 			]
 		],
 		"width": 0.0
