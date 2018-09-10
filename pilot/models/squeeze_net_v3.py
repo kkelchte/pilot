@@ -1,5 +1,6 @@
 """
-Version of Squeezenet adjust to personal interface but based on 
+Version of Squeezenet 
+v2 --> v3: more batch norm layers
 https://github.com/vonclites/squeezenet/blob/master/networks/squeezenet.py
 """
 
@@ -37,14 +38,14 @@ def squeezenet(inputs,
   relu1 = tf.nn.relu(bn1, name=end_point)
   end_points[end_point]=relu1    
   
-  end_point = '1_pool'
-  p1=tf.layers.max_pooling2d(relu1, pool_size=3, strides=2, padding='valid',name=end_point)
-  if verbose: print("shape p1: {}".format(p1.shape))
-  end_points[end_point]=p1
+  end_point = '1_conv_pool'
+  cp1 = tf.layers.conv2d(relu1, 96, kernel_size=[3,3], strides=2, padding='valid', activation=None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  if verbose: print("shape cp1: {}".format(cp1.shape))
+  end_points[end_point]=cp1
   
   # TOWER 2 Firemodule
   end_point = '2_squeeze_conv_1'
-  l2_s1 = tf.layers.conv2d(p1, 16, kernel_size=[1,1], strides=1, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l2_s1 = tf.layers.conv2d(cp1, 16, kernel_size=[1,1], strides=1, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l2_s1: {}".format(l2_s1.shape))
   end_points[end_point]=l2_s1
 
@@ -63,9 +64,13 @@ def squeezenet(inputs,
   if verbose: print("shape l2_c: {}".format(l2_c.shape))
   end_points[end_point]=l2_c
 
+  end_point='2_bn'
+  bn2 = tf.layers.batch_normalization(l2_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn2
+  
   # TOWER 3 Firemodule
   end_point = '3_squeeze_conv_1'
-  l3_s1 = tf.layers.conv2d(l2_c, 16, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l3_s1 = tf.layers.conv2d(bn2, 16, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l3_s1: {}".format(l3_s1.shape))
   end_points[end_point]=l3_s1
 
@@ -84,9 +89,14 @@ def squeezenet(inputs,
   if verbose: print("shape l3_c: {}".format(l3_c.shape))
   end_points[end_point]=l3_c
 
+  end_point='3_bn'
+  bn3 = tf.layers.batch_normalization(l3_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn3
+
+
   # TOWER 4 Firemodule with batch normalization and max pool
   end_point = '4_squeeze_conv_1'
-  l4_s1 = tf.layers.conv2d(l3_c, 32, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l4_s1 = tf.layers.conv2d(bn3, 32, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l4_s1: {}".format(l4_s1.shape))
   end_points[end_point]=l4_s1
 
@@ -109,14 +119,14 @@ def squeezenet(inputs,
   bn4 = tf.layers.batch_normalization(l4_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
   end_points[end_point]=bn4  
   
-  end_point='4_pool'
-  p4=tf.layers.max_pooling2d(bn4, pool_size=3, strides=2, padding='valid',name=end_point)
-  if verbose: print("shape p4: {}".format(p4.shape))
-  end_points[end_point]=p4
+  end_point='4_conv_pool'
+  cp4 = tf.layers.conv2d(bn4, 256, kernel_size=[3,3], strides=2, padding='valid', activation=None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  if verbose: print("shape cp4: {}".format(cp4.shape))
+  end_points[end_point]=cp4
   
   # TOWER 5 Firemodule
   end_point = '5_squeeze_conv_1'
-  l5_s1 = tf.layers.conv2d(p4, 32, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l5_s1 = tf.layers.conv2d(cp4, 32, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l5_s1: {}".format(l5_s1.shape))
   end_points[end_point]=l5_s1
 
@@ -135,9 +145,13 @@ def squeezenet(inputs,
   if verbose: print("shape l5_c: {}".format(l5_c.shape))
   end_points[end_point]=l5_c
 
+  end_point='5_bn'
+  bn5 = tf.layers.batch_normalization(l5_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn5
+
   # TOWER 6 Firemodule
   end_point = '6_squeeze_conv_1'
-  l6_s1 = tf.layers.conv2d(l5_c, 48, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l6_s1 = tf.layers.conv2d(bn5, 48, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l6_s1: {}".format(l6_s1.shape))
   end_points[end_point]=l6_s1
 
@@ -156,9 +170,13 @@ def squeezenet(inputs,
   if verbose: print("shape l6_c: {}".format(l6_c.shape))
   end_points[end_point]=l6_c
 
+  end_point='6_bn'
+  bn6 = tf.layers.batch_normalization(l6_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn6
+
   # TOWER 7 Firemodule
   end_point = '7_squeeze_conv_1'
-  l7_s1 = tf.layers.conv2d(l6_c, 48, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l7_s1 = tf.layers.conv2d(bn6, 48, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l7_s1: {}".format(l7_s1.shape))
   end_points[end_point]=l7_s1
 
@@ -177,9 +195,13 @@ def squeezenet(inputs,
   if verbose: print("shape l7_c: {}".format(l7_c.shape))
   end_points[end_point]=l7_c
 
+  end_point='7_bn'
+  bn7 = tf.layers.batch_normalization(l7_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn7
+
   # TOWER 8 Firemodule + batch norm + max pool
   end_point = '8_squeeze_conv_1'
-  l8_s1 = tf.layers.conv2d(l7_c, 64, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l8_s1 = tf.layers.conv2d(bn7, 64, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l8_s1: {}".format(l8_s1.shape))
   end_points[end_point]=l8_s1
 
@@ -201,15 +223,15 @@ def squeezenet(inputs,
   end_point='8_bn'
   bn8 = tf.layers.batch_normalization(l8_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
   end_points[end_point]=bn8
-
-  end_point='8_pool'
-  p8=tf.layers.max_pooling2d(bn8, pool_size=3, strides=2, padding='valid',name=end_point)
-  if verbose: print("shape p8: {}".format(p8.shape))
-  end_points[end_point]=p8
+  
+  end_point='8_conv_pool'
+  cp8 = tf.layers.conv2d(bn8, 512, kernel_size=[3,3], strides=2, padding='valid', activation=None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  if verbose: print("shape cp8: {}".format(cp8.shape))
+  end_points[end_point]=cp8
   
   # TOWER 9 Firemodule
   end_point = '9_squeeze_conv_1'
-  l9_s1 = tf.layers.conv2d(p8, 64, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l9_s1 = tf.layers.conv2d(cp8, 64, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l9_s1: {}".format(l9_s1.shape))
   end_points[end_point]=l9_s1
 
@@ -228,19 +250,28 @@ def squeezenet(inputs,
   if verbose: print("shape l9_c: {}".format(l9_c.shape))
   end_points[end_point]=l9_c
 
+  end_point='9_bn'
+  bn9 = tf.layers.batch_normalization(l9_c, axis=-1, momentum=0.999, epsilon=0.00001, center=True, scale=False, training=is_training, name=end_point, reuse=reuse)
+  end_points[end_point]=bn9
+
   # TOWER 10 Conv2d and avgpool
   end_point = '10_conv'
-  l10 = tf.layers.conv2d(l9_c, num_outputs, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.tanh if num_outputs == 1 else None, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l10 = tf.layers.conv2d(bn9, num_outputs, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.tanh if num_outputs == 1 else tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l10: {}".format(l10.shape))
   end_points[end_point]=l10
 
-  end_point = '10_avgpool'
-  p10=tf.layers.max_pooling2d(l10, pool_size=13, strides=1, padding='valid',name=end_point)
-  if verbose: print("shape p10: {}".format(p10.shape))
-  end_points[end_point]=p10
+  end_point='10_conv_pool'
+  cp10 = tf.layers.conv2d(l10, num_outputs, kernel_size=[13,13], strides=1, padding='valid', activation=None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  if verbose: print("shape cp10: {}".format(cp10.shape))
+  end_points[end_point]=cp10
+
+  # end_point = '10_avgpool'
+  # p10=tf.layers.max_pooling2d(l10, pool_size=13, strides=1, padding='valid',name=end_point)
+  # if verbose: print("shape p10: {}".format(p10.shape))
+  # end_points[end_point]=p10
 
   end_point = 'outputs'
-  outputs = tf.squeeze(p10, [1,2], name=end_point)
+  outputs = tf.squeeze(cp10, [1,2], name=end_point)
   if verbose: print("shape outputs: {}".format(outputs.shape))
   end_points[end_point]=outputs
 

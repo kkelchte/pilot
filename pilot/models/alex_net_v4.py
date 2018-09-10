@@ -87,7 +87,8 @@ def alexnet(inputs,
     end_points[end_point]=l7
 
     end_point = 'fc_8'
-    l8=tf.layers.conv1d(l7, filters=num_outputs, kernel_size=1, strides=1, padding='valid', activation=tf.nn.tanh if num_outputs == 1 else tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    l8=tf.layers.conv1d(l7, filters=num_outputs, kernel_size=1, strides=1, padding='valid', activation=tf.nn.tanh if num_outputs == 1 else None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    # l8=tf.layers.conv1d(l7, filters=num_outputs, kernel_size=1, strides=1, padding='valid', activation=tf.nn.tanh if num_outputs == 1 else tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     if verbose: print("shape l8: {}".format(l8.shape))
     end_points[end_point]=l8
     end_point = 'outputs'

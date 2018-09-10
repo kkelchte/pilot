@@ -519,23 +519,6 @@
 	},
 	"buffers":
 	[
-		{
-			"file": "scripts/launch.sh",
-			"settings":
-			{
-				"buffer_size": 20651,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "scripts/evaluate_in_singularity.sh",
-			"settings":
-			{
-				"buffer_size": 963,
-				"line_ending": "Unix"
-			}
-		}
 	],
 	"build_system": "",
 	"build_system_choices":
@@ -576,22 +559,31 @@
 	],
 	"file_history":
 	[
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_offline.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/clean_dataset.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/squeeze_net_v2.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/squeeze_net_v3.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/vary_exp.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/floor.yaml",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/model.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_net.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/__init__.py",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_controller/src/motor_controller.cpp",
+		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/__init__.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/tools.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/evaluate_in_singularity.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_offline.py",
 		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train_and_evaluate.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot.sublime-project",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_net.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/squeeze_net.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/model.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/data.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/test_train_evaluate.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/opal_launch.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_create_data.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/save_results_as_pdf.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-08-13_debug_ros_gazebo_on_condor.md",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
@@ -602,12 +594,10 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/corridor_generator.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/world_generator.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-08-28_factoring_control.md",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/tools.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/opal_launch.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/alex_net_v3.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/alex_net_v4.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/alex_net.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/clean_dataset.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/squeeze_net_v1.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/demo_combined_sing",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/demo_empty_sing",
@@ -617,7 +607,6 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/combined.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/ceiling.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/floor.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/passway_door.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/passway_arc.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/radiator_left.yaml",
@@ -657,7 +646,6 @@
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-08-16_visualize_activations.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/tf_cnnvis.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/utils.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/__init__.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/index.md",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-07-10_doshico_revisited.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/replay_buffer.py",
@@ -698,12 +686,7 @@
 		"/esat/opal/kkelchte/docker_home/tensorflow/log/test_doshico/lr01_bs64_gmw01/xterm_python_2018-04-05_16-32",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/ground_truth_listener.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/clean_dataset.sh",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/launch/behaviorarbitration.launch",
-		"/esat/opal/kkelchte/docker_home/tensorflow/log/test_doshico/lr01_bs64_gmw01/condor/.tmp/run_test_doshico_lr01_bs64_gmw01__2018-04-05_1534.sh",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/start_python_sing.sh",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/start_python.sh",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/show_depth_prediction.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/evaluate_model.sh"
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/launch/behaviorarbitration.launch"
 	],
 	"find":
 	{
@@ -721,6 +704,18 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"v2",
+			"7",
+			"6",
+			"5",
+			"3",
+			"3_",
+			"2",
+			"bn1",
+			"v1",
+			"cp8",
+			"pool",
+			"cp4",
 			"10*60",
 			"--wall_time_train",
 			"15",
@@ -836,19 +831,7 @@
 			"offset",
 			"z_location",
 			"0.02",
-			"height",
-			"len(tiles)-1",
-			"wall_",
-			"z_location",
-			" ",
-			"test_drone",
-			"lights_location",
-			"><",
-			"conf",
-			"texture",
-			"picked_tiles",
-			"10",
-			"background"
+			"height"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -866,67 +849,8 @@
 	"groups":
 	[
 		{
-			"selected": 1,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "scripts/launch.sh",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 20651,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1045,
-								1045
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 1010.0,
-						"translation.y": 360.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "scripts/evaluate_in_singularity.sh",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 963,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								294,
-								963
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				}
 			]
 		}
 	],
@@ -983,6 +907,66 @@
 		"selected_items":
 		[
 			[
+				"cle",
+				"pilot/scripts/clean_dataset.py"
+			],
+			[
+				"floo",
+				"simulation_supervised/simulation_supervised_demo/extensions/config/floor.yaml"
+			],
+			[
+				"var",
+				"simulation_supervised/simulation_supervised_demo/extensions/config/vary_exp.yaml"
+			],
+			[
+				"__",
+				"pilot/pilot/models/__init__.py"
+			],
+			[
+				"v2",
+				"pilot/pilot/models/squeeze_net_v2.py"
+			],
+			[
+				"lau",
+				"pilot/scripts/launch.sh"
+			],
+			[
+				"mo",
+				"pilot/pilot/model.py"
+			],
+			[
+				"moc",
+				"hector_quadrotor/hector_quadrotor_controller/src/motor_controller.cpp"
+			],
+			[
+				"mobi",
+				"pilot/pilot/models/mobile_net.py"
+			],
+			[
+				"too",
+				"pilot/pilot/tools.py"
+			],
+			[
+				"mob",
+				"pilot/pilot/models/mobile_net.py"
+			],
+			[
+				"squ",
+				"pilot/pilot/models/squeeze_net_v2.py"
+			],
+			[
+				"co on",
+				"pilot/scripts/condor_online.py"
+			],
+			[
+				"eva",
+				"pilot/scripts/evaluate_in_singularity.sh"
+			],
+			[
+				"mod",
+				"pilot/pilot/model.py"
+			],
+			[
 				"dag",
 				"pilot/scripts/dag_train_and_evaluate.py"
 			],
@@ -1003,20 +987,8 @@
 				"pilot/scripts/launch.sh"
 			],
 			[
-				"mobi",
-				"pilot/pilot/models/mobile_net.py"
-			],
-			[
 				"sq",
 				"pilot/pilot/models/squeeze_net.py"
-			],
-			[
-				"mob",
-				"pilot/pilot/models/mobile_net.py"
-			],
-			[
-				"mo",
-				"pilot/pilot/model.py"
 			],
 			[
 				"mai",
@@ -1025,10 +997,6 @@
 			[
 				"dat",
 				"pilot/pilot/data.py"
-			],
-			[
-				"eva",
-				"pilot/scripts/evaluate_in_singularity.sh"
 			],
 			[
 				"te",
@@ -1107,24 +1075,12 @@
 				"pilot/scripts/dag_train_and_evaluate.py"
 			],
 			[
-				"mod",
-				"pilot/pilot/model.py"
-			],
-			[
-				"co on",
-				"pilot/scripts/condor_online.py"
-			],
-			[
 				"cono",
 				"pilot/scripts/condor_offline.py"
 			],
 			[
 				"op",
 				"pilot/scripts/opal_launch.py"
-			],
-			[
-				"too",
-				"pilot/pilot/tools.py"
 			],
 			[
 				"ru",
@@ -1157,10 +1113,6 @@
 			[
 				"201",
 				"kkelchte.github.io/docs/2018-08-28_factoring_control.md"
-			],
-			[
-				"cle",
-				"pilot/scripts/clean_dataset.py"
 			],
 			[
 				"squ v",
@@ -1255,20 +1207,12 @@
 				"simulation_supervised/simulation_supervised_tools/python/generators/extension_generator.py"
 			],
 			[
-				"var",
-				"simulation_supervised/simulation_supervised_demo/extensions/config/vary_primal_exp.yaml"
-			],
-			[
 				"rad",
 				"simulation_supervised/simulation_supervised_demo/extensions/config/radiator.yaml"
 			],
 			[
 				"radi r",
 				"simulation_supervised/simulation_supervised_demo/extensions/config/radiator_right.yaml"
-			],
-			[
-				"lau",
-				"pilot/scripts/launch.sh"
 			],
 			[
 				"__ini",
@@ -1473,26 +1417,6 @@
 			[
 				"repl",
 				"pilot/pilot/replay_buffer.py"
-			],
-			[
-				"tes tra",
-				"pilot/scripts/test_train_evaluate.sh"
-			],
-			[
-				"en gr\t",
-				"docker_home/.entrypoint_graph"
-			],
-			[
-				"tra da",
-				"pilot/scripts/dag_train_and_evaluate.py"
-			],
-			[
-				".en",
-				"docker_home/.entrypoint_graph"
-			],
-			[
-				"on co",
-				"pilot/scripts/condor_online.py"
 			]
 		],
 		"width": 0.0
@@ -1523,7 +1447,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 66.0,
+	"side_bar_width": 149.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

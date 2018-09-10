@@ -49,7 +49,9 @@ class Model(object):
                 'alex_v3': alex_net_v3,
                 'alex_v4': alex_net_v4,
                 'squeeze': squeeze_net,
-                'squeeze_v1': squeeze_net_v1}
+                'squeeze_v1': squeeze_net_v1,
+                'squeeze_v2': squeeze_net_v2,
+                'squeeze_v3': squeeze_net_v3}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
@@ -175,7 +177,9 @@ class Model(object):
               'reuse':None if mode == 'train' else True,
               'is_training': mode == 'train'}
         versions={'squeeze': squeeze_net,
-            'squeeze_v1': squeeze_net_v1}
+            'squeeze_v1': squeeze_net_v1,
+            'squeeze_v2': squeeze_net_v2,
+            'squeeze_v3': squeeze_net_v3}
         self.endpoints[mode] = versions[self.FLAGS.network].squeezenet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)

@@ -69,11 +69,17 @@
 # python dag_create_data.py -t combined_corridor --wall_time_rec $((2*60*60)) --destination combined_corridor --number_of_recorders 50 --number_of_runs 20 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --corridor_bends 5 --extension_config combined --x_var 0.5 --y_var 0.7 --z_pos 1.3 --z_var 0.3 --yaw_or 1.57 --yaw_var 0.5233
 
 # # --> vary_corridor
-# for texture in Grey Red Black Bricks Grass WoodFloor ; do
-# 	for light in default spot directional ; do
-# 		python dag_create_data.py -t vary_corridor_${texture}_${light} --wall_time_rec $((8*60*60)) --destination vary_corridor_${texture}_${light} -number_of_recorders 4 --number_of_runs 5 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --corridor_bends 5 --extension_config vary_exp --texture Gazebo/$texture --lights ${light}_light --x_var 0.5 --y_var 0.7 --z_pos 1.3 --z_var 0.3 --yaw_or 1.57 --yaw_var 0.5233
-# 	done 
-# done
+
+# texture=Grey
+# light=default
+# python dag_create_data.py -t vary_corridor_${texture}_${light} --wall_time_rec $((2*60*60)) --destination vary_corridor_${texture}_${light} --number_of_recorders 2 --number_of_runs 2 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --corridor_bends 5 --extension_config vary_exp --texture Gazebo/$texture --lights ${light}_light --x_var 0.5 --y_var 0.7 --z_pos 1.3 --z_var 0.3 --yaw_or 1.57 --yaw_var 0.5233
+
+
+for texture in Red Black Bricks Grass WoodFloor ; do
+	for light in spot directional ; do
+		python dag_create_data.py -t vary_corridor_${texture}_${light} --wall_time_rec $((8*60*60)) --destination vary_corridor_${texture}_${light} --number_of_recorders 2 --number_of_runs 10 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --corridor_bends 5 --extension_config vary_exp --texture Gazebo/$texture --lights ${light}_light --x_var 0.5 --y_var 0.7 --z_pos 1.3 --z_var 0.3 --yaw_or 1.57 --yaw_var 0.5233 --max_depth_rgb_difference 3 
+	done 
+done
 
 
 
@@ -88,21 +94,21 @@
 # for world in combined_corridor ; do
 
 #   # mobile
-#   for net in mobile ; do
-#     python dag_train_and_evaluate.py -t ${world}_${net}               --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 9 -w corridor -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
-#     # python dag_train_and_evaluate.py -t ${world}_${net}_imgnet        --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 9 -w corridor -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
-#     # python dag_train_and_evaluate.py -t ${world}_${net}_05 --gpumem 3000 --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --depth_multiplier 0.5 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 9 -w corridor -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
-#   done
+#   # for net in mobile ; do
+#   #   python dag_train_and_evaluate.py -t ${world}_${net}               --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 9 -w corridor -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+#   #   # python dag_train_and_evaluate.py -t ${world}_${net}_imgnet        --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 9 -w corridor -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+#   #   # python dag_train_and_evaluate.py -t ${world}_${net}_05 --gpumem 3000 --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --depth_multiplier 0.5 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 9 -w corridor -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+#   # done
 
 #   # alex --> requires 3000G
-#   # for net in alex_v4 ; do
-#   #   python dag_train_and_evaluate.py -t ${world}_${net} --gpumem 3000 --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 9 -w corridor -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
-#   # done
+#   for net in alex_v4 ; do
+#     python dag_train_and_evaluate.py -t ${world}_${net}_no_act --gpumem 4500 --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 1 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+#   done
 
 #   # # squeeze --> requires 3000G
-#   # for net in squeeze_v1 ; do
-#   #   python dag_train_and_evaluate.py -t ${world}_${net} --gpumem 3000 --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 9 -w corridor -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
-#   # done
+#   for net in squeeze_v3 ; do
+#     python dag_train_and_evaluate.py -t ${world}_${net} --gpumem 3000 --copy_dataset --wall_time_train $((20*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 2 --normalize_over_actions --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+#   done
 
 # done
 
@@ -122,8 +128,8 @@
 # done
 
 
-python condor_offline.py -t reference_radiator --wall_time $((3*60*60)) --dataset radiator --max_episodes 600 --discrete --load_data_in_ram
-python condor_offline.py -t reference_radiator_poster --wall_time $((3*60*60)) --dataset radiator_poster --max_episodes 600 --discrete --load_data_in_ram
+# python condor_offline.py -t reference_radiator --wall_time $((3*60*60)) --dataset radiator --max_episodes 600 --discrete --load_data_in_ram
+# python condor_offline.py -t reference_radiator_poster --wall_time $((3*60*60)) --dataset radiator_poster --max_episodes 600 --discrete --load_data_in_ram
 
 
 # ------------ONLINE-------------
