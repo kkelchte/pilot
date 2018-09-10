@@ -86,40 +86,46 @@
 # python dag_train_and_evaluate.py -t sandbox_drone_scratch --wall_time_train $((5*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 5 --learning_rate 0.01 --dataset sandbox_drone --max_episodes 1000 --paramfile eva_params.yaml --number_of_runs 10 -w sandbox -w esat_v1 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --network mobile --scratch --speed 1.3 --visualize_saliency_of_output --visualize_deep_dream_of_output
 
 # for world in combined_corridor ; do
-
 #   # mobile
 #   for net in mobile ; do
-#     python dag_train_and_evaluate.py -t ${world}_${net}               --wall_time_train $((6*60*60)) --wall_time_eva $((40*60)) --number_of_models 3 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 #     python dag_train_and_evaluate.py -t ${world}_${net}_imgnet        --wall_time_train $((6*60*60)) --wall_time_eva $((40*60)) --number_of_models 3 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 300 --network $net --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 #     python dag_train_and_evaluate.py -t ${world}_${net}_05 --gpumem 2500 --wall_time_train $((6*60*60)) --wall_time_eva $((40*60)) --number_of_models 3 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 1000 --network $net --depth_multiplier 0.5 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 #   done
-
 #   # alex --> requires 3000G
 #   for net in alex_v3 alex_v4 ; do
 #     python dag_train_and_evaluate.py -t ${world}_${net} --gpumem 3000 --wall_time_train $((6*60*60)) --wall_time_eva $((40*60)) --number_of_models 3 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 #   done
-
 #   # squeeze --> requires 3000G
 #   for net in squeeze squeeze_v1 ; do
 #     python dag_train_and_evaluate.py -t ${world}_${net} --gpumem 3000 --wall_time_train $((6*60*60)) --wall_time_eva $((40*60)) --number_of_models 3 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 1000 --network $net --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 #   done
-
 # done
 
-
-# test with preload data in canyon
-# python dag_train_and_evaluate.py -t test_canyon_tiny_mobile --not_nice --wall_time_train $((6*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 2 --load_data_in_ram --network mobile --normalize_over_actions --learning_rate 0.1 --dataset canyon_drone_tiny --max_episodes 300 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3
-
-# test with data overnet in canyon
-# python dag_train_and_evaluate.py -t test_canyon_tiny_mobile_nopreload --not_nice --wall_time_train $((6*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 1 --network mobile --normalize_over_actions --learning_rate 0.1 --dataset canyon_drone_tiny --max_episodes 300 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3
-
-# test with copying data in canyon
-python dag_train_and_evaluate.py -t test_canyon_tiny_mobile_copy_data --not_nice --copy_dataset --wall_time_train $((6*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 1 --network mobile --normalize_over_actions --learning_rate 0.1 --dataset canyon_drone_tiny --max_episodes 300 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3
+# python dag_train_and_evaluate.py -t test_canyon_tiny_mobile --not_nice --wall_time_train $((30*60)) --wall_time_eva $((60*60)) --number_of_models 1 --network mobile --normalize_over_actions --learning_rate 0.1 --dataset canyon_drone_tiny --max_episodes 30 --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 1 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3
 
 # primal test before big batch
 # world='combined_corridor'
 # net='mobile'
 # python dag_train_and_evaluate.py -t test_${world}_${net}_dont_copy --not_nice --wall_time_train $((6*60*60)) --wall_time_eva $((6*60*60)) --number_of_models 1 --normalize_over_actions --learning_rate 0.01 --dataset ${world} --max_episodes 100 --network $net --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 5 -w corridor -w corridor -w different_corridor -w esatv1 -w esatv2 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+
+# python condor_offline.py -t ensemble_radiator_single_loss --wall_time $((3*60*60)) --dataset radiator --max_episodes 600 --discrete --single_loss_training --load_data_in_ram --n_factors 1
+# python condor_offline.py -t ensemble_radiator_poster_single_loss --wall_time $((3*60*60)) --dataset radiator_poster --max_episodes 600 --discrete --single_loss_training --load_data_in_ram --n_factors 2
+
+
+
+# python dag_train_and_evaluate.py -t all_factors/ensemble_mse_01 --wall_time_train $((12*60*60)) --wall_time_eva $((60*60)) --rammem 10 --number_of_models 1 --loss mse --non_expert_weight 0.1 --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset all_factors --max_episodes 1000 --network mobile --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+# python dag_train_and_evaluate.py -t all_factors/ensemble_mse_1 --wall_time_train $((12*60*60)) --wall_time_eva $((60*60)) --rammem 10 --number_of_models 1 --loss mse --non_expert_weight 1 --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset all_factors --max_episodes 1000 --network mobile --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+# python dag_train_and_evaluate.py -t all_factors/ensemble_mse_0 --wall_time_train $((12*60*60)) --wall_time_eva $((60*60)) --rammem 10 --number_of_models 1 --loss mse --non_expert_weight 0 --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset all_factors --max_episodes 1000 --network mobile --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+# python dag_train_and_evaluate.py -t all_factors/ensemble_ce_0 --wall_time_train $((12*60*60)) --wall_time_eva $((60*60)) --rammem 10 --number_of_models 1 --loss ce --non_expert_weight 0 --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset all_factors --max_episodes 1000 --network mobile --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+# python dag_train_and_evaluate.py -t all_factors/ensemble_ce_01 --wall_time_train $((12*60*60)) --wall_time_eva $((60*60)) --rammem 10 --number_of_models 1 --loss ce --non_expert_weight 0.1 --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset all_factors --max_episodes 1000 --network mobile --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+# python dag_train_and_evaluate.py -t all_factors/ensemble_ce_1 --wall_time_train $((12*60*60)) --wall_time_eva $((60*60)) --rammem 10 --number_of_models 1 --loss ce --non_expert_weight 1 --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset all_factors --max_episodes 1000 --network mobile --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+
+# TODO # max_episodes?
+python dag_train_and_evaluate.py -t all_factors/ensemble_imgnet --wall_time_train $((12*60*60)) --wall_time_eva $((60*60)) --rammem 20 --number_of_models 1 --loss mse --non_expert_weight 1 --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset all_factors --max_episodes 1000 --network mobile --discrete --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+python dag_train_and_evaluate.py -t all_factors/ensemble_smce_1 --wall_time_train $((12*60*60)) --wall_time_eva $((60*60)) --rammem 20 --number_of_models 1 --loss smce                   --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset all_factors --max_episodes 1000 --network mobile --discrete --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --histogram_of_weights --histogram_of_activations --paramfile eva_params.yaml --number_of_runs 6 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+
+
+
 
 
 
@@ -133,6 +139,8 @@ python dag_train_and_evaluate.py -t test_canyon_tiny_mobile_copy_data --not_nice
 # 	# python condor_online.py -t test_$i --wall_time $((2*24*60*60)) -w canyon -w forest -w sandbox --robot drone_sim --fsm oracle_drone_fsm -n $((2)) --paramfile params.yaml -ds -e --save_only_success
 # done
 
+# test
+# python condor_online.py --not_nice -t test_online_eva --checkpoint_path combined_corridor/mobile --wall_time $((60*60)) --paramfile eva_params.yaml --number_of_runs 3 -w corridor --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 
 # -----------TEST-----------------
 # create dataset

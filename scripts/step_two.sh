@@ -115,7 +115,7 @@ fi
 echo
 echo "$(tput setaf 2)Finished installation step_two."
 echo "Please test your installation with the test script. (outside a docker container)"
-echo "$(tput setaf 3) $HOME_HOST/tensorflow/pilot/scripts/test_script.sh$(tput setaf 2)"
+echo "$(tput setaf 3) $HOME_HOST/tensorflow/ensemble_v0/scripts/test_script.sh$(tput setaf 2)"
 echo "Goodluck!"
 
 tput sgr 0

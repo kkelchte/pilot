@@ -66,13 +66,13 @@ for model in range(FLAGS.number_of_models):
 
 ##########################################################################################################################
 # STEP 4 Call a python script that parses the results and prints some stats
-command="python condor_offline.py -t {0}/results --dont_submit -pp pilot/scripts -ps get_results.py --mother_dir {0} --endswith _eva --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 10*60)
+command="python condor_offline.py -t {0}/results --dont_submit --rammem 7 -pp pilot/scripts -ps get_results.py --mother_dir {0} --endswith _eva --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
 for e in others: command=" {0} {1}".format(command, e)
 save_call(command)
 
 ##########################################################################################################################
 # STEP 5 Call a python script that creates a report
-command="python condor_offline.py -t {0}/report --dont_submit -pp pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 10*60, FLAGS.summary_dir)
+command="python condor_offline.py -t {0}/report --dont_submit --rammem 7 -pp pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 2*60*60, FLAGS.summary_dir)
 for e in others: command=" {0} {1}".format(command, e)
 save_call(command)
 
@@ -84,8 +84,8 @@ try:
   os.makedirs(dag_dir)
 except OSError:
   print("Found existing log folder: {0}/{1}{2}".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
-  df.write("# File name: dag_file_"+FLAGS.log_tag+" \n")
+with open(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_'),'w') as df:
+  df.write("# File name: dag_file_"+FLAGS.log_tag.replace('/','_')+" \n")
   for model in range(FLAGS.number_of_models):
     df.write("JOB m{0}_train {1}/{2}{3}/{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
     df.write("JOB m{0}_eva {1}/{2}{3}/{0}_eva/condor/online.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
@@ -108,13 +108,13 @@ with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
 
 ##########################################################################################################################
 # STEP 6 submit DAG file
-save_call("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag))
+save_call("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_')))
 
 print("Submission done.")
 print("Monitor with: ")
-print("tail -f {0}/dag_file_{1}.nodes.log".format(dag_dir, FLAGS.log_tag))
+print("tail -f {0}/dag_file_{1}.nodes.log".format(dag_dir, FLAGS.log_tag.replace('/','_')))
 print("or: ")
-print("tail -f {0}/dag_file_{1}.dagman.out".format(dag_dir, FLAGS.log_tag))
+print("tail -f {0}/dag_file_{1}.dagman.out".format(dag_dir, FLAGS.log_tag.replace('/','_')))
 time.sleep(1)
 
 

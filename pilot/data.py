@@ -29,6 +29,7 @@ FLAGS=None
 full_set = {}
 im_size=(128,128,3)
 de_size = (55,74)
+factor_offsets={} #for each factor an offset is defined so that offset+0,offset+1,offset+2 corresponds to the correct outputs when creating the target.
 
 """
 Load data from hdf5 file (--hdf5) or from the dataset folder that contains a train_set.txt val_set.txt and test_set.txt.
@@ -63,7 +64,8 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   test_set=load_set('test')
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
 
-  
+  print("[data.py]: Control factors with offsets: {}".format(sorted(factor_offsets.iteritems(), key=lambda (k,v): (v,k))))
+  return factor_offsets
 # def load_set_hdf5(data_type):
 #   """Load a type (train, val or test) of set in the set_list
 #   as a tuple: first tuple element the directory of the fligth 
@@ -123,10 +125,17 @@ def load_set(data_type):
 
 def load_run_info(coord, run_list, set_list, checklist):
   """Load information from run with multiple threads"""
+  global factor_offsets
   while not coord.should_stop():
     try:
       run_dir = run_list.pop()
       print run_dir
+      # extract factor from run_dir name
+      factor=run_dir.split('/')[-2].split('_')[0]
+      if factor not in factor_offsets.keys():
+        # add factor with new offset according to the action_quantity
+        factor_offsets[factor]=0 if len(factor_offsets.values()) == 0 else max(factor_offsets.values())+(FLAGS.action_quantity if FLAGS.discrete else 1)
+
       # get list of all image numbers available in listdir
       imgs_jpg=[f for f in listdir(join(run_dir,'RGB')) if not f.startswith('.')]
       num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg[::FLAGS.subsample]])
@@ -215,12 +224,12 @@ def load_run_info(coord, run_list, set_list, checklist):
           depths.append(de)
 
       # add all data to the dataset
-      set_list.append({'name':run_dir, 'controls':control_list, 'num_imgs':num_imgs, 'imgs':imgs, 'num_depths':depth_list, 'depths':depths})
+      set_list.append({'name':run_dir, 'controls':control_list, 'num_imgs':num_imgs, 'imgs':imgs, 'num_depths':depth_list, 'depths':depths, 'control_factor': factor})
       
     except IndexError as e:
       coord.request_stop()
     except Exception as e:
-      print('Problem in loading data: {0} @ {1}'.format(e, run_dir))
+      print('Problem in loading data: {0} @ {1}'.format(e.message, run_dir))
       checklist.append(False)
       coord.request_stop()
 
@@ -286,6 +295,7 @@ def generate_batch(data_type):
         ctr = data_set[run_ind]['controls'][frame_ind]
         ctr_index = 0 if np.abs(ctr) < 0.3 else np.sign(ctr)
         count_controls[ctr_index]+=1
+    
     # print count_controls
     if not FLAGS.load_data_in_ram:
       # load data multithreaded style into RAM
@@ -335,11 +345,10 @@ def generate_batch(data_type):
               im, de = load_rgb_depth_image(run_ind, frame_ind)
               ctr = data_set[run_ind]['controls'][frame_ind]
 
-            # clip control avoiding values larger than 1
+            # clip control avoiding values larger than 1 and add it to the offset of this control factor
             ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
-              
             # append rgb image, control and depth to batch
-            batch.append({'img':im, 'ctr':ctr, 'depth':de})
+            batch.append({'img':im, 'ctr':ctr, 'depth':de, 'factor': data_set[run_ind]['control_factor']})
             checklist.append(True)
           except IndexError as e:
             # print(e)
@@ -370,10 +379,11 @@ def generate_batch(data_type):
           print("[data.py]: Problem loading depth in batch.")
           pass
         ctr = data_set[run_ind]['controls'][frame_ind]
-        # clip control avoiding values larger than 1
+        # clip control avoiding values larger than 1 and add it to the offset of this control factor
         ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
+        
         # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
-        batch.append({'img':img, 'ctr':ctr, 'depth': depth})
+        batch.append({'img':img, 'ctr':ctr, 'depth': depth, 'factor': data_set[run_ind]['control_factor']})
         ok=True
     if ok: b+=1
     yield b, ok, batch
@@ -384,10 +394,10 @@ def generate_batch(data_type):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  parser.add_argument("--dataset", default="small", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="all_factors_small", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
-  parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
+  parser.add_argument("--num_threads", default=1, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--action_bound", default=1, type=float, help="Bound the action space between -b and b")
   parser.add_argument("--auxiliary_depth", action='store_true', help="Define wether network is trained with auxiliary depth prediction.")
   # parser.add_argument("--n_fc", action='store_true', help="Define wether network uses 3 concatenated consecutive frames.")
@@ -401,8 +411,10 @@ if __name__ == '__main__':
 
   parser.add_argument("--network",default='mobile',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
-  parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--batch_size",default=16,type=int,help="Define the size of minibatches.")
   parser.add_argument("--normalize_over_actions", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
+  parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
+  parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
   
   FLAGS=parser.parse_args()  
 
@@ -415,20 +427,23 @@ if __name__ == '__main__':
     print("Number of images: {}".format(sum([ len(s['num_imgs']) for s in full_set[dt]])))
     print("Number of depths: {}".format(sum([ len(s['num_depths']) for s in full_set[dt]])))
     print("Number of controls: {}".format(sum([ len(s['controls']) for s in full_set[dt]])))
+    # print("All factors: {}".format(set([s['control_factor'] for s in full_set[dt]])))
+    print("Factors with offsets: {}".format(sorted(factor_offsets.iteritems(), key=lambda (k,v): (v,k))))
   
   start_time=time.time()
   for index, ok, batch in generate_batch('train'):
-    print("Batch: {}".format(index))
+    # print("Batch: {}".format(index))
     inputs = np.array([_['img'] for _ in batch])
     actions = np.array([[_['ctr']] for _ in batch])
     target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
-    
+    factors = np.array([_['factor'] for _ in batch])
+
     print("batchsize: {}".format(len(batch)))
     print("images size: {}".format(inputs.shape))
     print("actions size: {}".format(actions.shape))
     print("depths size: {}".format(target_depth.shape if FLAGS.auxiliary_depth else 0))
-
-    # import pdb; pdb.set_trace()  
+    print("factors: {}".format(factors))
+    import pdb; pdb.set_trace()  
     
-  print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
+  # print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
   
