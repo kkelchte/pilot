@@ -63,7 +63,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   print("Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
   boollist=['auxiliary_depth', 'discrete']
-  intlist=['n_frames', 'num_outputs']
+  intlist=['n_frames', 'num_outputs','n_factors']
   floatlist=['depth_multiplier','speed']
   stringlist=['network', 'data_format']
   for child in tree.getroot().find('flags'):
@@ -157,6 +157,8 @@ def main(_):
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   parser.add_argument("--single_loss_training", action='store_true',help="Train expert only on data relevant for this expert.")
+  parser.add_argument("--non_expert_weight", default=1., type=float, help="Define the weight of the gradient to a non-expert output layer.")
+  parser.add_argument("--combine_factor_outputs", default='max', type=str, help="Combine the outputs from different experts of different factors: max listens only to loudest expert direction. Weighted_mean sums over all actions from which it takes max.")
   
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")

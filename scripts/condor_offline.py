@@ -44,7 +44,7 @@ parser.add_argument("-ps","--python_script",default='main.py', type=str, help="D
 #===========================
 #   Condor Machine Settings
 #===========================
-parser.add_argument("--gpumem",default=1900, type=int,help="define the number of gigs required in your GPU.")
+parser.add_argument("--gpumem",default=1900, type=int,help="define the number of mbs required in your GPU.")
 parser.add_argument("--rammem",default=15, type=int,help="define the number of gigs required in your RAM.")
 parser.add_argument("--diskmem",default=50, type=int,help="define the number of gigs required on your HD.")
 parser.add_argument("--evaluate_after",action='store_true', help="After training a new condor job can be submitted to evaluate the model after.")
@@ -148,66 +148,66 @@ executable = open(shell_file,'w')
 executable.write("#!/bin/bash \n")
 executable.write("echo \"[condor_script] started executable for condor_offline: $(date +%F_%H:%M)\" \n")
 
-if '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
-  dataset=others[others.index('--dataset')+1]
-  if os.path.isfile('{0}/{1}{2}.tar.gz'.format(FLAGS.home, FLAGS.data_root, dataset)):
-    executable.write("echo \"Copy compressed dataset to /tmp $(date +%H:%M:%S)\" \n")
-    executable.write("cp {0}/{1}{2}.tar.gz /tmp\n".format(FLAGS.home, FLAGS.data_root, dataset))
-    executable.write("echo \"extract dataset to /tmp $(date +%H:%M:%S)\" \n")
-    # extraction of 10 g took around 3min on opal
-    executable.write("tar -xzf /tmp/{0}.tar.gz -C /tmp \n".format(dataset))
-    executable.write("sed -i 's/esat\/opal\/kkelchte\/docker_home\/pilot_data/tmp/' /tmp/{0}/*.txt \n".format(dataset))
-  else:      
-    executable.write("echo \"Copy dataset as separate files to /tmp. $(date +%H:%M:%S)\" \n")
-    executable.write("while read line ; do \n")
-    executable.write("  cp -r $line /tmp\n")
-    executable.write("  echo /tmp/$(basename $line) >> /tmp/train_set.txt\n")
-    executable.write("done < {0}/{1}{2}/train_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
-    executable.write("while read line ; do \n")
-    executable.write("  cp -r $line /tmp\n")
-    executable.write("  echo /tmp/$(basename $line) >> /tmp/val_set.txt\n")
-    executable.write("done < {0}/{1}{2}/val_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
-    executable.write("while read line ; do \n")
-    executable.write("  cp -r $line /tmp\n")
-    executable.write("  echo /tmp/$(basename $line) >> /tmp/test_set.txt\n")
-    executable.write("done < {0}/{1}{2}/test_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
-    others[others.index('--dataset')+1]='.'
-  executable.write("echo \"Finished data copy $(date +%H:%M:%S)\" \n")  
-  FLAGS.data_root='/tmp'
+if FLAGS.python_script == 'main.py':
+  # in case of offline training work locally in /tmp and copy dataset
+  if '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
+    dataset=others[others.index('--dataset')+1]
+    if os.path.isfile('{0}/{1}{2}.tar.gz'.format(FLAGS.home, FLAGS.data_root, dataset)):
+      executable.write("echo \"Copy compressed dataset to /tmp $(date +%H:%M:%S)\" \n")
+      executable.write("cp {0}/{1}{2}.tar.gz /tmp\n".format(FLAGS.home, FLAGS.data_root, dataset))
+      executable.write("echo \"extract dataset to /tmp $(date +%H:%M:%S)\" \n")
+      # extraction of 10 g took around 3min on opal
+      executable.write("tar -xzf /tmp/{0}.tar.gz -C /tmp \n".format(dataset))
+      executable.write("sed -i 's/esat\/opal\/kkelchte\/docker_home\/pilot_data/tmp/' /tmp/{0}/*.txt \n".format(dataset))
+    else:      
+      executable.write("echo \"Copy dataset as separate files to /tmp. $(date +%H:%M:%S)\" \n")
+      executable.write("while read line ; do \n")
+      executable.write("  cp -r $line /tmp\n")
+      executable.write("  echo /tmp/$(basename $line) >> /tmp/train_set.txt\n")
+      executable.write("done < {0}/{1}{2}/train_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+      executable.write("while read line ; do \n")
+      executable.write("  cp -r $line /tmp\n")
+      executable.write("  echo /tmp/$(basename $line) >> /tmp/val_set.txt\n")
+      executable.write("done < {0}/{1}{2}/val_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+      executable.write("while read line ; do \n")
+      executable.write("  cp -r $line /tmp\n")
+      executable.write("  echo /tmp/$(basename $line) >> /tmp/test_set.txt\n")
+      executable.write("done < {0}/{1}{2}/test_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+      others[others.index('--dataset')+1]='.'
+    executable.write("echo \"Finished data copy $(date +%H:%M:%S)\" \n")  
+    FLAGS.data_root='/tmp'
 
+  # create temporary log directory
+  executable.write("mkdir -p /tmp/{0}{1} \n".format(FLAGS.summary_dir, FLAGS.log_tag))
+  # adjust data_root to absolute path (as home environment will be set to /tmp)
+  if FLAGS.data_root != '/tmp': FLAGS.data_root = '{0}/{1}'.format(FLAGS.home, FLAGS.data_root)
+  # check if there is a previous checkpoint saved in summary_dir
+  # if os.path.isdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag): # log_tag is still motherdir/run_number (without date tag)
+  try:
+    # search for checkpoint and config file in current directory and sub directories
+    date_dirs = [FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d for d in ['.']+sorted(os.listdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag)) if os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/checkpoint') and os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/configuration.xml')]
+    checkpoint_file=date_dirs[-1]+'/checkpoint'
+    conf_file=date_dirs[-1]+'/configuration.xml'
+    if date_dirs[-1].split('/')[-1].startswith('2018'): # incase model is saved in date-tagged folder
+      date_tag=date_dirs[-1].split('/')[-1]
+      executable.write("mkdir -p /tmp/{0}{1}/{2} \n".format(FLAGS.summary_dir, FLAGS.log_tag, date_tag))
+      for f in [checkpoint_file, conf_file]: executable.write("cp {0} /tmp/{1}{2}/{3} \n".format(f, FLAGS.summary_dir, FLAGS.log_tag, date_tag))
+    else:
+      for f in [checkpoint_file, conf_file]: executable.write("cp {0} /tmp/{1}{2} \n".format(f, FLAGS.summary_dir, FLAGS.log_tag))
+  except:
+    print("Did not find previous checkpoint in {0}".format(FLAGS.summary_dir+FLAGS.log_tag))
+    # in case no previous moodel is found copy checkpoint path
+    if '--checkpoint_path' in others:
+      checkpoint_path=others[others.index('--checkpoint_path')+1]
+    else:
+      checkpoint_path='mobilenet_025'
+    executable.write('mkdir -p /tmp/{0}{1} \n'.format(FLAGS.summary_dir,checkpoint_path))
+    executable.write('cp {0}/{1}{2}/checkpoint /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
 
+  executable.write('export HOME=/tmp \n')
 
-# create temporary log directory
-executable.write("mkdir -p /tmp/{0}{1} \n".format(FLAGS.summary_dir, FLAGS.log_tag))
-# adjust data_root to absolute path (as home environment will be set to /tmp)
-if FLAGS.data_root != '/tmp': FLAGS.data_root = '{0}/{1}'.format(FLAGS.home, FLAGS.data_root)
-# check if there is a previous checkpoint saved in summary_dir
-# if os.path.isdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag): # log_tag is still motherdir/run_number (without date tag)
-try:
-  # search for checkpoint and config file in current directory and sub directories
-  date_dirs = [FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d for d in ['.']+sorted(os.listdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag)) if os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/checkpoint') and os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/configuration.xml')]
-  checkpoint_file=date_dirs[-1]+'/checkpoint'
-  conf_file=date_dirs[-1]+'/configuration.xml'
-  if date_dirs[-1].split('/')[-1].startswith('2018'): # incase model is saved in date-tagged folder
-    date_tag=date_dirs[-1].split('/')[-1]
-    executable.write("mkdir -p /tmp/{0}{1}/{2} \n".format(FLAGS.summary_dir, FLAGS.log_tag, date_tag))
-    for f in [checkpoint_file, conf_file]: executable.write("cp {0} /tmp/{1}{2}/{3} \n".format(f, FLAGS.summary_dir, FLAGS.log_tag, date_tag))
-  else:
-    for f in [checkpoint_file, conf_file]: executable.write("cp {0} /tmp/{1}{2} \n".format(f, FLAGS.summary_dir, FLAGS.log_tag))
-except:
-  print("Did not find previous checkpoint in {0}".format(FLAGS.summary_dir+FLAGS.log_tag))
-  # in case no previous moodel is found copy checkpoint path
-  if '--checkpoint_path' in others:
-    checkpoint_path=others[others.index('--checkpoint_path')+1]
-  else:
-    checkpoint_path='mobilenet_025'
-  executable.write('mkdir -p /tmp/{0}{1} \n'.format(FLAGS.summary_dir,checkpoint_path))
-  executable.write('cp {0}/{1}{2}/checkpoint /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
-
-
-
-executable.write('export HOME=/tmp \n')
-# executable.write("export HOME={0}\n".format(FLAGS.home))
+else:
+  executable.write("export HOME={0}\n".format(FLAGS.home))
 
 executable.write("export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.1/lib64 \n")
 executable.write("source /users/visics/kkelchte/tensorflow_1.8/bin/activate \n")

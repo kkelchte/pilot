@@ -175,12 +175,12 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
       # Loop over images
       for i in range(results[k][c].shape[0]):
         results[k][c][i]=deprocess_image(results[k][c][i])
-  if num_rows > 6:
-    print("[tools.py]: There are too many columns to create a proper image.")
-    return
+  # if num_rows > 6:
+  #   print("[tools.py]: There are too many columns to create a proper image.")
+  #   return
 
   # create one combined image with each input image on each column
-  fig, axes = plt.subplots(2*num_rows+1,min(len(input_images),5),figsize=(23, 4*(2*len(results.keys())+1)))
+  fig, axes = plt.subplots(2*num_rows+1,min(len(input_images),5),figsize=(15, int(5.5*(2*len(results.keys())+1))))
   # fig, axes = plt.subplots(num_columns+1,min(len(input_images),5),figsize=(23, 4*(2*len(results.keys())+1)))
   # add original images in first row
   for i in range(axes.shape[1]):

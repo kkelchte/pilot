@@ -79,8 +79,8 @@ class Model(object):
         
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)
-      # self.add_discrete_control_layers(self.endpoints['train'])
-      # self.add_discrete_control_layers(self.endpoints['eval'])
+      self.add_discrete_control_layers(self.endpoints['train']) #add probability output with softmax
+      self.add_discrete_control_layers(self.endpoints['eval'])
 
     # add control_layers to parse from the outputs the correct control
     self.add_control_layer(self.endpoints['train'])
@@ -197,7 +197,8 @@ class Model(object):
     '''
     Calculate the boundaries of the different bins for discretizing the targets.
     Define a list form [-bound, +bound] with action_quantity steps and keep the boundaries in a field.
-    Returns the boundaries as well as the values
+    Returns the boundaries as well as the values.
+    Note that this all is abount control bins unrelated to different factors or offsets.
     '''
     # the width of each bin over the range defined by action_bound
     bin_width=2*action_bound/(action_quantity-1.)
@@ -254,6 +255,7 @@ class Model(object):
   def discrete_to_continuous(self, discrete_value, name=None):
     """
     Changes a discrete value to the continuous value (center of the corresponding bin)
+    [0,1,2] --> [-1,0,1]
     """
     if isinstance(discrete_value, tf.Tensor):
       return self.control_values_from_tensors.lookup(discrete_value,name=name)
@@ -274,18 +276,46 @@ class Model(object):
     one_hot[index]=1
     return one_hot
 
-  def one_hot_to_control(self, one_hots,name=None):
+  def one_hot_to_control_digits(self, one_hots, name=None):
     """
-    Changes an array of one_hots to indices.
+    Changes an array of one_hots over different factors to control indices [0,1,2].
+    Only tensor version is used in code.
     """
-    if isinstance(one_hots, tf.Tensor):
-      digits=tf.floormod(tf.argmax(one_hots,axis=-1, name=name, output_type=tf.int32), tf.constant(3, dtype=tf.int32))
-      return self.discrete_to_continuous(digits)
-    else:
-      if len(one_hots.shape)==1:
-        return self.discrete_to_continuous(np.argmax(one_hots))
+    print("[model.py] combine expert outputs with {}".format(self.FLAGS.combine_factor_outputs))
+    if self.FLAGS.combine_factor_outputs == 'max': # take max of outputs
+      if isinstance(one_hots, tf.Tensor):
+        digits=tf.floormod(tf.argmax(one_hots,axis=-1, name=name, output_type=tf.int32), tf.constant(self.FLAGS.action_quantity, dtype=tf.int32))
+        return digits
       else:
-        return self.discrete_to_continuous([np.argmax(o) for o in one_hots])
+        if len(one_hots.shape)==1:
+          return np.argmax(one_hots)%self.FLAGS.action_quantity
+        else:
+          return [np.argmax(o)%self.FLAGS.action_quantity for o in one_hots]
+    else: # weighted average over outputs
+      if isinstance(one_hots, tf.Tensor):
+        # With A = action_quantity, N = batchsize, F = number of factors
+        # First one_hots are reshaped from [N, AxF] to [N, F, A]
+        # Then the actions from different factors is summed with reduce_sum(axis=-2) to [N,A]
+        # Then the max argument index is selected with argmax(axis=-1) to [N] containing integers [0..A-1]
+        return tf.argmax(tf.reduce_sum(tf.reshape(one_hots,(-1,self.FLAGS.n_factors,self.FLAGS.action_quantity), name='reshape_NFA'), axis=-2, name='summed_NA'), axis=-1, name='amax_N', output_type=tf.int32)
+      elif len(one_hots.shape)==1: # in case of one array of all different outputs
+        sums=[0]*self.FLAGS.action_quantity
+        for i in range(0,len(one_hots),self.FLAGS.action_quantity):
+          sums[i]+=one_hots[i]
+          sums[i+1]+=one_hots[i+1]
+          sums[i+2]+=one_hots[i+2]
+        return np.argmax(sums)
+      else: # numpy batch of one_hots
+        output=[] # loop over samples
+        for o in one_hots:
+          sums=[0]*self.FLAGS.action_quantity
+          for i in range(0,len(o),self.FLAGS.action_quantity):
+            sums[i]+=o[i]
+            sums[i+1]+=o[i+1]
+            sums[i+2]+=o[i+2]
+          output.append(np.argmax(sums))
+        return output
+        # raise NotImplementedError
 
   def adjust_targets(self, targets, factors):
     """
@@ -301,12 +331,19 @@ class Model(object):
         new_targets[i,self.factor_offsets[factors[i]]]=t if not self.FLAGS.discrete else self.one_hot(self.continuous_to_discrete(t))
     else:
       for i,t in enumerate(targets):
-        new_targets[i,self.factor_offsets[factors[i]]:self.factor_offsets[factors[i]]+len(self.control_values)]=self.one_hot(self.continuous_to_discrete(t))
-    # print factors
-    # print targets
-    # print new_targets
-    # import pdb; pdb.set_trace()
-    return new_targets  
+        new_targets[i,self.factor_offsets[factors[i]]:self.factor_offsets[factors[i]]+self.FLAGS.action_quantity]=self.one_hot(self.continuous_to_discrete(t))
+    return new_targets
+
+  def adjust_weights(self, targets, factors):
+    """
+    Adjust the weights over the loss (MSE)
+    """
+    # initialize all with non-expert weight
+    weights = np.zeros((len(targets), self.output_size)) + self.FLAGS.non_expert_weight
+    # except of course for the expert outputs extracted from factors
+    for i,t in enumerate(targets): #iterate over samples in batch
+      weights[i,self.factor_offsets[factors[i]]:self.factor_offsets[factors[i]]+(1 if not self.FLAGS.discrete else self.FLAGS.action_quantity)]=1
+    return weights  
 
   def add_control_layer(self, endpoints):
     """Each expert part has one output node in continuous case or different in discrete case.
@@ -316,15 +353,15 @@ class Model(object):
     """
     if not self.FLAGS.discrete:
       end_point='control'
+      # mean will allways be around zero. This can not work.
       ctr = tf.reduce_mean(endpoints['outputs'], axis=-1, name=end_point)
       endpoints[end_point]=ctr
     else:
       end_point='digit'
-      digit = self.one_hot_to_control(endpoints['outputs'], name=end_point)
+      digit = self.one_hot_to_control_digits(endpoints['outputs'], name=end_point)
       endpoints[end_point]=digit
-      end_point='control'
-      control = self.discrete_to_continuous(endpoints['digit'], name=end_point)
-      endpoints[end_point]=control
+      end_point='control' # change local control digit to continuous control float
+      endpoints[end_point] = self.discrete_to_continuous(digit, name=end_point)
 
   def add_discrete_control_layers(self, endpoints):
     """
@@ -336,11 +373,11 @@ class Model(object):
     end_point='probs'
     probs = tf.nn.softmax(endpoints['outputs'], axis=-1, name='softmax')
     endpoints[end_point] = probs
-    end_point='digit'
-    digit = tf.argmax(probs, axis=-1, name='argmax', output_type=tf.int32)
-    endpoints[end_point] = digit
-    end_point='control'
-    endpoints[end_point] = self.discrete_to_continuous(digit, name=end_point)
+    # end_point='digit'
+    # digit = tf.argmax(probs, axis=-1, name='argmax', output_type=tf.int32)
+    # endpoints[end_point] = digit
+    # end_point='control'
+    # endpoints[end_point] = self.discrete_to_continuous(digit, name=end_point)
 
   def define_loss(self, endpoints):
     '''tensors for calculating the loss are added in LOSS collection
@@ -350,17 +387,16 @@ class Model(object):
       if not self.FLAGS.discrete:
         self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
       else:
-        if self.FLAGS.single_loss_training:
-          if self.FLAGS.loss == 'ce':
-            loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['outputs']))
-            loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['outputs']))
-            self.loss = tf.reduce_mean(loss)
-            tf.losses.add_loss(tf.reduce_mean(self.loss))
-          else:
-            self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
-        else:
+        if self.FLAGS.loss == 'ce':
+          loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['probs']+0.001))
+          loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['probs']))
+          self.loss = tf.reduce_mean(loss)
+          tf.losses.add_loss(tf.reduce_mean(self.loss))
+        elif self.FLAGS.loss == 'smce':
           self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'])
-      # tf.losses.add_loss(self.loss)
+        else:
+          self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
+        # tf.losses.add_loss(self.loss)
       if self.FLAGS.auxiliary_depth:
         weights = self.FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
         self.depth_loss = tf.losses.huber_loss(self.depth_targets,endpoints['aux_depth_reshaped'],weights=weights)
@@ -377,14 +413,13 @@ class Model(object):
         self.accuracy={}
         for mode in ['train', 'val']: #following modes offline training
           # keep running variables for both validation and training data
-          self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights, name="mse_"+mode)
-          # self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['digit'] if self.FLAGS.discrete else endpoints['outputs'], weights=self.weights, name="mse_"+mode)
+          if self.FLAGS.discrete: # accuracy is measured on local control digits [0,1,2]
+            self.mse[mode] = tf.metrics.mean_squared_error(self.one_hot_to_control_digits(self.targets), endpoints['digit'], name="mse_"+mode)
+            self.accuracy[mode] = tf.metrics.accuracy(self.one_hot_to_control_digits(self.targets), endpoints['digit'], name='accuracy_'+mode)
+          else:
+            self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights, name="mse_"+mode)
           if self.FLAGS.auxiliary_depth:
             self.mse_depth[mode] = tf.metrics.mean_squared_error(self.depth_targets, endpoints['aux_depth_reshaped'], weights=self.weights, name="mse_depth_"+mode)
-          # add an accuracy metric
-          if self.FLAGS.discrete: 
-            self.accuracy[mode] = tf.metrics.accuracy(self.one_hot_to_control(self.targets), endpoints['control'], name='accuracy_'+mode)
-            # self.accuracy[mode] = tf.metrics.accuracy(self.targets, endpoints['digit'], name='accuracy_'+mode)
     # keep metric variables in a field so they are easily updated
     self.metric_variables=tf.get_collection(tf.GraphKeys.LOCAL_VARIABLES, scope="metrics")
 
@@ -444,11 +479,8 @@ class Model(object):
       # tensors.append(self.mse['val'][1]) # 1 is required to get the update operation
       new_targets = self.adjust_targets(targets,factors)
       feed_dict[self.targets]=new_targets  
-      if self.FLAGS.single_loss_training:
-        weights = np.zeros(new_targets.shape)
-        weights[new_targets != 999] = 1
-      else:
-        weights = np.ones(new_targets.shape)
+
+      weights = self.adjust_weights(targets, factors)
       feed_dict[self.weights] = weights
 
       if self.FLAGS.discrete: tensors.append(self.accuracy['val'])
@@ -498,17 +530,14 @@ class Model(object):
     new_targets = self.adjust_targets(targets, factors)
     feed_dict[self.targets] = new_targets
     
-    if self.FLAGS.single_loss_training:
-      weights = np.zeros(new_targets.shape)
-      weights[new_targets != 999] = 1
-    else:
-      weights = np.ones(new_targets.shape)
-    
+    weights = self.adjust_weights(targets, factors)
+
     feed_dict[self.weights] = weights
 
     
     # append loss
-    tensors.append(self.total_loss)
+    tensors.append(self.loss)
+    # tensors.append(self.total_loss)
 
     # append visualizations
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):

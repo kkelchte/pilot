@@ -84,8 +84,8 @@ try:
   os.makedirs(dag_dir)
 except OSError:
   print("Found existing log folder: {0}/{1}{2}".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
-  df.write("# File name: dag_file_"+FLAGS.log_tag+" \n")
+with open(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_'),'w') as df:
+  df.write("# File name: dag_file_"+FLAGS.log_tag.replace('/','_')+" \n")
   for model in range(FLAGS.number_of_models):
     df.write("JOB m{0}_train {1}/{2}{3}/{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
     df.write("JOB m{0}_eva {1}/{2}{3}/{0}_eva/condor/online.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
@@ -108,13 +108,13 @@ with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
 
 ##########################################################################################################################
 # STEP 6 submit DAG file
-save_call("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag))
+save_call("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_')))
 
 print("Submission done.")
 print("Monitor with: ")
-print("tail -f {0}/dag_file_{1}.nodes.log".format(dag_dir, FLAGS.log_tag))
+print("tail -f {0}/dag_file_{1}.nodes.log".format(dag_dir, FLAGS.log_tag.replace('/','_')))
 print("or: ")
-print("tail -f {0}/dag_file_{1}.dagman.out".format(dag_dir, FLAGS.log_tag))
+print("tail -f {0}/dag_file_{1}.dagman.out".format(dag_dir, FLAGS.log_tag.replace('/','_')))
 time.sleep(1)
 
 
