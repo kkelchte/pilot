@@ -38,7 +38,7 @@ parser.add_argument("--dont_summarize_locally",action='store_true', help="Keep t
 # ==========================
 #   Tensorflow Settings
 # ==========================
-parser.add_argument("-pp","--python_project",default='ensemble_v0/pilot', type=str, help="Define in which python project the executable should be started with ~/tenorflow/PROJECT_NAME/main.py: q-learning/pilot, ensemble_v0/pilot, ddpg, ....")
+parser.add_argument("-pp","--python_project",default='ensemble_v1/pilot', type=str, help="Define in which python project the executable should be started with ~/tenorflow/PROJECT_NAME/main.py: q-learning/pilot, ensemble_v0/pilot, ddpg, ....")
 parser.add_argument("-ps","--python_script",default='main.py', type=str, help="Define which python module should be started within the project: e.g. main.py or data.py.")
 
 #===========================

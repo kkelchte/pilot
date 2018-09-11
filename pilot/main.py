@@ -136,7 +136,7 @@ def main(_):
   # ===========================
   # parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
   parser.add_argument("--load_data_in_ram", action='store_true', help="Define wether the dataset is preloaded into RAM.")
-  parser.add_argument("--dataset", default="small", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="all_factors_small", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--control_file", default='control_info.txt', type=str, help="Define the name of the file with the action labels.")
@@ -225,7 +225,6 @@ def main(_):
   if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
 
   np.random.seed(FLAGS.random_seed)
-  tf.set_random_seed(FLAGS.random_seed)
   
   if FLAGS.random_learning_rate:
     FLAGS.learning_rate = 10**np.random.uniform(-2,0)
@@ -278,6 +277,8 @@ def main(_):
     FLAGS=load_config(FLAGS, checkpoint_path)
     
   save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
+
+  # reset graph and set seed before session
   config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
@@ -289,6 +290,7 @@ def main(_):
   model = Model(FLAGS, sess)
   writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   model.writer = writer
+
   
   def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')

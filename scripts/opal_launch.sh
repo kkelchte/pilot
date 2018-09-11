@@ -32,7 +32,7 @@ echo "$(date +%H:%M:%S) -------- $tag "
 
 mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/$tag
 
-python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/main.py --dataset $world  \
+python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot/main.py --dataset $world  \
                                                                             --network squeeze_v1 \
                                                                             --load_data_in_ram \
                                                                             --scratch  \
@@ -66,7 +66,7 @@ echo "$(date +%H:%M:%S) ---------- done "
 
 
 # mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/
-# python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/main.py --log_tag $tag \
+# python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot/main.py --log_tag $tag \
 #                                                                       --dataset ${world} \
 #                                                                       --max_episodes 1000 \
 #                                                                       --network $name \
@@ -80,8 +80,8 @@ echo "$(date +%H:%M:%S) ---------- done "
 # echo "$(date +%H:%M:%S) ---------- done "
 
 # TODO
-# python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/save_results_as_pdf.py --mother_dir ${name}
+# python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/scripts/save_results_as_pdf.py --mother_dir ${name}
 
 
 # TODO
-# singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_writable.img /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/evaluate_in_singularity.sh >> /esat/opal/kkelchte/docker_home/tensorflow/log/${world}/${name}_output 2>&1
+# singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_writable.img /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/scripts/evaluate_in_singularity.sh >> /esat/opal/kkelchte/docker_home/tensorflow/log/${world}/${name}_output 2>&1

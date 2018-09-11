@@ -95,6 +95,7 @@ class Model(object):
       list_to_exclude.append("H_fc_control")
       list_to_exclude.append("outputs")
       list_to_exclude.append("MobilenetV1/q_depth")
+      list_to_exclude.append("gates")
     else: #If continue training
       list_to_exclude = []
     variables_to_restore = slim.get_variables_to_restore(exclude=list_to_exclude)
@@ -124,7 +125,7 @@ class Model(object):
     # self.targets = tf.placeholder(tf.int32 if FLAGS.discrete else tf.float32, [None, self.output_size])
     self.targets = tf.placeholder(tf.float32, [None, self.output_size])
     self.weights = tf.placeholder(tf.float32, [None, self.output_size])
-
+    self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.n_factors])
 
     self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
         
@@ -192,6 +193,29 @@ class Model(object):
         self.endpoints[mode] = versions[self.FLAGS.network].squeezenet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
+      self.define_gating_function(mode)
+
+  def define_gating_function(self, mode):
+    """Add layers to the network to train a discriminator based on the inner feature representation.
+    This gating function can be based on all intermediate filter activations or only on the final feature.
+    The tensors are added to the endpoints with name [gate]
+    """
+    self.feature_names={'mobile':'AvgPool_1a',
+                        'alex':'fc_7',
+                        'squeeze':'9_concat'}
+    gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0]]]
+    end_point='gates'
+    ep=tf.layers.conv2d(gating_inputs,
+                                                     filters=self.FLAGS.n_factors,
+                                                     kernel_size=[1,1],
+                                                     strides=1,
+                                                     padding='valid',
+                                                     activation=None,
+                                                     use_bias=False,
+                                                     kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                                                     name=end_point,
+                                                     reuse=mode=='eval')
+    self.endpoints[mode][end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
 
   def define_discrete_bins(self, action_bound, action_quantity):
     '''
@@ -266,7 +290,7 @@ class Model(object):
 
   def one_hot(self, index):
     """
-    Index should be an integer.
+    Index should be an integer 32.
     Change from index to one_hot encoding:
     0 --> 1,0,0
     1 --> 0,1,0
@@ -279,43 +303,13 @@ class Model(object):
   def one_hot_to_control_digits(self, one_hots, name=None):
     """
     Changes an array of one_hots over different factors to control indices [0,1,2].
-    Only tensor version is used in code.
+    Only tensor version is used in code and only for targets.
     """
-    print("[model.py] combine expert outputs with {}".format(self.FLAGS.combine_factor_outputs))
-    if self.FLAGS.combine_factor_outputs == 'max': # take max of outputs
-      if isinstance(one_hots, tf.Tensor):
-        digits=tf.floormod(tf.argmax(one_hots,axis=-1, name=name, output_type=tf.int32), tf.constant(self.FLAGS.action_quantity, dtype=tf.int32))
-        return digits
-      else:
-        if len(one_hots.shape)==1:
-          return np.argmax(one_hots)%self.FLAGS.action_quantity
-        else:
-          return [np.argmax(o)%self.FLAGS.action_quantity for o in one_hots]
-    else: # weighted average over outputs
-      if isinstance(one_hots, tf.Tensor):
-        # With A = action_quantity, N = batchsize, F = number of factors
-        # First one_hots are reshaped from [N, AxF] to [N, F, A]
-        # Then the actions from different factors is summed with reduce_sum(axis=-2) to [N,A]
-        # Then the max argument index is selected with argmax(axis=-1) to [N] containing integers [0..A-1]
-        return tf.argmax(tf.reduce_sum(tf.reshape(one_hots,(-1,self.FLAGS.n_factors,self.FLAGS.action_quantity), name='reshape_NFA'), axis=-2, name='summed_NA'), axis=-1, name='amax_N', output_type=tf.int32)
-      elif len(one_hots.shape)==1: # in case of one array of all different outputs
-        sums=[0]*self.FLAGS.action_quantity
-        for i in range(0,len(one_hots),self.FLAGS.action_quantity):
-          sums[i]+=one_hots[i]
-          sums[i+1]+=one_hots[i+1]
-          sums[i+2]+=one_hots[i+2]
-        return np.argmax(sums)
-      else: # numpy batch of one_hots
-        output=[] # loop over samples
-        for o in one_hots:
-          sums=[0]*self.FLAGS.action_quantity
-          for i in range(0,len(o),self.FLAGS.action_quantity):
-            sums[i]+=o[i]
-            sums[i+1]+=o[i+1]
-            sums[i+2]+=o[i+2]
-          output.append(np.argmax(sums))
-        return output
-        # raise NotImplementedError
+    if isinstance(one_hots, tf.Tensor):
+      digits=tf.floormod(tf.argmax(one_hots,axis=-1, name=name, output_type=tf.int32), tf.constant(self.FLAGS.action_quantity, dtype=tf.int32))
+      return digits
+    else:
+      raise NotImplementedError
 
   def adjust_targets(self, targets, factors):
     """
@@ -354,11 +348,21 @@ class Model(object):
     if not self.FLAGS.discrete:
       end_point='control'
       # mean will allways be around zero. This can not work.
-      ctr = tf.reduce_mean(endpoints['outputs'], axis=-1, name=end_point)
+      ctr=tf.reduce_sum(tf.multiply(endpoints['gates'],endpoints['outputs']),axis=-1,name=end_point)
       endpoints[end_point]=ctr
-    else:
+    else:    
+      #The weights are the predictions of the discriminator with shape(NxF) weighting each factor output with a likelihood.
+      # make weights of shape NxFxA by tiling: NxF --> NxFx1 --> NxFxA
+      end_point='weights_reshaped'
+      w=tf.tile(tf.expand_dims(endpoints['gates'],axis=-1),tf.constant([1,1,self.FLAGS.action_quantity]))
+      endpoints[end_point]=w
+      #The outputs are the outputs of the network with shape Nx(AF) --> NxFxA --> sum over F.
+      end_point='weighted_sum'
+      ws=tf.reduce_sum(tf.multiply(w,tf.reshape(endpoints['outputs'],(-1,self.FLAGS.n_factors,self.FLAGS.action_quantity))),axis=-2)
+      endpoints[end_point]=ws
+      # take the max over the actions to get digits
       end_point='digit'
-      digit = self.one_hot_to_control_digits(endpoints['outputs'], name=end_point)
+      digit = tf.argmax(ws, axis=-1,name=end_point, output_type=tf.int32)
       endpoints[end_point]=digit
       end_point='control' # change local control digit to continuous control float
       endpoints[end_point] = self.discrete_to_continuous(digit, name=end_point)
@@ -379,6 +383,19 @@ class Model(object):
     # end_point='control'
     # endpoints[end_point] = self.discrete_to_continuous(digit, name=end_point)
 
+  def get_gate_targets(self, factors):
+    """
+    Creates from the list of factors ['factor1', 'factor0', 'factor5',...]
+    a onehot label for training the discriminator of NxF parsed from factor_offsets.
+    [0 1 0 0 0 ..,
+     1 0 0 0 0 ..,
+     0 0 0 0 0 ..]
+    """
+    gate_labels = np.zeros((len(factors), self.FLAGS.n_factors))
+    for i,f in enumerate(factors): 
+      gate_labels[i,int(self.factor_offsets[f]/(self.FLAGS.action_quantity if self.FLAGS.discrete else 1))]=1
+    return gate_labels
+
   def define_loss(self, endpoints):
     '''tensors for calculating the loss are added in LOSS collection
     total_loss includes regularization loss defined in tf.layers
@@ -391,12 +408,16 @@ class Model(object):
           loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['probs']+0.001))
           loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['probs']))
           self.loss = tf.reduce_mean(loss)
-          tf.losses.add_loss(tf.reduce_mean(self.loss))
+          tf.losses.add_loss(tf.reduce_mean(self.loss))        
         elif self.FLAGS.loss == 'smce':
           self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'])
         else:
           self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
-        # tf.losses.add_loss(self.loss)
+      
+      # self.discriminator_loss = tf.losses.mean_squared_error(self.gate_targets, endpoints['gates'])
+      self.discriminator_loss = tf.losses.softmax_cross_entropy(onehot_labels=self.gate_targets, logits=endpoints['gates'])
+      tf.losses.add_loss(self.discriminator_loss)
+
       if self.FLAGS.auxiliary_depth:
         weights = self.FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
         self.depth_loss = tf.losses.huber_loss(self.depth_targets,endpoints['aux_depth_reshaped'],weights=weights)
@@ -411,7 +432,9 @@ class Model(object):
         self.mse={}
         self.mse_depth={}
         self.accuracy={}
+        self.gating_accuracy={}
         for mode in ['train', 'val']: #following modes offline training
+          self.gating_accuracy[mode] = tf.metrics.accuracy(tf.argmax(self.gate_targets, axis=-1, output_type=tf.int32), tf.argmax(endpoints['gates'],axis=-1, output_type=tf.int32), name='gating_accuracy_'+mode)
           # keep running variables for both validation and training data
           if self.FLAGS.discrete: # accuracy is measured on local control digits [0,1,2]
             self.mse[mode] = tf.metrics.mean_squared_error(self.one_hot_to_control_digits(self.targets), endpoints['digit'], name="mse_"+mode)
@@ -471,11 +494,15 @@ class Model(object):
 
     tensors = [self.endpoints['eval']['control']]
     
+    feed_dict[self.gate_targets] = self.get_gate_targets(factors)
+
     if auxdepth: # predict auxiliary depth
       tensors.append(self.endpoints['eval']['aux_depth_reshaped'])
     
     if len(targets) != 0 and len(factors) != 0: # if target control is available, calculate loss
       tensors.append(self.mse['val']) # 1 is required to get the update operation
+      tensors.append(self.gating_accuracy['val']) # 1 is required to get the update operation
+      
       # tensors.append(self.mse['val'][1]) # 1 is required to get the update operation
       new_targets = self.adjust_targets(targets,factors)
       feed_dict[self.targets]=new_targets  
@@ -529,15 +556,16 @@ class Model(object):
 
     new_targets = self.adjust_targets(targets, factors)
     feed_dict[self.targets] = new_targets
+
+    feed_dict[self.gate_targets] = self.get_gate_targets(factors)
     
     weights = self.adjust_weights(targets, factors)
 
     feed_dict[self.weights] = weights
-
     
     # append loss
-    tensors.append(self.loss)
-    # tensors.append(self.total_loss)
+    # tensors.append(self.loss)
+    tensors.append(self.total_loss)
 
     # append visualizations
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):
@@ -551,6 +579,8 @@ class Model(object):
     # append updates for metrics
     # tensors.append(self.mse['train'][1])
     tensors.append(self.mse['train'])
+
+    tensors.append(self.gating_accuracy['train'])
     
     if self.FLAGS.discrete: 
       tensors.append(self.accuracy['train'])
@@ -593,6 +623,7 @@ class Model(object):
     results={}
     for mode in ['train', 'val']:  
       tensors.append(self.mse[mode][0])
+      tensors.append(self.gating_accuracy[mode][0])
       if self.FLAGS.discrete:
         tensors.append(self.accuracy[mode][0])
       if self.FLAGS.auxiliary_depth:
@@ -600,6 +631,7 @@ class Model(object):
     output=self.sess.run(tensors)
     for mode in ['train', 'val']:
       results['mse_'+mode]=output.pop(0)
+      results['gating_accuracy_'+mode]=output.pop(0)
       if self.FLAGS.discrete:
         results['accuracy_'+mode]=output.pop(0)
       if self.FLAGS.auxiliary_depth:
@@ -621,12 +653,12 @@ class Model(object):
     self.add_summary_var('Loss_train_total')
 
     for t in ['train', 'val']:
-      for l in ['mse', 'accuracy', 'mse_depth']:
+      for l in ['mse', 'gating_accuracy', 'accuracy', 'mse_depth']:
         name='{0}_{1}'.format(l,t)
         self.add_summary_var(name)
     for d in ['current','furthest']:
       for t in ['train', 'test']:
-        for w in ['','corridor','sandbox','forest','canyon','esat_v1', 'esat_v2']:
+        for w in ['','corridor','sandbox','forest','canyon','esatv1', 'esatv2']:
           name = 'Distance_{0}_{1}'.format(d,t)
           if len(w)!=0: name='{0}_{1}'.format(name,w)
           self.add_summary_var(name)
