@@ -39,14 +39,14 @@ clear
 ############################# TRAIN COMBINED
 # world=all_factors
 
-world=combined_corridor
+world=varied_corridor
 
-name=mobile
-#name=squeeze_v1
+# name=mobile
+# name=squeeze_v1
 #name=alex_v3
-#name=alex_v4
+name=alex_v4
 
-tag=${world}/${name}_scratch
+tag=${world}/${name}
 
 
 echo "$(date +%H:%M:%S) ---------- $tag "
@@ -54,6 +54,7 @@ echo "$(date +%H:%M:%S) ---------- $tag "
 
 mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/$tag
 python /esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py --log_tag $tag \
+                                                                      --num_threads 2 \
                                                                       --dataset ${world} \
                                                                       --max_episodes 1000 \
                                                                       --network $name \

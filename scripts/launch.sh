@@ -75,11 +75,11 @@
 # python dag_create_data.py -t vary_corridor_${texture}_${light} --wall_time_rec $((2*60*60)) --destination vary_corridor_${texture}_${light} --number_of_recorders 2 --number_of_runs 2 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --corridor_bends 5 --extension_config vary_exp --texture Gazebo/$texture --lights ${light}_light --x_var 0.5 --y_var 0.7 --z_pos 1.3 --z_var 0.3 --yaw_or 1.57 --yaw_var 0.5233
 
 
-for texture in Red Black Bricks Grass WoodFloor ; do
-	for light in spot directional ; do
-		python dag_create_data.py -t vary_corridor_${texture}_${light} --wall_time_rec $((8*60*60)) --destination vary_corridor_${texture}_${light} --number_of_recorders 2 --number_of_runs 10 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --corridor_bends 5 --extension_config vary_exp --texture Gazebo/$texture --lights ${light}_light --x_var 0.5 --y_var 0.7 --z_pos 1.3 --z_var 0.3 --yaw_or 1.57 --yaw_var 0.5233 --max_depth_rgb_difference 3 
-	done 
-done
+# for texture in Red Black Bricks Grass WoodFloor ; do
+# 	for light in spot directional ; do
+# 		python dag_create_data.py -t vary_corridor_${texture}_${light} --wall_time_rec $((8*60*60)) --destination vary_corridor_${texture}_${light} --number_of_recorders 2 --number_of_runs 10 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --corridor_bends 5 --extension_config vary_exp --texture Gazebo/$texture --lights ${light}_light --x_var 0.5 --y_var 0.7 --z_pos 1.3 --z_var 0.3 --yaw_or 1.57 --yaw_var 0.5233 --max_depth_rgb_difference 3 
+# 	done 
+# done
 
 
 
