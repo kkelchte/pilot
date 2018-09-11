@@ -523,7 +523,7 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-06_implementing_ensemble.md",
 			"settings":
 			{
-				"buffer_size": 9557,
+				"buffer_size": 10207,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -550,15 +550,6 @@
 			"settings":
 			{
 				"buffer_size": 29467,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "scripts/evaluate_in_singularity.sh",
-			"settings":
-			{
-				"buffer_size": 1301,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -605,6 +596,7 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/evaluate_in_singularity.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/opal_launch.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/clean_dataset.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
@@ -613,7 +605,6 @@
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/save_results_as_pdf.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/dag_train_and_evaluate.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/opal_launch.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/evaluate_in_singularity.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/rosinterface.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/offline.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/data.py",
@@ -895,7 +886,7 @@
 	"groups":
 	[
 		{
-			"selected": 4,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -904,15 +895,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 9557,
+						"buffer_size": 10207,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								8602,
-								8602
+								0,
+								0
 							]
 						],
 						"settings":
@@ -923,7 +914,7 @@
 						"translation.y": 337.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -953,7 +944,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -983,7 +974,7 @@
 						"translation.y": 1916.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
@@ -999,8 +990,8 @@
 						"selection":
 						[
 							[
-								12259,
-								12259
+								11847,
+								11847
 							]
 						],
 						"settings":
@@ -1010,35 +1001,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2070.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "scripts/evaluate_in_singularity.sh",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1301,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1301,
-								1301
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 4005.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
