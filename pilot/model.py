@@ -281,8 +281,8 @@ class Model(object):
     Changes an array of one_hots over different factors to control indices [0,1,2].
     Only tensor version is used in code.
     """
-    print("[model.py] combine expert outputs with {}".format(self.FLAGS.combine_factor_outputs))
     if self.FLAGS.combine_factor_outputs == 'max': # take max of outputs
+      print("[model.py] take max over expert outputs: {}".format(self.FLAGS.combine_factor_outputs))    
       if isinstance(one_hots, tf.Tensor):
         digits=tf.floormod(tf.argmax(one_hots,axis=-1, name=name, output_type=tf.int32), tf.constant(self.FLAGS.action_quantity, dtype=tf.int32))
         return digits
@@ -292,6 +292,7 @@ class Model(object):
         else:
           return [np.argmax(o)%self.FLAGS.action_quantity for o in one_hots]
     else: # weighted average over outputs
+      print("[model.py] take avg over expert outputs: {}".format(self.FLAGS.combine_factor_outputs))    
       if isinstance(one_hots, tf.Tensor):
         # With A = action_quantity, N = batchsize, F = number of factors
         # First one_hots are reshaped from [N, AxF] to [N, F, A]
@@ -415,7 +416,7 @@ class Model(object):
           # keep running variables for both validation and training data
           if self.FLAGS.discrete: # accuracy is measured on local control digits [0,1,2]
             self.mse[mode] = tf.metrics.mean_squared_error(self.one_hot_to_control_digits(self.targets), endpoints['digit'], name="mse_"+mode)
-            self.accuracy[mode] = tf.metrics.accuracy(self.one_hot_to_control_digits(self.targets), endpoints['digit'], name='accuracy_'+mode)
+            self.accuracy[mode] = tf.metrics.accuracy(self.one_hot_to_control_digits(self.targets), self.one_hot_to_control_digits(endpoints['outputs']), name='accuracy_'+mode)
           else:
             self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights, name="mse_"+mode)
           if self.FLAGS.auxiliary_depth:
