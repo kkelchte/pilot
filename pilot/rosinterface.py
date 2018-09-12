@@ -277,27 +277,26 @@ class PilotNode(object):
     
     ### SEND CONTROL
     control = control[0]
-    
     if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
       action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
     else:
       action = control
     
     msg = Twist()
+    msg.linear.x = self.FLAGS.speed 
     if self.FLAGS.noise == 'ou':
       noise = self.exploration_noise.noise()
-      msg.linear.x = self.FLAGS.speed 
       msg.linear.y = (not self.FLAGS.evaluate)*noise[1]*self.FLAGS.sigma_y
       msg.linear.z = (not self.FLAGS.evaluate)*noise[2]*self.FLAGS.sigma_z
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))
     elif self.FLAGS.noise == 'uni':
-      msg.linear.x = self.FLAGS.speed
       # msg.linear.x = self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
       msg.linear.y = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_y, self.FLAGS.sigma_y)
       msg.linear.z = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_z, self.FLAGS.sigma_z)
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
+    if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
 
