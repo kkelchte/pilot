@@ -7,25 +7,8 @@
 ############################# TRAIN SEPARATE
 world=all_factors
 
-# loss=mse
-# non_expert_weight=1
-# tag=${world}/ensemble_${loss}_1
-
-# loss=mse
-# non_expert_weight=0.1
-# tag=${world}/ensemble_${loss}_01
-
-# loss=smce
-# non_expert_weight=1
-# tag=${world}/ensemble_${loss}_1
-
-# loss=ce
-# non_expert_weight=0.1
-# tag=${world}/ensemble_${loss}_01
-
-loss=mse
-non_expert_weight=1
-tag=${world}/ensemble_${loss}_1_squeeze
+input=image
+tag=${world}/committee_imgnet_${input}
 
 
 echo "$(date +%H:%M:%S) -------- $tag "
@@ -33,18 +16,15 @@ echo "$(date +%H:%M:%S) -------- $tag "
 mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/$tag
 
 python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot/main.py --dataset $world  \
-                                                                            --network squeeze_v1 \
+                                                                            --discriminator_input ${input} \
+                                                                            --network mobile \
                                                                             --load_data_in_ram \
-                                                                            --scratch  \
+                                                                            --histogram_of_weights \
                                                                             --discrete \
-                                                                            --normalize_over_actions  \
                                                                             --learning_rate 0.1  \
-                                                                            --max_episodes 4000 \
-                                                                            --visualize_deep_dream_of_output  \
-                                                                            --visualize_saliency_of_output  \
-                                                                            --loss ${loss}  \
+                                                                            --max_episodes 1000 \
                                                                             --random_seed 654  \
-                                                                            --non_expert_weight ${non_expert_weight}  \
+                                                                            --non_expert_weight 0  \
                                                                             --log_tag $tag >> /esat/opal/kkelchte/docker_home/tensorflow/log/${tag}_output 2>&1
 echo "$(date +%H:%M:%S) ---------- done "
 

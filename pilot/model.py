@@ -93,9 +93,9 @@ class Model(object):
       list_to_exclude.append("MobilenetV1/control")
       list_to_exclude.append("MobilenetV1/aux_depth")
       list_to_exclude.append("H_fc_control")
-      list_to_exclude.append("outputs")
+      # list_to_exclude.append("outputs")
       list_to_exclude.append("MobilenetV1/q_depth")
-      list_to_exclude.append("gates")
+      list_to_exclude.append("discriminator/gates")
     else: #If continue training
       list_to_exclude = []
     variables_to_restore = slim.get_variables_to_restore(exclude=list_to_exclude)
@@ -125,7 +125,8 @@ class Model(object):
     # self.targets = tf.placeholder(tf.int32 if FLAGS.discrete else tf.float32, [None, self.output_size])
     self.targets = tf.placeholder(tf.float32, [None, self.output_size])
     self.weights = tf.placeholder(tf.float32, [None, self.output_size])
-    self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.n_factors])
+    self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.action_quantity])
+    # self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.n_factors])
 
     self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
         
@@ -200,22 +201,69 @@ class Model(object):
     This gating function can be based on all intermediate filter activations or only on the final feature.
     The tensors are added to the endpoints with name [gate]
     """
-    self.feature_names={'mobile':'AvgPool_1a',
+    if self.FLAGS.discriminator_input == 'activations':
+      raise NotImplementedError
+    elif self.FLAGS.discriminator_input == 'image':
+      gating_inputs=self.inputs
+      with tf.variable_scope('discriminator'):
+        end_point='gates_conv_1'
+        ep=tf.layers.conv2d(gating_inputs,
+                            filters=10,
+                            kernel_size=[6,6],
+                            strides=3,
+                            padding='valid',
+                            activation=tf.nn.relu,
+                            use_bias=False,
+                            kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                            name=end_point,
+                            reuse=mode=='eval')
+        self.endpoints[mode][end_point]=ep
+        print("shape gates_conv_1: {}".format(ep.shape))
+
+        end_point='gates_conv_2'
+        ep=tf.layers.conv2d(ep,
+                            filters=20,
+                            kernel_size=[3,3],
+                            strides=2,
+                            padding='valid',
+                            activation=tf.nn.relu,
+                            use_bias=False,
+                            kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                            name=end_point,
+                            reuse=mode=='eval')
+        self.endpoints[mode][end_point]=ep                    
+        print("shape gates_conv_2: {}".format(ep.shape))
+        end_point='gates'
+        ep=tf.layers.conv2d(ep,
+                             filters=self.FLAGS.n_factors,
+                             kernel_size=[20,20],
+                             strides=1,
+                             padding='valid',
+                             activation=None,
+                             use_bias=False,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                             name=end_point,
+                             reuse=mode=='eval')
+        self.endpoints[mode][end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
+
+    else:
+      self.feature_names={'mobile':'AvgPool_1a',
                         'alex':'fc_7',
                         'squeeze':'9_concat'}
-    gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0]]]
-    end_point='gates'
-    ep=tf.layers.conv2d(gating_inputs,
-                                                     filters=self.FLAGS.n_factors,
-                                                     kernel_size=[1,1],
-                                                     strides=1,
-                                                     padding='valid',
-                                                     activation=None,
-                                                     use_bias=False,
-                                                     kernel_initializer=tf.contrib.layers.xavier_initializer(),
-                                                     name=end_point,
-                                                     reuse=mode=='eval')
-    self.endpoints[mode][end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
+      gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0]]]
+      end_point='gates'
+      with tf.variable_scope('discriminator'):
+        ep=tf.layers.conv2d(gating_inputs,
+                             filters=self.FLAGS.n_factors,
+                             kernel_size=[1,1],
+                             strides=1,
+                             padding='valid',
+                             activation=None,
+                             use_bias=False,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                             name=end_point,
+                             reuse=mode=='eval')
+      self.endpoints[mode][end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
 
   def define_discrete_bins(self, action_bound, action_quantity):
     '''
@@ -360,6 +408,7 @@ class Model(object):
       end_point='weighted_sum'
       ws=tf.reduce_sum(tf.multiply(w,tf.reshape(endpoints['outputs'],(-1,self.FLAGS.n_factors,self.FLAGS.action_quantity))),axis=-2)
       endpoints[end_point]=ws
+      # print ws.shape
       # take the max over the actions to get digits
       end_point='digit'
       digit = tf.argmax(ws, axis=-1,name=end_point, output_type=tf.int32)
@@ -383,7 +432,7 @@ class Model(object):
     # end_point='control'
     # endpoints[end_point] = self.discrete_to_continuous(digit, name=end_point)
 
-  def get_gate_targets(self, factors):
+  def get_gate_targets(self, targets):
     """
     Creates from the list of factors ['factor1', 'factor0', 'factor5',...]
     a onehot label for training the discriminator of NxF parsed from factor_offsets.
@@ -391,10 +440,16 @@ class Model(object):
      1 0 0 0 0 ..,
      0 0 0 0 0 ..]
     """
-    gate_labels = np.zeros((len(factors), self.FLAGS.n_factors))
-    for i,f in enumerate(factors): 
-      gate_labels[i,int(self.factor_offsets[f]/(self.FLAGS.action_quantity if self.FLAGS.discrete else 1))]=1
-    return gate_labels
+    # gate_labels = np.zeros((len(factors), self.FLAGS.n_factors))
+    # for i,f in enumerate(factors): 
+    #   gate_labels[i,int(self.factor_offsets[f]/(self.FLAGS.action_quantity if self.FLAGS.discrete else 1))]=1
+    """New implementation:
+    targets should be just discretized controls of shape NxA 
+    """
+    gate_labels = []
+    for t in targets:
+      gate_labels.append(self.one_hot(self.continuous_to_discrete(t)))
+    return np.asarray(gate_labels)
 
   def define_loss(self, endpoints):
     '''tensors for calculating the loss are added in LOSS collection
@@ -415,8 +470,8 @@ class Model(object):
           self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
       
       # self.discriminator_loss = tf.losses.mean_squared_error(self.gate_targets, endpoints['gates'])
-      self.discriminator_loss = tf.losses.softmax_cross_entropy(onehot_labels=self.gate_targets, logits=endpoints['gates'])
-      tf.losses.add_loss(self.discriminator_loss)
+      self.discriminator_loss = tf.losses.softmax_cross_entropy(onehot_labels=self.gate_targets, logits=endpoints['weighted_sum'])
+      # tf.losses.add_loss(self.discriminator_loss)
 
       if self.FLAGS.auxiliary_depth:
         weights = self.FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
@@ -431,13 +486,16 @@ class Model(object):
       with tf.variable_scope('metrics'):
         self.mse={}
         self.mse_depth={}
+        self.max_expert_accuracy={}
         self.accuracy={}
         self.gating_accuracy={}
         for mode in ['train', 'val']: #following modes offline training
-          self.gating_accuracy[mode] = tf.metrics.accuracy(tf.argmax(self.gate_targets, axis=-1, output_type=tf.int32), tf.argmax(endpoints['gates'],axis=-1, output_type=tf.int32), name='gating_accuracy_'+mode)
+          self.gating_accuracy[mode] = tf.metrics.accuracy(tf.argmax(self.gate_targets, axis=-1, output_type=tf.int32), tf.argmax(endpoints['weighted_sum'],axis=-1, output_type=tf.int32), name='gating_accuracy_'+mode)
+          
           # keep running variables for both validation and training data
           if self.FLAGS.discrete: # accuracy is measured on local control digits [0,1,2]
             self.mse[mode] = tf.metrics.mean_squared_error(self.one_hot_to_control_digits(self.targets), endpoints['digit'], name="mse_"+mode)
+            self.max_expert_accuracy[mode] = tf.metrics.accuracy(self.one_hot_to_control_digits(self.targets), self.one_hot_to_control_digits(endpoints['outputs']), name='max_expert_accuracy_'+mode)
             self.accuracy[mode] = tf.metrics.accuracy(self.one_hot_to_control_digits(self.targets), endpoints['digit'], name='accuracy_'+mode)
           else:
             self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights, name="mse_"+mode)
@@ -475,8 +533,15 @@ class Model(object):
       
       update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
       with tf.control_dependencies(update_ops):
-        self.train_op = self.optimizer.minimize(self.total_loss,
+        self.train_op = self.optimizer.minimize(self.discriminator_loss,
                                                 global_step=self.global_step)
+
+      # discriminator_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+      #                                       "discriminator")
+      # self.train_op = self.optimizer.minimize(self.discriminator_loss, var_list=discriminator_vars, global_step=self.global_step)
+
+      # print discriminator_vars
+      # import pdb; pdb.set_trace()
       # self.train_op = slim.learning.create_train_op(self.total_loss, 
       #   self.optimizer, 
       #   global_step=self.global_step, 
@@ -494,7 +559,7 @@ class Model(object):
 
     tensors = [self.endpoints['eval']['control']]
     
-    feed_dict[self.gate_targets] = self.get_gate_targets(factors)
+    feed_dict[self.gate_targets] = self.get_gate_targets(targets)
 
     if auxdepth: # predict auxiliary depth
       tensors.append(self.endpoints['eval']['aux_depth_reshaped'])
@@ -510,7 +575,9 @@ class Model(object):
       weights = self.adjust_weights(targets, factors)
       feed_dict[self.weights] = weights
 
-      if self.FLAGS.discrete: tensors.append(self.accuracy['val'])
+      if self.FLAGS.discrete: 
+        tensors.append(self.max_expert_accuracy['val'])
+        tensors.append(self.accuracy['val'])
       
     if len(depth_targets) != 0 and self.FLAGS.auxiliary_depth:# if target depth is available, calculate loss
       tensors.append(self.mse_depth['val'])
@@ -557,14 +624,14 @@ class Model(object):
     new_targets = self.adjust_targets(targets, factors)
     feed_dict[self.targets] = new_targets
 
-    feed_dict[self.gate_targets] = self.get_gate_targets(factors)
+    gate_targets=self.get_gate_targets(targets)
+    feed_dict[self.gate_targets] = gate_targets
     
     weights = self.adjust_weights(targets, factors)
-
     feed_dict[self.weights] = weights
     
     # append loss
-    # tensors.append(self.loss)
+    # tensors.append(self.discriminator_loss)
     tensors.append(self.total_loss)
 
     # append visualizations
@@ -583,6 +650,7 @@ class Model(object):
     tensors.append(self.gating_accuracy['train'])
     
     if self.FLAGS.discrete: 
+      tensors.append(self.max_expert_accuracy['train'])
       tensors.append(self.accuracy['train'])
 
     if self.FLAGS.auxiliary_depth:
@@ -595,7 +663,6 @@ class Model(object):
     
     losses={'total':results.pop(0)}
 
-        
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):
       for e in sorted(self.endpoints['eval'].keys()):
         res = results.pop(0)
@@ -625,6 +692,7 @@ class Model(object):
       tensors.append(self.mse[mode][0])
       tensors.append(self.gating_accuracy[mode][0])
       if self.FLAGS.discrete:
+        tensors.append(self.max_expert_accuracy[mode][0])
         tensors.append(self.accuracy[mode][0])
       if self.FLAGS.auxiliary_depth:
         tensors.append(self.mse_depth[mode][0])
@@ -633,6 +701,7 @@ class Model(object):
       results['mse_'+mode]=output.pop(0)
       results['gating_accuracy_'+mode]=output.pop(0)
       if self.FLAGS.discrete:
+        results['max_expert_accuracy_'+mode]=output.pop(0)
         results['accuracy_'+mode]=output.pop(0)
       if self.FLAGS.auxiliary_depth:
         results['mse_depth_'+mode]=output.pop(0)
@@ -653,7 +722,7 @@ class Model(object):
     self.add_summary_var('Loss_train_total')
 
     for t in ['train', 'val']:
-      for l in ['mse', 'gating_accuracy', 'accuracy', 'mse_depth']:
+      for l in ['mse', 'gating_accuracy', 'accuracy', 'max_expert_accuracy','mse_depth']:
         name='{0}_{1}'.format(l,t)
         self.add_summary_var(name)
     for d in ['current','furthest']:

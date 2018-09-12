@@ -65,7 +65,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   boollist=['auxiliary_depth', 'discrete']
   intlist=['n_frames', 'num_outputs','n_factors']
   floatlist=['depth_multiplier','speed']
-  stringlist=['network', 'data_format']
+  stringlist=['network', 'data_format','discriminator_input']
   for child in tree.getroot().find('flags'):
     try :
       if child.attrib['name'] in boollist:
@@ -159,6 +159,7 @@ def main(_):
   parser.add_argument("--single_loss_training", action='store_true',help="Train expert only on data relevant for this expert.")
   parser.add_argument("--non_expert_weight", default=1., type=float, help="Define the weight of the gradient to a non-expert output layer.")
   parser.add_argument("--combine_factor_outputs", default='max', type=str, help="Combine the outputs from different experts of different factors: max listens only to loudest expert direction. Weighted_mean sums over all actions from which it takes max.")
+  parser.add_argument("--discriminator_input", default='feature', type=str, help="Define how large the input of the discriminator is: feature, activations, image.")
   
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
