@@ -25,7 +25,7 @@ class Model(object):
     '''
     self.sess = session
     self.action_dim = FLAGS.action_dim
-    self.output_size = FLAGS.output_size
+    # self.output_size = FLAGS.output_size
     self.prefix = prefix
     self.device = FLAGS.device
     
@@ -42,7 +42,7 @@ class Model(object):
     elif self.FLAGS.network =='mobile_nfc':
       self.input_size = [mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 
           mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 3*self.FLAGS.n_frames]
-    elif self.FLAGS.network.startswith('alex') or self.FLAGS.network.startswith('squeeze'):
+    elif sum([self.FLAGS.network.startswith(name) for name in ['alex','squeeze','tiny']]):
       versions={'alex': alex_net,
                 'alex_v1': alex_net_v1,
                 'alex_v2': alex_net_v2,
@@ -51,12 +51,14 @@ class Model(object):
                 'squeeze': squeeze_net,
                 'squeeze_v1': squeeze_net_v1,
                 'squeeze_v2': squeeze_net_v2,
-                'squeeze_v3': squeeze_net_v3}
+                'squeeze_v3': squeeze_net_v3,
+                'tiny':tiny_net}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
     
     self.input_size=[None]+self.input_size
+    self.output_size=int(self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity)
 
     # define a network for training and for evaluation
     self.inputs= tf.placeholder(tf.float32, shape = self.input_size, name = 'Inputs')
@@ -181,6 +183,15 @@ class Model(object):
             'squeeze_v2': squeeze_net_v2,
             'squeeze_v3': squeeze_net_v3}
         self.endpoints[mode] = versions[self.FLAGS.network].squeezenet(**args)
+      elif self.FLAGS.network.startswith('tiny'):
+        args={'inputs':self.inputs,
+              'num_outputs':self.output_size,
+              'verbose':True,
+              'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
+              'reuse':None if mode == 'train' else True,
+              'is_training': mode == 'train'}
+        versions={'tiny': tiny_net}
+        self.endpoints[mode] = versions[self.FLAGS.network].tinynet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
 

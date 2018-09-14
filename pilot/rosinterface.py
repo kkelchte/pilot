@@ -185,7 +185,8 @@ class PilotNode(object):
       # # values can be nan for when they are closer than 0.5m but than the evaluate node should
       # # kill the run anyway.
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
-      size = self.model.output_size #(55,74)
+      size = (55,74)
+      # size = self.model.output_size #(55,74)
       # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
       
       de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
@@ -203,8 +204,8 @@ class PilotNode(object):
     ranges = [sum(ranges[i*self.FLAGS.smooth_scan:i*self.FLAGS.smooth_scan+self.FLAGS.smooth_scan])/self.FLAGS.smooth_scan for i in range(int(len(ranges)/self.FLAGS.smooth_scan))]
     # make it a numpy array
     de = np.asarray(ranges).reshape((1,-1))
-    if list(de.shape) != self.model.output_size: # reshape if necessary
-      de = sm.resize(de,self.model.output_size,order=1,mode='constant', preserve_range=True)
+    # if list(de.shape) != self.model.output_size: # reshape if necessary
+    #   de = sm.resize(de,self.model.output_size,order=1,mode='constant', preserve_range=True)
     return de
     
   def compressed_image_callback(self, msg):
@@ -281,7 +282,6 @@ class PilotNode(object):
       action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
     else:
       action = control
-    
     msg = Twist()
     msg.linear.x = self.FLAGS.speed 
     if self.FLAGS.noise == 'ou':
@@ -296,7 +296,9 @@ class PilotNode(object):
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
-    if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0
+    # if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0.
+    if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0. + np.random.binomial(1, 0.1)
+    
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
 

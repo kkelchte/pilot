@@ -37,16 +37,16 @@ clear
 # echo "$(date +%H:%M:%S) ---------- done "
 
 ############################# TRAIN COMBINED
-# world=all_factors
+world=all_factors
 
-world=varied_corridor
+# world=combined_corridor
 
 # name=mobile
 # name=squeeze_v1
 #name=alex_v3
-name=alex_v4
+name=tiny
 
-tag=${world}/${name}
+tag=${world}/${name}_pilot
 
 
 echo "$(date +%H:%M:%S) ---------- $tag "
@@ -54,7 +54,7 @@ echo "$(date +%H:%M:%S) ---------- $tag "
 
 mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/$tag
 python /esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py --log_tag $tag \
-                                                                      --num_threads 2 \
+                                                                      --load_data_in_ram \
                                                                       --dataset ${world} \
                                                                       --max_episodes 1000 \
                                                                       --network $name \

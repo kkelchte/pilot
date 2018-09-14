@@ -5,6 +5,9 @@
 			"path": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised"
 		},
 		{
+			"path": "/esat/opal/kkelchte/docker_home/simsup_ws/src/teleop_twist_keyboard"
+		},
+		{
 			"path": "."
 		},
 		{
