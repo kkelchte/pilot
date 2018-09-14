@@ -45,14 +45,17 @@ class Model(object):
     elif self.FLAGS.network =='mobile_nfc':
       self.input_size = [mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 
           mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 3*self.FLAGS.n_frames]
-    elif self.FLAGS.network.startswith('alex') or self.FLAGS.network.startswith('squeeze'):
+    elif sum([self.FLAGS.network.startswith(name) for name in ['alex','squeeze','tiny']]):
       versions={'alex': alex_net,
                 'alex_v1': alex_net_v1,
                 'alex_v2': alex_net_v2,
                 'alex_v3': alex_net_v3,
                 'alex_v4': alex_net_v4,
                 'squeeze': squeeze_net,
-                'squeeze_v1': squeeze_net_v1}
+                'squeeze_v1': squeeze_net_v1,
+                'squeeze_v2': squeeze_net_v2,
+                'squeeze_v3': squeeze_net_v3,
+                'tiny':tiny_net}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
@@ -188,8 +191,19 @@ class Model(object):
               'reuse':None if mode == 'train' else True,
               'is_training': mode == 'train'}
         versions={'squeeze': squeeze_net,
-            'squeeze_v1': squeeze_net_v1}
+            'squeeze_v1': squeeze_net_v1,
+            'squeeze_v2': squeeze_net_v2,
+            'squeeze_v3': squeeze_net_v3}
         self.endpoints[mode] = versions[self.FLAGS.network].squeezenet(**args)
+      elif self.FLAGS.network.startswith('tiny'):
+        args={'inputs':self.inputs,
+              'num_outputs':self.output_size,
+              'verbose':True,
+              'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
+              'reuse':None if mode == 'train' else True,
+              'is_training': mode == 'train'}
+        versions={'tiny': tiny_net}
+        self.endpoints[mode] = versions[self.FLAGS.network].tinynet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
 
@@ -318,18 +332,20 @@ class Model(object):
         return output
         # raise NotImplementedError
 
-  def adjust_targets(self, targets, factors):
+  def adjust_targets(self, targets, factors=[]):
     """
     Create new targets of shape [batch_size, num_outputs].
     In the continuous case the target control is placed in the bin according to the factor of that sample.
     If discrete we work with an offset when changing from continuous to discrete.
     It returns the new targets.
+
+    In case there are no factors given, the targets are filled in for the first factor.
     """
-    assert(len(targets) == len(factors))
     new_targets=np.zeros((targets.shape[0],self.output_size))+(999 if self.FLAGS.single_loss_training else 0)
+    if len(factors)==0: factors=[self.factor_offsets.keys()[0]]*len(targets)
     if not self.FLAGS.discrete:
       for i,t in enumerate(targets):
-        new_targets[i,self.factor_offsets[factors[i]]]=t if not self.FLAGS.discrete else self.one_hot(self.continuous_to_discrete(t))
+        new_targets[i,self.factor_offsets[factors[i]]]=t
     else:
       for i,t in enumerate(targets):
         new_targets[i,self.factor_offsets[factors[i]]:self.factor_offsets[factors[i]]+self.FLAGS.action_quantity]=self.one_hot(self.continuous_to_discrete(t))
@@ -491,6 +507,11 @@ class Model(object):
       # tensors.append(self.mse_depth['val'][1])
       feed_dict[self.depth_targets] = depth_targets
 
+    if len(targets) != 0 and len(factors) == 0: # evaluate on test data without factors but with control targets
+      new_targets = self.adjust_targets(targets)
+      feed_dict[self.targets]=new_targets  
+      if self.FLAGS.discrete: tensors.append(self.accuracy['val'])
+
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
     output=results.pop(0)
@@ -537,8 +558,8 @@ class Model(object):
 
     
     # append loss
-    tensors.append(self.loss)
-    # tensors.append(self.total_loss)
+    # tensors.append(self.loss)
+    tensors.append(self.total_loss)
 
     # append visualizations
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):

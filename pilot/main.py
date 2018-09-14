@@ -65,7 +65,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   boollist=['auxiliary_depth', 'discrete']
   intlist=['n_frames', 'num_outputs','n_factors']
   floatlist=['depth_multiplier','speed']
-  stringlist=['network', 'data_format']
+  stringlist=['network', 'data_format', 'combine_factor_outputs']
   for child in tree.getroot().find('flags'):
     try :
       if child.attrib['name'] in boollist:
@@ -136,7 +136,7 @@ def main(_):
   # ===========================
   # parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type.")
   parser.add_argument("--load_data_in_ram", action='store_true', help="Define wether the dataset is preloaded into RAM.")
-  parser.add_argument("--dataset", default="small", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="all_factors_small", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--control_file", default='control_info.txt', type=str, help="Define the name of the file with the action labels.")
@@ -158,7 +158,7 @@ def main(_):
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   parser.add_argument("--single_loss_training", action='store_true',help="Train expert only on data relevant for this expert.")
   parser.add_argument("--non_expert_weight", default=1., type=float, help="Define the weight of the gradient to a non-expert output layer.")
-  parser.add_argument("--combine_factor_outputs", default='max', type=str, help="Combine the outputs from different experts of different factors: max listens only to loudest expert direction. Weighted_mean sums over all actions from which it takes max.")
+  parser.add_argument("--combine_factor_outputs", default='max', type=str, help="Combine the outputs from different experts of different factors: max, weighted_average")
   
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
