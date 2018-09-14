@@ -45,14 +45,17 @@ class Model(object):
     elif self.FLAGS.network =='mobile_nfc':
       self.input_size = [mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 
           mobile_nfc_net.default_image_size[FLAGS.depth_multiplier], 3*self.FLAGS.n_frames]
-    elif self.FLAGS.network.startswith('alex') or self.FLAGS.network.startswith('squeeze'):
+    elif sum([self.FLAGS.network.startswith(name) for name in ['alex','squeeze','tiny']]):
       versions={'alex': alex_net,
                 'alex_v1': alex_net_v1,
                 'alex_v2': alex_net_v2,
                 'alex_v3': alex_net_v3,
                 'alex_v4': alex_net_v4,
                 'squeeze': squeeze_net,
-                'squeeze_v1': squeeze_net_v1}
+                'squeeze_v1': squeeze_net_v1,
+                'squeeze_v2': squeeze_net_v2,
+                'squeeze_v3': squeeze_net_v3,
+                'tiny':tiny_net}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
@@ -190,8 +193,19 @@ class Model(object):
               'reuse':None if mode == 'train' else True,
               'is_training': mode == 'train'}
         versions={'squeeze': squeeze_net,
-            'squeeze_v1': squeeze_net_v1}
+            'squeeze_v1': squeeze_net_v1,
+            'squeeze_v2': squeeze_net_v2,
+            'squeeze_v3': squeeze_net_v3}
         self.endpoints[mode] = versions[self.FLAGS.network].squeezenet(**args)
+      elif self.FLAGS.network.startswith('tiny'):
+        args={'inputs':self.inputs,
+              'num_outputs':self.output_size,
+              'verbose':True,
+              'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
+              'reuse':None if mode == 'train' else True,
+              'is_training': mode == 'train'}
+        versions={'tiny': tiny_net}
+        self.endpoints[mode] = versions[self.FLAGS.network].tinynet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
       self.define_gating_function(mode)
@@ -201,9 +215,42 @@ class Model(object):
     This gating function can be based on all intermediate filter activations or only on the final feature.
     The tensors are added to the endpoints with name [gate]
     """
-    if self.FLAGS.discriminator_input == 'activations':
+    if self.FLAGS.discriminator_input == 'feature': #tiny net is too small to extract real features from
+      self.feature_names={'mobile':'AvgPool_1a',
+                        'alex':'fc_7',
+                        'squeeze':'10_conv',
+                        'tiny':'conv_2'}
+      feature_sizes={'mobile':[1,1],
+                        'alex':[1,1],
+                        'squeeze':[13,13],
+                        'tiny':[20,20]}
+      gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0]]]
+      end_point='gates'
+      with tf.variable_scope('discriminator'):
+        if len(gating_inputs.shape) == 4:
+          if gating_inputs.shape[1] != 1:
+            gating_inputs=tf.expand_dims(tf.layers.flatten(gating_inputs),axis=1)
+          else:
+            gating_inputs=tf.squeeze(gating_inputs,[1])
+        ep=tf.layers.conv1d(gating_inputs,
+                             filters=self.FLAGS.n_factors,
+                             kernel_size=1,
+                             # kernel_size=feature_sizes[self.FLAGS.network.split('_')[0]],
+                             strides=1,
+                             padding='valid',
+                             activation=None,
+                             use_bias=False,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                             name=end_point,
+                             reuse=mode=='eval')
+      if len(ep.shape) == 4:
+        self.endpoints[mode][end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
+      elif len(ep.shape) == 3:
+        self.endpoints[mode][end_point]=tf.squeeze(ep,[1],name=end_point+'_squeeze')
+
+    elif self.FLAGS.discriminator_input == 'activations':
       raise NotImplementedError
-    elif self.FLAGS.discriminator_input == 'image':
+    else: # self.FLAGS.discriminator_input == 'image'
       gating_inputs=self.inputs
       with tf.variable_scope('discriminator'):
         end_point='gates_conv_1'
@@ -245,26 +292,7 @@ class Model(object):
                              name=end_point,
                              reuse=mode=='eval')
         self.endpoints[mode][end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
-
-    else:
-      self.feature_names={'mobile':'AvgPool_1a',
-                        'alex':'fc_7',
-                        'squeeze':'9_concat'}
-      gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0]]]
-      end_point='gates'
-      with tf.variable_scope('discriminator'):
-        ep=tf.layers.conv2d(gating_inputs,
-                             filters=self.FLAGS.n_factors,
-                             kernel_size=[1,1],
-                             strides=1,
-                             padding='valid',
-                             activation=None,
-                             use_bias=False,
-                             kernel_initializer=tf.contrib.layers.xavier_initializer(),
-                             name=end_point,
-                             reuse=mode=='eval')
-      self.endpoints[mode][end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
-
+    
   def define_discrete_bins(self, action_bound, action_quantity):
     '''
     Calculate the boundaries of the different bins for discretizing the targets.
@@ -359,18 +387,20 @@ class Model(object):
     else:
       raise NotImplementedError
 
-  def adjust_targets(self, targets, factors):
+  def adjust_targets(self, targets, factors=[]):
     """
     Create new targets of shape [batch_size, num_outputs].
     In the continuous case the target control is placed in the bin according to the factor of that sample.
     If discrete we work with an offset when changing from continuous to discrete.
     It returns the new targets.
+
+    In case there are no factors given, the targets are filled in for the first factor.
     """
-    assert(len(targets) == len(factors))
     new_targets=np.zeros((targets.shape[0],self.output_size))+(999 if self.FLAGS.single_loss_training else 0)
+    if len(factors)==0: factors=[self.factor_offsets.keys()[0]]*len(targets)
     if not self.FLAGS.discrete:
       for i,t in enumerate(targets):
-        new_targets[i,self.factor_offsets[factors[i]]]=t if not self.FLAGS.discrete else self.one_hot(self.continuous_to_discrete(t))
+        new_targets[i,self.factor_offsets[factors[i]]]=t
     else:
       for i,t in enumerate(targets):
         new_targets[i,self.factor_offsets[factors[i]]:self.factor_offsets[factors[i]]+self.FLAGS.action_quantity]=self.one_hot(self.continuous_to_discrete(t))
@@ -533,7 +563,7 @@ class Model(object):
       
       update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
       with tf.control_dependencies(update_ops):
-        self.train_op = self.optimizer.minimize(self.discriminator_loss,
+        self.train_op = self.optimizer.minimize(self.total_loss,
                                                 global_step=self.global_step)
 
       # discriminator_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
@@ -559,12 +589,11 @@ class Model(object):
 
     tensors = [self.endpoints['eval']['control']]
     
-    feed_dict[self.gate_targets] = self.get_gate_targets(targets)
-
     if auxdepth: # predict auxiliary depth
       tensors.append(self.endpoints['eval']['aux_depth_reshaped'])
     
     if len(targets) != 0 and len(factors) != 0: # if target control is available, calculate loss
+      feed_dict[self.gate_targets] = self.get_gate_targets(targets)
       tensors.append(self.mse['val']) # 1 is required to get the update operation
       tensors.append(self.gating_accuracy['val']) # 1 is required to get the update operation
       
@@ -583,6 +612,11 @@ class Model(object):
       tensors.append(self.mse_depth['val'])
       # tensors.append(self.mse_depth['val'][1])
       feed_dict[self.depth_targets] = depth_targets
+
+    if len(targets) != 0 and len(factors) == 0: # evaluate on test data without factors but with control targets
+      new_targets = self.adjust_targets(targets)
+      feed_dict[self.targets]=new_targets  
+      if self.FLAGS.discrete: tensors.append(self.accuracy['val'])
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
@@ -628,7 +662,9 @@ class Model(object):
     feed_dict[self.gate_targets] = gate_targets
     
     weights = self.adjust_weights(targets, factors)
+
     feed_dict[self.weights] = weights
+
     
     # append loss
     # tensors.append(self.discriminator_loss)
@@ -663,6 +699,7 @@ class Model(object):
     
     losses={'total':results.pop(0)}
 
+        
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):
       for e in sorted(self.endpoints['eval'].keys()):
         res = results.pop(0)

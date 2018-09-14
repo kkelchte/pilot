@@ -8,7 +8,7 @@
 world=all_factors
 
 input=image
-tag=${world}/committee_imgnet_${input}
+tag=${world}/committee_scratch_${input}
 
 
 echo "$(date +%H:%M:%S) -------- $tag "
@@ -21,6 +21,7 @@ python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot/main.py --da
                                                                             --load_data_in_ram \
                                                                             --histogram_of_weights \
                                                                             --discrete \
+                                                                            --scratch \
                                                                             --learning_rate 0.1  \
                                                                             --max_episodes 1000 \
                                                                             --random_seed 654  \

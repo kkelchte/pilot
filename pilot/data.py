@@ -112,7 +112,7 @@ def load_set(data_type):
   checklist = []
   try:
     coord=tf.train.Coordinator()
-    threads = [threading.Thread(target=load_run_info, args=(coord, run_list, set_list, checklist)) for i in range(FLAGS.num_threads)]
+    threads = [threading.Thread(target=load_run_info, args=(coord, run_list, set_list, checklist, data_type)) for i in range(FLAGS.num_threads)]
     for t in threads: t.start()
     coord.join(threads, stop_grace_period_secs=30)
   except RuntimeError as e:
@@ -123,7 +123,7 @@ def load_set(data_type):
       print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
   return set_list
 
-def load_run_info(coord, run_list, set_list, checklist):
+def load_run_info(coord, run_list, set_list, checklist, data_type):
   """Load information from run with multiple threads"""
   global factor_offsets
   while not coord.should_stop():
@@ -132,7 +132,7 @@ def load_run_info(coord, run_list, set_list, checklist):
       print run_dir
       # extract factor from run_dir name
       factor=run_dir.split('/')[-2].split('_')[0]
-      if factor not in factor_offsets.keys():
+      if factor not in factor_offsets.keys() and data_type != 'test':
         # add factor with new offset according to the action_quantity
         factor_offsets[factor]=0 if len(factor_offsets.values()) == 0 else max(factor_offsets.values())+(FLAGS.action_quantity if FLAGS.discrete else 1)
 

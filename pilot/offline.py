@@ -45,14 +45,10 @@ def run_episode(mode, sumvar, model):
         losses = model.backward(inputs, targets, factors, depth_targets=target_depth, sumvar=sumvar)
         for k in losses.keys():
           results[k].append(losses[k])
-      elif mode=='val' or mode=='test':
+      elif mode=='val':
         _, aux_results = model.forward(inputs, auxdepth=False, targets=targets, factors=factors, depth_targets=target_depth)
-        # _, losses, aux_results = model.forward(inputs, auxdepth=False, targets=targets, depth_targets=target_depth)
-      # for k in results.keys():
-      #   try:
-      #     results[k].append(losses[k])
-      #   except KeyError:
-      #     pass
+      elif mode=='test':
+        _, aux_results = model.forward(inputs, targets=targets)
       if index == 1 and mode=='val' and FLAGS.plot_depth: 
           depth_predictions = tools.plot_depth(inputs, target_depth, model)
     else:
@@ -117,6 +113,7 @@ def run(_FLAGS, model, start_ep=0):
 
   if FLAGS.max_episodes != 0:
     # ------------ test
+    model.reset_metrics()    
     sumvar = run_episode('test', {}, model)  
     # ----------- write summary
     results = model.get_metrics()

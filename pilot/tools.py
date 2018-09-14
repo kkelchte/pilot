@@ -93,7 +93,7 @@ def load_images(file_names, im_size):
       inputs.append(img)
   return np.asarray(inputs)
 
-def deprocess_image(x):
+def deprocess_image(x, one_channel=False):
     # normalize tensor: center on 0., ensure std is 0.1
     x -= x.mean()
     x /= (x.std() + 1e-5)
@@ -107,6 +107,10 @@ def deprocess_image(x):
     x *= 1
     #     x = x.transpose((1, 2, 0))
     x = np.clip(x, 0, 1).astype('float')
+
+    # make it to one channel by taking max over 3 channels
+    if one_channel: x = np.amax(x,axis=2)
+    
     return x
 
 def matplotlibprove(x):
@@ -167,20 +171,24 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
 
   # Normalize deconvolution within 0:1 range
   num_rows=0
+  clean_results={} 
   # Loop over layers
   for k in results.keys():
+    clean_results[k]=[]
     # Loop over channels
     for c in range(len(results[k])):
       num_rows+=1
+      clean_results[k].append(np.zeros((results[k][c].shape[0:3])))
       # Loop over images
       for i in range(results[k][c].shape[0]):
-        results[k][c][i]=deprocess_image(results[k][c][i])
+        clean_results[k][c][i]=deprocess_image(results[k][c][i],one_channel=True)
   # if num_rows > 6:
   #   print("[tools.py]: There are too many columns to create a proper image.")
   #   return
 
   # create one combined image with each input image on each column
-  fig, axes = plt.subplots(2*num_rows+1,min(len(input_images),5),figsize=(15, int(5.5*(2*len(results.keys())+1))))
+  # figsize width x height
+  fig, axes = plt.subplots(num_rows+1,min(len(input_images),5),figsize=(10, 8*(2*len(results.keys())+1)))
   # fig, axes = plt.subplots(num_columns+1,min(len(input_images),5),figsize=(23, 4*(2*len(results.keys())+1)))
   # add original images in first row
   for i in range(axes.shape[1]):
@@ -188,23 +196,25 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
     axes[0, i].imshow(matplotlibprove(inputs[i]), cmap='inferno')
     axes[0, i].axis('off')
   
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
   # add deconvolutions over the columns
   row_index = 1
   for k in results.keys(): # go over layers
     for c in range(len(results[k])): # add each channel in 2 new column
       for i in range(axes.shape[1]): # fill row going over input images
         # axes[row_index, i].set_title(k.split('/')[1]+'/'+k.split('/')[2]+'_'+str(c))
-        axes[row_index, i].set_title(k+'_'+str(c))
-        axes[row_index, i].imshow(matplotlibprove(results[k][c][i]), cmap='inferno')
+        # axes[row_index, i].set_title(k+'_'+str(c))
+        axes[row_index, i].set_title(experts[c])
+        
+        axes[row_index, i].imshow(np.concatenate((inputs[i],np.expand_dims(clean_results[k][c][i],axis=2)), axis=2))
         axes[row_index, i].axis('off')
-        axes[row_index+1,i].imshow(matplotlibprove((results[k][c][i]+inputs[i])/2), cmap='inferno')
-        axes[row_index+1,i].axis('off')
-      row_index+=2
-      # row_index+=1
+      # row_index+=2
+      row_index+=1
   # plt.show()
   plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
 
-def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,step_size=0.1):
+def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=50,step_size=0.1):
   """
   Function that for each of the input image adjust a number of iterations.
   It creates an image corresponding to strong left and strong right turn.
@@ -219,6 +229,8 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
 
   print("[tools.py]: extracting deep dream maps of {0} in {1}".format([os.path.basename(i) for i in input_images], os.path.dirname(input_images[0])))
   
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
   inputs = load_images(input_images, model.input_size[1:])
   
   # collect gradients for output endpoint of evaluation model
@@ -253,17 +265,21 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
         opposite_results[gk] -= step_size * model.sess.run(grads[gk], {model.inputs: opposite_results[gk]})
 
   # Normalize results within 0:1 range
+  clean_results={}
   for gk in results.keys():
+    clean_results[gk]=[]
     for i in range(results[gk].shape[0]):
-      results[gk][i]=deprocess_image(results[gk][i])
+      clean_results[gk].append(deprocess_image(results[gk][i], one_channel=True))
+      # results[gk][i]=deprocess_image(results[gk][i], one_channel=True)
       if isinstance(opposite_results,dict):
         opposite_results[gk][i]=deprocess_image(opposite_results[gk][i])
 
   # combine adjust input images in one overview image
   # one column for each input image
   # one row with each extreme control for separate and difference images
-  num_rows=1+len(results.keys())+1 if not isinstance(opposite_results,dict) else 1+2+1
+  num_rows=1+len(results.keys())
   fig, axes = plt.subplots(num_rows ,min(len(input_images),5),figsize=(23, 4*(len(grads.keys())+1)))
+  # fig, axes = plt.subplots(num_rows ,min(len(input_images),5),figsize=(23, 4*(len(grads.keys())+1)))
   # add original images in first row
   for i in range(axes.shape[1]):
     axes[0, i].set_title(os.path.basename(input_images[i]).split('.')[0])
@@ -276,38 +292,41 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
     for i in range(axes.shape[1]):
       # print gk
       # axes[row_index, i].set_title('Grad Asc: '+gk.split('/')[1]+'/'+gk[-1])   
-      axes[row_index, i].set_title('Grad Asc: '+gk)   
-      axes[row_index, i].imshow(matplotlibprove(results[gk][i]), cmap='inferno')
+      # axes[row_index, i].set_title('Grad Asc: '+gk)
+      axes[row_index, i].set_title(experts[row_index-1])
+
+      axes[row_index, i].imshow(np.concatenate((inputs[i],np.expand_dims(clean_results[gk][i],axis=2)), axis=2), cmap='inferno')
+      # axes[row_index, i].imshow(matplotlibprove(results[gk][i]), cmap='inferno')
       axes[row_index, i].axis('off')
     row_index+=1
   # In cas of continouos controls: visualize the gradient descent and difference
-  if isinstance(opposite_results,dict):
-    for gk in opposite_results.keys():
-        for i in range(axes.shape[1]):
-          # axes[row_index, i].set_title('Grad Desc: '+gk.split('/')[1])   
-          axes[row_index, i].set_title('Grad Desc: '+gk)   
-          axes[row_index, i].imshow(matplotlibprove(opposite_results[gk][i]), cmap='inferno')
-          axes[row_index, i].axis('off')
-        row_index+=1
+  # if isinstance(opposite_results,dict):
+  #   for gk in opposite_results.keys():
+  #       for i in range(axes.shape[1]):
+  #         # axes[row_index, i].set_title('Grad Desc: '+gk.split('/')[1])   
+  #         axes[row_index, i].set_title('Grad Desc: '+gk)   
+  #         axes[row_index, i].imshow(matplotlibprove(opposite_results[gk][i]), cmap='inferno')
+  #         axes[row_index, i].axis('off')
+  #       row_index+=1
     
-    # add difference
-    for gk in opposite_results.keys():
-        for i in range(axes.shape[1]):
-          # axes[row_index, i].set_title('Diff: '+gk.split('/')[1])   
-          axes[row_index, i].set_title('Diff: '+gk)   
-          axes[row_index, i].imshow(matplotlibprove(deprocess_image((opposite_results[gk][i]-results[gk][i])**2)), cmap='inferno')
-          axes[row_index, i].axis('off')
-        row_index+=1
-  else:
-    # add difference between 2 exteme actions
-    gk_left=sorted(results.keys())[0]
-    gk_right=sorted(results.keys())[-1]
-    for i in range(axes.shape[1]):
-      # axes[row_index, i].set_title('Diff : '+gk.split('/')[1])   
-      axes[row_index, i].set_title('Diff : '+gk)   
-      axes[row_index, i].imshow(matplotlibprove(deprocess_image((results[gk_left][i]-results[gk_right][i])**2)), cmap='inferno')
-      axes[row_index, i].axis('off')
-    row_index+=1
+  #   # add difference
+  #   for gk in opposite_results.keys():
+  #       for i in range(axes.shape[1]):
+  #         # axes[row_index, i].set_title('Diff: '+gk.split('/')[1])   
+  #         axes[row_index, i].set_title('Diff: '+gk)   
+  #         axes[row_index, i].imshow(matplotlibprove(deprocess_image((opposite_results[gk][i]-results[gk][i])**2)), cmap='inferno')
+  #         axes[row_index, i].axis('off')
+  #       row_index+=1
+  # else:
+  #   # add difference between 2 exteme actions
+  #   gk_left=sorted(results.keys())[0]
+  #   gk_right=sorted(results.keys())[-1]
+  #   for i in range(axes.shape[1]):
+  #     # axes[row_index, i].set_title('Diff : '+gk.split('/')[1])   
+  #     axes[row_index, i].set_title('Diff : '+gk)   
+  #     axes[row_index, i].imshow(matplotlibprove(deprocess_image((results[gk_left][i]-results[gk_right][i])**2)), cmap='inferno')
+  #     axes[row_index, i].axis('off')
+  #   row_index+=1
   
   
   plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/control_dream_maps.jpg',bbox_inches='tight')

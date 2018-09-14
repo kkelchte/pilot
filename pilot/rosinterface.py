@@ -251,10 +251,11 @@ class PilotNode(object):
     trgt = -100.
     inpt=im
     if self.FLAGS.evaluate: ### EVALUATE
-      trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
-      trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-      control, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
-      if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
+      # trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
+      # trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
+      control, aux_results = self.model.forward([inpt])
+      # control, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
+      # if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
     else: ###TRAINING
       # Get necessary labels, if label is missing wait...
       def check_field(target_name):
@@ -296,7 +297,7 @@ class PilotNode(object):
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
-    if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0
+    if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0. + np.random.binomial(1, 0.1)
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
 

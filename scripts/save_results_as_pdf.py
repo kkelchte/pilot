@@ -143,30 +143,35 @@ report.insert(line_index, "\\end{figure} \n")
 line_index+=1
 
 # create table with all final results of offline training
-# continue graph_keys but only accuracies for in the table of offline results
-graph_keys=[k for k in graph_keys if 'accuracy' in k]
-start_table="\\begin{tabular}{|l|"+len(graph_keys)*'c'+"|}\n"
+# rows corresponds to keys and columns to nets
+start_table="\\begin{tabular}{|l|"+len(offline_results.keys())*'c'+"|}\n"
 report.insert(line_index, start_table)
 line_index+=1
 report.insert(line_index, "\\hline\n")
-line_index+=1 # add first row with all keys
-table_row="model "
-for k in graph_keys: table_row="{0} & {1} ".format(table_row, k.replace('_',' '))
+line_index+=1
+
+table_row="offline "
+for m in sorted(offline_results.keys()): 
+  table_row="{0} & {1} ".format(table_row, m.replace('_',' '))
 table_row="{0} \\\\ \n".format(table_row)
 report.insert(line_index, table_row)
 line_index+=1
 report.insert(line_index, "\\hline \n")
 line_index+=1
-for m in offline_results.keys(): # fill a row for each model
-  table_row=m.replace('_',' ')
-  for k in graph_keys:
-    try: # get last value of list
-      table_row="{0} & {1:.2f} \% ".format(table_row, 100*offline_results[m][k][-1])
+
+graph_keys=[k for k in graph_keys if 'accuracy' in k]
+# add accuracy on each row
+for k in sorted(graph_keys):
+  table_row="{0}".format(k.replace('_',' '))
+  for m in sorted(offline_results.keys()): 
+    try:
+      table_row="{0} & {1:.2f}\%".format(table_row, 100*offline_results[m][k][-1])
     except KeyError:
-      table_row="{0} & {1} ".format(table_row, '-')
+      table_row="{0} & - ".format(table_row)
   table_row="{0} \\\\ \n".format(table_row)
   report.insert(line_index, table_row)
   line_index+=1
+
 # close table
 report.insert(line_index, "\\hline \n")
 line_index+=1
@@ -175,6 +180,38 @@ report.insert(line_index, "\\end{tabular} \n")
 line_index+=1
 report.insert(line_index, "\n")
 line_index+=1
+
+# graph_keys=[k for k in graph_keys if 'accuracy' in k]
+# start_table="\\begin{tabular}{|l|"+len(graph_keys)*'c'+"|}\n"
+# report.insert(line_index, start_table)
+# line_index+=1
+# report.insert(line_index, "\\hline\n")
+# line_index+=1 # add first row with all keys
+# table_row="model "
+# for k in graph_keys: table_row="{0} & {1} ".format(table_row, k.replace('_',' '))
+# table_row="{0} \\\\ \n".format(table_row)
+# report.insert(line_index, table_row)
+# line_index+=1
+# report.insert(line_index, "\\hline \n")
+# line_index+=1
+# for m in offline_results.keys(): # fill a row for each model
+#   table_row=m.replace('_',' ')
+#   for k in graph_keys:
+#     try: # get last value of list
+#       table_row="{0} & {1:.2f} \% ".format(table_row, 100*offline_results[m][k][-1])
+#     except KeyError:
+#       table_row="{0} & {1} ".format(table_row, '-')
+#   table_row="{0} \\\\ \n".format(table_row)
+#   report.insert(line_index, table_row)
+#   line_index+=1
+# # close table
+# report.insert(line_index, "\\hline \n")
+# line_index+=1
+# # insert 
+# report.insert(line_index, "\\end{tabular} \n")
+# line_index+=1
+# report.insert(line_index, "\n")
+# line_index+=1
 
 # In case there are saliency maps or deep dream maps in the offline folder, add them to the report
 def add_figure(report, line_index, image_path):
