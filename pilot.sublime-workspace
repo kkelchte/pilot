@@ -532,7 +532,24 @@
 			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 27344,
+				"buffer_size": 27336,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/save_results_as_pdf.py",
+			"settings":
+			{
+				"buffer_size": 14538,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/dag_train_and_evaluate.py",
+			"settings":
+			{
+				"buffer_size": 6700,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -750,6 +767,7 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"pilot",
 			"alex_v4",
 			"squeeze_v3",
 			"_",
@@ -876,8 +894,7 @@
 			"condor_submit",
 			"val",
 			"train",
-			"sing.wr",
-			"sing"
+			"sing.wr"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -895,7 +912,7 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -925,7 +942,7 @@
 						"translation.y": 4200.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
@@ -934,15 +951,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 27344,
+						"buffer_size": 27336,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								18470,
-								21922
+								19041,
+								21914
 							]
 						],
 						"settings":
@@ -953,11 +970,75 @@
 						"translation.y": 1049.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
+					"file": "scripts/save_results_as_pdf.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 14538,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								9456,
+								9456
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 5170.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "scripts/dag_train_and_evaluate.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6700,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3764,
+								3772
+							],
+							[
+								4234,
+								4242
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 902.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
 					"file": "pilot/main.py",
 					"semi_transient": false,
 					"settings":
@@ -983,11 +1064,11 @@
 						"translation.y": 270.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 5,
 					"file": "pilot/model.py",
 					"semi_transient": false,
 					"settings":
@@ -1013,11 +1094,11 @@
 						"translation.y": 4320.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 6,
 					"file": "scripts/evaluate_in_singularity.sh",
 					"semi_transient": false,
 					"settings":
@@ -1041,7 +1122,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 3,
 					"type": "text"
 				}
 			]
@@ -1049,7 +1130,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 24.0
+		"height": 31.0
 	},
 	"input":
 	{
@@ -1090,7 +1171,7 @@
 	"project": "pilot.sublime-project",
 	"replace":
 	{
-		"height": 44.0
+		"height": 58.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1099,6 +1180,14 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"dag",
+				"ensemble_v0/scripts/dag_train_and_evaluate.py"
+			],
+			[
+				"sav",
+				"ensemble_v0/scripts/save_results_as_pdf.py"
+			],
 			[
 				"mod",
 				"ensemble_v0/pilot/model.py"
@@ -1154,14 +1243,6 @@
 			[
 				"opa",
 				"ensemble_v0/scripts/opal_launch.sh"
-			],
-			[
-				"dag",
-				"ensemble_v0/scripts/dag_train_and_evaluate.py"
-			],
-			[
-				"sav",
-				"ensemble_v0/scripts/save_results_as_pdf.py"
 			],
 			[
 				"op",
@@ -1617,19 +1698,19 @@
 	"select_project":
 	{
 		"height": 500.0,
-		"last_filter": "pi",
+		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"",
+				"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot.sublime-project"
+			],
 			[
 				"pi",
 				"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot.sublime-project"
 			],
 			[
 				"en",
-				"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot.sublime-project"
-			],
-			[
-				"",
 				"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot.sublime-project"
 			]
 		],
