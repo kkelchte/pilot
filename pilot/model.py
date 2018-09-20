@@ -55,7 +55,8 @@ class Model(object):
                 'squeeze_v1': squeeze_net_v1,
                 'squeeze_v2': squeeze_net_v2,
                 'squeeze_v3': squeeze_net_v3,
-                'tiny':tiny_net}
+                'tiny':tiny_net,
+                'tiny_CAM':tiny_CAM_net}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
@@ -128,7 +129,9 @@ class Model(object):
     # self.targets = tf.placeholder(tf.int32 if FLAGS.discrete else tf.float32, [None, self.output_size])
     self.targets = tf.placeholder(tf.float32, [None, self.output_size])
     self.weights = tf.placeholder(tf.float32, [None, self.output_size])
-    self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.action_quantity])
+    # the discriminator is not strongly fixed to learn to predict the correct expert
+    # the loss takes both the discriminator as the network outputs into account
+    self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.action_quantity]) 
     # self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.n_factors])
 
     self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
@@ -204,7 +207,8 @@ class Model(object):
               'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
               'reuse':None if mode == 'train' else True,
               'is_training': mode == 'train'}
-        versions={'tiny': tiny_net}
+        versions={'tiny': tiny_net,
+                  'tiny_CAM': tiny_CAM_net,}
         self.endpoints[mode] = versions[self.FLAGS.network].tinynet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
@@ -224,7 +228,7 @@ class Model(object):
                         'alex':[1,1],
                         'squeeze':[13,13],
                         'tiny':[20,20]}
-      gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0]]]
+      gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0] if not 'CAM' in self.FLAGS.network else 'avg_pool']]
       end_point='gates'
       with tf.variable_scope('discriminator'):
         if len(gating_inputs.shape) == 4:
@@ -424,21 +428,23 @@ class Model(object):
     In the discrete case, the maximum is taken from the three discrete bins and the index is kept: 0,1,2.
     """
     if not self.FLAGS.discrete:
+      # The outputs of the gating functions are used as weights of the outputs of the different experts
+      # The weighted sum of these n experts corresponds to the final control
+      end_point='weighted_sum'
+      ws=tf.multiply(endpoints['gates'],tf.reshape(endpoints['outputs'],(-1,self.FLAGS.n_factors)))
+      endpoints[end_point]=ws
       end_point='control'
-      # mean will allways be around zero. This can not work.
-      ctr=tf.reduce_sum(tf.multiply(endpoints['gates'],endpoints['outputs']),axis=-1,name=end_point)
-      endpoints[end_point]=ctr
+      endpoints[end_point] = ws
     else:    
       #The weights are the predictions of the discriminator with shape(NxF) weighting each factor output with a likelihood.
       # make weights of shape NxFxA by tiling: NxF --> NxFx1 --> NxFxA
       end_point='weights_reshaped'
       w=tf.tile(tf.expand_dims(endpoints['gates'],axis=-1),tf.constant([1,1,self.FLAGS.action_quantity]))
       endpoints[end_point]=w
-      #The outputs are the outputs of the network with shape Nx(AF) --> NxFxA --> sum over F.
+      #The outputs are the outputs of the network with shape Nx(AF) --> NxFxA --> sum over F to get NxA.
       end_point='weighted_sum'
       ws=tf.reduce_sum(tf.multiply(w,tf.reshape(endpoints['outputs'],(-1,self.FLAGS.n_factors,self.FLAGS.action_quantity))),axis=-2)
       endpoints[end_point]=ws
-      # print ws.shape
       # take the max over the actions to get digits
       end_point='digit'
       digit = tf.argmax(ws, axis=-1,name=end_point, output_type=tf.int32)
