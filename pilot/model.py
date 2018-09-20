@@ -131,7 +131,7 @@ class Model(object):
     self.weights = tf.placeholder(tf.float32, [None, self.output_size])
     # the discriminator is not strongly fixed to learn to predict the correct expert
     # the loss takes both the discriminator as the network outputs into account
-    self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.action_quantity]) 
+    self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.action_quantity if self.FLAGS.discrete else 1]) 
     # self.gate_targets = tf.placeholder(tf.float32, [None, self.FLAGS.n_factors])
 
     self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
@@ -431,7 +431,8 @@ class Model(object):
       # The outputs of the gating functions are used as weights of the outputs of the different experts
       # The weighted sum of these n experts corresponds to the final control
       end_point='weighted_sum'
-      ws=tf.multiply(endpoints['gates'],tf.reshape(endpoints['outputs'],(-1,self.FLAGS.n_factors)))
+      ws=tf.expand_dims(tf.reduce_sum(tf.multiply(endpoints['gates'],endpoints['outputs']),axis=-1),axis=-1)
+      print ws.shape
       endpoints[end_point]=ws
       end_point='control'
       endpoints[end_point] = ws
@@ -479,12 +480,14 @@ class Model(object):
     # gate_labels = np.zeros((len(factors), self.FLAGS.n_factors))
     # for i,f in enumerate(factors): 
     #   gate_labels[i,int(self.factor_offsets[f]/(self.FLAGS.action_quantity if self.FLAGS.discrete else 1))]=1
+    
     """New implementation:
-    targets should be just discretized controls of shape NxA 
+    targets should be just discretized controls of shape NxA for the discrete case
+    and Nx1 for the continuous case. 
     """
     gate_labels = []
     for t in targets:
-      gate_labels.append(self.one_hot(self.continuous_to_discrete(t)))
+      gate_labels.append(t if not self.FLAGS.discrete else self.one_hot(self.continuous_to_discrete(t)))
     return np.asarray(gate_labels)
 
   def define_loss(self, endpoints):
@@ -506,7 +509,11 @@ class Model(object):
           self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
       
       # self.discriminator_loss = tf.losses.mean_squared_error(self.gate_targets, endpoints['gates'])
-      self.discriminator_loss = tf.losses.softmax_cross_entropy(onehot_labels=self.gate_targets, logits=endpoints['weighted_sum'])
+      if self.FLAGS.discrete:
+        self.discriminator_loss = tf.losses.softmax_cross_entropy(onehot_labels=self.gate_targets, logits=endpoints['weighted_sum'])
+      else:
+        self.discriminator_loss = tf.losses.mean_squared_error(self.gate_targets, endpoints['weighted_sum'])
+
       # tf.losses.add_loss(self.discriminator_loss)
 
       if self.FLAGS.auxiliary_depth:
