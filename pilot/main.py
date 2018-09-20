@@ -64,7 +64,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
   boollist=['auxiliary_depth', 'discrete']
   intlist=['n_frames', 'num_outputs']
-  floatlist=['depth_multiplier','speed']
+  floatlist=['depth_multiplier']
   stringlist=['network', 'data_format']
   for child in tree.getroot().find('flags'):
     try :
@@ -212,7 +212,7 @@ def main(_):
 
   parser.add_argument("--field_of_view", default=104, type=int, help="The field of view of the camera cuts the depth scan in the range visible for the camera. Value should be even. Normal: 72 (-36:36), Wide-Angle: 120 (-60:60)")
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings")
-
+  
   # FLAGS=parser.parse_args()
   try:
     FLAGS, others = parser.parse_known_args()

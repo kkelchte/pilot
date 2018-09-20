@@ -80,6 +80,9 @@ class PilotNode(object):
     self.depth_prediction=[]
     self.depth_loss=[]
     self.driving_duration=None
+
+    self.skip_frames = 0
+    self.img_index = 0
     
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
@@ -118,7 +121,10 @@ class PilotNode(object):
       self.FLAGS.speed=self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
       if rospy.has_param('evaluate'):
         self.FLAGS.evaluate = rospy.get_param('evaluate')
-        print '--> set evaluate to: {}'.format(self.FLAGS.evaluate)
+        print '--> set evaluate to: {0} with speed {1}'.format(self.FLAGS.evaluate, self.FLAGS.speed)
+      if rospy.has_param('skip_frames'):
+        self.skip_frames = rospy.get_param('skip_frames')
+        print '--> set skip_frames to: {0}'.format(self.skip_frames)
       if rospy.has_param('world_name') :
         self.world_name = rospy.get_param('world_name')
       time.sleep(1) # wait one second, otherwise create_dataset can't follow...
@@ -248,6 +254,13 @@ class PilotNode(object):
       Plot auxiliary predictions.
       Fill replay buffer.
     """
+    # skip a number of frames to lower the actual control rate
+    # independently of the image frame rate
+    if self.skip_frames != 0:
+      self.img_index+=1
+      if self.img_index % (self.skip_frames+1) != 0:
+        return
+
     aux_depth=[] # variable to keep predicted depth 
     trgt = -100.
     inpt=im
@@ -299,6 +312,14 @@ class PilotNode(object):
     # if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0.
     if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0. + np.random.binomial(1, 0.1)
     
+
+    ############### DEBUG CONTROL RATE TO BE DELETED
+    # msg.linear.x = 0 if self.img_index%2==0 else self.FLAGS.speed
+    # msg.angular.z = 0 if self.img_index%2==1 else 1
+    # msg.angular.z = 1 
+    # msg.linear.x = 0
+    ############### DEBUG CONTROL RATE TO BE DELETED
+
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
 
@@ -452,6 +473,6 @@ class PilotNode(object):
       self.imitation_loss=[]
       self.depth_loss=[]
       self.driving_duration=None
-    
+      self.img_index=0    
       
 
