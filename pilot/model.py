@@ -228,7 +228,7 @@ class Model(object):
                         'alex':[1,1],
                         'squeeze':[13,13],
                         'tiny':[20,20]}
-      gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0] if not 'CAM' in self.FLAGS.network else 'avg_pool']]
+      gating_inputs=self.endpoints[mode][self.feature_names[self.FLAGS.network.split('_')[0]] if not 'CAM' in self.FLAGS.network else 'avg_pool']
       end_point='gates'
       with tf.variable_scope('discriminator'):
         if len(gating_inputs.shape) == 4:
@@ -432,7 +432,6 @@ class Model(object):
       # The weighted sum of these n experts corresponds to the final control
       end_point='weighted_sum'
       ws=tf.expand_dims(tf.reduce_sum(tf.multiply(endpoints['gates'],endpoints['outputs']),axis=-1),axis=-1)
-      print ws.shape
       endpoints[end_point]=ws
       end_point='control'
       endpoints[end_point] = ws

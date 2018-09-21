@@ -9,6 +9,7 @@ import tensorflow as tf
 
 import os,sys,time
 
+import skimage.transform as sm
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -353,4 +354,59 @@ def visualize_activations(FLAGS,model,input_images=[],layers = ['c']):
 
 
   # fig.canvas.tostring_rgb and then numpy.fromstring
+
+"""
+Plot Control Activation Maps
+"""
+def visualize_control_activation_maps(FLAGS, model, input_images=[]):
+  """
+  The control activation maps assumes that there is a global average pooling step at the end before the decision layer.
+  """
+  # load input
+  if len(input_images) == 0:
+    # use predefined images
+    img_dir='/esat/opal/kkelchte/docker_home/pilot_data/visualization_images'
+    input_images=sorted([img_dir+'/'+f for f in os.listdir(img_dir)])
+  inputs = load_images(input_images, model.input_size[1:])
+  
+  # evaluate input to get activation maps
+  weights, activation_maps = model.sess.run([[v for v in tf.trainable_variables() if v.name == 'outputs/kernel:0'][0],
+                                            model.endpoints['eval']['activation_maps']], {model.inputs: inputs})
+
+  # combine the activation maps
+  activation_maps = np.dot(activation_maps,np.squeeze(weights))
+  
+  # create a nice plot with on the columns the different images and the rows the different experts
+
+  number_of_maps = activation_maps.shape[-1] 
+
+  fig, axes = plt.subplots(number_of_maps+1, # number of rows
+                          activation_maps.shape[0], # number of columns
+                          figsize=(23, 5*(number_of_maps+1)))
+  
+  # fill first row with original image
+  for i in range(axes.shape[1]):
+    axes[0, i].set_title(os.path.basename(input_images[i]).split('.')[0])
+    axes[0, i].imshow(matplotlibprove(inputs[i]))
+    axes[0, i].axis('off')
+
+  # get expert names for titling
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
+  # add following rows for different experts with different upscaled activation maps
+  # for j in range(activation_maps.shape[-1]): # loop over diferent outputs
+  for j in range(number_of_maps): # loop over diferent outputs
+    for i in range(axes.shape[1]):
+      axes[j+1, i].set_title(experts[j])
+      # pure upscaled heat maps:
+      axes[j+1, i].imshow(matplotlibprove(activation_maps[i,:,:,j]), cmap='seismic')
+      # concatenated in alpha channels:
+      # axes[j+1, i].imshow(np.zeros(inputs[i].shape[0:3]))
+      # axes[j+1, i].imshow(matplotlibprove(np.concatenate((inputs[i], deprocess_image(sm.resize(activation_maps[i,:,:,j],inputs[i].shape[0:2]+(1,),order=1,mode='constant', preserve_range=True))), axis=2)))
+      axes[j+1, i].axis('off')
+
+  plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/control_activation_maps.jpg',bbox_inches='tight')
+  print("saved control_activation_maps")
+  # plt.show()
+  # import pdb; pdb.set_trace()
 
