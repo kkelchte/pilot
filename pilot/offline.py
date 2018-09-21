@@ -141,3 +141,7 @@ def run(_FLAGS, model, start_ep=0):
 
   if FLAGS.visualize_activations:
     tools.visualize_activations(FLAGS,model) 
+
+  if FLAGS.visualize_control_activation_maps and 'CAM' in FLAGS.network:
+    tools.visualize_control_activation_maps(FLAGS,model) 
+

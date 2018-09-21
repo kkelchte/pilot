@@ -110,6 +110,7 @@ def main(_):
   parser.add_argument("--visualize_saliency_of_output",action='store_true',help="Visualize saliency maps of the output.")
   parser.add_argument("--visualize_deep_dream_of_output",action='store_true',help="Visualize gradient ascent maps for different extreme controls.")
   parser.add_argument("--visualize_activations",action='store_true',help="Visualize activation.")
+  parser.add_argument("--visualize_control_activation_maps",action='store_true',help="Visualize control activation map.")
   parser.add_argument("--histogram_of_activations",action='store_true',help="Summarize all activations in a histogram.")
   parser.add_argument("--histogram_of_weights",action='store_true',help="Summarize all weights in a histogram.")
 
