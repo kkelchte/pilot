@@ -317,7 +317,8 @@ class PilotNode(object):
     # msg.linear.x = 0 if self.img_index%2==0 else self.FLAGS.speed
     # msg.angular.z = 0 if self.img_index%2==1 else 1
     # msg.angular.z = 1 
-    # msg.linear.x = 0
+    # msg.angular.z = 0
+    # msg.linear.x = 1
     ############### DEBUG CONTROL RATE TO BE DELETED
 
     self.action_pub.publish(msg)

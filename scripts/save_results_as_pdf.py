@@ -65,6 +65,7 @@ offline_models=[d for d in os.listdir(mother_dir) if not 'eva' in d and not d=='
 offline_results={}
 saliency_maps=[]
 control_dream_maps=[]
+control_activation_maps=[]
 for m in offline_models:
   offline_results[m]={}
   try:
@@ -73,6 +74,7 @@ for m in offline_models:
     tf_log=open(mother_dir+'/'+m+log_dir+'/tf_log','r').readlines()
     saliency_maps.append(mother_dir+'/'+m+log_dir+'/saliency_maps.jpg')
     control_dream_maps.append(mother_dir+'/'+m+log_dir+'/control_dream_maps.jpg')
+    control_activation_maps.append(mother_dir+'/'+m+log_dir+'/control_activation_maps.jpg')
     # saliency_maps = sorted([d for d in os.listdir(mother_dir+'/'+m) if '2018' in d])[-1]+'/saliency_maps.jpg'
     # control_dream_maps = sorted([d for d in os.listdir(mother_dir+'/'+m) if '2018' in d])[-1]+'/control_dream_maps.jpg'
   except:
@@ -167,6 +169,7 @@ for m in offline_results.keys(): # fill a row for each model
   table_row="{0} \\\\ \n".format(table_row)
   report.insert(line_index, table_row)
   line_index+=1
+
 # close table
 report.insert(line_index, "\\hline \n")
 line_index+=1
@@ -191,6 +194,7 @@ def add_figure(report, line_index, image_path):
 
 for m in saliency_maps: report, line_index = add_figure(report, line_index, m)
 for m in control_dream_maps: report, line_index = add_figure(report, line_index, m)
+for m in control_activation_maps: report, line_index = add_figure(report, line_index, m)
 
 
 # Step 3: extract online results from json and add tables if json file with results is there

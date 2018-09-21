@@ -52,7 +52,8 @@ class Model(object):
                 'squeeze_v1': squeeze_net_v1,
                 'squeeze_v2': squeeze_net_v2,
                 'squeeze_v3': squeeze_net_v3,
-                'tiny':tiny_net}
+                'tiny':tiny_net,
+                'tiny_CAM':tiny_CAM_net}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
@@ -190,7 +191,8 @@ class Model(object):
               'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
               'reuse':None if mode == 'train' else True,
               'is_training': mode == 'train'}
-        versions={'tiny': tiny_net}
+        versions={'tiny': tiny_net,
+                  'tiny_CAM': tiny_CAM_net,}
         self.endpoints[mode] = versions[self.FLAGS.network].tinynet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
