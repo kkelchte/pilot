@@ -83,7 +83,8 @@ class PilotNode(object):
 
     self.skip_frames = 0
     self.img_index = 0
-    
+    self.fsm_index = 0
+
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
       if 'compressed' in image_topic:
@@ -314,7 +315,26 @@ class PilotNode(object):
     
 
     ############### DEBUG CONTROL RATE TO BE DELETED
-    # msg.linear.x = 0 if self.img_index%2==0 else self.FLAGS.speed
+    fsm={0:(1,0),
+        1: (1,0),
+        2: (1,0),
+        3: (1,0),
+        4: (0,1),
+        5: (0,1),
+        6: (0,1),
+        7: (0,1),
+        8: (1,0),
+        9: (1,0),
+        10: (1,0),
+        11: (1,0),
+        12: (0,-1),
+        13: (0,-1),
+        14: (0,-1),
+        15: (0,-1)}
+
+    msg.linear.x = fsm[self.fsm_index%len(fsm.keys())][0]
+    msg.angular.z = fsm[self.fsm_index%len(fsm.keys())][1]
+    self.fsm_index+=1
     # msg.angular.z = 0 if self.img_index%2==1 else 1
     # msg.angular.z = 1 
     # msg.angular.z = 0
@@ -475,5 +495,6 @@ class PilotNode(object):
       self.depth_loss=[]
       self.driving_duration=None
       self.img_index=0    
-      
+      self.fsm_index = 0
+          
 

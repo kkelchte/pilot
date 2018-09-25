@@ -37,6 +37,12 @@
 
 # PRIMAL EXPERIMENT:
 
+# python dag_create_data.py -t floor_straight --wall_time_rec $((60*60)) --destination floor_straight --number_of_recorders 4 --number_of_runs 5 -w corridor --corridor_bends 0 --corridor_length 4 --extension_config floor --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 2  --test_len 2 --x_pos 0 --x_var 0.5 --y_pos 0 --y_var 0.7 --z_pos 1.5 --z_var 0.5 --yaw_or 1.57 --yaw_var 0.523
+# python dag_create_data.py -t floor_bended --wall_time_rec $((60*60)) --destination floor_bended --number_of_recorders 4 --number_of_runs 10 -w corridor --corridor_bends 1 --corridor_length 1 --extension_config floor --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 4  --test_len 4 --x_pos 0 --x_var 0.5 --y_pos 0 --y_var 0.7 --z_pos 1.5 --z_var 0.5 --yaw_or 1.57 --yaw_var 0.523
+
+# python dag_create_data.py --dont_retry -t test_floor_bended --wall_time_rec $((60*60)) --destination test_floor_bended --number_of_recorders 1 --number_of_runs 1 -w corridor --corridor_bends 1 --corridor_length 1 --extension_config floor --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 4  --test_len 4 --x_pos 0 --x_var 0.5 --y_pos 0 --y_var 0.7 --z_pos 1.5 --z_var 0.5 --yaw_or 1.57 --yaw_var 0.523
+
+
 # radiator
 # # python dag_create_data.py -t radiator_left --wall_time_rec $((60*60)) --destination radiator_left --number_of_recorders 6 --number_of_runs 10 -w corridor --corridor_bends 0 --corridor_length 1 --extension_config radiator_left --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 3  --test_len 3 --x_pos '-0.2' --x_var 0.25 --y_pos 0.3 --y_var 1 --z_pos 1.5 --z_var 0.5 --yaw_or 2.09 --yaw_var 0.523
 # python dag_create_data.py -t radiator_right --wall_time_rec $((60*60)) --destination radiator_right --number_of_recorders 6 --number_of_runs 10 -w corridor --corridor_bends 0 --corridor_length 1 --extension_config radiator_right --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 3  --test_len 3 --x_pos '+0.2' --x_var 0.25 --y_pos 0.3 --y_var 1 --z_pos 1.5 --z_var 0.5 --yaw_or 1.05 --yaw_var 0.523
@@ -59,7 +65,11 @@
 # python dag_train_and_evaluate.py -t naive_ensemble/tiny --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.05 --dataset all_factors --max_episodes 1000 --network tiny --discrete  --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 
 
-python dag_train.py -t naive_ensemble/tiny_CAM --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.05 --dataset all_factors --max_episodes 1000 --network tiny_CAM --discrete  --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --visualize_control_activation_maps
+# python dag_train.py -t naive_ensemble/tiny_CAM --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.05 --dataset all_factors --max_episodes 1000 --network tiny_CAM --discrete  --scratch --visualize_deep_dream_of_output --visualize_saliency_of_output --visualize_control_activation_maps
+
+
+python dag_train_and_evaluate.py -t naive_ensemble_10_uni/mobile_imgnet --wall_time_train $((4*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --load_data_in_ram --learning_rate 0.05 --dataset all_factors_uni --max_episodes 1000 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+python dag_train_and_evaluate.py -t naive_ensemble_10_ou/mobile_imgnet --wall_time_train $((4*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --load_data_in_ram --learning_rate 0.05 --dataset all_factors_ou --max_episodes 1000 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 
 
 # ------------OFFLINE FACTORS-----
