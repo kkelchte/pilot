@@ -520,35 +520,27 @@
 	"buffers":
 	[
 		{
-			"file": "pilot/model.py",
+			"file": "pilot/models/tiny_net.py",
 			"settings":
 			{
-				"buffer_size": 30688,
+				"buffer_size": 1477,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/tools.py",
+			"file": "pilot/models/tiny_CAM_net.py",
 			"settings":
 			{
-				"buffer_size": 16713,
+				"buffer_size": 2006,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/main.py",
+			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 20080,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "scripts/evaluate_in_singularity.sh",
-			"settings":
-			{
-				"buffer_size": 1340,
+				"buffer_size": 32787,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -595,18 +587,18 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/main.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/evaluate_in_singularity.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/model.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/tools.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/launch.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/rosinterface.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/main.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/dag_train.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/condor_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/dag_train_and_evaluate.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/save_results_as_pdf.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/data.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/offline.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/model.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/pilot/tools.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/evaluate_in_singularity.sh",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-06_implementing_ensemble.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/opal_launch.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v0/scripts/clean_dataset.py",
@@ -740,6 +732,7 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"conv_1",
 			"max",
 			"pilot",
 			"alex_v4 --gpume",
@@ -866,8 +859,7 @@
 			"lights_location",
 			"><",
 			"conf",
-			"texture",
-			"picked_tiles"
+			"texture"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -885,114 +877,85 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 2,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "pilot/model.py",
+					"file": "pilot/models/tiny_net.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 30688,
+						"buffer_size": 1477,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								1083,
+								1083
 							]
 						],
 						"settings":
 						{
+							"history_list_is_closing": true,
 							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
+							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4320.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "pilot/tools.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 16713,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								15489,
-								15489
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 5954.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "pilot/main.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 20080,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								4577,
-								4577
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 918.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
-					"file": "scripts/evaluate_in_singularity.sh",
+					"buffer": 1,
+					"file": "pilot/models/tiny_CAM_net.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1340,
+						"buffer_size": 2006,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1277,
-								1277
+								679,
+								1561
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "scripts/launch.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 32787,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								27495,
+								27495
 							]
 						],
 						"settings":
@@ -1000,10 +963,10 @@
 							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1734.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -1062,16 +1025,20 @@
 		"selected_items":
 		[
 			[
-				"tol",
-				"ensemble_v0/pilot/tools.py"
+				"la",
+				"ensemble_v0/scripts/launch.sh"
 			],
 			[
 				"ma",
 				"ensemble_v0/pilot/main.py"
 			],
 			[
-				"la",
-				"ensemble_v0/scripts/launch.sh"
+				"tin",
+				"ensemble_v0/pilot/models/tiny_CAM_net.py"
+			],
+			[
+				"tol",
+				"ensemble_v0/pilot/tools.py"
 			],
 			[
 				"dag",
@@ -1568,10 +1535,6 @@
 			[
 				".en",
 				"docker_home/.entrypoint_graph"
-			],
-			[
-				"on co",
-				"pilot/scripts/condor_online.py"
 			]
 		],
 		"width": 0.0
@@ -1584,7 +1547,7 @@
 		[
 			[
 				"",
-				"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot.sublime-project"
+				"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot.sublime-project"
 			],
 			[
 				"pi",
