@@ -523,7 +523,8 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-06_implementing_ensemble.md",
 			"settings":
 			{
-				"buffer_size": 11265,
+				"buffer_size": 11305,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -531,36 +532,25 @@
 			"file": "pilot/model.py",
 			"settings":
 			{
-				"buffer_size": 31160,
+				"buffer_size": 31179,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/models/tiny_CAM_net.py",
+			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 1740,
+				"buffer_size": 12322,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "#!/bin/bash\n#\n# This script is used to prepare next tasks to be launched on opal\n#\n#\nclear\n############################# TRAIN SEPARATE\n# world=radiator\n# world=corridor\n# world=floor\n# world=poster\n# world=ceiling\n# world=blocked_hole\n# world=doorway\n# world=arc\n\n# name='mobile'\n# tag=${name}_factored_scratch/${world}\n\n# echo \"$(date +%H:%M:%S) ---------- $tag \"\n\n\n# mkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/$tag\n# python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot/main.py --log_tag $tag \\\n#                                                                       --dataset ${world} \\\n#                                                                       --max_episodes 100 \\\n#                                                                       --network $name \\\n#                                                                       --discrete \\\n#                                                                       --scratch \\\n#                                                                       --load_data_in_ram \\\n#                                                                       --normalize_over_actions  \\\n#                                                                       --visualize_deep_dream_of_output \\\n#                                                                       --visualize_saliency_of_output \\\n#                                                                       --histogram_of_weights \\\n#                                                                       --histogram_of_activations >> /esat/opal/kkelchte/docker_home/tensorflow/log/${tag}_output 2>&1\n\n# echo \"$(date +%H:%M:%S) ---------- done \"\n\n############################# TRAIN COMBINED\nworld=all_factors\n\n# world=combined_corridor\n\n# name=mobile\n# name=squeeze_v1\n#name=alex_v3\nname=tiny\n\ntag=${world}/${name}_pilot\n\n\necho \"$(date +%H:%M:%S) ---------- $tag \"\n\n\nmkdir -p /esat/opal/kkelchte/docker_home/tensorflow/log/$tag\npython /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot/main.py --log_tag $tag \\\n                                                                      --load_data_in_ram \\\n                                                                      --dataset ${world} \\\n                                                                      --max_episodes 1000 \\\n                                                                      --network $name \\\n                                                                      --discrete \\\n                                                                      --scratch \\\n                                                                      --normalize_over_actions  \\\n                                                                      --visualize_deep_dream_of_output \\\n                                                                      --visualize_saliency_of_output \\\n                                                                      --visualize_control_activation_maps \\\n                                                                      --histogram_of_weights \\\n                                                                      --histogram_of_activations >> /esat/opal/kkelchte/docker_home/tensorflow/log/${tag}_output 2>&1\n\necho \"$(date +%H:%M:%S) ---------- done \"\n\n# TODO\n# python /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/scripts/save_results_as_pdf.py --mother_dir ${name}\n\n\n# TODO\n# singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_writable.img /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/scripts/evaluate_in_singularity.sh >> /esat/opal/kkelchte/docker_home/tensorflow/log/${world}/${name}_output 2>&1\n",
-			"file": "scripts/opal_launch.sh",
-			"file_size": 3599,
-			"file_write_time": 131819959415206142,
+			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-24_noise_augmentation.md",
 			"settings":
 			{
-				"buffer_size": 3707,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "pilot/tools.py",
-			"settings":
-			{
-				"buffer_size": 16945,
+				"buffer_size": 2577,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -570,7 +560,6 @@
 			"settings":
 			{
 				"buffer_size": 20093,
-				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -583,10 +572,18 @@
 			}
 		},
 		{
+			"file": "pilot/models/tiny_CAM_net.py",
+			"settings":
+			{
+				"buffer_size": 1740,
+				"line_ending": "Unix"
+			}
+		},
+		{
 			"file": "pilot/models/tiny_net.py",
 			"settings":
 			{
-				"buffer_size": 1477,
+				"buffer_size": 1516,
 				"line_ending": "Unix"
 			}
 		}
@@ -630,10 +627,14 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot/model.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot/models/tiny_CAM_net.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/scripts/opal_launch.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot/tools.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot/main.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/scripts/opal_launch.py",
 		"/users/visics/kkelchte/.bashrc",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-06_implementing_ensemble.md",
-		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot/main.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params_slow.yaml",
 		"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot/rosinterface.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/control_mapping.py",
@@ -753,11 +754,7 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/forest.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/canyon.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/sandbox.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/nn_drone_fsm.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/parameters/turtle_canyon.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/parameters/turtle_sandbox.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/depth_heuristic.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/parameters/turtle_forest.yaml"
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/nn_drone_fsm.yaml"
 	],
 	"find":
 	{
@@ -920,7 +917,7 @@
 	"groups":
 	[
 		{
-			"selected": 5,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -929,15 +926,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 11265,
+						"buffer_size": 11305,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4537,
-								4537
+								11094,
+								11094
 							]
 						],
 						"settings":
@@ -945,10 +942,10 @@
 							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 1530.0,
+						"translation.y": 2558.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
@@ -957,15 +954,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 31160,
+						"buffer_size": 31179,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								17558,
-								17558
+								3975,
+								3975
 							]
 						],
 						"settings":
@@ -975,104 +972,70 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1454.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "pilot/models/tiny_CAM_net.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1740,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1324,
-								1324
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "scripts/opal_launch.sh",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3707,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2736,
-								2736
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax",
-							"tab_size": 7,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 255.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "pilot/tools.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 16945,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								14109,
-								14109
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 5764.0,
+						"translation.y": 1241.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 2,
+					"file": "scripts/launch.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12322,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-24_noise_augmentation.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2577,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								626,
+								626
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
 					"file": "pilot/main.py",
 					"semi_transient": false,
 					"settings":
@@ -1084,8 +1047,8 @@
 						"selection":
 						[
 							[
-								9496,
-								9496
+								3269,
+								3269
 							]
 						],
 						"settings":
@@ -1095,14 +1058,14 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1887.0,
+						"translation.y": 1020.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 5,
 					"file": "pilot/data.py",
 					"semi_transient": false,
 					"settings":
@@ -1128,7 +1091,37 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "pilot/models/tiny_CAM_net.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1740,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								322,
+								322
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
@@ -1137,7 +1130,7 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1477,
+						"buffer_size": 1516,
 						"regions":
 						{
 						},
@@ -1217,12 +1210,28 @@
 		"selected_items":
 		[
 			[
-				"too",
-				"ensemble_v2/pilot/tools.py"
+				"20",
+				"kkelchte.github.io/docs/2018-09-24_noise_augmentation.md"
+			],
+			[
+				"lau",
+				"ensemble_v2/scripts/launch.sh"
 			],
 			[
 				"mai",
 				"ensemble_v2/pilot/main.py"
+			],
+			[
+				"tiny",
+				"ensemble_v2/pilot/models/tiny_CAM_net.py"
+			],
+			[
+				"mod",
+				"ensemble_v2/pilot/model.py"
+			],
+			[
+				"too",
+				"ensemble_v2/pilot/tools.py"
 			],
 			[
 				"op",
@@ -1241,20 +1250,8 @@
 				"ensemble_v2/pilot/data.py"
 			],
 			[
-				"tiny",
-				"ensemble_v2/pilot/models/tiny_net.py"
-			],
-			[
 				".bas",
 				"kkelchte/.bashrc"
-			],
-			[
-				"mod",
-				"ensemble_v2/pilot/model.py"
-			],
-			[
-				"20",
-				"kkelchte.github.io/docs/2018-09-06_implementing_ensemble.md"
 			],
 			[
 				".ba",
@@ -1475,10 +1472,6 @@
 			[
 				"v2",
 				"pilot/pilot/models/squeeze_net_v2.py"
-			],
-			[
-				"lau",
-				"pilot/scripts/launch.sh"
 			],
 			[
 				"mo",
