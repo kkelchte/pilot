@@ -37,20 +37,18 @@ def run_episode(mode, sumvar, model):
       targets = np.array([[_['ctr']] for _ in batch])
       # try:
       target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
+      factors = [_['factor'] for _ in batch]
+      
       if len(target_depth) == 0 and FLAGS.auxiliary_depth: raise ValueError('No depth in batch.')
       if mode=='train':
         # model.backward(inputs, targets=targets, depth_targets=target_depth, sumvar=sumvar)
-        losses = model.backward(inputs, targets=targets, depth_targets=target_depth, sumvar=sumvar)
+        losses = model.backward(inputs, targets, factors, depth_targets=target_depth, sumvar=sumvar)
         for k in losses.keys():
           results[k].append(losses[k])
-      elif mode=='val' or mode=='test':
-        _, aux_results = model.forward(inputs, auxdepth=False, targets=targets, depth_targets=target_depth)
-        # _, losses, aux_results = model.forward(inputs, auxdepth=False, targets=targets, depth_targets=target_depth)
-      # for k in results.keys():
-      #   try:
-      #     results[k].append(losses[k])
-      #   except KeyError:
-      #     pass
+      elif mode=='val':
+        _, aux_results = model.forward(inputs, auxdepth=False, targets=targets, factors=factors, depth_targets=target_depth)
+      elif mode=='test':
+        _, aux_results = model.forward(inputs, targets=targets)
       if index == 1 and mode=='val' and FLAGS.plot_depth: 
           depth_predictions = tools.plot_depth(inputs, target_depth, model)
     else:
@@ -69,7 +67,8 @@ def run(_FLAGS, model, start_ep=0):
 
   FLAGS=_FLAGS
   start_time=time.time()
-  data.prepare_data(FLAGS, (model.input_size[1], model.input_size[2], model.input_size[3]))
+  factor_offsets = data.prepare_data(FLAGS, (model.input_size[1], model.input_size[2], model.input_size[3]))
+  model.factor_offsets = factor_offsets
   print("data loading time: {0:0.0f}".format(time.time()-start_time))
   ep=start_ep
   
@@ -114,6 +113,7 @@ def run(_FLAGS, model, start_ep=0):
 
   if FLAGS.max_episodes != 0:
     # ------------ test
+    model.reset_metrics()    
     sumvar = run_episode('test', {}, model)  
     # ----------- write summary
     results = model.get_metrics()
@@ -141,3 +141,7 @@ def run(_FLAGS, model, start_ep=0):
 
   if FLAGS.visualize_activations:
     tools.visualize_activations(FLAGS,model) 
+
+  if FLAGS.visualize_control_activation_maps and 'CAM' in FLAGS.network:
+    tools.visualize_control_activation_maps(FLAGS,model) 
+

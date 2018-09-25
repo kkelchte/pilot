@@ -9,6 +9,7 @@ import tensorflow as tf
 
 import os,sys,time
 
+import skimage.transform as sm
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -182,12 +183,13 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
       # Loop over images
       for i in range(results[k][c].shape[0]):
         clean_results[k][c][i]=deprocess_image(results[k][c][i],one_channel=True)
-  if num_rows > 6:
-    print("[tools.py]: There are too many columns to create a proper image.")
-    return
+  # if num_rows > 6:
+  #   print("[tools.py]: There are too many columns to create a proper image.")
+  #   return
 
   # create one combined image with each input image on each column
-  fig, axes = plt.subplots(num_rows+1,min(len(input_images),5),figsize=(23, 4*(2*len(results.keys())+1)))
+  # figsize width x height
+  fig, axes = plt.subplots(num_rows+1,min(len(input_images),5),figsize=(10, 8*(2*len(results.keys())+1)))
   # fig, axes = plt.subplots(num_columns+1,min(len(input_images),5),figsize=(23, 4*(2*len(results.keys())+1)))
   # add original images in first row
   for i in range(axes.shape[1]):
@@ -195,13 +197,17 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
     axes[0, i].imshow(matplotlibprove(inputs[i]), cmap='inferno')
     axes[0, i].axis('off')
   
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
   # add deconvolutions over the columns
   row_index = 1
   for k in results.keys(): # go over layers
     for c in range(len(results[k])): # add each channel in 2 new column
       for i in range(axes.shape[1]): # fill row going over input images
         # axes[row_index, i].set_title(k.split('/')[1]+'/'+k.split('/')[2]+'_'+str(c))
-        axes[row_index, i].set_title(k+'_'+str(c))
+        # axes[row_index, i].set_title(k+'_'+str(c))
+        axes[row_index, i].set_title(experts[c])
+        
         axes[row_index, i].imshow(np.concatenate((inputs[i],np.expand_dims(clean_results[k][c][i],axis=2)), axis=2))
         axes[row_index, i].axis('off')
       # row_index+=2
@@ -209,7 +215,7 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
   # plt.show()
   plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
 
-def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,step_size=0.1):
+def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=50,step_size=0.1):
   """
   Function that for each of the input image adjust a number of iterations.
   It creates an image corresponding to strong left and strong right turn.
@@ -224,6 +230,8 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
 
   print("[tools.py]: extracting deep dream maps of {0} in {1}".format([os.path.basename(i) for i in input_images], os.path.dirname(input_images[0])))
   
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
   inputs = load_images(input_images, model.input_size[1:])
   
   # collect gradients for output endpoint of evaluation model
@@ -285,7 +293,9 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
     for i in range(axes.shape[1]):
       # print gk
       # axes[row_index, i].set_title('Grad Asc: '+gk.split('/')[1]+'/'+gk[-1])   
-      axes[row_index, i].set_title('Grad Asc: '+gk)
+      # axes[row_index, i].set_title('Grad Asc: '+gk)
+      axes[row_index, i].set_title(experts[row_index-1])
+
       axes[row_index, i].imshow(np.concatenate((inputs[i],np.expand_dims(clean_results[gk][i],axis=2)), axis=2), cmap='inferno')
       # axes[row_index, i].imshow(matplotlibprove(results[gk][i]), cmap='inferno')
       axes[row_index, i].axis('off')
@@ -344,4 +354,59 @@ def visualize_activations(FLAGS,model,input_images=[],layers = ['c']):
 
 
   # fig.canvas.tostring_rgb and then numpy.fromstring
+
+"""
+Plot Control Activation Maps
+"""
+def visualize_control_activation_maps(FLAGS, model, input_images=[]):
+  """
+  The control activation maps assumes that there is a global average pooling step at the end before the decision layer.
+  """
+  # load input
+  if len(input_images) == 0:
+    # use predefined images
+    img_dir='/esat/opal/kkelchte/docker_home/pilot_data/visualization_images'
+    input_images=sorted([img_dir+'/'+f for f in os.listdir(img_dir)])
+  inputs = load_images(input_images, model.input_size[1:])
+  
+  # evaluate input to get activation maps
+  weights = model.sess.run([v for v in tf.trainable_variables() if 'outputs' in v.name], {model.inputs: inputs})
+  activation_maps = model.sess.run([ model.endpoints['eval'][ep] for ep in model.endpoints['eval'].keys() if 'activation_maps' in ep], {model.inputs: inputs})
+
+  # combine the activation maps in a weighted sum over filter dimension and concatenate in last dimension
+  activation_maps = np.stack([np.dot(activation_maps[i], np.squeeze(weights[i])) for i in range(FLAGS.n_factors)],axis=-1)
+  print activation_maps.shape
+  import pdb; pdb.set_trace()  
+  # create a nice plot with on the columns the different images and the rows the different experts
+
+  number_of_maps = activation_maps.shape[-1] 
+
+  fig, axes = plt.subplots(number_of_maps+1, # number of rows
+                          activation_maps.shape[0], # number of columns
+                          figsize=(23, 5*(number_of_maps+1)))
+  
+  # fill first row with original image
+  for i in range(axes.shape[1]):
+    axes[0, i].set_title(os.path.basename(input_images[i]).split('.')[0])
+    axes[0, i].imshow(matplotlibprove(inputs[i]))
+    axes[0, i].axis('off')
+
+  # get expert names for titling
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
+  # add following rows for different experts with different upscaled activation maps
+  # for j in range(activation_maps.shape[-1]): # loop over diferent outputs
+  for j in range(number_of_maps): # loop over diferent outputs
+    for i in range(axes.shape[1]):
+      axes[j+1, i].set_title(experts[j])
+      # pure upscaled heat maps:
+      axes[j+1, i].imshow(matplotlibprove(activation_maps[i,:,:,j]), cmap='seismic')
+      # concatenated in alpha channels:
+      # axes[j+1, i].imshow(np.zeros(inputs[i].shape[0:3]))
+      # axes[j+1, i].imshow(matplotlibprove(np.concatenate((inputs[i], deprocess_image(sm.resize(activation_maps[i,:,:,j],inputs[i].shape[0:2]+(1,),order=1,mode='constant', preserve_range=True))), axis=2)))
+      axes[j+1, i].axis('off')
+
+  plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/control_activation_maps.jpg',bbox_inches='tight')
+  # plt.show()
+  # import pdb; pdb.set_trace()
 

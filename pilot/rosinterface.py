@@ -90,12 +90,12 @@ class PilotNode(object):
         rospy.Subscriber(image_topic, CompressedImage, self.compressed_image_callback)
       else:
         rospy.Subscriber(image_topic, Image, self.image_callback)
-    if rospy.has_param('depth_image'):
-      depth_topic = rospy.get_param('depth_image')
-      if 'scan' in depth_topic:
-        rospy.Subscriber(depth_topic, LaserScan, self.scan_depth_callback)
-      else:
-        rospy.Subscriber(depth_topic, Image, self.depth_callback)
+    # if rospy.has_param('depth_image'):
+    #   depth_topic = rospy.get_param('depth_image')
+    #   if 'scan' in depth_topic:
+    #     rospy.Subscriber(depth_topic, LaserScan, self.scan_depth_callback)
+    #   else:
+    #     rospy.Subscriber(depth_topic, Image, self.depth_callback)
     if not self.FLAGS.real: # initialize the replay buffer
       self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed)
       self.accumloss = 0
@@ -192,7 +192,6 @@ class PilotNode(object):
       # # kill the run anyway.
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
       size = (55,74)
-      # size = self.model.output_size #(55,74)
       # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
       
       de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
@@ -265,10 +264,11 @@ class PilotNode(object):
     trgt = -100.
     inpt=im
     if self.FLAGS.evaluate: ### EVALUATE
-      trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
-      trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-      control, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
-      if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
+      # trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
+      # trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
+      # control, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
+      control, aux_results = self.model.forward([inpt])
+      # if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
     else: ###TRAINING
       # Get necessary labels, if label is missing wait...
       def check_field(target_name):
@@ -295,6 +295,7 @@ class PilotNode(object):
       action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
     else:
       action = control
+    
     msg = Twist()
     msg.linear.x = self.FLAGS.speed 
     if self.FLAGS.noise == 'ou':
@@ -309,17 +310,9 @@ class PilotNode(object):
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
-    # if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0.
+    # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
     if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0. + np.random.binomial(1, 0.1)
     
-
-    ############### DEBUG CONTROL RATE TO BE DELETED
-    # msg.linear.x = 0 if self.img_index%2==0 else self.FLAGS.speed
-    # msg.angular.z = 0 if self.img_index%2==1 else 1
-    # msg.angular.z = 1 
-    # msg.linear.x = 0
-    ############### DEBUG CONTROL RATE TO BE DELETED
-
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
 

@@ -12,7 +12,7 @@ source /users/visics/kkelchte/tensorflow_1.8/bin/activate
 export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages
 export HOME=/esat/opal/kkelchte/docker_home
 
-python ~/tensorflow/pilot/pilot/main.py --max_episodes 3 --dataset canyon_drone_tiny --network mobile --log_tag test_model --owr --discrete --scratch #--load_data_in_ram 
+python ~/tensorflow/ensemble_v2/pilot/main.py --max_episodes 3 --dataset canyon_drone_tiny --network mobile --log_tag test_model --owr --discrete --scratch #--load_data_in_ram 
 ret=$?
 if [ $ret -ne 0 ]; then
      #Handle failure
@@ -20,7 +20,7 @@ if [ $ret -ne 0 ]; then
 fi
 
 # 2. Evaluate trained model in singularity 
-singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_writable.img /esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/evaluate_in_singularity.sh
+singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_writable.img /esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/scripts/evaluate_in_singularity.sh
 
 echo
 echo "--------------------------------------------------"

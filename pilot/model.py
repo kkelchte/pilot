@@ -28,7 +28,10 @@ class Model(object):
     # self.output_size = FLAGS.output_size
     self.prefix = prefix
     self.device = FLAGS.device
-    
+
+    # set in offline.py coming from data.py and used for training offline.
+    self.factor_offsets={}
+
     self.FLAGS=FLAGS
 
     self.lr = self.FLAGS.learning_rate
@@ -52,19 +55,22 @@ class Model(object):
                 'squeeze_v1': squeeze_net_v1,
                 'squeeze_v2': squeeze_net_v2,
                 'squeeze_v3': squeeze_net_v3,
-                'tiny':tiny_net}
+                'tiny':tiny_net,
+                'tiny_CAM':tiny_CAM_net}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
       raise NotImplementedError( 'Network is unknown: ', self.FLAGS.network)
     
     self.input_size=[None]+self.input_size
-    self.output_size=int(self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity)
-
+    self.output_size=int(self.FLAGS.n_factors*(self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity))
+    
     # define a network for training and for evaluation
     self.inputs= tf.placeholder(tf.float32, shape = self.input_size, name = 'Inputs')
     self.endpoints={}
     for mode in ['train', 'eval']:
+      self.endpoints[mode]={}
       self.define_network(mode)
+      # count number of trainable parameters
       params=0
       for t in tf.trainable_variables():
         if len(t.shape) == 4:
@@ -79,8 +85,12 @@ class Model(object):
         
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)
-      self.add_discrete_control_layers(self.endpoints['train'])
+      self.add_discrete_control_layers(self.endpoints['train']) #add probability output with softmax
       self.add_discrete_control_layers(self.endpoints['eval'])
+
+    # add control_layers to parse from the outputs the correct control
+    self.add_control_layer(self.endpoints['train'])
+    self.add_control_layer(self.endpoints['eval'])
 
     # Only feature extracting part is initialized from pretrained model
     if not self.FLAGS.continue_training:
@@ -116,7 +126,12 @@ class Model(object):
     self.saver = tf.train.Saver(max_to_keep=50, keep_checkpoint_every_n_hours=1)
     
     # Add the loss and metric functions to the graph for both endpoints of train and eval.
-    self.targets = tf.placeholder(tf.int32, [None, self.action_dim]) if FLAGS.discrete else tf.placeholder(tf.float32, [None, self.action_dim])
+    # self.targets = tf.placeholder(tf.int32, [None, self.output_size]) if FLAGS.discrete else tf.placeholder(tf.float32, [None, self.action_dim])
+    # self.targets = tf.placeholder(tf.int32 if FLAGS.discrete else tf.float32, [None, self.output_size])
+    self.targets = tf.placeholder(tf.float32, [None, self.output_size])
+    self.weights = tf.placeholder(tf.float32, [None, self.output_size])
+
+
     self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
         
     self.define_loss(self.endpoints['train'])
@@ -141,26 +156,25 @@ class Model(object):
     '''
     with tf.device(self.device):
       if self.FLAGS.network.startswith('mobile'):
-        args={'inputs':self.inputs,
-              'weight_decay': self.FLAGS.weight_decay,
-              'stddev':self.FLAGS.init_scale,
-              'initializer':self.FLAGS.initializer,
-              'random_seed':self.FLAGS.random_seed,
-              'num_outputs':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
-              'dropout_keep_prob':1-self.FLAGS.dropout_rate,
-              'depth_multiplier':self.FLAGS.depth_multiplier}
-        if not '_nfc' in self.FLAGS.network:
-          self.endpoints[mode] = mobile_net.mobilenet(is_training=mode=='train', #in case of training do dropout
-                                                      reuse = mode=='eval', #reuse in case of evaluation network
-                                                      **args)
-        else:
-          args['n_frames']=self.FLAGS.n_frames
-          self.endpoints[mode] = mobile_nfc_net.mobilenet_nfc(is_training=mode=='train',
-                                                            reuse = mode=='eval',
-                                                            **args)
+        for f in range(self.FLAGS.n_factors):
+          args={'inputs':self.inputs,
+                'weight_decay': self.FLAGS.weight_decay,
+                'stddev':self.FLAGS.init_scale,
+                'initializer':self.FLAGS.initializer,
+                'random_seed':self.FLAGS.random_seed,
+                'num_outputs':self.output_size,
+                'dropout_keep_prob':1-self.FLAGS.dropout_rate,
+                'depth_multiplier':self.FLAGS.depth_multiplier,
+                'scope': str(f)+"_"}
+          self.endpoints[mode].update(mobile_net.mobilenet(is_training=mode=='train', #in case of training do dropout
+                                                          reuse = mode=='eval', #reuse in case of evaluation network
+                                                          **args))
+        end_point = 'outputs'
+        self.endpoints[mode][end_point] = tf.concat([self.endpoints[mode][ep] for ep in self.endpoints[mode].keys() if ep.endswith('outputs')], axis=-1, name=end_point)
+        print self.endpoints[mode][end_point].shape
       elif self.FLAGS.network.startswith('alex'):
         args={'inputs':self.inputs,
-              'num_outputs':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
+              'num_outputs':self.output_size,
               'verbose':True,
               'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
               'reuse':None if mode == 'train' else True,
@@ -173,7 +187,7 @@ class Model(object):
         self.endpoints[mode] = versions[self.FLAGS.network].alexnet(**args)
       elif self.FLAGS.network.startswith('squeeze'):
         args={'inputs':self.inputs,
-              'num_outputs':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
+              'num_outputs':self.output_size,
               'verbose':True,
               'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
               'reuse':None if mode == 'train' else True,
@@ -184,14 +198,20 @@ class Model(object):
             'squeeze_v3': squeeze_net_v3}
         self.endpoints[mode] = versions[self.FLAGS.network].squeezenet(**args)
       elif self.FLAGS.network.startswith('tiny'):
-        args={'inputs':self.inputs,
-              'num_outputs':self.output_size,
-              'verbose':True,
-              'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
-              'reuse':None if mode == 'train' else True,
-              'is_training': mode == 'train'}
-        versions={'tiny': tiny_net}
-        self.endpoints[mode] = versions[self.FLAGS.network].tinynet(**args)
+        for f in range(self.FLAGS.n_factors):
+          args={'inputs':self.inputs,
+                'num_outputs':self.FLAGS.action_quantity if self.FLAGS.discrete else 1,
+                'verbose':True,
+                'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
+                'reuse':None if mode == 'train' else True,
+                'is_training': mode == 'train',
+                'scope': str(f)+"_"}
+          versions={'tiny': tiny_net,
+                    'tiny_CAM': tiny_CAM_net}
+          self.endpoints[mode].update(versions[self.FLAGS.network].tinynet(**args))
+        end_point = 'outputs'
+        self.endpoints[mode][end_point] = tf.concat([self.endpoints[mode][ep] for ep in self.endpoints[mode].keys() if ep.endswith('outputs')], axis=-1, name=end_point)
+        print self.endpoints[mode][end_point].shape
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
 
@@ -199,7 +219,8 @@ class Model(object):
     '''
     Calculate the boundaries of the different bins for discretizing the targets.
     Define a list form [-bound, +bound] with action_quantity steps and keep the boundaries in a field.
-    Returns the boundaries as well as the values
+    Returns the boundaries as well as the values.
+    Note that this all is abount control bins unrelated to different factors or offsets.
     '''
     # the width of each bin over the range defined by action_bound
     bin_width=2*action_bound/(action_quantity-1.)
@@ -253,14 +274,119 @@ class Model(object):
           discrete+=1
       return discrete
 
-  def discrete_to_continuous(self, discrete_value):
+  def discrete_to_continuous(self, discrete_value, name=None):
     """
     Changes a discrete value to the continuous value (center of the corresponding bin)
+    [0,1,2] --> [-1,0,1]
     """
     if isinstance(discrete_value, tf.Tensor):
-      return self.control_values_from_tensors.lookup(discrete_value)
+      return self.control_values_from_tensors.lookup(discrete_value,name=name)
+    elif hasattr(discrete_value, '__contains__'):
+      return [self.control_values[int(v)] for v in discrete_value]
     else:
       return self.control_values[int(discrete_value)]
+
+  def one_hot(self, index):
+    """
+    Index should be an integer.
+    Change from index to one_hot encoding:
+    0 --> 1,0,0
+    1 --> 0,1,0
+    2 --> 0,0,1
+    """
+    one_hot=np.zeros((len(self.control_values)))
+    one_hot[index]=1
+    return one_hot
+
+  def one_hot_to_control_digits(self, one_hots, name=None):
+    """
+    Changes an array of one_hots over different factors to control indices [0,1,2].
+    Only tensor version is used in code.
+    """
+    if self.FLAGS.combine_factor_outputs == 'max': # take max of outputs
+      print("[model.py] take max over expert outputs: {}".format(self.FLAGS.combine_factor_outputs))    
+      if isinstance(one_hots, tf.Tensor):
+        digits=tf.floormod(tf.argmax(one_hots,axis=-1, name=name, output_type=tf.int32), tf.constant(self.FLAGS.action_quantity, dtype=tf.int32))
+        return digits
+      else:
+        if len(one_hots.shape)==1:
+          return np.argmax(one_hots)%self.FLAGS.action_quantity
+        else:
+          return [np.argmax(o)%self.FLAGS.action_quantity for o in one_hots]
+    else: # weighted average over outputs
+      print("[model.py] take avg over expert outputs: {}".format(self.FLAGS.combine_factor_outputs))    
+      if isinstance(one_hots, tf.Tensor):
+        # With A = action_quantity, N = batchsize, F = number of factors
+        # First one_hots are reshaped from [N, AxF] to [N, F, A]
+        # Then the actions from different factors is summed with reduce_sum(axis=-2) to [N,A]
+        # Then the max argument index is selected with argmax(axis=-1) to [N] containing integers [0..A-1]
+        return tf.argmax(tf.reduce_sum(tf.reshape(one_hots,(-1,self.FLAGS.n_factors,self.FLAGS.action_quantity), name='reshape_NFA'), axis=-2, name='summed_NA'), axis=-1, name='amax_N', output_type=tf.int32)
+      elif len(one_hots.shape)==1: # in case of one array of all different outputs
+        sums=[0]*self.FLAGS.action_quantity
+        for i in range(0,len(one_hots),self.FLAGS.action_quantity):
+          sums[i]+=one_hots[i]
+          sums[i+1]+=one_hots[i+1]
+          sums[i+2]+=one_hots[i+2]
+        return np.argmax(sums)
+      else: # numpy batch of one_hots
+        output=[] # loop over samples
+        for o in one_hots:
+          sums=[0]*self.FLAGS.action_quantity
+          for i in range(0,len(o),self.FLAGS.action_quantity):
+            sums[i]+=o[i]
+            sums[i+1]+=o[i+1]
+            sums[i+2]+=o[i+2]
+          output.append(np.argmax(sums))
+        return output
+        # raise NotImplementedError
+
+  def adjust_targets(self, targets, factors=[]):
+    """
+    Create new targets of shape [batch_size, num_outputs].
+    In the continuous case the target control is placed in the bin according to the factor of that sample.
+    If discrete we work with an offset when changing from continuous to discrete.
+    It returns the new targets.
+
+    In case there are no factors given, the targets are filled in for the first factor.
+    """
+    new_targets=np.zeros((targets.shape[0],self.output_size))+(999 if self.FLAGS.single_loss_training else 0)
+    if len(factors)==0: factors=[self.factor_offsets.keys()[0]]*len(targets)
+    if not self.FLAGS.discrete:
+      for i,t in enumerate(targets):
+        new_targets[i,self.factor_offsets[factors[i]]]=t
+    else:
+      for i,t in enumerate(targets):
+        new_targets[i,self.factor_offsets[factors[i]]:self.factor_offsets[factors[i]]+self.FLAGS.action_quantity]=self.one_hot(self.continuous_to_discrete(t))
+    return new_targets
+
+  def adjust_weights(self, targets, factors):
+    """
+    Adjust the weights over the loss (MSE)
+    """
+    # initialize all with non-expert weight
+    weights = np.zeros((len(targets), self.output_size)) + self.FLAGS.non_expert_weight
+    # except of course for the expert outputs extracted from factors
+    for i,t in enumerate(targets): #iterate over samples in batch
+      weights[i,self.factor_offsets[factors[i]]:self.factor_offsets[factors[i]]+(1 if not self.FLAGS.discrete else self.FLAGS.action_quantity)]=1
+    return weights  
+
+  def add_control_layer(self, endpoints):
+    """Each expert part has one output node in continuous case or different in discrete case.
+    From the outputs of all the experts one final output should be extract with a control.
+    In the continuous case this is the mean over the output of all experts.
+    In the discrete case, the maximum is taken from the three discrete bins and the index is kept: 0,1,2.
+    """
+    if not self.FLAGS.discrete:
+      end_point='control'
+      # mean will allways be around zero. This can not work.
+      ctr = tf.reduce_mean(endpoints['outputs'], axis=-1, name=end_point)
+      endpoints[end_point]=ctr
+    else:
+      end_point='digit'
+      digit = self.one_hot_to_control_digits(endpoints['outputs'], name=end_point)
+      endpoints[end_point]=digit
+      end_point='control' # change local control digit to continuous control float
+      endpoints[end_point] = self.discrete_to_continuous(digit, name=end_point)
 
   def add_discrete_control_layers(self, endpoints):
     """
@@ -272,24 +398,30 @@ class Model(object):
     end_point='probs'
     probs = tf.nn.softmax(endpoints['outputs'], axis=-1, name='softmax')
     endpoints[end_point] = probs
-    end_point='digit'
-    digit = tf.argmax(probs, axis=-1, name='argmax', output_type=tf.int32)
-    endpoints[end_point] = digit
-    end_point='control'
-    endpoints[end_point] = self.discrete_to_continuous(digit)
-  
+    # end_point='digit'
+    # digit = tf.argmax(probs, axis=-1, name='argmax', output_type=tf.int32)
+    # endpoints[end_point] = digit
+    # end_point='control'
+    # endpoints[end_point] = self.discrete_to_continuous(digit, name=end_point)
+
   def define_loss(self, endpoints):
     '''tensors for calculating the loss are added in LOSS collection
     total_loss includes regularization loss defined in tf.layers
     '''
     with tf.device(self.device):
       if not self.FLAGS.discrete:
-        self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.FLAGS.control_weight)
+        self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
       else:
-        # targets should be class indices like [0,1,2, ... action_dim] for classes [-1,0,1]
-        one_hot=tf.squeeze(tf.one_hot(self.targets, depth=self.FLAGS.action_quantity, on_value=1., off_value=0., axis=-1),[1])
-        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=endpoints['outputs'], weights=self.FLAGS.control_weight)
-      # tf.losses.add_loss(self.loss)
+        if self.FLAGS.loss == 'ce':
+          loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['probs']+0.001))
+          loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['probs']))
+          self.loss = tf.reduce_mean(loss)
+          tf.losses.add_loss(tf.reduce_mean(self.loss))
+        elif self.FLAGS.loss == 'smce':
+          self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'])
+        else:
+          self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
+        # tf.losses.add_loss(self.loss)
       if self.FLAGS.auxiliary_depth:
         weights = self.FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
         self.depth_loss = tf.losses.huber_loss(self.depth_targets,endpoints['aux_depth_reshaped'],weights=weights)
@@ -306,12 +438,13 @@ class Model(object):
         self.accuracy={}
         for mode in ['train', 'val']: #following modes offline training
           # keep running variables for both validation and training data
-          self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['digit'] if self.FLAGS.discrete else endpoints['outputs'], name="mse_"+mode)
+          if self.FLAGS.discrete: # accuracy is measured on local control digits [0,1,2]
+            self.mse[mode] = tf.metrics.mean_squared_error(self.one_hot_to_control_digits(self.targets), endpoints['digit'], name="mse_"+mode)
+            self.accuracy[mode] = tf.metrics.accuracy(self.one_hot_to_control_digits(self.targets), self.one_hot_to_control_digits(endpoints['outputs']), name='accuracy_'+mode)
+          else:
+            self.mse[mode] = tf.metrics.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights, name="mse_"+mode)
           if self.FLAGS.auxiliary_depth:
-            self.mse_depth[mode] = tf.metrics.mean_squared_error(self.depth_targets, endpoints['aux_depth_reshaped'], name="mse_depth_"+mode)
-          # add an accuracy metric
-          if self.FLAGS.discrete: 
-            self.accuracy[mode] = tf.metrics.accuracy(self.targets, endpoints['digit'], name='accuracy_'+mode)
+            self.mse_depth[mode] = tf.metrics.mean_squared_error(self.depth_targets, endpoints['aux_depth_reshaped'], weights=self.weights, name="mse_depth_"+mode)
     # keep metric variables in a field so they are easily updated
     self.metric_variables=tf.get_collection(tf.GraphKeys.LOCAL_VARIABLES, scope="metrics")
 
@@ -352,7 +485,7 @@ class Model(object):
       #   gradient_multipliers=gradient_multipliers, 
       #   clip_gradient_norm=self.FLAGS.clip_grad)
 
-  def forward(self, inputs, auxdepth=False, targets=[], depth_targets=[]):
+  def forward(self, inputs, auxdepth=False, targets=[], factors=[], depth_targets=[]):
     '''run forward pass and return action prediction
     inputs=batch of RGB images
     auxdepth = variable defining wether auxiliary depth should be predicted
@@ -361,22 +494,31 @@ class Model(object):
     '''
     feed_dict={self.inputs: inputs}  
 
-    tensors = [self.endpoints['eval']['control']] if self.FLAGS.discrete else [self.endpoints['eval']['outputs']]
+    tensors = [self.endpoints['eval']['control']]
     
     if auxdepth: # predict auxiliary depth
       tensors.append(self.endpoints['eval']['aux_depth_reshaped'])
     
-    if len(targets) != 0: # if target control is available, calculate loss
+    if len(targets) != 0 and len(factors) != 0: # if target control is available, calculate loss
       tensors.append(self.mse['val']) # 1 is required to get the update operation
       # tensors.append(self.mse['val'][1]) # 1 is required to get the update operation
-      feed_dict[self.targets]=targets if not self.FLAGS.discrete else self.continuous_to_discrete(targets)
-      # if self.FLAGS.discrete: tensors.append(self.accuracy['val'][1])
+      new_targets = self.adjust_targets(targets,factors)
+      feed_dict[self.targets]=new_targets  
+
+      weights = self.adjust_weights(targets, factors)
+      feed_dict[self.weights] = weights
+
       if self.FLAGS.discrete: tensors.append(self.accuracy['val'])
       
     if len(depth_targets) != 0 and self.FLAGS.auxiliary_depth:# if target depth is available, calculate loss
       tensors.append(self.mse_depth['val'])
       # tensors.append(self.mse_depth['val'][1])
       feed_dict[self.depth_targets] = depth_targets
+
+    if len(targets) != 0 and len(factors) == 0: # evaluate on test data without factors but with control targets
+      new_targets = self.adjust_targets(targets)
+      feed_dict[self.targets]=new_targets  
+      if self.FLAGS.discrete: tensors.append(self.accuracy['val'])
 
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
@@ -405,7 +547,7 @@ class Model(object):
 
     return output, aux_results
 
-  def backward(self, inputs, targets=[], depth_targets=[], sumvar=None):
+  def backward(self, inputs, targets, factors, depth_targets=[], sumvar=None):
     '''run backward pass and return losses
     inputs: batch of images
     targets: batch of control labels
@@ -414,9 +556,17 @@ class Model(object):
     '''
     tensors = [self.train_op]
     feed_dict = {self.inputs: inputs}
-    feed_dict[self.targets]= self.continuous_to_discrete(targets) if self.FLAGS.discrete else targets
+
+    new_targets = self.adjust_targets(targets, factors)
+    feed_dict[self.targets] = new_targets
+    
+    weights = self.adjust_weights(targets, factors)
+
+    feed_dict[self.weights] = weights
+
     
     # append loss
+    # tensors.append(self.loss)
     tensors.append(self.total_loss)
 
     # append visualizations
@@ -445,16 +595,7 @@ class Model(object):
     
     losses={'total':results.pop(0)}
 
-    # mse_train (count and total)
-    # print "target: ", targets
-    # print "eval output: ", self.sess.run(self.endpoints['eval']['outputs'], feed_dict=feed_dict)
-    # print "train output: ", self.sess.run(self.endpoints['train']['outputs'], feed_dict=feed_dict)
-    # print "loss: ", self.sess.run(self.loss, feed_dict=feed_dict)
-    # print "total loss: ",self.sess.run(self.total_loss, feed_dict=feed_dict)
-    # print "metrics: "
-    # for v in self.metric_variables:
-    #   print("{0} : {1}".format(v.name, self.sess.run(v)))
-    
+        
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):
       for e in sorted(self.endpoints['eval'].keys()):
         res = results.pop(0)
@@ -494,7 +635,6 @@ class Model(object):
       if self.FLAGS.auxiliary_depth:
         results['mse_depth_'+mode]=output.pop(0)
     return results
-
 
   def save(self, logfolder):
     '''save a checkpoint'''
