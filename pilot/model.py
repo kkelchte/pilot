@@ -94,8 +94,8 @@ class Model(object):
     if not self.FLAGS.continue_training:
       # make sure you exclude the prediction layers of the model
       list_to_exclude = ["global_step"]
-      list_to_exclude.append("MobilenetV1/control")
-      list_to_exclude.append("MobilenetV1/aux_depth")
+      # list_to_exclude.append("MobilenetV1/control")
+      # list_to_exclude.append("MobilenetV1/aux_depth")
       list_to_exclude.append("H_fc_control")
       # list_to_exclude.append("outputs")
       list_to_exclude.append("MobilenetV1/q_depth")
@@ -494,19 +494,19 @@ class Model(object):
     total_loss includes regularization loss defined in tf.layers
     '''
     with tf.device(self.device):
-      if not self.FLAGS.discrete:
-        self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
-      else:
-        if self.FLAGS.loss == 'ce':
-          loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['probs']+0.001))
-          loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['probs']))
-          self.loss = tf.reduce_mean(loss)
-          tf.losses.add_loss(tf.reduce_mean(self.loss))        
-        elif self.FLAGS.loss == 'smce':
-          self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'])
-        else:
-          self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
-      
+      # if not self.FLAGS.discrete:
+      #   self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
+      # else:
+      # if self.FLAGS.loss == 'ce':
+      #   loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['probs']+0.001))
+      #   loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['probs']))
+      #   self.loss = tf.reduce_mean(loss)
+      #   tf.losses.add_loss(tf.reduce_mean(self.loss))        
+      # elif self.FLAGS.loss == 'smce':
+      #   self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'])
+      # else:
+      #   self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
+    
       # self.discriminator_loss = tf.losses.mean_squared_error(self.gate_targets, endpoints['gates'])
       if self.FLAGS.discrete:
         self.discriminator_loss = tf.losses.softmax_cross_entropy(onehot_labels=self.gate_targets, logits=endpoints['weighted_sum'])
@@ -573,14 +573,14 @@ class Model(object):
       #   batchnorm_variables = [v for v in tf.global_variables() if v.name.find('BatchNorm')!=-1]
       #   gradient_multipliers = {v.name: 0 for v in mobile_variables}
       
-      update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-      with tf.control_dependencies(update_ops):
-        self.train_op = self.optimizer.minimize(self.total_loss,
-                                                global_step=self.global_step)
+      # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+      # with tf.control_dependencies(update_ops):
+      #   self.train_op = self.optimizer.minimize(self.total_loss,
+      #                                           global_step=self.global_step)
 
-      # discriminator_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-      #                                       "discriminator")
-      # self.train_op = self.optimizer.minimize(self.discriminator_loss, var_list=discriminator_vars, global_step=self.global_step)
+      discriminator_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                            "discriminator")
+      self.train_op = self.optimizer.minimize(self.discriminator_loss, var_list=discriminator_vars, global_step=self.global_step)
 
       # print discriminator_vars
       # import pdb; pdb.set_trace()
