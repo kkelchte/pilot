@@ -531,7 +531,7 @@
 			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 9373,
+				"buffer_size": 9998,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -540,7 +540,7 @@
 			"file": "scripts/dag_train_and_evaluate.py",
 			"settings":
 			{
-				"buffer_size": 6674,
+				"buffer_size": 6901,
 				"line_ending": "Unix"
 			}
 		},
@@ -937,15 +937,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 9373,
+						"buffer_size": 9998,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								787,
-								787
+								4578,
+								4578
 							]
 						],
 						"settings":
@@ -953,7 +953,7 @@
 							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 17.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -965,7 +965,7 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6674,
+						"buffer_size": 6901,
 						"regions":
 						{
 						},
@@ -986,7 +986,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
@@ -1032,8 +1032,8 @@
 						"selection":
 						[
 							[
-								5126,
-								5126
+								28423,
+								28423
 							]
 						],
 						"settings":
@@ -1043,10 +1043,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1411.0,
+						"translation.y": 561.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -1076,7 +1076,7 @@
 						"translation.y": 986.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				}
 			]
@@ -1657,7 +1657,7 @@
 		[
 			[
 				"",
-				"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot.sublime-project"
+				"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot.sublime-project"
 			]
 		],
 		"width": 380.0
