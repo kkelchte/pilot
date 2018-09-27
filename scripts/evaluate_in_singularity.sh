@@ -19,3 +19,4 @@ for model in naive_ensemble/mobile_scratch/0 ; do
     # python run_script.py -t ${model}_eva -pe sing -pp ensemble_v2/pilot -m $model -w corridor --corridor_bends 0 --corridor_length 1 --extension_config $world --corridor_type empty -p eva_params.yaml -n 2 --robot drone_sim --fsm oracle_nn_drone_fsm -e
   # done
 done
+

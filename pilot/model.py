@@ -85,7 +85,7 @@ class Model(object):
         
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)
-      self.add_discrete_control_layers(self.endpoints['train']) #add probability output with softmax
+      self.add_discrete_control_layers(self.endpoints['train'])
       self.add_discrete_control_layers(self.endpoints['eval'])
 
     # add control_layers to parse from the outputs the correct control

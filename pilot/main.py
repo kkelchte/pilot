@@ -64,7 +64,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
   boollist=['auxiliary_depth', 'discrete']
   intlist=['n_frames', 'num_outputs','n_factors']
-  floatlist=['depth_multiplier','speed']
+  floatlist=['depth_multiplier']
   stringlist=['network', 'data_format', 'combine_factor_outputs']
   for child in tree.getroot().find('flags'):
     try :

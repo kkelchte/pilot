@@ -169,6 +169,7 @@ for m in offline_results.keys(): # fill a row for each model
   table_row="{0} \\\\ \n".format(table_row)
   report.insert(line_index, table_row)
   line_index+=1
+
 # close table
 report.insert(line_index, "\\hline \n")
 line_index+=1

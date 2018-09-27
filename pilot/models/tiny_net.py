@@ -26,9 +26,14 @@ def tinynet(inputs,
     end_points[end_point]=ep                    
     print("shape conv_2: {}".format(ep.shape))
     
+    end_pointscope+='conv_3'
+    ep=tf.layers.conv2d(ep, filters=24, kernel_size=[20,20], strides=1, padding='valid', activation=tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    end_points[end_point]=ep                    
+    print("shape conv_3: {}".format(ep.shape))
+
     end_point=scope+'outputs'
     print num_outputs
-    ep=tf.layers.conv2d(ep, filters=num_outputs, kernel_size=[20,20], strides=1, padding='valid', activation=None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    ep=tf.layers.conv2d(ep, filters=num_outputs, kernel_size=[1,1], strides=1, padding='valid', activation=None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
     
     return end_points

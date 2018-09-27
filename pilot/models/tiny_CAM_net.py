@@ -21,8 +21,13 @@ def tinynet(inputs,
     end_points[end_point]=ep
     print("shape conv_1: {}".format(ep.shape))
     
+    end_point=scope+'conv_2'
+    ep=tf.layers.conv2d(ep, filters=20, kernel_size=[3,3], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    end_points[end_point]=ep
+    print("shape conv_2: {}".format(ep.shape))
+    
     end_point=scope+'activation_maps'
-    ep=tf.layers.conv2d(ep, filters=256, kernel_size=[3,3], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    ep=tf.layers.conv2d(ep, filters=40, kernel_size=[3,3], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=ep                    
     print("shape activation_maps: {}".format(ep.shape))
     
