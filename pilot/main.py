@@ -45,7 +45,7 @@ def save_config(FLAGS, logfolder, file_name = "configuration"):
   flg = ET.SubElement(root, "flags")
   
   flags_dict=FLAGS.__dict__
-  for f in flags_dict:
+  for f in sorted(flags_dict.keys()):
     # print f, flags_dict[f]
     e = ET.SubElement(flg, f, name=f) 
     e.text = str(flags_dict[f])
@@ -64,7 +64,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
   boollist=['auxiliary_depth', 'discrete']
   intlist=['n_frames', 'num_outputs','n_factors']
-  floatlist=['depth_multiplier','speed']
+  floatlist=['depth_multiplier']
   stringlist=['network', 'data_format','discriminator_input']
   for child in tree.getroot().find('flags'):
     try :
@@ -159,7 +159,6 @@ def main(_):
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   parser.add_argument("--single_loss_training", action='store_true',help="Train expert only on data relevant for this expert.")
   parser.add_argument("--non_expert_weight", default=0, type=float, help="Define the weight of the gradient to a non-expert output layer.")
-  parser.add_argument("--combine_factor_outputs", default='max', type=str, help="Combine the outputs from different experts of different factors: max listens only to loudest expert direction. Weighted_mean sums over all actions from which it takes max.")
   parser.add_argument("--discriminator_input", default='feature', type=str, help="Define how large the input of the discriminator is: feature, activations, image.")
   
   # INITIALIZATION
@@ -227,6 +226,7 @@ def main(_):
   if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
 
   np.random.seed(FLAGS.random_seed)
+  tf.set_random_seed(FLAGS.random_seed)
   
   if FLAGS.random_learning_rate:
     FLAGS.learning_rate = 10**np.random.uniform(-2,0)
@@ -279,8 +279,6 @@ def main(_):
     FLAGS=load_config(FLAGS, checkpoint_path)
     
   save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
-
-  # reset graph and set seed before session
   config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
@@ -292,7 +290,6 @@ def main(_):
   model = Model(FLAGS, sess)
   writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   model.writer = writer
-
   
   def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')

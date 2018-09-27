@@ -80,6 +80,9 @@ class PilotNode(object):
     self.depth_prediction=[]
     self.depth_loss=[]
     self.driving_duration=None
+
+    self.skip_frames = 0
+    self.img_index = 0
     
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
@@ -118,7 +121,10 @@ class PilotNode(object):
       self.FLAGS.speed=self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
       if rospy.has_param('evaluate'):
         self.FLAGS.evaluate = rospy.get_param('evaluate')
-        print '--> set evaluate to: {}'.format(self.FLAGS.evaluate)
+        print '--> set evaluate to: {0} with speed {1}'.format(self.FLAGS.evaluate, self.FLAGS.speed)
+      if rospy.has_param('skip_frames'):
+        self.skip_frames = rospy.get_param('skip_frames')
+        print '--> set skip_frames to: {0}'.format(self.skip_frames)
       if rospy.has_param('world_name') :
         self.world_name = rospy.get_param('world_name')
       time.sleep(1) # wait one second, otherwise create_dataset can't follow...
@@ -203,8 +209,8 @@ class PilotNode(object):
     ranges = [sum(ranges[i*self.FLAGS.smooth_scan:i*self.FLAGS.smooth_scan+self.FLAGS.smooth_scan])/self.FLAGS.smooth_scan for i in range(int(len(ranges)/self.FLAGS.smooth_scan))]
     # make it a numpy array
     de = np.asarray(ranges).reshape((1,-1))
-    if list(de.shape) != self.model.output_size: # reshape if necessary
-      de = sm.resize(de,self.model.output_size,order=1,mode='constant', preserve_range=True)
+    # if list(de.shape) != self.model.output_size: # reshape if necessary
+    #   de = sm.resize(de,self.model.output_size,order=1,mode='constant', preserve_range=True)
     return de
     
   def compressed_image_callback(self, msg):
@@ -247,6 +253,13 @@ class PilotNode(object):
       Plot auxiliary predictions.
       Fill replay buffer.
     """
+    # skip a number of frames to lower the actual control rate
+    # independently of the image frame rate
+    if self.skip_frames != 0:
+      self.img_index+=1
+      if self.img_index % (self.skip_frames+1) != 0:
+        return
+
     aux_depth=[] # variable to keep predicted depth 
     trgt = -100.
     inpt=im
@@ -254,7 +267,6 @@ class PilotNode(object):
       # trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
       # trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
       control, aux_results = self.model.forward([inpt])
-      # control, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
       # if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
     else: ###TRAINING
       # Get necessary labels, if label is missing wait...
@@ -282,7 +294,6 @@ class PilotNode(object):
       action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
     else:
       action = control
-    
     msg = Twist()
     msg.linear.x = self.FLAGS.speed 
     if self.FLAGS.noise == 'ou':
@@ -297,6 +308,7 @@ class PilotNode(object):
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
+    # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
     if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0. + np.random.binomial(1, 0.1)
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
@@ -451,6 +463,6 @@ class PilotNode(object):
       self.imitation_loss=[]
       self.depth_loss=[]
       self.driving_duration=None
-    
+      self.img_index=0    
       
 

@@ -230,7 +230,7 @@ def squeezenet(inputs,
 
   # TOWER 10 Conv2d and avgpool
   end_point = '10_conv'
-  l10 = tf.layers.conv2d(l9_c, num_outputs, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.tanh if num_outputs == 1 else tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+  l10 = tf.layers.conv2d(l9_c, num_outputs, kernel_size=[1,1], strides=1, padding='same', activation=tf.nn.tanh if num_outputs == 1 else None, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
   if verbose: print("shape l10: {}".format(l10.shape))
   end_points[end_point]=l10
 

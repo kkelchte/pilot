@@ -125,7 +125,6 @@ blacklist=""
 # greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
 greenlist=""
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
-# condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
@@ -277,10 +276,6 @@ sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 \n")
 sing.write("retVal=$? \n")
 sing.write("echo \"got exit code $retVal\" \n")
-sing.write("if [ $retVal -ne 0 ]; then \n")
-sing.write("    echo Error \n")
-sing.write("    exit $retVal \n")
-sing.write("fi \n")
 
 ###### Copy data and log back to opal
 sing.write("echo 'copy pilot data back' \n")
@@ -288,6 +283,10 @@ sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.data_root)
 sing.write("echo 'copy tensorflow log back' \n")
 sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.summary_dir))
 #####
+sing.write("if [ $retVal -ne 0 ]; then \n")
+sing.write("    echo Error \n")
+sing.write("    exit $retVal \n")
+sing.write("fi \n")
 
 sing.write("echo \"[$(date +%F_%H:%M:%S)] $Command : leaving $RemoteHost.\" \n")
 # singularity tend to not always shut down properly so strong kill the condor node

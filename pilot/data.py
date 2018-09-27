@@ -347,6 +347,7 @@ def generate_batch(data_type):
 
             # clip control avoiding values larger than 1 and add it to the offset of this control factor
             ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
+              
             # append rgb image, control and depth to batch
             batch.append({'img':im, 'ctr':ctr, 'depth':de, 'factor': data_set[run_ind]['control_factor']})
             checklist.append(True)

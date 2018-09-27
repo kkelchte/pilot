@@ -51,7 +51,7 @@ for rec in range(FLAGS.number_of_recorders):
 
 ##########################################################################################################################
 # STEP 3 Add condor_offline cleanup data: note that cleanup data should never take more than 3hours...
-command="python condor_offline.py -t {0}/clean --dont_submit -pp pilot/scripts -ps clean_dataset.py --startswith {0} --destination {1} --home {3} --wall_time {4}".format(FLAGS.log_tag, FLAGS.destination, FLAGS.summary_dir, FLAGS.home, 3*60*60)
+command="python condor_offline.py -t {0}/clean --dont_submit -pp ensemble_v1/scripts -ps clean_dataset.py --startswith {0} --destination {1} --home {3} --wall_time {4}".format(FLAGS.log_tag, FLAGS.destination, FLAGS.summary_dir, FLAGS.home, 3*60*60)
 for e in others: command=" {0} {1}".format(command, e)
 subprocess.call(shlex.split(command)) 
 
@@ -62,8 +62,8 @@ try:
   os.makedirs(dag_dir)
 except OSError:
   print("Found existing log folder: {0}/{1}{2}".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
-  df.write("# File name: dag_file_"+FLAGS.log_tag+" \n")
+with open(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_'),'w') as df:
+  df.write("# File name: dag_file_"+FLAGS.log_tag.replace('/','_')+" \n")
   for rec in range(FLAGS.number_of_recorders):
     df.write("JOB r{0} {1}/{2}{3}/{0}/condor/online.condor \n".format(rec, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("JOB clean {0}/{1}{2}/clean/condor/offline.condor \n".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
@@ -77,12 +77,12 @@ with open(dag_dir+"/dag_file_"+FLAGS.log_tag,'w') as df:
     df.write("Retry clean 2 \n")
 ##########################################################################################################################
 # STEP 5 submit DAG file
-subprocess.call(shlex.split("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag)))
+subprocess.call(shlex.split("condor_submit_dag {0}".format(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_'))))
 print("Submission done.")
 print("Monitor with: ")
-print("tail -f {0}/dag_file_{1}.nodes.log".format(dag_dir,FLAGS.log_tag))
+print("tail -f {0}/dag_file_{1}.nodes.log".format(dag_dir,FLAGS.log_tag.replace('/','_')))
 print("or: ")
-print("tail -f {0}/dag_file_{1}.dagman.out".format(dag_dir,FLAGS.log_tag))
+print("tail -f {0}/dag_file_{1}.dagman.out".format(dag_dir,FLAGS.log_tag.replace('/','_')))
 time.sleep(1)
 
 

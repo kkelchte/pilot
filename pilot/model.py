@@ -69,6 +69,7 @@ class Model(object):
     self.endpoints={}
     for mode in ['train', 'eval']:
       self.define_network(mode)
+      # count number of trainable parameters
       params=0
       for t in tf.trainable_variables():
         if len(t.shape) == 4:
@@ -83,7 +84,7 @@ class Model(object):
         
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)
-      self.add_discrete_control_layers(self.endpoints['train']) #add probability output with softmax
+      self.add_discrete_control_layers(self.endpoints['train'])
       self.add_discrete_control_layers(self.endpoints['eval'])
 
     # add control_layers to parse from the outputs the correct control
@@ -370,7 +371,7 @@ class Model(object):
 
   def one_hot(self, index):
     """
-    Index should be an integer 32.
+    Index should be an integer.
     Change from index to one_hot encoding:
     0 --> 1,0,0
     1 --> 0,1,0
@@ -383,7 +384,7 @@ class Model(object):
   def one_hot_to_control_digits(self, one_hots, name=None):
     """
     Changes an array of one_hots over different factors to control indices [0,1,2].
-    Only tensor version is used in code and only for targets.
+    Only tensor version is used in code.
     """
     if isinstance(one_hots, tf.Tensor):
       digits=tf.floormod(tf.argmax(one_hots,axis=-1, name=name, output_type=tf.int32), tf.constant(self.FLAGS.action_quantity, dtype=tf.int32))
@@ -494,26 +495,25 @@ class Model(object):
     total_loss includes regularization loss defined in tf.layers
     '''
     with tf.device(self.device):
-      # if not self.FLAGS.discrete:
-      #   self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
-      # else:
-      # if self.FLAGS.loss == 'ce':
-      #   loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['probs']+0.001))
-      #   loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['probs']))
-      #   self.loss = tf.reduce_mean(loss)
-      #   tf.losses.add_loss(tf.reduce_mean(self.loss))        
-      # elif self.FLAGS.loss == 'smce':
-      #   self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'])
-      # else:
-      #   self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
-    
+      if not self.FLAGS.discrete:
+        self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
+      else:
+        if self.FLAGS.loss == 'ce':
+          loss = -tf.multiply(tf.multiply(self.targets,self.weights), tf.log(endpoints['probs']+0.001))
+          loss = loss-tf.multiply(tf.multiply((1-self.targets),self.weights), tf.log(1-endpoints['probs']))
+          self.loss = tf.reduce_mean(loss)
+          tf.losses.add_loss(tf.reduce_mean(self.loss))
+        elif self.FLAGS.loss == 'smce':
+          self.loss = tf.losses.softmax_cross_entropy(onehot_labels=self.targets, logits=endpoints['outputs'])
+        else:
+          self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.weights)
+      
       # self.discriminator_loss = tf.losses.mean_squared_error(self.gate_targets, endpoints['gates'])
       if self.FLAGS.discrete:
         self.discriminator_loss = tf.losses.softmax_cross_entropy(onehot_labels=self.gate_targets, logits=endpoints['weighted_sum'])
       else:
         self.discriminator_loss = tf.losses.mean_squared_error(self.gate_targets, endpoints['weighted_sum'])
 
-      # tf.losses.add_loss(self.discriminator_loss)
 
       if self.FLAGS.auxiliary_depth:
         weights = self.FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
@@ -573,14 +573,14 @@ class Model(object):
       #   batchnorm_variables = [v for v in tf.global_variables() if v.name.find('BatchNorm')!=-1]
       #   gradient_multipliers = {v.name: 0 for v in mobile_variables}
       
-      # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-      # with tf.control_dependencies(update_ops):
-      #   self.train_op = self.optimizer.minimize(self.total_loss,
-      #                                           global_step=self.global_step)
+      update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+      with tf.control_dependencies(update_ops):
+        self.train_op = self.optimizer.minimize(self.total_loss,
+                                                global_step=self.global_step)
 
-      discriminator_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                                            "discriminator")
-      self.train_op = self.optimizer.minimize(self.discriminator_loss, var_list=discriminator_vars, global_step=self.global_step)
+      # discriminator_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+      #                                       "discriminator")
+      # self.train_op = self.optimizer.minimize(self.discriminator_loss, var_list=discriminator_vars, global_step=self.global_step)
 
       # print discriminator_vars
       # import pdb; pdb.set_trace()
