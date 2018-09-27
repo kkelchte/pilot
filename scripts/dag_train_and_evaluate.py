@@ -61,7 +61,14 @@ for model in range(FLAGS.number_of_models):
 # STEP 3 Add for each model an online condor job without submitting for evaluation/training online
 for model in range(FLAGS.number_of_models):
   command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --checkpoint_path {0}/{1} --wall_time {4}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
-  for e in others: command=" {0} {1}".format(command, e)
+  break_next = False
+  for e in others: 
+    if break_next: # don't add another --checkpoint_path in case this was set
+      break_next = False 
+    elif e == '--checkpoint_path':
+      break_next = True
+    else:
+      command=" {0} {1}".format(command, e)
   save_call(command)
 
 ##########################################################################################################################

@@ -45,7 +45,7 @@ def save_config(FLAGS, logfolder, file_name = "configuration"):
   flg = ET.SubElement(root, "flags")
   
   flags_dict=FLAGS.__dict__
-  for f in flags_dict:
+  for f in sorted(flags_dict.keys()):
     # print f, flags_dict[f]
     e = ET.SubElement(flg, f, name=f) 
     e.text = str(flags_dict[f])

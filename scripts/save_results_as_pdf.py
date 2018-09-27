@@ -354,6 +354,6 @@ p_mail = subprocess.Popen(shlex.split("mailx -s {0} -a {1} klaas.kelchtermans@es
 print(p_mail.communicate())
 
 # Step 6: put report also in archive
-shutil.copyfile(mother_dir+'/report/report.pdf', '{0}/{1}archive/{2}_{3}.pdf'.format(FLAGS.home,FLAGS.summary_dir, time.strftime("%Y-%m-%d_%I%M"), FLAGS.mother_dir.replace('/','_')) )
+shutil.copyfile(mother_dir+'/report/report.pdf', '{0}/{1}archive/{2}.pdf'.format(FLAGS.home,FLAGS.summary_dir, FLAGS.mother_dir.replace('/','_')) )
 
 
