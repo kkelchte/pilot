@@ -220,7 +220,7 @@ def load_run_info(coord, run_list, set_list, checklist):
     except IndexError as e:
       coord.request_stop()
     except Exception as e:
-      print('Problem in loading data: {0} @ {1}'.format(e, run_dir))
+      print('Problem in loading data: {0} @ {1}'.format(e.message, run_dir))
       checklist.append(False)
       coord.request_stop()
 
@@ -286,6 +286,7 @@ def generate_batch(data_type):
         ctr = data_set[run_ind]['controls'][frame_ind]
         ctr_index = 0 if np.abs(ctr) < 0.3 else np.sign(ctr)
         count_controls[ctr_index]+=1
+    
     # print count_controls
     if not FLAGS.load_data_in_ram:
       # load data multithreaded style into RAM
@@ -372,6 +373,7 @@ def generate_batch(data_type):
         ctr = data_set[run_ind]['controls'][frame_ind]
         # clip control avoiding values larger than 1
         ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
+        
         # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
         batch.append({'img':img, 'ctr':ctr, 'depth': depth})
         ok=True

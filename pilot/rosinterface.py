@@ -193,7 +193,6 @@ class PilotNode(object):
       # # kill the run anyway.
       de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010
       size = (55,74)
-      # size = self.model.output_size #(55,74)
       # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)
       
       de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)
@@ -310,31 +309,31 @@ class PilotNode(object):
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
-    # if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0.
+    # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
     if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0. + np.random.binomial(1, 0.1)
     
 
     ############### DEBUG CONTROL RATE TO BE DELETED
-    fsm={0:(1,0),
-        1: (1,0),
-        2: (1,0),
-        3: (1,0),
-        4: (0,1),
-        5: (0,1),
-        6: (0,1),
-        7: (0,1),
-        8: (1,0),
-        9: (1,0),
-        10: (1,0),
-        11: (1,0),
-        12: (0,-1),
-        13: (0,-1),
-        14: (0,-1),
-        15: (0,-1)}
+    #fsm={0:(1,0),
+    #    1: (1,0),
+    #    2: (1,0),
+    #    3: (1,0),
+    #    4: (0,1),
+    #    5: (0,1),
+    #    6: (0,1),
+    #    7: (0,1),
+    #    8: (1,0),
+    #    9: (1,0),
+    #    10: (1,0),
+    #    11: (1,0),
+    #    12: (0,-1),
+    #    13: (0,-1),
+    #    14: (0,-1),
+    #    15: (0,-1)}
 
-    msg.linear.x = fsm[self.fsm_index%len(fsm.keys())][0]
-    msg.angular.z = fsm[self.fsm_index%len(fsm.keys())][1]
-    self.fsm_index+=1
+    #msg.linear.x = fsm[self.fsm_index%len(fsm.keys())][0]
+    #msg.angular.z = fsm[self.fsm_index%len(fsm.keys())][1]
+    #self.fsm_index+=1
     # msg.angular.z = 0 if self.img_index%2==1 else 1
     # msg.angular.z = 1 
     # msg.angular.z = 0
@@ -495,6 +494,5 @@ class PilotNode(object):
       self.depth_loss=[]
       self.driving_duration=None
       self.img_index=0    
-      self.fsm_index = 0
-          
+      self.fsm_index = 0          
 

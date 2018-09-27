@@ -196,13 +196,17 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
     axes[0, i].imshow(matplotlibprove(inputs[i]), cmap='inferno')
     axes[0, i].axis('off')
   
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
   # add deconvolutions over the columns
   row_index = 1
   for k in results.keys(): # go over layers
     for c in range(len(results[k])): # add each channel in 2 new column
       for i in range(axes.shape[1]): # fill row going over input images
         # axes[row_index, i].set_title(k.split('/')[1]+'/'+k.split('/')[2]+'_'+str(c))
-        axes[row_index, i].set_title(k+'_'+str(c))
+        # axes[row_index, i].set_title(k+'_'+str(c))
+        axes[row_index, i].set_title(experts[c])
+        
         axes[row_index, i].imshow(np.concatenate((inputs[i],np.expand_dims(clean_results[k][c][i],axis=2)), axis=2))
         axes[row_index, i].axis('off')
       # row_index+=2
@@ -225,6 +229,8 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
 
   print("[tools.py]: extracting deep dream maps of {0} in {1}".format([os.path.basename(i) for i in input_images], os.path.dirname(input_images[0])))
   
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
   inputs = load_images(input_images, model.input_size[1:])
   
   # collect gradients for output endpoint of evaluation model
@@ -286,7 +292,9 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
     for i in range(axes.shape[1]):
       # print gk
       # axes[row_index, i].set_title('Grad Asc: '+gk.split('/')[1]+'/'+gk[-1])   
-      axes[row_index, i].set_title('Grad Asc: '+gk)
+      # axes[row_index, i].set_title('Grad Asc: '+gk)
+      axes[row_index, i].set_title(experts[row_index-1])
+
       axes[row_index, i].imshow(np.concatenate((inputs[i],np.expand_dims(clean_results[gk][i],axis=2)), axis=2), cmap='inferno')
       # axes[row_index, i].imshow(matplotlibprove(results[gk][i]), cmap='inferno')
       axes[row_index, i].axis('off')
@@ -370,9 +378,12 @@ def visualize_control_activation_maps(FLAGS, model, input_images=[]):
   if len(activation_maps.shape) != 4: activation_maps = np.expand_dims(activation_maps, axis=-1)
 
   # create a nice plot with on the columns the different images and the rows the different experts
-  fig, axes = plt.subplots(activation_maps.shape[-1]+1, # number of rows
+
+  number_of_maps = activation_maps.shape[-1] 
+
+  fig, axes = plt.subplots(number_of_maps+1, # number of rows
                           activation_maps.shape[0], # number of columns
-                          figsize=(23, 5*(activation_maps.shape[-1]+1)))
+                          figsize=(23, 5*(number_of_maps+1)))
   
   # fill first row with original image
   for i in range(axes.shape[1]):
@@ -380,11 +391,14 @@ def visualize_control_activation_maps(FLAGS, model, input_images=[]):
     axes[0, i].imshow(matplotlibprove(inputs[i]))
     axes[0, i].axis('off')
 
-  
+  # get expert names for titling
+  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+
   # add following rows for different experts with different upscaled activation maps
   # for j in range(activation_maps.shape[-1]): # loop over diferent outputs
-  for j in range(activation_maps.shape[-1]): # loop over diferent outputs
+  for j in range(number_of_maps): # loop over diferent outputs
     for i in range(axes.shape[1]):
+      axes[j+1, i].set_title(experts[j])
       # pure upscaled heat maps:
       axes[j+1, i].imshow(matplotlibprove(activation_maps[i,:,:,j]), cmap='seismic')
       # concatenated in alpha channels:
@@ -393,6 +407,7 @@ def visualize_control_activation_maps(FLAGS, model, input_images=[]):
       axes[j+1, i].axis('off')
 
   plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/control_activation_maps.jpg',bbox_inches='tight')
+  print("saved control_activation_maps")
   # plt.show()
   # import pdb; pdb.set_trace()
 

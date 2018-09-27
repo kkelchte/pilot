@@ -45,12 +45,6 @@ def run_episode(mode, sumvar, model):
           results[k].append(losses[k])
       elif mode=='val' or mode=='test':
         _, aux_results = model.forward(inputs, auxdepth=False, targets=targets, depth_targets=target_depth)
-        # _, losses, aux_results = model.forward(inputs, auxdepth=False, targets=targets, depth_targets=target_depth)
-      # for k in results.keys():
-      #   try:
-      #     results[k].append(losses[k])
-      #   except KeyError:
-      #     pass
       if index == 1 and mode=='val' and FLAGS.plot_depth: 
           depth_predictions = tools.plot_depth(inputs, target_depth, model)
     else:

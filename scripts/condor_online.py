@@ -125,7 +125,6 @@ blacklist=""
 # greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
 greenlist=""
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
-# condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 

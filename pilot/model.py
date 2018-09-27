@@ -28,7 +28,6 @@ class Model(object):
     # self.output_size = FLAGS.output_size
     self.prefix = prefix
     self.device = FLAGS.device
-    
     self.FLAGS=FLAGS
 
     self.lr = self.FLAGS.learning_rate
@@ -147,7 +146,7 @@ class Model(object):
               'stddev':self.FLAGS.init_scale,
               'initializer':self.FLAGS.initializer,
               'random_seed':self.FLAGS.random_seed,
-              'num_outputs':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
+              'num_outputs':self.output_size,
               'dropout_keep_prob':1-self.FLAGS.dropout_rate,
               'depth_multiplier':self.FLAGS.depth_multiplier}
         if not '_nfc' in self.FLAGS.network:
@@ -161,7 +160,7 @@ class Model(object):
                                                             **args)
       elif self.FLAGS.network.startswith('alex'):
         args={'inputs':self.inputs,
-              'num_outputs':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
+              'num_outputs':self.output_size,
               'verbose':True,
               'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
               'reuse':None if mode == 'train' else True,
@@ -174,7 +173,7 @@ class Model(object):
         self.endpoints[mode] = versions[self.FLAGS.network].alexnet(**args)
       elif self.FLAGS.network.startswith('squeeze'):
         args={'inputs':self.inputs,
-              'num_outputs':self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity,
+              'num_outputs':self.output_size,
               'verbose':True,
               'dropout_rate':self.FLAGS.dropout_rate if mode == 'train' else 0,
               'reuse':None if mode == 'train' else True,
@@ -255,12 +254,15 @@ class Model(object):
           discrete+=1
       return discrete
 
-  def discrete_to_continuous(self, discrete_value):
+  def discrete_to_continuous(self, discrete_value, name=None):
     """
     Changes a discrete value to the continuous value (center of the corresponding bin)
+    [0,1,2] --> [-1,0,1]
     """
     if isinstance(discrete_value, tf.Tensor):
-      return self.control_values_from_tensors.lookup(discrete_value)
+      return self.control_values_from_tensors.lookup(discrete_value,name=name)
+    elif hasattr(discrete_value, '__contains__'):
+      return [self.control_values[int(v)] for v in discrete_value]
     else:
       return self.control_values[int(discrete_value)]
 
@@ -447,16 +449,7 @@ class Model(object):
     
     losses={'total':results.pop(0)}
 
-    # mse_train (count and total)
-    # print "target: ", targets
-    # print "eval output: ", self.sess.run(self.endpoints['eval']['outputs'], feed_dict=feed_dict)
-    # print "train output: ", self.sess.run(self.endpoints['train']['outputs'], feed_dict=feed_dict)
-    # print "loss: ", self.sess.run(self.loss, feed_dict=feed_dict)
-    # print "total loss: ",self.sess.run(self.total_loss, feed_dict=feed_dict)
-    # print "metrics: "
-    # for v in self.metric_variables:
-    #   print("{0} : {1}".format(v.name, self.sess.run(v)))
-    
+        
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):
       for e in sorted(self.endpoints['eval'].keys()):
         res = results.pop(0)
@@ -496,7 +489,6 @@ class Model(object):
       if self.FLAGS.auxiliary_depth:
         results['mse_depth_'+mode]=output.pop(0)
     return results
-
 
   def save(self, logfolder):
     '''save a checkpoint'''

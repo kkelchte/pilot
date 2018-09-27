@@ -45,7 +45,7 @@ def save_config(FLAGS, logfolder, file_name = "configuration"):
   flg = ET.SubElement(root, "flags")
   
   flags_dict=FLAGS.__dict__
-  for f in flags_dict:
+  for f in sorted(flags_dict.keys()):
     # print f, flags_dict[f]
     e = ET.SubElement(flg, f, name=f) 
     e.text = str(flags_dict[f])
@@ -213,7 +213,7 @@ def main(_):
 
   parser.add_argument("--field_of_view", default=104, type=int, help="The field of view of the camera cuts the depth scan in the range visible for the camera. Value should be even. Normal: 72 (-36:36), Wide-Angle: 120 (-60:60)")
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings")
-  
+
   # FLAGS=parser.parse_args()
   try:
     FLAGS, others = parser.parse_known_args()
