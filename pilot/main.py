@@ -45,7 +45,7 @@ def save_config(FLAGS, logfolder, file_name = "configuration"):
   flg = ET.SubElement(root, "flags")
   
   flags_dict=FLAGS.__dict__
-  for f in flags_dict:
+  for f in sorted(flags_dict.keys()):
     # print f, flags_dict[f]
     e = ET.SubElement(flg, f, name=f) 
     e.text = str(flags_dict[f])
@@ -64,7 +64,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
   boollist=['auxiliary_depth', 'discrete']
   intlist=['n_frames', 'num_outputs','n_factors']
-  floatlist=['depth_multiplier','speed']
+  floatlist=['depth_multiplier']
   stringlist=['network', 'data_format', 'combine_factor_outputs']
   for child in tree.getroot().find('flags'):
     try :
@@ -159,7 +159,7 @@ def main(_):
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   parser.add_argument("--single_loss_training", action='store_true',help="Train expert only on data relevant for this expert.")
   parser.add_argument("--non_expert_weight", default=1., type=float, help="Define the weight of the gradient to a non-expert output layer.")
-  parser.add_argument("--combine_factor_outputs", default='max', type=str, help="Combine the outputs from different experts of different factors: max, weighted_average")
+  parser.add_argument("--combine_factor_outputs", default='weighted_average', type=str, help="Combine the outputs from different experts of different factors: max, weighted_average")
   
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")

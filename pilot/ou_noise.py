@@ -11,8 +11,8 @@ class OUNoise:
     def __init__(self,action_dimension,mu=0, theta=0.15, sigma=1.0):
         self.action_dimension = action_dimension
         self.mu = mu
-        self.theta = theta
-        self.sigma = sigma
+        self.theta = theta # pull back force
+        self.sigma = sigma # deviation force
         self.state = np.ones(self.action_dimension) * self.mu
         self.reset()
 

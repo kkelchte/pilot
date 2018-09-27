@@ -44,7 +44,7 @@ parser.add_argument("-ps","--python_script",default='main.py', type=str, help="D
 #===========================
 #   Condor Machine Settings
 #===========================
-parser.add_argument("--gpumem",default=1900, type=int,help="define the number of mbs required in your GPU.")
+parser.add_argument("--gpumem",default=1900, type=int,help="define the number of gigs required in your GPU.")
 parser.add_argument("--rammem",default=15, type=int,help="define the number of gigs required in your RAM.")
 parser.add_argument("--diskmem",default=50, type=int,help="define the number of gigs required on your HD.")
 parser.add_argument("--evaluate_after",action='store_true', help="After training a new condor job can be submitted to evaluate the model after.")

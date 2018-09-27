@@ -276,10 +276,6 @@ sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 \n")
 sing.write("retVal=$? \n")
 sing.write("echo \"got exit code $retVal\" \n")
-sing.write("if [ $retVal -ne 0 ]; then \n")
-sing.write("    echo Error \n")
-sing.write("    exit $retVal \n")
-sing.write("fi \n")
 
 ###### Copy data and log back to opal
 sing.write("echo 'copy pilot data back' \n")
@@ -287,6 +283,10 @@ sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.data_root)
 sing.write("echo 'copy tensorflow log back' \n")
 sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.summary_dir))
 #####
+sing.write("if [ $retVal -ne 0 ]; then \n")
+sing.write("    echo Error \n")
+sing.write("    exit $retVal \n")
+sing.write("fi \n")
 
 sing.write("echo \"[$(date +%F_%H:%M:%S)] $Command : leaving $RemoteHost.\" \n")
 # singularity tend to not always shut down properly so strong kill the condor node

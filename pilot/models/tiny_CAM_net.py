@@ -11,31 +11,32 @@ def tinynet(inputs,
             dropout_rate=0,
             reuse=None,
             is_training=False,
-            verbose=False):
+            verbose=False,
+            scope=""):
     """A basic alex net."""
     end_points={}
     
-    end_point='conv_1'
-    ep=tf.layers.conv2d(inputs, filters=10, kernel_size=[3,3], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    end_point=scope+'conv_1'
+    ep=tf.layers.conv2d(inputs, filters=10, kernel_size=[6,6], strides=3, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=ep
     print("shape conv_1: {}".format(ep.shape))
     
-    end_point='conv_2'
+    end_point=scope+'conv_2'
     ep=tf.layers.conv2d(ep, filters=20, kernel_size=[3,3], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=ep
     print("shape conv_2: {}".format(ep.shape))
-
-    end_point='activation_maps'
+    
+    end_point=scope+'activation_maps'
     ep=tf.layers.conv2d(ep, filters=40, kernel_size=[3,3], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=ep                    
     print("shape activation_maps: {}".format(ep.shape))
     
-    end_point='avg_pool'
-    ep=tf.layers.average_pooling2d(ep, pool_size=15, strides=1, padding='valid',name=end_point)
+    end_point=scope+'avg_pool'
+    ep=tf.layers.average_pooling2d(ep, pool_size=20, strides=1, padding='valid',name=end_point)
     end_points[end_point]=ep                    
     print("shape avg_pool: {}".format(ep.shape))
     
-    end_point='outputs'
+    end_point=scope+'outputs'
     ep=tf.layers.conv2d(ep, filters=num_outputs, kernel_size=[1,1], strides=1, padding='valid', activation=None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
     

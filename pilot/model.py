@@ -69,6 +69,7 @@ class Model(object):
     self.endpoints={}
     for mode in ['train', 'eval']:
       self.define_network(mode)
+      # count number of trainable parameters
       params=0
       for t in tf.trainable_variables():
         if len(t.shape) == 4:
@@ -83,7 +84,7 @@ class Model(object):
         
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)
-      self.add_discrete_control_layers(self.endpoints['train']) #add probability output with softmax
+      self.add_discrete_control_layers(self.endpoints['train'])
       self.add_discrete_control_layers(self.endpoints['eval'])
 
     # add control_layers to parse from the outputs the correct control
@@ -560,7 +561,6 @@ class Model(object):
 
     
     # append loss
-    # tensors.append(self.loss)
     tensors.append(self.total_loss)
 
     # append visualizations

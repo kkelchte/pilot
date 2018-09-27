@@ -215,7 +215,7 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
   # plt.show()
   plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
 
-def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=50,step_size=0.1):
+def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,step_size=0.1):
   """
   Function that for each of the input image adjust a number of iterations.
   It creates an image corresponding to strong left and strong right turn.
@@ -376,6 +376,8 @@ def visualize_control_activation_maps(FLAGS, model, input_images=[]):
   # combine the activation maps
   activation_maps = np.dot(activation_maps,np.squeeze(weights))
   
+  if len(activation_maps.shape) != 4: activation_maps = np.expand_dims(activation_maps, axis=-1)
+
   # create a nice plot with on the columns the different images and the rows the different experts
 
   number_of_maps = activation_maps.shape[-1] 
@@ -406,6 +408,7 @@ def visualize_control_activation_maps(FLAGS, model, input_images=[]):
       axes[j+1, i].axis('off')
 
   plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/control_activation_maps.jpg',bbox_inches='tight')
+  print("saved control_activation_maps")
   # plt.show()
   # import pdb; pdb.set_trace()
 
