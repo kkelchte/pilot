@@ -135,9 +135,11 @@ for i,r in enumerate(runs):
     if FLAGS.noise_type == 'uni':
       background = np.random.randint(0,255+1,size=img.shape)
     elif FLAGS.noise_type == 'ou':
-      theta=0.1
-      sigma=0.1
-
+      # theta=0.1
+      # sigma=0.1
+      theta=np.random.beta(2,2) #min(max(np.random.normal(0.5,1),0),2)
+      sigma=np.random.beta(1,3)
+    
       # create horizontal noise over the columns repeated over the rows
       ou = ou_noise.OUNoise(3,0,theta,sigma)
       horizontal_noise = []
