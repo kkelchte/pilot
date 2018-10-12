@@ -523,7 +523,7 @@
 			"file": "pilot/models/tiny_net.py",
 			"settings":
 			{
-				"buffer_size": 1477,
+				"buffer_size": 1856,
 				"line_ending": "Unix"
 			}
 		},
@@ -531,7 +531,7 @@
 			"file": "pilot/models/tiny_CAM_net.py",
 			"settings":
 			{
-				"buffer_size": 2006,
+				"buffer_size": 2062,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -540,7 +540,7 @@
 			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 32787,
+				"buffer_size": 32789,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -886,15 +886,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1477,
+						"buffer_size": 1856,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1083,
-								1083
+								0,
+								0
 							]
 						],
 						"settings":
@@ -917,15 +917,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2006,
+						"buffer_size": 2062,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								679,
-								1561
+								0,
+								0
 							]
 						],
 						"settings":
@@ -947,15 +947,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 32787,
+						"buffer_size": 32789,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								27495,
-								27495
+								26951,
+								26951
 							]
 						],
 						"settings":
