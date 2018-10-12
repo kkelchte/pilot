@@ -532,7 +532,7 @@
 			"file": "scripts/save_results_as_pdf.py",
 			"settings":
 			{
-				"buffer_size": 14710,
+				"buffer_size": 14711,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -541,7 +541,7 @@
 			"file": "pilot/main.py",
 			"settings":
 			{
-				"buffer_size": 20108,
+				"buffer_size": 20100,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -550,7 +550,7 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-24_noise_augmentation.md",
 			"settings":
 			{
-				"buffer_size": 3353,
+				"buffer_size": 3629,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -933,15 +933,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 14710,
+						"buffer_size": 14711,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								14671,
-								14671
+								0,
+								0
 							]
 						],
 						"settings":
@@ -963,15 +963,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 20108,
+						"buffer_size": 20100,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								995,
-								995
+								0,
+								0
 							]
 						],
 						"settings":
@@ -993,15 +993,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3353,
+						"buffer_size": 3629,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3287,
-								3287
+								0,
+								0
 							]
 						],
 						"settings":
@@ -1028,8 +1028,8 @@
 						"selection":
 						[
 							[
-								5230,
-								5230
+								3991,
+								3991
 							]
 						],
 						"settings":
