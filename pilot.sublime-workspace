@@ -540,7 +540,7 @@
 			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 32789,
+				"buffer_size": 33367,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -732,6 +732,10 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"24",
+			"500",
+			"1000",
+			"4",
 			"conv_1",
 			"max",
 			"pilot",
@@ -855,11 +859,7 @@
 			"wall_",
 			"z_location",
 			" ",
-			"test_drone",
-			"lights_location",
-			"><",
-			"conf",
-			"texture"
+			"test_drone"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -947,22 +947,26 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 32789,
+						"buffer_size": 33367,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								26951,
-								26951
+								27111,
+								27111
+							],
+							[
+								27692,
+								27692
 							]
 						],
 						"settings":
 						{
 							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
-						"translation.x": 0.0,
+						"translation.x": 777.0,
 						"translation.y": 1734.0,
 						"zoom_level": 1.0
 					},
@@ -1547,7 +1551,7 @@
 		[
 			[
 				"",
-				"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v2/pilot.sublime-project"
+				"/esat/opal/kkelchte/docker_home/tensorflow/ensemble_v1/pilot.sublime-project"
 			],
 			[
 				"pi",
