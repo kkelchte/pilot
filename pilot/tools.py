@@ -196,7 +196,7 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
     axes[0, i].imshow(matplotlibprove(inputs[i]), cmap='inferno')
     axes[0, i].axis('off')
   
-  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+  # experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
 
   # add deconvolutions over the columns
   row_index = 1
@@ -204,8 +204,8 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[]):
     for c in range(len(results[k])): # add each channel in 2 new column
       for i in range(axes.shape[1]): # fill row going over input images
         # axes[row_index, i].set_title(k.split('/')[1]+'/'+k.split('/')[2]+'_'+str(c))
-        # axes[row_index, i].set_title(k+'_'+str(c))
-        axes[row_index, i].set_title(experts[c])
+        axes[row_index, i].set_title(k+'_'+str(c))
+        # axes[row_index, i].set_title(experts[c])
         
         axes[row_index, i].imshow(np.concatenate((inputs[i],np.expand_dims(clean_results[k][c][i],axis=2)), axis=2))
         axes[row_index, i].axis('off')
@@ -229,7 +229,7 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
 
   print("[tools.py]: extracting deep dream maps of {0} in {1}".format([os.path.basename(i) for i in input_images], os.path.dirname(input_images[0])))
   
-  experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
+  # experts=np.asarray([[k]*(FLAGS.action_quantity if FLAGS.discrete else 1) for v in sorted(model.factor_offsets.values()) for k in model.factor_offsets.keys() if model.factor_offsets[k]==v]).flatten()
 
   inputs = load_images(input_images, model.input_size[1:])
   
@@ -292,8 +292,8 @@ def deep_dream_of_extreme_control(FLAGS,model,input_images=[],num_iterations=10,
     for i in range(axes.shape[1]):
       # print gk
       # axes[row_index, i].set_title('Grad Asc: '+gk.split('/')[1]+'/'+gk[-1])   
-      # axes[row_index, i].set_title('Grad Asc: '+gk)
-      axes[row_index, i].set_title(experts[row_index-1])
+      axes[row_index, i].set_title('Grad Asc: '+gk)
+      # axes[row_index, i].set_title(experts[row_index-1])
 
       axes[row_index, i].imshow(np.concatenate((inputs[i],np.expand_dims(clean_results[gk][i],axis=2)), axis=2), cmap='inferno')
       # axes[row_index, i].imshow(matplotlibprove(results[gk][i]), cmap='inferno')

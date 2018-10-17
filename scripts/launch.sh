@@ -69,7 +69,9 @@
 
 
 # python dag_train_and_evaluate.py -t naive_ensemble_10_uni/mobile_imgnet --wall_time_train $((4*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --load_data_in_ram --learning_rate 0.05 --dataset all_factors_uni --max_episodes 1000 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
-python dag_train_and_evaluate.py -t naive_ensemble_10_ou/mobile_imgnet --wall_time_train $((4*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --load_data_in_ram --learning_rate 0.05 --dataset all_factors_ou --max_episodes 1000 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+
+python dag_train_and_evaluate.py -t naive_ensemble_10_empty_uni/mobile_imgnet --wall_time_train $((15*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --learning_rate 0.05 --dataset all_factors_empty_uni --max_episodes 500 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+python dag_train_and_evaluate.py -t naive_ensemble_10_empty_uni_ou/mobile_imgnet --wall_time_train $((15*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --learning_rate 0.05 --dataset all_factors_empty_uni_ou --max_episodes 500 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 
 
 # ------------OFFLINE FACTORS-----

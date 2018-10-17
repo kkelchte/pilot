@@ -523,7 +523,7 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-24_noise_augmentation.md",
 			"settings":
 			{
-				"buffer_size": 3629,
+				"buffer_size": 4313,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -532,7 +532,7 @@
 			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 15210,
+				"buffer_size": 15721,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -748,6 +748,9 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"24",
+			"8",
+			"--load_data_in_ram ",
 			"uni",
 			"gray_max",
 			"gray_min",
@@ -872,10 +875,7 @@
 			"0.04 1 1",
 			"panel",
 			"texture",
-			"corridor_texture",
-			"texture",
-			"paramfile",
-			"direct_corridor"
+			"corridor_texture"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -902,15 +902,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3629,
+						"buffer_size": 4313,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								3295,
+								3295
 							]
 						],
 						"settings":
@@ -918,7 +918,7 @@
 							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 534.0,
+						"translation.y": 806.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 1,
@@ -930,22 +930,22 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 15210,
+						"buffer_size": 15721,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								10107,
-								10107
+								11090,
+								11090
 							]
 						],
 						"settings":
 						{
 							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
-						"translation.x": 0.0,
+						"translation.x": 48.0,
 						"translation.y": 816.0,
 						"zoom_level": 1.0
 					},
