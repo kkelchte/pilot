@@ -63,7 +63,7 @@ class Model(object):
     self.endpoints={}
     for mode in ['train', 'eval']:
       self.define_network(mode)
-      params=0
+      params=tf.Dimension(0)
       for t in tf.trainable_variables():
         if len(t.shape) == 4:
           params+=t.shape[0]*t.shape[1]*t.shape[3]
