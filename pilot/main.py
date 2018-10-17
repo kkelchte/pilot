@@ -102,6 +102,7 @@ def main(_):
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
   parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=32,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--frozen", action='store_true', help="Keep the static ensemble frozen and only train the gating function.")
 
   # ==========================
   #   Offline Parameters

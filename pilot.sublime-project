@@ -5,6 +5,18 @@
 			"path": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised"
 		},
 		{
+			"path": "/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/turtlebot"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_ros"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/parrot_ardrone"
+		},
+		{
 			"path": "."
 		},
 		{

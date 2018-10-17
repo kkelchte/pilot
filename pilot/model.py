@@ -573,14 +573,15 @@ class Model(object):
       #   batchnorm_variables = [v for v in tf.global_variables() if v.name.find('BatchNorm')!=-1]
       #   gradient_multipliers = {v.name: 0 for v in mobile_variables}
       
-      update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-      with tf.control_dependencies(update_ops):
-        self.train_op = self.optimizer.minimize(self.total_loss,
-                                                global_step=self.global_step)
-
-      # discriminator_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-      #                                       "discriminator")
-      # self.train_op = self.optimizer.minimize(self.discriminator_loss, var_list=discriminator_vars, global_step=self.global_step)
+      if not self.FLAGS.frozen:
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+          self.train_op = self.optimizer.minimize(self.total_loss,
+                                                  global_step=self.global_step)
+      else:
+        discriminator_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
+                                              "discriminator")
+        self.train_op = self.optimizer.minimize(self.discriminator_loss, var_list=discriminator_vars, global_step=self.global_step)
 
       # print discriminator_vars
       # import pdb; pdb.set_trace()
