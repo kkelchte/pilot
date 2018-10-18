@@ -523,7 +523,7 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-16_evaluation_of_ros_openai.md",
 			"settings":
 			{
-				"buffer_size": 4725,
+				"buffer_size": 5036,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -538,11 +538,27 @@
 			}
 		},
 		{
+			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-08-28_factoring_control.md",
+			"settings":
+			{
+				"buffer_size": 14789,
+				"line_ending": "Unix"
+			}
+		},
+		{
 			"file": "/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects/my_parrotdrone_openai_example/config/experimental_config.yaml",
 			"settings":
 			{
 				"buffer_size": 1735,
 				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects/my_parrotdrone_openai_example/launch/start_training.launch",
+			"settings":
+			{
+				"buffer_size": 347,
 				"line_ending": "Unix"
 			}
 		}
@@ -583,12 +599,12 @@
 	},
 	"expanded_folders":
 	[
-		"/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects",
-		"/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects/my_parrotdrone_openai_example",
-		"/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects/my_parrotdrone_openai_example/config",
-		"/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects/my_parrotdrone_openai_example/launch",
-		"/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects/my_parrotdrone_openai_example/scripts",
-		"/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/parrot_ardrone"
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/imgs"
 	],
 	"file_history":
 	[
@@ -737,6 +753,7 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"15hours",
 			"30",
 			"2*60",
 			"1000",
@@ -863,8 +880,7 @@
 			"0.04 1 1",
 			"panel",
 			"texture",
-			"corridor_texture",
-			"texture"
+			"corridor_texture"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -882,7 +898,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 0,
 			"sheets":
 			[
 				{
@@ -891,15 +907,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4725,
+						"buffer_size": 5036,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4086,
-								4086
+								4773,
+								4773
 							]
 						],
 						"settings":
@@ -907,10 +923,10 @@
 							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 1177.0,
+						"translation.y": 921.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
@@ -937,7 +953,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 306.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
@@ -945,6 +961,34 @@
 				},
 				{
 					"buffer": 2,
+					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-08-28_factoring_control.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 14789,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1482,
+								1482
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
 					"file": "/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects/my_parrotdrone_openai_example/config/experimental_config.yaml",
 					"semi_transient": false,
 					"settings":
@@ -970,7 +1014,35 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/esat/opal/kkelchte/docker_home/ros_open_ai_ws/src/openai_examples_projects/my_parrotdrone_openai_example/launch/start_training.launch",
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 347,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
 					"type": "text"
 				}
 			]
@@ -1028,6 +1100,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"201",
+				"kkelchte.github.io/docs/2018-08-28_factoring_control.md"
+			],
 			[
 				"parrotdrone got",
 				"openai_ros/openai_ros/src/openai_ros/task_envs/parrotdrone/parrotdrone_goto.py"
@@ -1301,10 +1377,6 @@
 				"pilot/pilot/offline.py"
 			],
 			[
-				"201",
-				"kkelchte.github.io/docs/2018-08-28_factoring_control.md"
-			],
-			[
 				"squ v",
 				"pilot/pilot/models/squeeze_net_v1.py"
 			],
@@ -1573,7 +1645,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 202.0,
+	"side_bar_width": 330.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
