@@ -70,8 +70,8 @@
 
 # python dag_train_and_evaluate.py -t naive_ensemble_10_uni/mobile_imgnet --wall_time_train $((4*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --load_data_in_ram --learning_rate 0.05 --dataset all_factors_uni --max_episodes 1000 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 
-python dag_train_and_evaluate.py -t naive_ensemble_10_empty_uni/mobile_imgnet --wall_time_train $((15*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --learning_rate 0.05 --dataset all_factors_empty_uni --max_episodes 500 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
-python dag_train_and_evaluate.py -t naive_ensemble_10_empty_uni_ou/mobile_imgnet --wall_time_train $((15*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --learning_rate 0.05 --dataset all_factors_empty_uni_ou --max_episodes 500 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+# python dag_train_and_evaluate.py -t naive_ensemble_10_empty_uni/mobile_imgnet --wall_time_train $((15*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --learning_rate 0.05 --dataset all_factors_empty_uni --max_episodes 500 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
+# python dag_train_and_evaluate.py -t naive_ensemble_10_empty_uni_ou/mobile_imgnet --wall_time_train $((15*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 10 --loss mse --learning_rate 0.05 --dataset all_factors_empty_uni_ou --max_episodes 500 --network mobile --discrete            --visualize_deep_dream_of_output --visualize_saliency_of_output --paramfile eva_params.yaml --number_of_runs 10 -w corridor -w esatv1 --reuse_default_world --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 
 
 
 # ------------OFFLINE FACTORS-----
@@ -85,6 +85,38 @@ python dag_train_and_evaluate.py -t naive_ensemble_10_empty_uni_ou/mobile_imgnet
 
 # python condor_offline.py -t reference_radiator --wall_time $((3*60*60)) --dataset radiator --max_episodes 600 --discrete --load_data_in_ram
 # python condor_offline.py -t reference_radiator_poster --wall_time $((3*60*60)) --dataset radiator_poster --max_episodes 600 --discrete --load_data_in_ram
+
+
+# ---------LIFELONGLEARNING--------
+# python dag_train_and_evaluate.py -t lifelonglearning/domain_A --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_A --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
+# python dag_train_and_evaluate.py -t lifelonglearning/domain_B --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_B --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_carton_box --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
+# python dag_train_and_evaluate.py -t lifelonglearning/domain_C --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_C --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel_blue --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
+
+
+
+# ------------CREATE_DATA-------------
+
+# python condor_online.py -t test_barrel --wall_time $((60*60)) --not_nice -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 1 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+
+for i in 0 1 ; do
+  # python condor_online.py -t rec_barrel_cw_$i --wall_time $((20*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+  # python condor_online.py -t rec_barrel_ccw_$i --wall_time $((20*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71
+  python condor_online.py -t rec_box_cw_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm -n 8 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+  python condor_online.py -t rec_box_ccw_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm -n 8 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71 
+  # python condor_online.py -t rec_blue_barrel_cw_$i --wall_time $((2*60*60)) -w osb_yellow_barrel_blue --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+  # python condor_online.py -t rec_blue_barrel_ccw_$i --wall_time $((2*60*60)) -w osb_yellow_barrel_blue --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71
+done
+
+# in case the state space shift does not allow nets to train on expert data.
+# for i in 0 1 2 ; do
+#   python condor_online.py -t rec_random_barrel_$i --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n 30 --paramfile random_slow.yaml -ds --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+#   python condor_online.py -t rec_random_box_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm nn_turtle_fsm -n 30 --paramfile random_slow.yaml -ds --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+#   python condor_online.py -t rec_random_blue_barrel_$i --wall_time $((2*60*60)) -w osb_yellow_barrel_blue --robot turtle_sim --fsm nn_turtle_fsm -n 30 --paramfile random_slow.yaml -ds --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# done
+
+
+# python dag_create_data.py -t test_turtle_A --wall_time $((60*60)) --destination test_turtle_A --not_nice --number_of_recorders 3 --number_of_runs 2 -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+
 
 
 # ------------ONLINE-------------

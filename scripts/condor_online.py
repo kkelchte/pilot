@@ -233,8 +233,8 @@ sing.write("cd $sing_loc\n")
 sing.write("pwd\n")
 sing.write("ls\n")
 sing.write("sleep 1\n")
-sing.write("echo 'copy singularity image to /tmp'\n")
-sing.write("cp $sing_loc/$sing_image /tmp\n")
+# sing.write("echo 'copy singularity image to /tmp'\n")
+# sing.write("cp $sing_loc/$sing_image /tmp\n")
 
 ###### Copy docker_home to local tmp
 sing.write("echo 'make home in tmp' \n")
@@ -272,8 +272,8 @@ sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 
 # sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_drone_ws.img $1 \n")
 # sing.write("/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_drone_ws.img $1 \n")
-# sing.write("/usr/bin/singularity exec --nv $sing_loc/$sing_image $1 \n")
-sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 \n")
+sing.write("/usr/bin/singularity exec --nv $sing_loc/$sing_image $1 \n")
+# sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 \n")
 sing.write("retVal=$? \n")
 sing.write("echo \"got exit code $retVal\" \n")
 
