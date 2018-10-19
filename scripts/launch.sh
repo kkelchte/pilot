@@ -88,7 +88,11 @@
 
 
 # ---------LIFELONGLEARNING--------
-# python dag_train_and_evaluate.py -t lifelonglearning/domain_A --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_A --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
+python dag_train_and_evaluate.py -t lifelonglearning/domain_A/lr01 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_A --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
+python dag_train_and_evaluate.py -t lifelonglearning/domain_A/lr05 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.5 --dataset domain_A --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
+python dag_train_and_evaluate.py -t lifelonglearning/domain_A/lr001 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.01 --dataset domain_A --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
+
+
 # python dag_train_and_evaluate.py -t lifelonglearning/domain_B --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_B --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_carton_box --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
 # python dag_train_and_evaluate.py -t lifelonglearning/domain_C --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_C --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel_blue --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
 
@@ -98,14 +102,14 @@
 
 # python condor_online.py -t test_barrel --wall_time $((60*60)) --not_nice -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 1 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 
-for i in 0 1 ; do
+# for i in 0 1 ; do
   # python condor_online.py -t rec_barrel_cw_$i --wall_time $((20*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
   # python condor_online.py -t rec_barrel_ccw_$i --wall_time $((20*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71
-  python condor_online.py -t rec_box_cw_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm -n 8 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-  python condor_online.py -t rec_box_ccw_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm -n 8 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71 
+  # python condor_online.py -t rec_box_cw_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm -n 8 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+  # python condor_online.py -t rec_box_ccw_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm -n 8 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71 
   # python condor_online.py -t rec_blue_barrel_cw_$i --wall_time $((2*60*60)) -w osb_yellow_barrel_blue --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
   # python condor_online.py -t rec_blue_barrel_ccw_$i --wall_time $((2*60*60)) -w osb_yellow_barrel_blue --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71
-done
+# done
 
 # in case the state space shift does not allow nets to train on expert data.
 # for i in 0 1 2 ; do

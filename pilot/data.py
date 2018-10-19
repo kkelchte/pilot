@@ -368,7 +368,7 @@ def generate_batch(data_type):
           depth = data_set[run_ind]['depths'][frame_ind]
         except:
           depth=[]
-          print("[data.py]: Problem loading depth in batch.")
+          # print("[data.py]: Problem loading depth in batch.")
           pass
         ctr = data_set[run_ind]['controls'][frame_ind]
         # clip control avoiding values larger than 1
