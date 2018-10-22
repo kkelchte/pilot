@@ -103,26 +103,14 @@
 
 # ------------CREATE_DATA-------------
 
-# python condor_online.py -t test_barrel --wall_time $((60*60)) --not_nice -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 1 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 
-# for i in 0 1 ; do
-  # python condor_online.py -t rec_barrel_cw_$i --wall_time $((20*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-  # python condor_online.py -t rec_barrel_ccw_$i --wall_time $((20*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71
-  # python condor_online.py -t rec_box_cw_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm -n 8 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-  # python condor_online.py -t rec_box_ccw_$i --wall_time $((2*60*60)) -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm -n 8 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71 
-  # python condor_online.py -t rec_blue_barrel_cw_$i --wall_time $((2*60*60)) -w osb_yellow_barrel_blue --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-  # python condor_online.py -t rec_blue_barrel_ccw_$i --wall_time $((2*60*60)) -w osb_yellow_barrel_blue --robot turtle_sim --fsm oracle_turtle_fsm -n 5 --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71
-# done
+# python dag_create_data.py -t rec_barrel_cw --wall_time_rec $((10*60*60)) --destination osb_yellow_barrel_cw --number_of_recorders 4 --number_of_runs 10 -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e --val_len 1  --test_len 1 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --min_distance 1
+# python dag_create_data.py -t rec_barrel_ccw --wall_time_rec $((10*60*60)) --destination osb_yellow_barrel_ccw --number_of_recorders 4 --number_of_runs 10 -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e --val_len 1  --test_len 1 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71 --min_distance 1
+# python dag_create_data.py -t rec_box_cw --wall_time_rec $((10*60*60)) --destination osb_carton_box_cw --number_of_recorders 4 --number_of_runs 10 -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e --val_len 1  --test_len 1 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --min_distance 1
+# python dag_create_data.py -t rec_box_ccw --wall_time_rec $((10*60*60)) --destination osb_carton_box_ccw --number_of_recorders 4 --number_of_runs 10 -w osb_carton_box --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e --val_len 1  --test_len 1 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71 --min_distance 1
+python dag_create_data.py -t rec_blue_barrel_cw --wall_time_rec $((10*60*60)) --destination osb_blue_yellow_barrel_cw --number_of_recorders 4 --number_of_runs 10 -w osb_yellow_barrel_blue --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e --val_len 1  --test_len 1 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --min_distance 1
+python dag_create_data.py -t rec_blue_barrel_ccw --wall_time_rec $((10*60*60)) --destination osb_blue_yellow_barrel_cw --number_of_recorders 4 --number_of_runs 10 -w osb_yellow_barrel_blue --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e --val_len 1  --test_len 1 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71 --min_distance 1
 
-# in case the state space shift does not allow nets to train on expert data.
-for i in 0 1 2 ; do
-  python condor_online.py -t rec_random_barrel_$i --wall_time $((20*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n 30 --paramfile random_slow.yaml -ds --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-  python condor_online.py -t rec_random_box_$i --wall_time $((20*60*60)) -w osb_carton_box --robot turtle_sim --fsm nn_turtle_fsm -n 30 --paramfile random_slow.yaml -ds --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-  python condor_online.py -t rec_random_blue_barrel_$i --wall_time $((20*60*60)) -w osb_yellow_barrel_blue --robot turtle_sim --fsm nn_turtle_fsm -n 30 --paramfile random_slow.yaml -ds --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-done
-
-
-# python dag_create_data.py -t test_turtle_A --wall_time $((60*60)) --destination test_turtle_A --not_nice --number_of_recorders 3 --number_of_runs 2 -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success --evaluation --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 
 
 

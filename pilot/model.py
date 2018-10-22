@@ -214,9 +214,9 @@ class Model(object):
     assert len(self.boundaries) == action_quantity-1  
     print("[model.py]: Divided {0} discrete actions over {1} with boundaries {2}.".format(action_quantity, self.control_values, self.boundaries))
     # add hash table to convert discrete bin to float with tensors
-    keys = tf.constant(np.arange(action_quantity), dtype=tf.int32)
-    values = tf.constant(np.array(self.control_values),  dtype=tf.int32)
-    default_value = tf.constant(0,  dtype=tf.int32)
+    keys = tf.constant(np.arange(action_quantity,dtype=np.int64), dtype=tf.int64)
+    values = tf.constant(np.array(self.control_values),  dtype=tf.float32)
+    default_value = tf.constant(0,  dtype=tf.float32)
     with tf.variable_scope('table'):
       self.control_values_from_tensors = tf.contrib.lookup.HashTable(
           tf.contrib.lookup.KeyValueTensorInitializer(keys, values),
@@ -280,7 +280,7 @@ class Model(object):
     digit = tf.argmax(probs, axis=-1, name='argmax', output_type=tf.int32)
     endpoints[end_point] = digit
     end_point='control'
-    endpoints[end_point] = self.discrete_to_continuous(digit)
+    endpoints[end_point] = self.discrete_to_continuous(tf.cast(digit, tf.int64))
   
   def define_loss(self, endpoints):
     '''tensors for calculating the loss are added in LOSS collection
@@ -385,6 +385,7 @@ class Model(object):
     results = self.sess.run(tensors, feed_dict=feed_dict)
 
     output=results.pop(0)
+
     # metrics = {}
     aux_results = {}   
 

@@ -35,6 +35,7 @@ def run_episode(mode, sumvar, model):
     if ok:
       inputs = np.array([_['img'] for _ in batch])
       targets = np.array([[_['ctr']] for _ in batch])
+      # print("targets: {}".format(targets))
       # try:
       target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
       if len(target_depth) == 0 and FLAGS.auxiliary_depth: raise ValueError('No depth in batch.')

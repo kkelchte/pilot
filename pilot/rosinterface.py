@@ -291,6 +291,7 @@ class PilotNode(object):
     
     ### SEND CONTROL
     control = control[0]
+    # print control
     if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
       action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
     else:

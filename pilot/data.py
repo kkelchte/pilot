@@ -281,11 +281,17 @@ def generate_batch(data_type):
         options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==+1)]
       if not len(options) == 0: # in case there are still frames left...
         frame_ind = random.choice(options)
-        batch_num += 1
-        batch_indices.append((batch_num, run_ind, frame_ind))
-        ctr = data_set[run_ind]['controls'][frame_ind]
-        ctr_index = 0 if np.abs(ctr) < 0.3 else np.sign(ctr)
-        count_controls[ctr_index]+=1
+      else:
+        print("[data.py]: failed to normalize actions due to not enough options...")
+        options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
+        frame_ind = random.choice(options)
+
+      batch_num += 1
+      batch_indices.append((batch_num, run_ind, frame_ind))
+      ctr = data_set[run_ind]['controls'][frame_ind]
+      ctr_index = 0 if np.abs(ctr) < 0.3 else np.sign(ctr)
+      count_controls[ctr_index]+=1
+
     
     # print count_controls
     if not FLAGS.load_data_in_ram:
