@@ -22,12 +22,12 @@ def tinynet(inputs,
     print("shape conv_1: {}".format(ep.shape))
     
     end_point=scope+'conv_2'
-    ep=tf.layers.conv2d(ep, filters=20, kernel_size=[3,3], strides=2, padding='valid', activation=tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    ep=tf.layers.conv2d(ep, filters=20, kernel_size=[3,3], strides=2, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=ep                    
     print("shape conv_2: {}".format(ep.shape))
     
     end_point=scope+'conv_3'
-    ep=tf.layers.conv2d(ep, filters=24, kernel_size=[20,20], strides=1, padding='valid', activation=tf.nn.relu, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    ep=tf.layers.conv2d(ep, filters=60, kernel_size=[20,20], strides=1, padding='valid', activation=tf.nn.relu, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=ep                    
     print("shape conv_3: {}".format(ep.shape))
 

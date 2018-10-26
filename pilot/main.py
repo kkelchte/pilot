@@ -64,7 +64,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
   boollist=['auxiliary_depth', 'discrete']
   intlist=['n_frames', 'num_outputs']
-  floatlist=['depth_multiplier']
+  floatlist=['depth_multiplier','speed','action_bound']
   stringlist=['network', 'data_format']
   for child in tree.getroot().find('flags'):
     try :
@@ -102,7 +102,14 @@ def main(_):
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
   parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=32,type=int,help="Define the size of minibatches.")
-
+  
+  # ==========================
+  #   Lifelonglearning Parameters
+  # ==========================
+  parser.add_argument("--lifelonglearning",action='store_true',help="In case there is a previous domain upon which the model was trained, use the lifelonglearning regularization to overcome forgetting.")
+  parser.add_argument("--update_importance_weights",action='store_true',help="Update importance weights for all variables for this domain.")
+  parser.add_argument("--lll_weight", default=1, type=float, help="Weight the lifelonglearning regularization term in the overall loss.")
+  
   # ==========================
   #   Offline Parameters
   # ==========================

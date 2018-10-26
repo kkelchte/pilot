@@ -264,6 +264,7 @@ class PilotNode(object):
     aux_depth=[] # variable to keep predicted depth 
     trgt = -100.
     inpt=im
+    
     if self.FLAGS.evaluate: ### EVALUATE
       trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
       trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
@@ -277,8 +278,7 @@ class PilotNode(object):
           return False
         else:
           return True
-      if not check_field(self.target_control): 
-        return
+      if not check_field(self.target_control): return
       else: 
         trgt = self.target_control[5]
       if self.FLAGS.auxiliary_depth:
@@ -312,34 +312,6 @@ class PilotNode(object):
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
     # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
     if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0. + np.random.binomial(1, 0.1)
-    
-
-    ############### DEBUG CONTROL RATE TO BE DELETED
-    #fsm={0:(1,0),
-    #    1: (1,0),
-    #    2: (1,0),
-    #    3: (1,0),
-    #    4: (0,1),
-    #    5: (0,1),
-    #    6: (0,1),
-    #    7: (0,1),
-    #    8: (1,0),
-    #    9: (1,0),
-    #    10: (1,0),
-    #    11: (1,0),
-    #    12: (0,-1),
-    #    13: (0,-1),
-    #    14: (0,-1),
-    #    15: (0,-1)}
-
-    #msg.linear.x = fsm[self.fsm_index%len(fsm.keys())][0]
-    #msg.angular.z = fsm[self.fsm_index%len(fsm.keys())][1]
-    #self.fsm_index+=1
-    # msg.angular.z = 0 if self.img_index%2==1 else 1
-    # msg.angular.z = 1 
-    # msg.angular.z = 0
-    # msg.linear.x = 1
-    ############### DEBUG CONTROL RATE TO BE DELETED
 
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
@@ -360,6 +332,7 @@ class PilotNode(object):
                   'trgt':trgt}
       if self.FLAGS.auxiliary_depth: experience['target_depth']=trgt_depth
       self.replay_buffer.add(experience)
+      # print("added experience: {0} vs {1}".format(action, trgt))
 
   def supervised_callback(self, data):
     """Get target control from the /supervised_vel node"""

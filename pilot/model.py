@@ -52,6 +52,9 @@ class Model(object):
                 'squeeze_v2': squeeze_net_v2,
                 'squeeze_v3': squeeze_net_v3,
                 'tiny':tiny_net,
+                'tiny_v1':tiny_net_v1,
+                'tiny_v2':tiny_net_v2,
+                'tiny_v3':tiny_net_v3,
                 'tiny_CAM':tiny_CAM_net}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
@@ -65,23 +68,14 @@ class Model(object):
     self.endpoints={}
     for mode in ['train', 'eval']:
       self.define_network(mode)
-      params=0
-      for t in tf.trainable_variables():
-        if len(t.shape) == 4:
-          params+=t.shape[0]*t.shape[1]*t.shape[3]
-        elif len(t.shape) == 3:
-          params+=t.shape[1]*t.shape[2]
-        elif len(t.shape) == 1:
-          params+=t.shape[0]        
-        # print t.name
+      params=sum([reduce(lambda x,y: x*y, v.get_shape().as_list()) for v in tf.trainable_variables()])
       print("total number of parameters: {0}".format(params))
-      # import pdb; pdb.set_trace()
-        
+  
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)
       self.add_discrete_control_layers(self.endpoints['train'])
       self.add_discrete_control_layers(self.endpoints['eval'])
-
+    
     # Only feature extracting part is initialized from pretrained model
     if not self.FLAGS.continue_training:
       # make sure you exclude the prediction layers of the model
@@ -91,8 +85,17 @@ class Model(object):
       list_to_exclude.append("H_fc_control")
       list_to_exclude.append("outputs")
       list_to_exclude.append("MobilenetV1/q_depth")
+      list_to_exclude.append("Omega")
+      print("[model.py]: only load feature extracting part in network.")
     else: #If continue training
+      print("[model.py]: continue training of total network.")
+      # list_to_exclude = ["Omega"]
       list_to_exclude = []
+      # In case of lifelonglearning and continue learning: 
+      # add variables for importance weights of previous domain and keep optimal variables for previous domain
+    if self.FLAGS.lifelonglearning or self.FLAGS.update_importance_weights:
+      self.define_importance_weights(self.endpoints['train'])
+
     variables_to_restore = slim.get_variables_to_restore(exclude=list_to_exclude)
     
     # get latest folder out of training directory if there is no checkpoint file
@@ -113,21 +116,24 @@ class Model(object):
         FLAGS.scratch = True
 
     # create saver for checkpoints
-    self.saver = tf.train.Saver(max_to_keep=50, keep_checkpoint_every_n_hours=1)
+    self.saver = tf.train.Saver(max_to_keep=10, keep_checkpoint_every_n_hours=1)
     
     # Add the loss and metric functions to the graph for both endpoints of train and eval.
     self.targets = tf.placeholder(tf.int32, [None, self.action_dim]) if FLAGS.discrete else tf.placeholder(tf.float32, [None, self.action_dim])
     self.depth_targets = tf.placeholder(tf.float32, [None,55,74])
         
-    self.define_loss(self.endpoints['train'])
     self.define_metrics(self.endpoints['eval'])
 
+    if self.FLAGS.continue_training and self.FLAGS.lifelonglearning:
+      self.define_star_variables(self.endpoints['train'])
+
     # Define the training op based on the total loss
+    self.define_loss(self.endpoints['train'])
     self.define_train()
     
     # Define summaries
     self.build_summaries()
-    
+
     init_all=tf_variables.global_variables_initializer()
     self.sess.run([init_all])
     if not self.FLAGS.scratch:
@@ -135,6 +141,23 @@ class Model(object):
       print('Successfully loaded model from:{}'.format(self.FLAGS.checkpoint_path))
     else:
       print('Training model from scratch so no initialization.')
+
+    if self.FLAGS.continue_training and self.FLAGS.lifelonglearning:
+      # print info on loaded importance weights
+      for v in tf.trainable_variables():
+        weights=self.sess.run(self.importance_weights[v.name])
+        weights=weights.flatten()
+        # print("{0}: {1} ({2}) min: {3} max: {4}".format(v.name, np.mean(weights), np.var(weights), np.amin(weights), np.amax(weights)))
+        print("| {0} | {1} | {2} | {3} | ".format(v.name, 
+                                                  np.percentile(weights,1),
+                                                  np.percentile(weights,50),
+                                                  np.percentile(weights,100)))
+
+      # assign star_variables after initialization
+      self.sess.run([tf.assign(self.star_variables[v.name], v) for v in tf.trainable_variables()])
+
+
+    
   
   def define_network(self, mode):
     '''build the network and set the tensors
@@ -142,6 +165,7 @@ class Model(object):
     with tf.device(self.device):
       if self.FLAGS.network.startswith('mobile'):
         args={'inputs':self.inputs,
+              'auxiliary_depth': self.FLAGS.auxiliary_depth,
               'weight_decay': self.FLAGS.weight_decay,
               'stddev':self.FLAGS.init_scale,
               'initializer':self.FLAGS.initializer,
@@ -191,7 +215,10 @@ class Model(object):
               'reuse':None if mode == 'train' else True,
               'is_training': mode == 'train'}
         versions={'tiny': tiny_net,
-                  'tiny_CAM': tiny_CAM_net,}
+                  'tiny_v1': tiny_net_v1,
+                  'tiny_v2': tiny_net_v2,
+                  'tiny_v3': tiny_net_v3,
+                  'tiny_CAM': tiny_CAM_net}
         self.endpoints[mode] = versions[self.FLAGS.network].tinynet(**args)
       else:
         raise NameError( '[model] Network is unknown: ', self.FLAGS.network)
@@ -282,23 +309,73 @@ class Model(object):
     end_point='control'
     endpoints[end_point] = self.discrete_to_continuous(tf.cast(digit, tf.int64))
   
-  def define_loss(self, endpoints):
-    '''tensors for calculating the loss are added in LOSS collection
-    total_loss includes regularization loss defined in tf.layers
+  def define_star_variables(self, endpoints):
+    '''Define star variables for previous domains used in combination with the importance weights for a lifelong regularization term in the loss.
+    In case copy is True the last domain creates new variables and copy the current weights of the model in these variables to introduce a new set of start variables corresponding to the last domain.
+    Star variables is a dictionary keeping a list of variables for each domain.
     '''
-    with tf.device(self.device):
-      if not self.FLAGS.discrete:
-        self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.FLAGS.control_weight)
-      else:
-        # targets should be class indices like [0,1,2, ... action_dim] for classes [-1,0,1]
-        one_hot=tf.squeeze(tf.one_hot(self.targets, depth=self.FLAGS.action_quantity, on_value=1., off_value=0., axis=-1),[1])
-        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=endpoints['outputs'], weights=self.FLAGS.control_weight)
-      # tf.losses.add_loss(self.loss)
-      if self.FLAGS.auxiliary_depth:
-        weights = self.FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
-        self.depth_loss = tf.losses.huber_loss(self.depth_targets,endpoints['aux_depth_reshaped'],weights=weights)
-        tf.losses.add_loss(self.depth_loss)
-      self.total_loss = tf.losses.get_total_loss()
+    self.star_variables={}
+    for v in tf.trainable_variables():
+      # self.star_variables[v.name]=self.sess.run(v)
+      # self.star_variables[v.name]= self.var_list[v].eval()
+      self.star_variables[v.name]=tf.get_variable('Star/'+v.name.split(':')[0],
+                                                      initializer=np.zeros(v.get_shape().as_list()).astype(np.float32),
+                                                      dtype=tf.float32,
+                                                      trainable=False)
+
+  def define_importance_weights(self, endpoints):
+    '''Define an important weight ~ omegas for each trainable variable
+    domain corresponds to the dataset
+    '''
+    self.importance_weights={}
+    for v in tf.trainable_variables():
+      self.importance_weights[v.name]=tf.get_variable('Omega/'+v.name.split(':')[0],
+                                                      initializer=np.zeros(v.get_shape().as_list()).astype(np.float32),
+                                                      dtype=tf.float32,
+                                                      trainable=False)
+    
+  def update_importance_weights(self, inputs):
+    '''Take one episode of data and keep track of gradients.
+    Calculate a importance value between 0 and 1 for each weight.
+    '''
+    # Add model variables for importance_weights for current dataset
+    gradients=[]
+    #number of batches of 200
+    N=int(inputs.shape[0]/200.)
+    print('[model.py]: update importance weights on {0} batches of 200.'.format(N))
+    for i in range(N):
+      # print i
+      batch_inputs=inputs[200*i:200*(i+1)]
+      # get gradients for a batch of images
+
+      results = self.sess.run(tf.gradients(tf.square(tf.norm(self.endpoints['train']['outputs'])), tf.trainable_variables()), feed_dict={self.inputs: batch_inputs})
+      # sum up over the absolute values
+      try:
+        gradients = [gradients[j]+np.abs(results[j]) for j in range(len(results))]
+      except:
+        gradients = [np.abs(results[j]) for j in range(len(results))]
+    #gradients are summed up by tf.gradients so average over the 200 samples
+    # divide to get the mean absolute value
+    gradients = [g/(200.*N) for g in gradients]
+
+    new_weights=[gradients[i] + self.sess.run(self.importance_weights[v.name]) for i,v in enumerate(tf.trainable_variables())]
+
+    # for i,v in enumerate(tf.trainable_variables()):
+    #   print("{0} {1} {2}".format(v.name,self.importance_weights[v.name].shape, gradients[i].shape))
+    # import pdb; pdb.set_trace()    
+
+    # assign these values to the importance weight variables
+    self.sess.run([tf.assign(self.importance_weights[v.name], new_weights[i]) for i,v in enumerate(tf.trainable_variables())])
+
+    with open(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas",'w') as f:
+      for i,v in enumerate(tf.trainable_variables()):
+        f.write("{0}: {1}\n".format(v.name, new_weights[i]))
+
+    # with open(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas_iw",'w') as f:
+    #   for i,v in enumerate(tf.trainable_variables()):
+    #     f.write("{0}: {1}\n".format(v.name, self.sess.run(self.importance_weights[v.name])))
+
+    # import pdb; pdb.set_trace()    
 
   def define_metrics(self, endpoints):
     '''tensors to evaluate the performance. Uses only the endpoints of the 'eval' copy of the network
@@ -324,6 +401,36 @@ class Model(object):
     """
     # initialize both train and val metric variables
     self.sess.run(tf.variables_initializer(var_list=self.metric_variables))
+
+  def define_loss(self, endpoints):
+    '''tensors for calculating the loss are added in LOSS collection
+    total_loss includes regularization loss defined in tf.layers
+    '''
+    with tf.device(self.device):
+      if not self.FLAGS.discrete:
+        self.loss = tf.losses.mean_squared_error(self.targets, endpoints['outputs'], weights=self.FLAGS.control_weight)
+      else:
+        # targets should be class indices like [0,1,2, ... action_dim] for classes [-1,0,1]
+        one_hot=tf.squeeze(tf.one_hot(self.targets, depth=self.FLAGS.action_quantity, on_value=1., off_value=0., axis=-1),[1])
+        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=endpoints['outputs'], weights=self.FLAGS.control_weight)
+      
+      #add regularization loss for lifelonglearning
+      self.lll_losses={}
+      if self.FLAGS.lifelonglearning:
+        for v in tf.trainable_variables():
+          # self.lll_losses[v.name.split(':')[0]]=self.FLAGS.lll_weight * tf.reduce_sum(tf.multiply(self.importance_weights[v.name],tf.abs(tf.subtract(v,self.star_variables[v.name]))))
+          self.lll_losses[v.name.split(':')[0]]=self.FLAGS.lll_weight * tf.reduce_sum(tf.multiply(self.importance_weights[v.name],tf.square(tf.subtract(v,self.star_variables[v.name]))))
+          tf.losses.add_loss(self.lll_losses[v.name.split(':')[0]])
+
+       # tf.losses.add_loss(self.loss)
+      if self.FLAGS.auxiliary_depth:
+        weights = self.FLAGS.depth_weight*tf.cast(tf.greater(self.depth_targets, 0), tf.float32) # put loss weight on zero where depth is negative or zero.        
+        self.depth_loss = tf.losses.huber_loss(self.depth_targets,endpoints['aux_depth_reshaped'],weights=weights)
+        tf.losses.add_loss(self.depth_loss)
+      
+      # self.total_loss = self.loss + self.FLAGS.lll_weight * self.lll_loss
+      # self.total_loss = self.FLAGS.lll_weight * self.lll_loss
+      self.total_loss = tf.losses.get_total_loss()
     
   def define_train(self):
     '''applying gradients to the weights from normal loss function
@@ -350,6 +457,8 @@ class Model(object):
       with tf.control_dependencies(update_ops):
         self.train_op = self.optimizer.minimize(self.total_loss,
                                                 global_step=self.global_step)
+      
+
       # self.train_op = slim.learning.create_train_op(self.total_loss, 
       #   self.optimizer, 
       #   global_step=self.global_step, 
@@ -423,6 +532,8 @@ class Model(object):
     
     # append loss
     tensors.append(self.total_loss)
+    if self.FLAGS.lifelonglearning:
+      tensors.extend([self.lll_losses[k] for k in self.lll_losses.keys()])
 
     # append visualizations
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):
@@ -449,6 +560,9 @@ class Model(object):
     _ = results.pop(0) # train_op
     
     losses={'total':results.pop(0)}
+
+    if self.FLAGS.lifelonglearning:
+      for k in self.lll_losses.keys(): losses['lll_'+k]=results.pop(0)
 
         
     if self.FLAGS.histogram_of_activations and isinstance(sumvar,dict):
@@ -504,6 +618,10 @@ class Model(object):
     self.summary_vars = {}
     self.summary_ops = {}
     self.add_summary_var('Loss_train_total')
+    
+    if self.FLAGS.lifelonglearning:
+      for k in self.lll_losses.keys():
+        self.add_summary_var('Loss_train_lll_'+k)
 
     for t in ['train', 'val']:
       for l in ['mse', 'accuracy', 'mse_depth']:

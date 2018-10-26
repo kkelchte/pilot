@@ -25,6 +25,7 @@ class ReplayBuffer(object):
       self.probs = None
 
     def add(self, experience):
+      # add experience dictionary to buffer
       if self.count < self.buffer_size: 
         self.count += 1
       else:
@@ -37,32 +38,34 @@ class ReplayBuffer(object):
 
       self.buffer.append(experience)
     
-    def size(self):
-      
+    def size(self):      
       return self.count
     
-    def new_run(self):
-      self.current_buffer = deque()
-      self.buffer_list.append(self.current_buffer)
+    # def new_run(self):
+    #   self.current_buffer = deque()
+    #   self.buffer_list.append(self.current_buffer)
 
     def softmax(self, x):
       e_x = np.exp(x-np.max(x))
       return e_x/e_x.sum()
 
     def sample_batch(self, batch_size):
+      # fill in a batch of size batch_size
+      # return an array of inputs, targets and auxiliary information
       assert batch_size < self.count, IOError('batchsize ',batch_size,' is bigger than buffer size: ',self.count)
-      batch=random.sample(self.current_buffer, batch_size)      
-      input_batch = np.array([_[0] for _ in batch])
-      target_batch = np.array([_[1] for _ in batch])
+      batch=random.sample(self.buffer, batch_size)
+
+      input_batch = np.array([_['state'] for _ in batch])
+      target_batch = np.array([_['trgt'] for _ in batch])
       aux_batch = {}
-      for k in batch[0][2].keys():
-        aux_batch[k]=np.array([_[2][k] for _ in batch])
+      # for k in batch[0].keys():
+      #   aux_batch[k]=np.array([_[k] for _ in batch])
 
       return input_batch, target_batch, aux_batch
 
     def clear(self):
-        self.current_buffer.clear()
-        self.buffer_list = []
+        self.buffer.clear()
+        # self.buffer_list = []
         self.count = 0
 
 if __name__ == '__main__':

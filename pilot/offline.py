@@ -13,7 +13,7 @@ The data is collected from the data module.
 """
 
 
-def run_episode(mode, sumvar, model):
+def run_episode(mode, sumvar, model, update_importance_weights=False):
   '''run over batches
   return different losses
   type: 'train', 'val' or 'test'
@@ -26,15 +26,24 @@ def run_episode(mode, sumvar, model):
   # results = {}
   # results['control'] = []
   results={'total': []}
+  for k in model.lll_losses.keys():
+    results['lll_'+k]=[]
   # results['accuracy'] = []
   # if FLAGS.auxiliary_depth: results['depth'] = []
   
+  all_inputs=[]
+
   for index, ok, batch in data.generate_batch(mode):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
     if ok:
       inputs = np.array([_['img'] for _ in batch])
       targets = np.array([[_['ctr']] for _ in batch])
+      if update_importance_weights and len(all_inputs) < 2000 :
+        try:
+          all_inputs=np.concatenate([all_inputs,inputs], axis=0)
+        except:
+          all_inputs=inputs[:]
       # print("targets: {}".format(targets))
       # try:
       target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
@@ -52,6 +61,10 @@ def run_episode(mode, sumvar, model):
       print('Failed to run {}.'.format(mode))
     calculation_time+=(time.time()-start_calc_time)
     start_data_time = time.time()
+
+  if update_importance_weights:
+    model.update_importance_weights(all_inputs)
+    
   for k in results.keys():
     if len(results[k])!=0: sumvar['Loss_'+mode+'_'+k]=np.mean(results[k]) 
   if len(depth_predictions) != 0: sumvar['depth_predictions']=depth_predictions
@@ -76,12 +89,13 @@ def run(_FLAGS, model, start_ep=0):
     # reset running metric variables
     model.reset_metrics()    
 
-    # ----------- train episode
+    # ----------- train episode: update importance weights on training data
+    # sumvar = run_episode('train', {}, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)    
     sumvar = run_episode('train', {}, model)    
     
     # ----------- validate episode
     # sumvar = run_episode('val', {}, model)
-    sumvar = run_episode('val', sumvar, model)
+    sumvar = run_episode('val', sumvar, model, FLAGS.update_importance_weights)
 
     # get all metrics of this episode and add them to var
     results = model.get_metrics()
@@ -107,14 +121,17 @@ def run(_FLAGS, model, start_ep=0):
       print('saved checkpoint')
       model.save(FLAGS.summary_dir+FLAGS.log_tag)
 
+    # import pdb; pdb.set_trace()
+
+
   if FLAGS.max_episodes != 0:
     # ------------ test
     model.reset_metrics()    
     sumvar = run_episode('test', {}, model)  
+    # sumvar = run_episode('test', {}, model, FLAGS.update_importance_weights)  
     # ----------- write summary
     results = model.get_metrics()
-    for k in results.keys():
-      sumvar[k] = results[k]
+    for k in results.keys(): sumvar[k] = results[k]
     tags_not_to_print=['depth_predictions']+['activations_'+e for e in model.endpoints['eval'].keys()]+['weights_'+v.name for v in tf.trainable_variables()]
     msg="run : {0}".format(ep)
     for k in sumvar.keys(): msg="{0}, {1} : {2}".format(msg, k, sumvar[k]) if k not in tags_not_to_print else msg
@@ -123,11 +140,13 @@ def run(_FLAGS, model, start_ep=0):
     f.write(msg+'\n')
     f.close()
     sys.stdout.flush()
+    print('saved checkpoint')
+    model.save(FLAGS.summary_dir+FLAGS.log_tag)
 
     try:
       model.summarize(sumvar)
     except Exception as e:
-      print('failed to summarize {}'.format(e))
+      print('failed to summarize {}'.format(e))    
 
   if FLAGS.visualize_saliency_of_output:
     tools.visualize_saliency_of_output(FLAGS, model)
