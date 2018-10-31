@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"world",
+				"world_name"
+			],
+			[
 				"fo",
 				"forest"
 			],
@@ -510,10 +514,6 @@
 			[
 				"load",
 				"load_images"
-			],
-			[
-				"ov",
-				"overlay"
 			]
 		]
 	},
@@ -529,20 +529,28 @@
 			}
 		},
 		{
-			"file": "scripts/launch.sh",
+			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_real_world_LLL.md",
 			"settings":
 			{
-				"buffer_size": 26662,
+				"buffer_size": 1360,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md",
+			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_real.launch",
 			"settings":
 			{
-				"buffer_size": 2847,
+				"buffer_size": 3388,
 				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
+			"settings":
+			{
+				"buffer_size": 4862,
 				"line_ending": "Unix"
 			}
 		},
@@ -627,6 +635,14 @@
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/robot/turtle_real.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots/launch/spawn_turtlebot.launch",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots/urdf/turtlebot3_burger.gazebo.xacro",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots/urdf/turtlebot3_burger.urdf.xacro",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots/urdf/wide_angle_camera.urdf.xacro",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/model.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/rosinterface.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train_and_evaluate.py",
@@ -651,7 +667,6 @@
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_offline.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/main.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/index.md",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
 		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/tiny_net_v3.py",
@@ -700,7 +715,6 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/robot/drone_sim.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/launch/load_params.launch",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_real.launch",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
 		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/utils.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/tf_cnnvis.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/launch/joy_teleop.launch",
@@ -748,13 +762,7 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv1.world",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/spot_light",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/diffuse_light",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/default_light",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/template/report.tex",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/directional_light",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/empty.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/canyon.world_old_",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_nfc_net.py"
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/lights/diffuse_light"
 	],
 	"find":
 	{
@@ -772,6 +780,7 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"203",
 			"forest_canyon",
 			"eva $((2",
 			"2*60*60",
@@ -898,8 +907,7 @@
 			"0 / 0",
 			"ls",
 			"cat",
-			"ls",
-			"cat"
+			"ls"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -952,47 +960,19 @@
 				},
 				{
 					"buffer": 1,
-					"file": "scripts/launch.sh",
+					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_real_world_LLL.md",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 26662,
+						"buffer_size": 1360,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3541,
-								3541
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 408.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2847,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2228,
-								2228
+								1351,
+								1351
 							]
 						],
 						"settings":
@@ -1003,11 +983,71 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_real.launch",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3388,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2832,
+								2832
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/XML/XML.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 408.0,
+						"zoom_level": 1.0
+					},
 					"stack_index": 1,
 					"type": "text"
 				},
 				{
 					"buffer": 3,
+					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4862,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4395,
+								4498
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/XML/XML.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 726.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
 					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 					"semi_transient": false,
 					"settings":
@@ -1033,11 +1073,11 @@
 						"translation.y": 6868.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 5,
 					"file": "scripts/evaluate_in_singularity.sh",
 					"semi_transient": false,
 					"settings":
@@ -1061,11 +1101,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 6,
 					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/forest.yaml",
 					"semi_transient": false,
 					"settings":
@@ -1089,11 +1129,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 7,
 					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/fsm.py",
 					"semi_transient": false,
 					"settings":
@@ -1119,7 +1159,7 @@
 						"translation.y": 4148.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 7,
 					"type": "text"
 				}
 			]
@@ -1177,6 +1217,42 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"tur sim",
+				"simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch"
+			],
+			[
+				"tur re ",
+				"simulation_supervised/simulation_supervised/config/robot/turtle_real.yaml"
+			],
+			[
+				"tur re",
+				"simulation_supervised/simulation_supervised_demo/launch/turtle_real.launch"
+			],
+			[
+				"wid an",
+				"klaas_robots/urdf/wide_angle_camera.urdf.xacro"
+			],
+			[
+				"turt bur ",
+				"klaas_robots/urdf/turtlebot3_burger.urdf.xacro"
+			],
+			[
+				"turt 3",
+				"klaas_robots/urdf/turtlebot3_burger.gazebo.xacro"
+			],
+			[
+				"spawn tu",
+				"klaas_robots/launch/spawn_turtlebot.launch"
+			],
+			[
+				"turt si",
+				"simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch"
+			],
+			[
+				"201 LLL",
+				"kkelchte.github.io/docs/2018-10-29_real_world_LLL.md"
+			],
 			[
 				"run",
 				"simulation_supervised/simulation_supervised/python/run_script.py"
@@ -1652,42 +1728,6 @@
 			[
 				"cons fs",
 				"simulation_supervised/simulation_supervised/config/fsm/console_fsm.yaml"
-			],
-			[
-				"sim",
-				"simulation_supervised/simulation_supervised/config/console/simple_console.yaml"
-			],
-			[
-				"ob",
-				"simulation_supervised/simulation_supervised/config/environment/objects.yaml"
-			],
-			[
-				"dron rea",
-				"simulation_supervised/simulation_supervised_demo/launch/drone_real.launch"
-			],
-			[
-				"var",
-				"simulation_supervised/simulation_supervised_demo/extensions/config/vary_exp.yaml"
-			],
-			[
-				"v2",
-				"pilot/pilot/models/squeeze_net_v2.py"
-			],
-			[
-				"mo",
-				"pilot/pilot/model.py"
-			],
-			[
-				"moc",
-				"hector_quadrotor/hector_quadrotor_controller/src/motor_controller.cpp"
-			],
-			[
-				"mob",
-				"pilot/pilot/models/mobile_net.py"
-			],
-			[
-				"squ",
-				"pilot/pilot/models/squeeze_net_v2.py"
 			]
 		],
 		"width": 0.0
