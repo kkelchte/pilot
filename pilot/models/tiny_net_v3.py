@@ -33,7 +33,7 @@ def tinynet(inputs,
 
     end_point=scope+'outputs'
     # print num_outputs
-    ep=tf.layers.dense(tf.reshape(ep,[-1,20*20*20]), num_outputs, activation=None, use_bias=True, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
+    ep=tf.layers.dense(tf.reshape(ep,[-1,20*20*20]), num_outputs, activation=None, use_bias=False, kernel_initializer=tf.contrib.layers.xavier_initializer(), name=end_point, reuse=reuse)
     end_points[end_point]=ep
     # end_points[end_point]=tf.squeeze(ep,[1,2],name=end_point+'_squeeze')
     

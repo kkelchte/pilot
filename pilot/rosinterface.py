@@ -311,7 +311,7 @@ class PilotNode(object):
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
     # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
-    if np.abs(msg.angular.z) > 0.3: msg.linear.x = 0. + np.random.binomial(1, 0.1)
+    if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: msg.linear.x = 0. + np.random.binomial(1, 0.1)
 
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())

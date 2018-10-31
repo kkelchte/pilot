@@ -49,6 +49,8 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   '''Load lists of tuples refering to images from which random batches can be drawn'''
   FLAGS=_FLAGS
   random.seed(FLAGS.random_seed)
+  np.random.seed(FLAGS.random_seed)
+
 
   im_size=size
   de_size = size_depth
@@ -292,7 +294,6 @@ def generate_batch(data_type):
       ctr_index = 0 if np.abs(ctr) < 0.3 else np.sign(ctr)
       count_controls[ctr_index]+=1
 
-    
     # print count_controls
     if not FLAGS.load_data_in_ram:
       # load data multithreaded style into RAM

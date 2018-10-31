@@ -53,14 +53,14 @@ print("Others: {0}".format(others))
 ##########################################################################################################################
 # STEP 2 For each model launch condor_offline without submitting
 for model in range(FLAGS.number_of_models):
-  command = "python condor_offline.py -t {0}/{1} --dont_submit --summary_dir {2} --wall_time {3}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train)
+  command = "python condor_offline.py -t {0}/{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train, 1361*model+531)
   for e in others: command=" {0} {1}".format(command, e)
   save_call(command)
 
 ##########################################################################################################################
 # STEP 3 Add for each model an online condor job without submitting for evaluation/training online
 for model in range(FLAGS.number_of_models):
-  command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --checkpoint_path {0}/{1} --wall_time {4}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
+  command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --checkpoint_path {0}/{1} --wall_time {4} --random_seed {5}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva, 1361*model+531)
   break_next = False
   for e in others: 
     if break_next: # don't add another --checkpoint_path in case this was set

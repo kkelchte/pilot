@@ -26,6 +26,7 @@ def run_episode(mode, sumvar, model, update_importance_weights=False):
   # results = {}
   # results['control'] = []
   results={'total': []}
+  results['ce'] = []
   for k in model.lll_losses.keys():
     results['lll_'+k]=[]
   # results['accuracy'] = []
@@ -95,7 +96,7 @@ def run(_FLAGS, model, start_ep=0):
     
     # ----------- validate episode
     # sumvar = run_episode('val', {}, model)
-    sumvar = run_episode('val', sumvar, model, FLAGS.update_importance_weights)
+    sumvar = run_episode('val', sumvar, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)
 
     # get all metrics of this episode and add them to var
     results = model.get_metrics()

@@ -156,8 +156,6 @@ class Model(object):
       # assign star_variables after initialization
       self.sess.run([tf.assign(self.star_variables[v.name], v) for v in tf.trainable_variables()])
 
-
-    
   
   def define_network(self, mode):
     '''build the network and set the tensors
@@ -338,25 +336,33 @@ class Model(object):
     '''Take one episode of data and keep track of gradients.
     Calculate a importance value between 0 and 1 for each weight.
     '''
+    # self.sess.run([tf.assign(self.importance_weights[v.name], np.ones((v.shape.as_list()))) for i,v in enumerate(tf.trainable_variables())])
+    # return
+
     # Add model variables for importance_weights for current dataset
     gradients=[]
+    # batchsize = 200
+    batchsize = 1
     #number of batches of 200
-    N=int(inputs.shape[0]/200.)
-    print('[model.py]: update importance weights on {0} batches of 200.'.format(N))
+    N=int(inputs.shape[0]/batchsize)
+    print('[model.py]: update importance weights on {0} batches of batchsize.'.format(N))
     for i in range(N):
       # print i
-      batch_inputs=inputs[200*i:200*(i+1)]
+      batch_inputs=inputs[batchsize*i:batchsize*(i+1)]
       # get gradients for a batch of images
 
       results = self.sess.run(tf.gradients(tf.square(tf.norm(self.endpoints['train']['outputs'])), tf.trainable_variables()), feed_dict={self.inputs: batch_inputs})
+
+      # print results
+      # import pdb; pdb.set_trace()
       # sum up over the absolute values
       try:
         gradients = [gradients[j]+np.abs(results[j]) for j in range(len(results))]
       except:
         gradients = [np.abs(results[j]) for j in range(len(results))]
-    #gradients are summed up by tf.gradients so average over the 200 samples
+    #gradients are summed up by tf.gradients so average over the batchsize samples
     # divide to get the mean absolute value
-    gradients = [g/(200.*N) for g in gradients]
+    gradients = [g/(batchsize*N) for g in gradients]
 
     new_weights=[gradients[i] + self.sess.run(self.importance_weights[v.name]) for i,v in enumerate(tf.trainable_variables())]
 
@@ -366,14 +372,30 @@ class Model(object):
 
     # assign these values to the importance weight variables
     self.sess.run([tf.assign(self.importance_weights[v.name], new_weights[i]) for i,v in enumerate(tf.trainable_variables())])
-
-    with open(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas",'w') as f:
-      for i,v in enumerate(tf.trainable_variables()):
-        f.write("{0}: {1}\n".format(v.name, new_weights[i]))
-
-    # with open(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas_iw",'w') as f:
+    
+    # with open(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas",'w') as f:
     #   for i,v in enumerate(tf.trainable_variables()):
-    #     f.write("{0}: {1}\n".format(v.name, self.sess.run(self.importance_weights[v.name])))
+    #     f.write("{0}: {1}\n".format(v.name, new_weights[i]))
+
+    with open(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas_w",'w') as f:
+      for i,v in enumerate(tf.trainable_variables()):
+        f.write("{0}: {1}\n".format(v.name, self.sess.run(self.importance_weights[v.name])))
+
+    # copy importance weights in dictionary to save as numpy file
+    copied_weights={}
+    for i,v in enumerate(tf.trainable_variables()):
+      copied_weights[v.name]=self.sess.run(self.importance_weights[v.name])
+    np.save(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas", copied_weights)
+
+    for v in tf.trainable_variables():
+        weights=self.sess.run(self.importance_weights[v.name])
+        weights=weights.flatten()
+        # print("{0}: {1} ({2}) min: {3} max: {4}".format(v.name, np.mean(weights), np.var(weights), np.amin(weights), np.amax(weights)))
+        print("| {0} | {1} | {2} | {3} | ".format(v.name, 
+                                                  np.percentile(weights,1),
+                                                  np.percentile(weights,50),
+                                                  np.percentile(weights,100)))
+
 
     # import pdb; pdb.set_trace()    
 
@@ -532,6 +554,7 @@ class Model(object):
     
     # append loss
     tensors.append(self.total_loss)
+    tensors.append(self.loss)
     if self.FLAGS.lifelonglearning:
       tensors.extend([self.lll_losses[k] for k in self.lll_losses.keys()])
 
@@ -560,6 +583,7 @@ class Model(object):
     _ = results.pop(0) # train_op
     
     losses={'total':results.pop(0)}
+    losses['ce']=results.pop(0)
 
     if self.FLAGS.lifelonglearning:
       for k in self.lll_losses.keys(): losses['lll_'+k]=results.pop(0)
@@ -618,6 +642,7 @@ class Model(object):
     self.summary_vars = {}
     self.summary_ops = {}
     self.add_summary_var('Loss_train_total')
+    self.add_summary_var('Loss_train_ce')
     
     if self.FLAGS.lifelonglearning:
       for k in self.lll_losses.keys():

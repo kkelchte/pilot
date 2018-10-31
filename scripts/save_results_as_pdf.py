@@ -24,6 +24,19 @@ def save_append(dic, k, v):
   except KeyError:
       dic[k]=[v]
 
+def add_figure(report, line_index, image_path):
+  if os.path.isfile(image_path):
+    report.insert(line_index, "\\begin{figure}[ht] \n")
+    line_index+=1
+    report.insert(line_index, "\\includegraphics[width=\\textwidth]{"+image_path+"}\n")
+    line_index+=1
+    report.insert(line_index, "\\caption{"+image_path.split('/')[-3].replace('_',' ')+"/"+image_path.split('/')[-2].replace('_',' ')+": "+os.path.basename(image_path).replace('_',' ').split('.')[0]+"} \n")
+    line_index+=1   
+    report.insert(line_index, "\\end{figure} \n")
+    line_index+=1
+  return report, line_index
+
+
 """
 This script is used at the end of a DAG condor train_and_evaluate series.
 It expects a motherdir with a number of models as well as a results.json file within that motherdir.
@@ -66,6 +79,7 @@ offline_results={}
 saliency_maps=[]
 control_dream_maps=[]
 control_activation_maps=[]
+omegas=[]
 for m in offline_models:
   offline_results[m]={}
   try:
@@ -75,6 +89,7 @@ for m in offline_models:
     saliency_maps.append(mother_dir+'/'+m+log_dir+'/saliency_maps.jpg')
     control_dream_maps.append(mother_dir+'/'+m+log_dir+'/control_dream_maps.jpg')
     control_activation_maps.append(mother_dir+'/'+m+log_dir+'/control_activation_maps.jpg')
+    omegas.append(mother_dir+'/'+m+log_dir+'/omegas.npy')
     # saliency_maps = sorted([d for d in os.listdir(mother_dir+'/'+m) if '2018' in d])[-1]+'/saliency_maps.jpg'
     # control_dream_maps = sorted([d for d in os.listdir(mother_dir+'/'+m) if '2018' in d])[-1]+'/control_dream_maps.jpg'
   except:
@@ -108,6 +123,7 @@ for m in offline_models:
           save_append(offline_results[m], key, val)
         except:
           pass
+# import pdb; pdb.set_trace()
 # create matplotlib images of offline data
 graph_keys=list(set([k for m in offline_results.keys() for k in offline_results[m].keys() if not 'run' in k]))
 if len(graph_keys) > 3:
@@ -179,23 +195,42 @@ line_index+=1
 report.insert(line_index, "\n")
 line_index+=1
 
-# In case there are saliency maps or deep dream maps in the offline folder, add them to the report
-def add_figure(report, line_index, image_path):
-  if os.path.isfile(image_path):
-    report.insert(line_index, "\\begin{figure}[ht] \n")
-    line_index+=1
-    report.insert(line_index, "\\includegraphics[width=\\textwidth]{"+image_path+"}\n")
-    line_index+=1
-    report.insert(line_index, "\\caption{"+image_path.split('/')[-3].replace('_',' ')+"/"+image_path.split('/')[-2].replace('_',' ')+": "+os.path.basename(image_path).replace('_',' ').split('.')[0]+"} \n")
-    line_index+=1   
-    report.insert(line_index, "\\end{figure} \n")
-    line_index+=1
-  return report, line_index
+# add one plot of offline training with validation accuracy against training accuracy
+plt.clf()
+check=['accuracy_train' in offline_results[k] and 'accuracy_val' in offline_results[k] for k in offline_results.keys()]
+if sum(check) == len(check):
+  fig=plt.figure(figsize=(10,10))
+  for i,k in enumerate(offline_results.keys()):
+    plt.plot(offline_results[k]['accuracy_train'], offline_results[k]['accuracy_val'],color=(1.-(i+0.)/len(offline_results.keys()), 0.1, (i+0.)/len(offline_results.keys())))
+  plt.xlabel('Training Accuracy')
+  plt.ylabel('Validation Accuracy')
+  fig_name=mother_dir+'/report/offline_accuracies.jpg'
+  plt.savefig(fig_name,bbox_inches='tight')
+  add_figure(report, line_index, fig_name)
 
+
+# In case there are saliency maps or deep dream maps in the offline folder, add them to the report
 for m in saliency_maps: report, line_index = add_figure(report, line_index, m)
 for m in control_dream_maps: report, line_index = add_figure(report, line_index, m)
 for m in control_activation_maps: report, line_index = add_figure(report, line_index, m)
 
+# incase there is a set of importance weights plot them in the pdf as well
+for oi, o in enumerate(omegas):
+  if os.path.isfile(o):
+    plt.clf()
+    importance_weights=np.load(o).tolist()
+    mx=np.max([np.amax(v) for v in importance_weights.values()])
+    colors=['r','g','b','y']
+    for i,k in enumerate(sorted(importance_weights.keys())):
+      if 'bias' in k: 
+        continue
+      else:
+        plt.hist(importance_weights[k].flatten(), np.linspace(0, mx, 100),density=True,alpha=0.2, facecolor=colors[int(i/2.%len(colors))], label=k)
+    plt.legend(loc='upper right')
+    plt.title("Normalized Importance Weights")
+    im_file=mother_dir+'/report/omegas_{0}.jpg'.format(oi)
+    plt.savefig(im_file,bbox_inches='tight')
+    report, line_index = add_figure(report, line_index, im_file)
 
 # Step 3: extract online results from json and add tables if json file with results is there
 try:
@@ -220,7 +255,7 @@ else:
   # Define each key for which a separate table is created
   # results[table_name][run_name(with hosts)][row information]
   run_images={}
-  table_keys=['success', 'Distance_furthest']
+  table_keys=['success', 'Distance_furthest', 'Distance_current']
   results={}
   for k in table_keys: # go over tables and add them to report    
     results[k]={}

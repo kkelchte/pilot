@@ -203,6 +203,7 @@ if FLAGS.python_script == 'main.py':
       checkpoint_path='mobilenet_025'
     executable.write('mkdir -p /tmp/{0}{1} \n'.format(FLAGS.summary_dir,checkpoint_path))
     executable.write('cp {0}/{1}{2}/checkpoint /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
+    executable.write('cp {0}/{1}{2}/configuration.xml /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
 
   executable.write('export HOME=/tmp \n')
 

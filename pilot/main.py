@@ -212,6 +212,8 @@ def main(_):
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+  
+  parser.add_argument("--break_and_turn", action='store_true', help="In case the robot should turn at zero forward speed by breaking.")
 
   parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
   parser.add_argument("--dont_show_depth",action='store_true', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
@@ -226,7 +228,7 @@ def main(_):
     FLAGS, others = parser.parse_known_args()
   except:
     sys.exit(2)
-  if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
+  # if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
 
   np.random.seed(FLAGS.random_seed)
   tf.set_random_seed(FLAGS.random_seed)
@@ -279,6 +281,8 @@ def main(_):
     if checkpoint_path[0]!='/': checkpoint_path = os.path.join(os.getenv('HOME'),'tensorflow/log',checkpoint_path)
     if not os.path.isfile(checkpoint_path+'/checkpoint'):
       checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/checkpoint')][-1]
+    if not os.path.isfile(checkpoint_path+'/configuration.xml'):
+      checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/configuration.xml')][-1]
     FLAGS=load_config(FLAGS, checkpoint_path)
     
   save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)

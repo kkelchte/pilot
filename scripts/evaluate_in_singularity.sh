@@ -13,7 +13,12 @@ roscd simulation_supervised/python
 # python run_script.py -t testing -pe sing -pp pilot/pilot -m $model -w $world -p eva_params_slow.yaml -n 1 --robot turtle_sim --fsm nn_turtle_fsm -e -g --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 
 
-python run_script.py -t testing -pe sing -pp pilot/pilot -m lifelonglearning/domain_A -w osb_yellow_barrel -p eva_params_slow.yaml -n 1 --robot turtle_sim --fsm nn_turtle_fsm -e -g --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# python run_script.py -t testing -pe sing -pp pilot/pilot -m LLL/domain_A -w osb_yellow_barrel -p eva_params_slow.yaml -n 1 --robot turtle_sim --fsm nn_turtle_fsm -e -g --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+
+# python run_script.py -t testing -pe sing -pp pilot/pilot -m LLL_doshico/forest -w forest -p eva_params.yaml -n 1 --robot drone_sim --fsm oracle_nn_drone_fsm -e -g
+
+# python run_script.py -t testing -pe sing -pp pilot/pilot -m LLL_doshico/forest_canyon -w canyon -w forest -p eva_params.yaml -n 2 --robot drone_sim --fsm oracle_nn_drone_fsm -e -g
+python run_script.py -t testing -pe sing -pp pilot/pilot -m LLL_doshico/forest_canyon_noLL -w forest -p eva_params.yaml -n 1 --robot drone_sim --fsm oracle_nn_drone_fsm -e -g
 
 
 

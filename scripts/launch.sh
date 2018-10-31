@@ -33,6 +33,22 @@
 
 # 4. others for offline training (see main.py) for online (see run_script.py)
 
+# ------------LLL DOSHICO-------
+
+# STEP 1: train set on forest and test
+#python dag_train_and_evaluate.py -t LLL_doshico/forest_g --network tiny_v2 --rammem 25 --wall_time_train $((2*60*60)) --wall_time_eva $((1*60*60)) --number_of_models 3 --load_data_in_ram --learning_rate 0.0001 --optimizer gradientdescent --dataset doshico_drone_forest --max_episodes 100 --discrete --update_importance_weights --paramfile eva_params.yaml --number_of_runs 5 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 -w forest 
+
+
+# STEP 2A: train set initialized on forest on canyon with and without lifelonglearning and test in canyon and forest
+python dag_train_and_evaluate.py -t LLL_doshico/forest_canyon/LL_10 --wall_time_train $((4*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --load_config --continue_training --learning_rate 0.001 --optimizer gradientdescent --dataset doshico_drone_forest_canyon --max_episodes 500 --checkpoint_path LLL_doshico/forest_g/0/2018-10-30_1046 --update_importance_weights --lifelonglearning --lll_weight 10 --paramfile eva_params.yaml --number_of_runs 10 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 -w canyon -w forest 
+python dag_train_and_evaluate.py -t LLL_doshico/forest_canyon/noLL  --wall_time_train $((4*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --load_config --continue_training --learning_rate 0.001 --optimizer gradientdescent --dataset doshico_drone_forest_canyon --max_episodes 500 --checkpoint_path LLL_doshico/forest_g/0/2018-10-30_1046 --update_importance_weights --paramfile eva_params.yaml --number_of_runs 10 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 -w forest -w canyon
+
+ # STEP 2B: train set initialized on forest on sandbox with and without lifelonglearning and test in sandbox and forest
+python dag_train_and_evaluate.py -t LLL_doshico/forest_sandbox/LL_10 --wall_time_train $((4*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --load_config --continue_training --learning_rate 0.001 --optimizer gradientdescent --dataset doshico_drone_forest_sandbox --max_episodes 500 --checkpoint_path LLL_doshico/forest_g/0/2018-10-30_1046 --update_importance_weights --lifelonglearning --lll_weight 10 --paramfile eva_params.yaml --number_of_runs 10 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 -w sandbox -w forest 
+python dag_train_and_evaluate.py -t LLL_doshico/forest_sandbox/noLL  --wall_time_train $((4*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 3 --load_config --continue_training --learning_rate 0.001 --optimizer gradientdescent --dataset doshico_drone_forest_sandbox --max_episodes 500 --checkpoint_path LLL_doshico/forest_g/0/2018-10-30_1046 --update_importance_weights --paramfile eva_params.yaml --number_of_runs 10 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 -w forest -w sandbox
+
+# STEP 3: train set initialized on forest+canyon on sandbox with and without lifelonglearning and test in sandbox and forest and canyon
+
 # ------------CREATE DATA-------
 
 # PRIMAL EXPERIMENT:
@@ -90,19 +106,32 @@
 # ---------LIFELONGLEARNING--------
 # python dag_train_and_evaluate.py -t lifelonglearning/domain_A --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_A --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 # python dag_train_and_evaluate.py -t lifelonglearning/domain_A_actnorm --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset domain_A --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-python dag_train_and_evaluate.py -t lifelonglearning/domain_B --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_B --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_carton_box --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# python dag_train_and_evaluate.py -t lifelonglearning/domain_B --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_B --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_carton_box --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 # python dag_train_and_evaluate.py -t lifelonglearning/domain_B_actnorm --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset domain_B --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_carton_box --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-python dag_train_and_evaluate.py -t lifelonglearning/domain_C --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_C --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel_blue --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# python dag_train_and_evaluate.py -t lifelonglearning/domain_C --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_C --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel_blue --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 # python dag_train_and_evaluate.py -t lifelonglearning/domain_C_actnorm --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --normalize_over_actions --learning_rate 0.1 --dataset domain_C --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel_blue --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-
-
 # python dag_train_and_evaluate.py -t lifelonglearning/domain_B --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_B --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_carton_box --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
 # python dag_train_and_evaluate.py -t lifelonglearning/domain_C --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 3 --loss mse --load_data_in_ram --learning_rate 0.1 --dataset domain_C --max_episodes 1000 --discrete --paramfile eva_params_slow.yaml --number_of_runs 3 -w osb_yellow_barrel_blue --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 
 
+# STEP 1: train in domain A
+#for n in tiny_v1 tiny_v2 tiny_v3; do
+#  for lr in '01' '001' '0001'; do
+#    python dag_train_and_evaluate.py -t LLL/domain_A/$n/$lr --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((2*60*60)) --number_of_models 1 --load_data_in_ram --network $n --learning_rate 0.$lr --update_importance_weights --optimizer gradientdescent --dataset domain_A --max_episodes 300 --discrete --action_bound 0.6 --paramfile eva_params_slow.yaml --number_of_runs 5 -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+#  done
+#done
+
+# STEP 2: train in domain C with and without lifelonglearning
+#TODO: decide which learning rate for training A gave best results and take that as lr variable
+# lr='001'
+# for n in tiny_v1 tiny_v2 tiny_v3; do
+#    python dag_train_and_evaluate.py -t LLL/domain_Aforest_noLL/$n --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((4*60*60)) --number_of_models 1 --load_data_in_ram --learning_rate 0.0001 --update_importance_weights --optimizer gradientdescent --dataset domain_Aforest --max_episodes 300 --checkpoint_path LLL/domain_A/$n/$lr/0 --load_config --continue_training --paramfile eva_params_slow.yaml --number_of_runs 6 -w osb_yellow_barrel -w forest --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+#    for lambda in 1 10 100 ; do   
+#      python dag_train_and_evaluate.py -t LLL/domain_Aforest_LL_${lambda}/$n --rammem 25 --wall_time_train $((3*60*60)) --wall_time_eva $((4*60*60)) --number_of_models 1 --load_data_in_ram --learning_rate 0.0001 --update_importance_weights --optimizer gradientdescent --dataset domain_Aforest --max_episodes 300 --checkpoint_path LLL/domain_A/$n/$lr/0 --load_config --continue_training --lifelonglearning --lll_weight $lambda --paramfile eva_params_slow.yaml --number_of_runs 6 -w osb_yellow_barrel -w forest --robot turtle_sim --fsm nn_turtle_fsm --evaluation --speed 0.3 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+#    done
+# done
 
 
-# ------------CREATE_DATA-------------
-
+# ------------CREATE_DATA LLL-------------
 
 # python dag_create_data.py -t rec_barrel_cw --wall_time_rec $((10*60*60)) --destination osb_yellow_barrel_cw --number_of_recorders 4 --number_of_runs 10 -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e --val_len 1  --test_len 1 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --min_distance 1
 # python dag_create_data.py -t rec_barrel_ccw --wall_time_rec $((10*60*60)) --destination osb_yellow_barrel_ccw --number_of_recorders 4 --number_of_runs 10 -w osb_yellow_barrel --robot turtle_sim --fsm oracle_turtle_fsm --paramfile params.yaml -ds --save_only_success -e --val_len 1  --test_len 1 --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 4.71 --min_distance 1
