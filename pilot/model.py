@@ -498,7 +498,7 @@ class Model(object):
 
     tensors = [self.endpoints['eval']['control']] if self.FLAGS.discrete else [self.endpoints['eval']['outputs']]
     
-    if auxdepth: # predict auxiliary depth
+    if auxdepth and 'aux_depth_reshaped' in self.endpoints['eval'].keys(): # predict auxiliary depth
       tensors.append(self.endpoints['eval']['aux_depth_reshaped'])
     
     if len(targets) != 0: # if target control is available, calculate loss

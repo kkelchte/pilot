@@ -200,26 +200,35 @@ def main(_):
   #   Rosinterface Parameters
   # ===========================
   parser.add_argument("--online", action='store_true', help="Training/evaluating online in simulation.")
-  parser.add_argument("--buffer_size", default=1000, type=int, help="Define the number of experiences saved in the buffer.")
+  
+  # noise related for state space exploration
   parser.add_argument("--ou_theta", default=0.05, type=float, help= "Theta is the pull back force of the OU Noise.")
   parser.add_argument("--noise", default='ou', type=str, help="Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
   parser.add_argument("--sigma_z", default=0.0, type=float, help= "sigma_z is the amount of noise in the z direction.")
   parser.add_argument("--sigma_x", default=0.0, type=float, help= "sigma_x is the amount of noise in the forward speed.")
   parser.add_argument("--sigma_y", default=0.0, type=float, help= "sigma_y is the amount of noise in the y direction.")
   parser.add_argument("--sigma_yaw", default=0.0, type=float, help= "sigma_yaw is the amount of noise added to the steering angle.")
-  parser.add_argument("--speed", default=1.3, type=float, help= "Define the forward speed of the quadrotor.")
-  parser.add_argument("--alpha",default=0., type=float, help="Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy..")
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
-  parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
   
+  # policy related
+  parser.add_argument("--speed", default=1.3, type=float, help= "Define the forward speed of the quadrotor.")
+  parser.add_argument("--alpha",default=0., type=float, help="Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy..")
+  parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
   parser.add_argument("--break_and_turn", action='store_true', help="In case the robot should turn at zero forward speed by breaking.")
 
-  parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
+  # replay buffer and batches related
+  parser.add_argument("--buffer_size", default=-1, type=int, help="Define the number of experiences saved in the buffer. If -1 it will keep all frames of one rollout.")
+  parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+  parser.add_argument("--max_gradient_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
+  parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
+  parser.add_argument("--max_batch_size", default=300, type=int, help="Define the max size of the batch (only if batch_size is -1).")
+  
+
+  # other  
   parser.add_argument("--dont_show_depth",action='store_true', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 
-  parser.add_argument("--grad_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
-
+  # preprocess depth scan
   parser.add_argument("--field_of_view", default=104, type=int, help="The field of view of the camera cuts the depth scan in the range visible for the camera. Value should be even. Normal: 72 (-36:36), Wide-Angle: 120 (-60:60)")
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings")
 

@@ -66,7 +66,7 @@ def run_episode(mode, sumvar, model, update_importance_weights=False):
   if update_importance_weights:
     model.update_importance_weights(all_inputs)
     
-  for k in results.keys():
+  for k in results.keys(): 
     if len(results[k])!=0: sumvar['Loss_'+mode+'_'+k]=np.mean(results[k]) 
   if len(depth_predictions) != 0: sumvar['depth_predictions']=depth_predictions
   print('>>{0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(mode.upper(),tuple(time.localtime()[0:5]),

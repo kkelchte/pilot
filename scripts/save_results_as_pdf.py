@@ -330,15 +330,16 @@ else:
   line_index+=1
 
   for model in sorted(run_images.keys()):
-    if os.path.isfile(run_images[model][0]):
-      report.insert(line_index, "\\begin{figure}[ht] \n")
-      line_index+=1
-      report.insert(line_index, "\\includegraphics[width=0.5\\textwidth]{"+run_images[model][0]+"}\n")
-      line_index+=1
-      report.insert(line_index, "\\caption{"+model.replace('_',' ')+"} \n")
-      line_index+=1
-      report.insert(line_index, "\\end{figure} \n")
-      line_index+=1
+    for im in run_images[model]:
+      if os.path.isfile(im):
+        report.insert(line_index, "\\begin{figure}[ht] \n")
+        line_index+=1
+        report.insert(line_index, "\\includegraphics[width=0.5\\textwidth]{"+im+"}\n")
+        line_index+=1
+        report.insert(line_index, "\\caption{"+model.replace('_',' ')+"} \n")
+        line_index+=1
+        report.insert(line_index, "\\end{figure} \n")
+        line_index+=1
 
 # step 3.B: add configuration.xml
 for l in report:
