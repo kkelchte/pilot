@@ -55,6 +55,7 @@ class Model(object):
                 'tiny_v1':tiny_net_v1,
                 'tiny_v2':tiny_net_v2,
                 'tiny_v3':tiny_net_v3,
+                'tiny_v4':tiny_net_v4,
                 'tiny_CAM':tiny_CAM_net}
       self.input_size = versions[self.FLAGS.network].default_image_size
     else:
@@ -142,6 +143,19 @@ class Model(object):
     else:
       print('Training model from scratch so no initialization.')
 
+    # FOR DEBUGGING: 
+    # for v in tf.trainable_variables():
+    # #   # assign importance weights 1 to everyting ==> keep everything as close as possible
+    # #   # self.sess.run([tf.assign(self.importance_weights[v.name], np.ones((v.get_shape().as_list()))) for i,v in enumerate(tf.trainable_variables())])
+      
+    #   # assign importance weights 1 to everything > 10**-5, else 0 ==> binair importance over the weights ==> freeze some part and leave other
+    #   old_weight = self.sess.run(self.importance_weights[v.name])
+    #   new_weight = old_weight > 10**-2
+    #   new_weight = new_weight.astype(np.float32)
+    #   self.sess.run(tf.assign(self.importance_weights[v.name], new_weight))
+  
+      
+
     if self.FLAGS.continue_training and self.FLAGS.lifelonglearning:
       # print info on loaded importance weights
       for v in tf.trainable_variables():
@@ -216,6 +230,7 @@ class Model(object):
                   'tiny_v1': tiny_net_v1,
                   'tiny_v2': tiny_net_v2,
                   'tiny_v3': tiny_net_v3,
+                  'tiny_v4': tiny_net_v4,
                   'tiny_CAM': tiny_CAM_net}
         self.endpoints[mode] = versions[self.FLAGS.network].tinynet(**args)
       else:

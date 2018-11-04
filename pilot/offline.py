@@ -132,7 +132,8 @@ def run(_FLAGS, model, start_ep=0):
     # sumvar = run_episode('test', {}, model, FLAGS.update_importance_weights)  
     # ----------- write summary
     results = model.get_metrics()
-    for k in results.keys(): sumvar[k] = results[k]
+    for k in results.keys(): 
+      if results[k] != 0: sumvar[k] = results[k]
     tags_not_to_print=['depth_predictions']+['activations_'+e for e in model.endpoints['eval'].keys()]+['weights_'+v.name for v in tf.trainable_variables()]
     msg="run : {0}".format(ep)
     for k in sumvar.keys(): msg="{0}, {1} : {2}".format(msg, k, sumvar[k]) if k not in tags_not_to_print else msg
