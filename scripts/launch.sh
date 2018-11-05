@@ -33,41 +33,13 @@
 
 # 4. others for offline training (see main.py) for online (see run_script.py)
 
-# ------------LLL DOSHICO-------
-
-# STEP 1: train set on forest and test
-python dag_train_and_evaluate.py -t LLL_doshico_final/forest --rammem 25 --wall_time_train $((2*60*60)) --wall_time_eva $((1*60*60)) --number_of_models 3 --network tiny_v2 --batch_size 64 --load_data_in_ram --learning_rate 0.0001 --optimizer gradientdescent --dataset doshico_drone_forest --max_episodes 100 --discrete --update_importance_weights --paramfile eva_params.yaml --number_of_runs 5 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 -w forest 
-
-
-# STEP 2A: train set initialized on forest on canyon with and without lifelonglearning and test in canyon and forest
-# python dag_train_and_evaluate.py -t LLL_doshico/forest_canyon_lr0001/LL_10 --wall_time_train $((4*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 1 --load_config --continue_training --learning_rate 0.0001 --optimizer gradientdescent --dataset doshico_drone_forest_canyon --max_episodes 500 --checkpoint_path LLL_doshico/forest_g/0/2018-10-30_1046 --update_importance_weights --lifelonglearning --lll_weight 10 --paramfile eva_params.yaml --number_of_runs 6 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3  -w forest -w canyon
-# python dag_train_and_evaluate.py -t LLL_doshico/forest_canyon_lr0001/noLL  --wall_time_train $((4*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 1 --load_config --continue_training --learning_rate 0.0001 --optimizer gradientdescent --dataset doshico_drone_forest_canyon --max_episodes 500 --checkpoint_path LLL_doshico/forest_g/0/2018-10-30_1046 --update_importance_weights --paramfile eva_params.yaml --number_of_runs 6 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 -w forest -w canyon
-
-# STEP 2B: train set initialized on forest on sandbox with and without lifelonglearning and test in sandbox and forest
-# python dag_train_and_evaluate.py -t LLL_doshico/forest_sandbox_lr0001/LL_10 --wall_time_train $((4*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 1 --load_config --continue_training --learning_rate 0.0001 --optimizer gradientdescent --dataset doshico_drone_forest_sandbox --max_episodes 500 --checkpoint_path LLL_doshico/forest_g/0/2018-10-30_1046 --update_importance_weights --lifelonglearning --lll_weight 10 --paramfile eva_params.yaml --number_of_runs 6 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3  -w forest -w sandbox
-# python dag_train_and_evaluate.py -t LLL_doshico/forest_sandbox_lr0001/noLL  --wall_time_train $((4*60*60)) --wall_time_eva $((3*60*60)) --number_of_models 1 --load_config --continue_training --learning_rate 0.0001 --optimizer gradientdescent --dataset doshico_drone_forest_sandbox --max_episodes 500 --checkpoint_path LLL_doshico/forest_g/0/2018-10-30_1046 --update_importance_weights --paramfile eva_params.yaml --number_of_runs 6 --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --speed 1.3 -w forest -w sandbox
-
-# STEP 3: train set initialized on forest+canyon on sandbox with and without lifelonglearning and test in sandbox and forest and canyon
-
-# ------------CREATE DATA-------
-
-# PRIMAL EXPERIMENT:
-
-# python dag_create_data.py -t floor_straight --wall_time_rec $((60*60)) --destination floor_straight --number_of_recorders 4 --number_of_runs 5 -w corridor --corridor_bends 0 --corridor_length 4 --extension_config floor --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 2  --test_len 2 --x_pos 0 --x_var 0.5 --y_pos 0 --y_var 0.7 --z_pos 1.5 --z_var 0.5 --yaw_or 1.57 --yaw_var 0.523
-# python dag_create_data.py -t floor_bended --wall_time_rec $((60*60)) --destination floor_bended --number_of_recorders 4 --number_of_runs 10 -w corridor --corridor_bends 1 --corridor_length 1 --extension_config floor --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 4  --test_len 4 --x_pos 0 --x_var 0.5 --y_pos 0 --y_var 0.7 --z_pos 1.5 --z_var 0.5 --yaw_or 1.57 --yaw_var 0.523
-
-# python dag_create_data.py --dont_retry -t test_floor_bended --wall_time_rec $((60*60)) --destination test_floor_bended --number_of_recorders 1 --number_of_runs 1 -w corridor --corridor_bends 1 --corridor_length 1 --extension_config floor --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 4  --test_len 4 --x_pos 0 --x_var 0.5 --y_pos 0 --y_var 0.7 --z_pos 1.5 --z_var 0.5 --yaw_or 1.57 --yaw_var 0.523
+# ------------TRAIN ONLINE------
+python condor_online.py -t online_yellow_barrel/default --not_nice --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((100)) --paramfile train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+python condor_online.py -t online_yellow_barrel/old --not_nice --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((100)) --paramfile train_params_old.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+python condor_online.py -t online_yellow_barrel/lll_1 --not_nice --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((100)) --paramfile LLL_train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 
 
-# radiator
-# # python dag_create_data.py -t radiator_left --wall_time_rec $((60*60)) --destination radiator_left --number_of_recorders 6 --number_of_runs 10 -w corridor --corridor_bends 0 --corridor_length 1 --extension_config radiator_left --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 3  --test_len 3 --x_pos '-0.2' --x_var 0.25 --y_pos 0.3 --y_var 1 --z_pos 1.5 --z_var 0.5 --yaw_or 2.09 --yaw_var 0.523
-# python dag_create_data.py -t radiator_right --wall_time_rec $((60*60)) --destination radiator_right --number_of_recorders 6 --number_of_runs 10 -w corridor --corridor_bends 0 --corridor_length 1 --extension_config radiator_right --corridor_type empty --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 3  --test_len 3 --x_pos '+0.2' --x_var 0.25 --y_pos 0.3 --y_var 1 --z_pos 1.5 --z_var 0.5 --yaw_or 1.05 --yaw_var 0.523
 
-# combined_corridor
-# python dag_create_data.py -t combined_corridor --wall_time_rec $((2*60*60)) --destination combined_corridor --number_of_recorders 50 --number_of_runs 20 -w corridor --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --corridor_bends 5 --extension_config combined --x_var 0.5 --y_var 0.7 --z_pos 1.3 --z_var 0.3 --yaw_or 1.57 --yaw_var 0.5233
-
-# esat
-# python dag_create_data.py -t esatv1 --wall_time_rec $((3*60*60)) --destination esatv1 --number_of_recorders 10 --number_of_runs 10 -w esatv1 --robot drone_sim --fsm oracle_drone_fsm --paramfile params.yaml -ds --save_only_success -e --max_depth_rgb_difference 3 --val_len 6  --test_len 6 --x_pos 0 --x_var 0.5 --y_pos 0 --y_var 0.7 --z_pos 1.5 --z_var 0.5 --yaw_or 1.57 --yaw_var 0.523
 
 # ------------TRAIN_OFFLINE_AND_EVALUATE_ONLINE----------
 # python condor_offline.py -t canyon_drone/0_scratch --not_nice --wall_time $((15*60*60)) --dataset canyon_drone --max_episodes 1000 --paramfile eva_params.yaml --number_of_runs 10 -w canyon --robot drone_sim --fsm oracle_nn_drone_fsm --evaluation --scratch

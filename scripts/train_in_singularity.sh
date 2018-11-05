@@ -1,8 +1,21 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 
-graphics=false
+# ---------------------settings
+graphics=true
+# params:
+## old params:
+# PARAMS=train_params_old.yaml
+## default params:
+# PARAMS=train_params.yaml
+## LLL params:
+# PARAMS=LLL_train_params.yaml
+## LLL params:
+PARAMS=LLL_train_params_debug.yaml
 
+
+
+#----------------------code
 cd /esat/opal/kkelchte/docker_home
 
 if [ $graphics = true ] ; then
@@ -13,12 +26,10 @@ fi
 
 roscd simulation_supervised/python
 
-
-
-############## Test interactively
-
 if [ $graphics = true ] ; then
-  python run_script.py -t test_train_online -pe sing -pp pilot_online/pilot -w osb_yellow_barrel -p train_params_old.yaml -n 10 --robot turtle_sim --fsm nn_turtle_fsm -g --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+  # short test
+  python run_script.py -t online_yellow_barrel/test -pe sing -pp pilot_online/pilot -w osb_yellow_barrel -p $PARAMS -n 100 --robot turtle_sim --fsm nn_turtle_fsm -g --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 else
-  python run_script.py -t online_lifelonglearning/osb_yellow_barrel/default -pe sing -pp pilot_online/pilot -w osb_yellow_barrel -p train_params_old.yaml -n 300 --robot turtle_sim --fsm nn_turtle_fsm --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+  # long in background
+  python run_script.py -t online_lifelonglearning/osb_yellow_barrel/default -pe sing -pp pilot_online/pilot -w osb_yellow_barrel -p $PARAMS -n 300 --robot turtle_sim --fsm nn_turtle_fsm --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 fi

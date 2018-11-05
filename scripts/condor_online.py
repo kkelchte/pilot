@@ -145,15 +145,20 @@ subprocess.call(shlex.split("chmod 711 {0}".format(condor_file)))
 
 
 ##########################################################################################################################
-# STEP 4 Create executable shell file: called one singularity is started 
+# STEP 4 Create executable shell file: called once singularity is started 
 
 executable = open(shell_file,'w')
 
 executable.write("#!/bin/bash \n")
 executable.write("echo started executable within singularity. \n")
-executable.write("cd /tmp/home \n")
-executable.write("source .entrypoint_xpra \n")
-# executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra \n")
+
+# in case of copy all to /tmp
+# executable.write("cd /tmp/home \n")
+# executable.write("source .entrypoint_xpra \n")
+# in case of copy all to /esat/opal
+executable.write("cd /esat/opal/kkelchte/docker_home \n")
+
+executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra \n")
 executable.write("roscd simulation_supervised/python \n")
 executable.write("echo PWD: $PWD \n")
 
@@ -163,6 +168,8 @@ command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
 command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
 for e in others: command="{0} {1}".format(command, e)
+
+
 
 executable.write("{0} \n".format(command))
 
@@ -233,41 +240,43 @@ sing.write("cd $sing_loc\n")
 sing.write("pwd\n")
 sing.write("ls\n")
 sing.write("sleep 1\n")
+
+###### Copy singularity image
 # sing.write("echo 'copy singularity image to /tmp'\n")
 # sing.write("cp $sing_loc/$sing_image /tmp\n")
 
 ###### Copy docker_home to local tmp
-sing.write("echo 'make home in tmp' \n")
-sing.write("mkdir -p /tmp/home \n")
-sing.write("cd /tmp/home \n")
-sing.write("echo 'cp entrypoint_xpra' \n")
-sing.write("cp {0}/.entrypoint_xpra . \n".format(FLAGS.home))
-sing.write("echo 'make data and tensorflow dir' \n")
-sing.write("mkdir {0} \n".format(FLAGS.data_root))
-sing.write("mkdir -p {0} \n".format(FLAGS.summary_dir))
-sing.write("echo 'cp checkpoint' \n")
-if '--checkpoint_path' in others:
-	checkpoint_path=others[others.index('--checkpoint_path')+1]
-else:
-	checkpoint_path='mobilenet_025'
-sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
-# if checkpoint_path != 'mobilenet_025':
-sing.write("if [ -e {1}/{2}{0}/checkpoint ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("cp {1}/{2}{0}/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("else \n")
-sing.write("cp {1}/{2}{0}/*/checkpoint {2}{0} || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("fi \n")
-sing.write("if [ -e {1}/{2}{0}/configuration.xml ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("cp {1}/{2}{0}/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("else \n")
-sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0}  || echo 'failed to copy configuration' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("fi \n")
-sing.write("echo 'cp tensorflow {0} project' \n".format(FLAGS.python_project))
-sing.write("ls {0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
-sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
-sing.write("cp -r {0}/tensorflow/tf_cnnvis tensorflow/ \n".format(FLAGS.home))
-sing.write("echo 'cp simulation_supervised' \n")
-sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
+# sing.write("echo 'make home in tmp' \n")
+# sing.write("mkdir -p /tmp/home \n")
+# sing.write("cd /tmp/home \n")
+# sing.write("echo 'cp entrypoint_xpra' \n")
+# sing.write("cp {0}/.entrypoint_xpra . \n".format(FLAGS.home))
+# sing.write("echo 'make data and tensorflow dir' \n")
+# sing.write("mkdir {0} \n".format(FLAGS.data_root))
+# sing.write("mkdir -p {0} \n".format(FLAGS.summary_dir))
+# sing.write("echo 'cp checkpoint' \n")
+# if '--checkpoint_path' in others:
+# 	checkpoint_path=others[others.index('--checkpoint_path')+1]
+# else:
+# 	checkpoint_path='mobilenet_025'
+# sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
+# # if checkpoint_path != 'mobilenet_025':
+# sing.write("if [ -e {1}/{2}{0}/checkpoint ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# sing.write("cp {1}/{2}{0}/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# sing.write("else \n")
+# sing.write("cp {1}/{2}{0}/*/checkpoint {2}{0} || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# sing.write("fi \n")
+# sing.write("if [ -e {1}/{2}{0}/configuration.xml ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# sing.write("cp {1}/{2}{0}/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# sing.write("else \n")
+# sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0}  || echo 'failed to copy configuration' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# sing.write("fi \n")
+# sing.write("echo 'cp tensorflow {0} project' \n".format(FLAGS.python_project))
+# sing.write("ls {0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
+# sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
+# sing.write("cp -r {0}/tensorflow/tf_cnnvis tensorflow/ \n".format(FLAGS.home))
+# sing.write("echo 'cp simulation_supervised' \n")
+# sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 ######
 
 # sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_drone_ws.img $1 \n")
@@ -278,10 +287,10 @@ sing.write("retVal=$? \n")
 sing.write("echo \"got exit code $retVal\" \n")
 
 ###### Copy data and log back to opal
-sing.write("echo 'copy pilot data back' \n")
-sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.data_root))
-sing.write("echo 'copy tensorflow log back' \n")
-sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.summary_dir))
+# sing.write("echo 'copy pilot data back' \n")
+# sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.data_root))
+# sing.write("echo 'copy tensorflow log back' \n")
+# sing.write("cp -r /tmp/home/{1}* {0}/{1} \n".format(FLAGS.home, FLAGS.summary_dir))
 #####
 sing.write("if [ $retVal -ne 0 ]; then \n")
 sing.write("    echo Error \n")

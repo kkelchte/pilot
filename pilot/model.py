@@ -9,6 +9,7 @@ from models import *
 # import models.depth_q_net as depth_q_net
 # import models.alex_net as alex_net
 
+import copy
 
 from tensorflow.contrib.slim import model_analyzer as ma
 from tensorflow.python.ops import variables as tf_variables
@@ -93,6 +94,10 @@ class Model(object):
       list_to_exclude = []
       # In case of lifelonglearning and continue learning: 
       # add variables for importance weights of previous domain and keep optimal variables for previous domain
+    
+
+    self.copied_trainable_variables = tf.trainable_variables()
+    
     if self.FLAGS.lifelonglearning or self.FLAGS.update_importance_weights:
       self.define_importance_weights(self.endpoints['train'])
 
@@ -124,7 +129,7 @@ class Model(object):
         
     self.define_metrics(self.endpoints['eval'])
 
-    if self.FLAGS.continue_training and self.FLAGS.lifelonglearning:
+    if (self.FLAGS.online or self.FLAGS.continue_training) and self.FLAGS.lifelonglearning:
       self.define_star_variables(self.endpoints['train'])
 
     # Define the training op based on the total loss
@@ -142,7 +147,7 @@ class Model(object):
     else:
       print('Training model from scratch so no initialization.')
 
-    if self.FLAGS.continue_training and self.FLAGS.lifelonglearning:
+    if (self.FLAGS.online or self.FLAGS.continue_training) and self.FLAGS.lifelonglearning:
       # print info on loaded importance weights
       for v in tf.trainable_variables():
         weights=self.sess.run(self.importance_weights[v.name])
@@ -312,6 +317,7 @@ class Model(object):
     In case copy is True the last domain creates new variables and copy the current weights of the model in these variables to introduce a new set of start variables corresponding to the last domain.
     Star variables is a dictionary keeping a list of variables for each domain.
     '''
+    print("[model.py]: define star variables")
     self.star_variables={}
     for v in tf.trainable_variables():
       # self.star_variables[v.name]=self.sess.run(v)
@@ -325,6 +331,7 @@ class Model(object):
     '''Define an important weight ~ omegas for each trainable variable
     domain corresponds to the dataset
     '''
+    print("[model.py]: define importance weights")
     self.importance_weights={}
     for v in tf.trainable_variables():
       self.importance_weights[v.name]=tf.get_variable('Omega/'+v.name.split(':')[0],
@@ -341,17 +348,19 @@ class Model(object):
 
     # Add model variables for importance_weights for current dataset
     gradients=[]
-    # batchsize = 200
-    batchsize = 1
+    batchsize = 50
+    # batchsize = 1
     #number of batches of 200
     N=int(inputs.shape[0]/batchsize)
-    print('[model.py]: update importance weights on {0} batches of batchsize.'.format(N))
+    print('[model.py]: update importance weights on {0} batches of batchsize {1}.'.format(N, batchsize))
+    
+
     for i in range(N):
       # print i
       batch_inputs=inputs[batchsize*i:batchsize*(i+1)]
       # get gradients for a batch of images
 
-      results = self.sess.run(tf.gradients(tf.square(tf.norm(self.endpoints['train']['outputs'])), tf.trainable_variables()), feed_dict={self.inputs: batch_inputs})
+      results = self.sess.run(tf.gradients(tf.square(tf.norm(self.endpoints['train']['outputs'])), self.copied_trainable_variables), feed_dict={self.inputs: batch_inputs})
 
       # print results
       # import pdb; pdb.set_trace()
@@ -360,41 +369,45 @@ class Model(object):
         gradients = [gradients[j]+np.abs(results[j]) for j in range(len(results))]
       except:
         gradients = [np.abs(results[j]) for j in range(len(results))]
+    
+
     #gradients are summed up by tf.gradients so average over the batchsize samples
     # divide to get the mean absolute value
     gradients = [g/(batchsize*N) for g in gradients]
 
-    new_weights=[gradients[i] + self.sess.run(self.importance_weights[v.name]) for i,v in enumerate(tf.trainable_variables())]
+    new_weights=[gradients[i] + self.sess.run(self.importance_weights[v.name]) for i,v in enumerate(self.copied_trainable_variables)]
 
-    # for i,v in enumerate(tf.trainable_variables()):
+    # for i,v in enumerate(self.copied_trainable_variables):
     #   print("{0} {1} {2}".format(v.name,self.importance_weights[v.name].shape, gradients[i].shape))
-    # import pdb; pdb.set_trace()    
+    
 
     # assign these values to the importance weight variables
-    self.sess.run([tf.assign(self.importance_weights[v.name], new_weights[i]) for i,v in enumerate(tf.trainable_variables())])
+    self.sess.run([tf.assign(self.importance_weights[v.name], new_weights[i]) for i,v in enumerate(self.copied_trainable_variables)])
     
     # with open(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas",'w') as f:
-    #   for i,v in enumerate(tf.trainable_variables()):
+    #   for i,v in enumerate(self.copied_trainable_variables):
     #     f.write("{0}: {1}\n".format(v.name, new_weights[i]))
 
     with open(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas_w",'w') as f:
-      for i,v in enumerate(tf.trainable_variables()):
+      for i,v in enumerate(self.copied_trainable_variables):
         f.write("{0}: {1}\n".format(v.name, self.sess.run(self.importance_weights[v.name])))
 
     # copy importance weights in dictionary to save as numpy file
     copied_weights={}
-    for i,v in enumerate(tf.trainable_variables()):
+    for i,v in enumerate(self.copied_trainable_variables):
       copied_weights[v.name]=self.sess.run(self.importance_weights[v.name])
+    
     np.save(self.FLAGS.summary_dir+self.FLAGS.log_tag+"/omegas", copied_weights)
 
-    for v in tf.trainable_variables():
-        weights=self.sess.run(self.importance_weights[v.name])
-        weights=weights.flatten()
-        # print("{0}: {1} ({2}) min: {3} max: {4}".format(v.name, np.mean(weights), np.var(weights), np.amin(weights), np.amax(weights)))
-        print("| {0} | {1} | {2} | {3} | ".format(v.name, 
-                                                  np.percentile(weights,1),
-                                                  np.percentile(weights,50),
-                                                  np.percentile(weights,100)))
+    for v in self.copied_trainable_variables:
+      print v.name
+      weights=self.sess.run(self.importance_weights[v.name])
+      weights=weights.flatten()
+      # print("{0}: {1} ({2}) min: {3} max: {4}".format(v.name, np.mean(weights), np.var(weights), np.amin(weights), np.amax(weights)))
+      print("| {0} | {1} | {2} | {3} | ".format(v.name, 
+                                                np.percentile(weights,1),
+                                                np.percentile(weights,50),
+                                                np.percentile(weights,100)))
 
 
     # import pdb; pdb.set_trace()    

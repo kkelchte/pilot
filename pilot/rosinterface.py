@@ -79,7 +79,7 @@ class PilotNode(object):
     self.imitation_loss=[]
     self.depth_prediction=[]
     self.depth_loss=[]
-    self.driving_duration=None
+    self.driving_duration=-1
 
     self.skip_frames = 0
     self.img_index = 0
@@ -275,6 +275,12 @@ class PilotNode(object):
       self.ready=False
       self.finished=True
       if self.start_time!=0: self.driving_duration = rospy.get_time() - self.start_time
+
+      # Update importance weights if driving duration was long enough
+      if self.driving_duration > self.FLAGS.minimum_collision_free_duration and self.FLAGS.lifelonglearning:
+        print("[rosinterface]: Update importance weights.")
+        self.update_importance_weights()
+
       
       if self.replay_buffer.size()>=self.FLAGS.batch_size and not self.FLAGS.evaluate:
         losses_train, depth_predictions = self.train_model()
@@ -308,7 +314,7 @@ class PilotNode(object):
     trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
     trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
     control, aux_results = self.model.forward([im], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
-    if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
+    if (not self.FLAGS.dont_show_depth) and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
     
     ### SEND CONTROL
     control = control[0]
@@ -368,7 +374,8 @@ class PilotNode(object):
       # print("added experience: {0} vs {1}".format(action, trgt))
 
   def backward_step_model(self, inputs, targets, aux_info, losses_train, depth_predictions):
-
+    """Apply gradient step with a backward pass
+    """
     # in case the batch size is -1 the full replay buffer is send back
     if self.FLAGS.auxiliary_depth: 
       depth_targets=aux_info['target_depth'].reshape(-1,55,74)
@@ -389,6 +396,16 @@ class PilotNode(object):
     
     return losses_train, depth_predictions
 
+  def update_importance_weights(self):
+    """Update the importance weights on ALL data in the replay buffer
+    """
+    # get full replay buffer to take one gradient step
+    inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)
+    if len(inputs) == 0: return
+    self.model.update_importance_weights(inputs)
+    # update star variables
+    self.model.sess.run([tf.assign(self.model.star_variables[v.name], v) for v in tf.trainable_variables()])
+  
   def train_model(self):
     """Sample a batch from the replay buffer and train on it
     """
@@ -432,7 +449,7 @@ class PilotNode(object):
     self.start_time=0
     self.imitation_loss=[]
     self.depth_loss=[]
-    self.driving_duration=None
+    self.driving_duration=-1
     self.img_index=0    
     self.fsm_index = 0
 
@@ -457,6 +474,8 @@ class PilotNode(object):
     for k in losses_train.keys():
       name={'total':'Loss_train_total'}
       name['ce']='Loss_train_ce'
+      for lll_k in self.model.lll_losses.keys():
+        name['lll_'+lll_k]='Loss_train_lll_'+lll_k
       sumvar[name[k]]=np.mean(losses_train[k])
       result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
     
@@ -469,7 +488,7 @@ class PilotNode(object):
     if self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:
       sumvar["depth_predictions"]=depth_predictions
     # add driving duration (collision free)
-    if self.driving_duration: 
+    if self.driving_duration != -1: 
       result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)
       sumvar['driving_time']=self.driving_duration
     # add imitation loss
