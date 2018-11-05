@@ -79,7 +79,7 @@ class PilotNode(object):
     self.imitation_loss=[]
     self.depth_prediction=[]
     self.depth_loss=[]
-    self.driving_duration=None
+    self.driving_duration=-1
 
     self.skip_frames = 0
     self.img_index = 0
@@ -359,6 +359,7 @@ class PilotNode(object):
       self.finished=True
       if self.start_time!=0: 
         self.driving_duration = rospy.get_time() - self.start_time
+
       
       # Train model from experience replay:
       # Train the model with batchnormalization out of the image callback loop
@@ -407,7 +408,7 @@ class PilotNode(object):
       if self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:
         sumvar["depth_predictions"]=depth_predictions
       # add driving duration (collision free)
-      if self.driving_duration: 
+      if self.driving_duration != -1: 
         result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)
         sumvar['driving_time']=self.driving_duration
       # add imitation loss
@@ -466,7 +467,7 @@ class PilotNode(object):
       self.start_time=0
       self.imitation_loss=[]
       self.depth_loss=[]
-      self.driving_duration=None
+      self.driving_duration=-1
       self.img_index=0    
       self.fsm_index = 0          
 
