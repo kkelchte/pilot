@@ -98,7 +98,10 @@ class PilotNode(object):
       else:
         rospy.Subscriber(depth_topic, Image, self.depth_callback)
     
-    self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed)
+    self.replay_buffer = ReplayBuffer(self.FLAGS.buffer_size, self.FLAGS.random_seed)
+    if self.FLAGS.hard_replay_buffer:
+      self.hard_replay_buffer = ReplayBuffer(self.FLAGS.hard_batch_size, self.FLAGS.random_seed)
+      
     self.accumloss = 0
     if rospy.has_param('gt_info'):
       rospy.Subscriber(rospy.get_param('gt_info'), Odometry, self.gt_callback)
@@ -313,8 +316,9 @@ class PilotNode(object):
     # Evaluate the input in your network
     trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
     trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-    control, aux_results = self.model.forward([im], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
-    if (not self.FLAGS.dont_show_depth) and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
+    control, aux_results = self.model.forward([im], auxdepth= not self.FLAGS.dont_show_depth, targets=trgt, depth_targets=trgt_depth)
+    if (not self.FLAGS.dont_show_depth) and self.FLAGS.auxiliary_depth and len(aux_results)>0: 
+      aux_depth = aux_results['d']
     
     ### SEND CONTROL
     control = control[0]
@@ -417,7 +421,37 @@ class PilotNode(object):
     # get full replay buffer to take one gradient step
     if self.FLAGS.buffer_size == -1 and self.FLAGS.batch_size == -1:
       inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)
-      losses_train, depth_predictions = self.backward_step_model(inputs, targets, aux_info, losses_train, depth_predictions)
+      if len(inputs) == 0: return losses_train, depth_predictions
+      print("len inputs "+str(len(inputs)))
+      print("len targets "+str(len(targets)))
+      # if there is a hard replay buffer that is full, use it for your batch
+      if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
+        print("inputs: {}".format(inputs.shape))
+        hard_inputs, hard_targets, hard_aux_info = self.hard_replay_buffer.get_all_data(self.FLAGS.hard_batch_size)
+        print("hardinputs: {}".format(hard_inputs.shape))
+        inputs = np.concatenate([inputs, hard_inputs], axis=0)
+        targets = np.concatenate([targets, hard_targets], axis=0)
+        # aux_info = np.concatenate([aux_info, hard_aux_info], axis=0)
+        print("inputs: {}".format(inputs.shape))
+        print("targets: {}".format(targets.shape))
+
+      losses_train, depth_predictions = self.backward_step_model(inputs, targets, [], losses_train, depth_predictions)
+      
+      # in case there is a hard replay buffer: fill it with the hardest examples over the inputs
+      if self.FLAGS.hard_replay_buffer and len(losses_train.keys()) != 0:
+        assert(len(list(losses_train['ce'][0]))==len(list(inputs)))
+        assert(len(list(losses_train['ce'][0]))==len(list(targets)))
+        sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train['ce'][0]), inputs.tolist())))]
+        sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['ce'][0]), targets.tolist())))]
+        # as all data in hard buffer was in batch we can clear the hard buffer totally
+        self.hard_replay_buffer.clear()
+        # and gradually add it with the hardest experiences till it is full.
+        for e in range(min(self.FLAGS.hard_batch_size, len(sorted_inputs))):
+          experience={'state':sorted_inputs[e],
+                  'action':None,
+                  'trgt':sorted_targets[e],
+                  'priority':losses_train['ce'][0][e]} 
+          self.hard_replay_buffer.add(experience)
     else:
       # go over all data in the replay buffer over different batches
       # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)):

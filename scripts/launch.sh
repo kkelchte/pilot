@@ -34,9 +34,17 @@
 # 4. others for offline training (see main.py) for online (see run_script.py)
 
 # ------------TRAIN ONLINE------
-python condor_online.py -t online_yellow_barrel/default --not_nice --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((100)) --paramfile train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-python condor_online.py -t online_yellow_barrel/old --not_nice --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((100)) --paramfile train_params_old.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-python condor_online.py -t online_yellow_barrel/lll_1 --not_nice --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((100)) --paramfile LLL_train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+python condor_online.py -t online_yellow_barrel/old --not_nice --wall_time $((5*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((500)) --paramfile train_params_old.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+python condor_online.py -t online_yellow_barrel/default --not_nice --wall_time $((5*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((500)) --paramfile train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+python condor_online.py -t online_yellow_barrel/default_hard --not_nice --wall_time $((5*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((500)) --paramfile train_params_hard_replay.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+
+
+# python condor_online.py -t online_yellow_barrel/lll_1/lr01 --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((300)) --paramfile LLL_train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# python condor_online.py -t online_yellow_barrel/lll_1/lr001 --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((300)) --paramfile LLL_train_params_001.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# python condor_online.py -t online_yellow_barrel/lll_1/lr0001 --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((300)) --paramfile LLL_train_params_0001.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# python condor_online.py -t online_yellow_barrel/lll_10/lr01 --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((300)) --paramfile LLL_train_params_10.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# python condor_online.py -t online_yellow_barrel/lll_10/lr001 --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((300)) --paramfile LLL_train_params_10_001.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+# python condor_online.py -t online_yellow_barrel/lll_10/lr0001 --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((300)) --paramfile LLL_train_params_10_0001.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
 
 
 

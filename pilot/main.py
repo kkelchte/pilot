@@ -195,6 +195,8 @@ def main(_):
 
   parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, state/action/target_variance, random_action")
   parser.add_argument("--prioritized_keeping", action='store_true', help="In case of True, the replay buffer only keeps replay data that is most likely to be sampled.")
+  parser.add_argument("--hard_replay_buffer", action='store_true', help="Add a replaybuffer with the hardest examples (according to the loss).")
+  parser.add_argument("--hard_batch_size", default=100, type=int, help="Define the amount of data in one batch coming from a hard replay buffer.")
 
   # ===========================
   #   Rosinterface Parameters
@@ -222,7 +224,7 @@ def main(_):
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
   parser.add_argument("--max_gradient_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
   parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
-  parser.add_argument("--max_batch_size", default=300, type=int, help="Define the max size of the batch (only if batch_size is -1).")
+  parser.add_argument("--max_batch_size", default=200, type=int, help="Define the max size of the batch (only if batch_size is -1).")
   
 
   # other  

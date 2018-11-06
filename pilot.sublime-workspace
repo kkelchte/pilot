@@ -4,6 +4,54 @@
 		"selected_items":
 		[
 			[
+				"sepa",
+				"separate_loss"
+			],
+			[
+				"reduc",
+				"reduce_sum"
+			],
+			[
+				"hard",
+				"hard_batch_size"
+			],
+			[
+				"sort",
+				"sorted_targets"
+			],
+			[
+				"sorted",
+				"sorted_inputs"
+			],
+			[
+				"replay_",
+				"hard_replay_buffer"
+			],
+			[
+				"har",
+				"hard_replay_buffer"
+			],
+			[
+				"max",
+				"max_batch_size"
+			],
+			[
+				"batch",
+				"batch_size"
+			],
+			[
+				"bat",
+				"batch_size"
+			],
+			[
+				"auxiliar",
+				"auxiliary_depth"
+			],
+			[
+				"run",
+				"run_number"
+			],
+			[
 				"buffer",
 				"buffer_size"
 			],
@@ -94,10 +142,6 @@
 			[
 				"define",
 				"define_importance_weights"
-			],
-			[
-				"bat",
-				"batch_inputs"
 			],
 			[
 				"auxil",
@@ -470,50 +514,6 @@
 			[
 				"contr",
 				"control_values"
-			],
-			[
-				"endpo",
-				"endpoints_train"
-			],
-			[
-				"foun",
-				"found_previous_run"
-			],
-			[
-				"check",
-				"checkpoints"
-			],
-			[
-				"prev",
-				"previous_runs"
-			],
-			[
-				"previous",
-				"previous_run"
-			],
-			[
-				"pre",
-				"previous_runs"
-			],
-			[
-				"input",
-				"input_images"
-			],
-			[
-				"sa",
-				"saliency_maps"
-			],
-			[
-				"line",
-				"line_index"
-			],
-			[
-				"contro",
-				"control_ops"
-			],
-			[
-				"op",
-				"opposite_results"
 			]
 		]
 	},
@@ -523,53 +523,7 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_online_LLL.md",
 			"settings":
 			{
-				"buffer_size": 5223,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params.yaml",
-			"settings":
-			{
-				"buffer_size": 222,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params_old.yaml",
-			"settings":
-			{
-				"buffer_size": 186,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"contents": "import rospy\nimport numpy as np\n# import scipy.misc as sm\nimport skimage.io as sio\nimport skimage.transform as sm\n\nimport sys, time, re, copy, cv2, os\nfrom os import path\n\nfrom tf import transformations\n\nfrom cv_bridge import CvBridge, CvBridgeError\nimport tensorflow as tf\n\nbridge = CvBridge()\n\nfrom replay_buffer import ReplayBuffer\nfrom model import Model\nfrom ou_noise import OUNoise\nimport tools\n\nfrom sensor_msgs.msg import LaserScan\nfrom sensor_msgs.msg import CompressedImage\nfrom sensor_msgs.msg import Image\nfrom geometry_msgs.msg import Twist\nfrom std_msgs.msg import Empty\nfrom rospy.numpy_msg import numpy_msg\nfrom rospy_tutorials.msg import Floats\nfrom nav_msgs.msg import Odometry\n\nimport matplotlib.animation as animation\nimport matplotlib.pyplot as plt\n\n\n#from PIL import Image\n\nclass PilotNode(object):\n  \"\"\"Node to listen to ROS topics like depth, rgb input and supervised control.\n  The node also publishes to pilot control and predicted depth for visualization.\n  \"\"\"\n  \n  def __init__(self, FLAGS, model, logfolder):\n    print('initialize pilot node')  \n    self.FLAGS=FLAGS\n    # Initialize fields\n    self.logfolder = logfolder\n    f=open(os.path.join(self.logfolder,'tf_log'),'a')\n    f.write(self.FLAGS.log_tag)\n    f.write('\\n')\n    f.close()\n    self.model = model \n    self.ready=False \n    self.finished=True\n    self.training=False\n    \n    self.last_pose=[] # previous pose, used for accumulative distance\n    self.world_name = ''\n    self.runs={'train':0, 'test':0} # number of online training run (used for averaging)\n    # self.accumlosses = {} # gather losses and info over the run in a dictionary\n    self.current_distance=0 # accumulative distance travelled from beginning of run used at evaluation\n    self.furthest_point=0 # furthest point reached from spawning point at the beginning of run\n    self.average_distances={'train':0, 'test':0} # running average over different runs\n    self.target_control = [] # field to keep the latest supervised control\n    self.target_depth = [] # field to keep the latest supervised depth\n    self.nfc_images =[] #used by n_fc networks for building up concatenated frames\n    self.exploration_noise = OUNoise(4, 0, self.FLAGS.ou_theta,1)\n    if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)\n    self.action_pub=rospy.Publisher('/nn_vel', Twist, queue_size=1)\n\n    self.model.reset_metrics()\n\n    rospy.Subscriber('/nn_start', Empty, self.ready_callback)\n    rospy.Subscriber('/nn_stop', Empty, self.finished_callback)\n\n    # extract imitation loss from supervised velocity\n    rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)\n    \n    self.start_time = 0\n    self.imitation_loss=[]\n    self.depth_prediction=[]\n    self.depth_loss=[]\n    self.driving_duration=-1\n\n    self.skip_frames = 0\n    self.img_index = 0\n    self.fsm_index = 0\n\n    if rospy.has_param('rgb_image'): \n      image_topic=rospy.get_param('rgb_image')\n      if 'compressed' in image_topic:\n        rospy.Subscriber(image_topic, CompressedImage, self.compressed_image_callback)\n      else:\n        rospy.Subscriber(image_topic, Image, self.image_callback)\n    if rospy.has_param('depth_image'):\n      depth_topic = rospy.get_param('depth_image')\n      if 'scan' in depth_topic:\n        rospy.Subscriber(depth_topic, LaserScan, self.scan_depth_callback)\n      else:\n        rospy.Subscriber(depth_topic, Image, self.depth_callback)\n    \n    self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed)\n    self.accumloss = 0\n    if rospy.has_param('gt_info'):\n      rospy.Subscriber(rospy.get_param('gt_info'), Odometry, self.gt_callback)\n\n    # Add some lines to debug delays:\n    self.time_im_received=[]\n    self.time_ctr_send=[]\n\n    rospy.init_node('pilot', anonymous=True)  \n  \n  #--------------------------------\n  # Callbacks\n  #--------------------------------\n\n  def ready_callback(self,msg):\n    \"\"\" callback function that makes DNN policy starts the ready flag is set on 1 (for 3s)\"\"\"\n    if not self.ready and self.finished:\n      print('Neural control activated.')\n      self.ready = True\n      self.start_time = rospy.get_time()\n      self.finished = False\n      self.exploration_noise.reset()\n      # choose one speed for this flight\n      self.FLAGS.speed=self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)\n      if rospy.has_param('evaluate'):\n        self.FLAGS.evaluate = rospy.get_param('evaluate')\n        print '--> set evaluate to: {0} with speed {1}'.format(self.FLAGS.evaluate, self.FLAGS.speed)\n      if rospy.has_param('skip_frames'):\n        self.skip_frames = rospy.get_param('skip_frames')\n        print '--> set skip_frames to: {0}'.format(self.skip_frames)\n      if rospy.has_param('world_name') :\n        self.world_name = rospy.get_param('world_name')\n      time.sleep(1) # wait one second, otherwise create_dataset can't follow...\n        \n  def gt_callback(self, data):\n    \"\"\"Callback function that keeps track of positions for logging\"\"\"\n    if not self.ready or self.training: return\n    current_pos=[data.pose.pose.position.x,\n                    data.pose.pose.position.y,\n                    data.pose.pose.position.z]\n    if len(self.last_pose)!= 0:\n        self.current_distance += np.sqrt((self.last_pose[0,3]-current_pos[0])**2+(self.last_pose[1,3]-current_pos[1])**2)\n    self.furthest_point=max([self.furthest_point, np.sqrt(current_pos[0]**2+current_pos[1]**2)])\n\n    # Get pose (rotation and translation) [DEPRECATED: USED FOR ODOMETRY]\n    quaternion = (data.pose.pose.orientation.x,\n      data.pose.pose.orientation.y,\n      data.pose.pose.orientation.z,\n      data.pose.pose.orientation.w)\n    self.last_pose = transformations.quaternion_matrix(quaternion) # orientation of current frame relative to global frame\n    self.last_pose[0:3,3]=current_pos\n\n  def process_rgb(self, msg):\n    \"\"\" Convert RGB serial data to opencv image of correct size\"\"\"\n    try:\n      # Convert your ROS Image message to OpenCV2\n      # changed to normal RGB order as i ll use matplotlib and PIL instead of opencv\n      img =bridge.imgmsg_to_cv2(msg, 'rgb8') \n    except CvBridgeError as e:\n      print(e)\n    else:\n      img = img[::2,::5,:]\n      size = self.model.input_size[1:]\n      img = sm.resize(img,size,mode='constant').astype(float)\n      return img\n\n  def process_rgb_compressed(self, msg):\n    \"\"\" Convert RGB serial data to opencv image of correct size\"\"\"\n    # if not self.ready or self.finished: return []\n    try:\n      img = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='passthrough')\n    except CvBridgeError as e:\n      print(e)\n    else:\n      # 308x410 to 128x128\n      img = img[::2,::3,:]\n      size = self.model.input_size[1:]\n      img = sm.resize(img,size,mode='constant').astype(float)\n      return img\n\n  def process_depth(self, msg):\n    \"\"\" Convert depth serial data to opencv image of correct size\"\"\"\n    # if not self.ready or self.finished: return [] \n    try:\n      # Convert your ROS Image message to OpenCV2\n      de = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')#gets float of 32FC1 depth image\n    except CvBridgeError as e:\n      print(e)\n    else:\n      \n      de = de[::6,::8]\n      shp=de.shape\n      # # assume that when value is not a number it is due to a too large distance (set to 5m)\n      # # values can be nan for when they are closer than 0.5m but than the evaluate node should\n      # # kill the run anyway.\n      de=np.asarray([ e*1.0 if not np.isnan(e) else 5 for e in de.flatten()]).reshape(shp) # clipping nans: dur: 0.010\n      size = (55,74)\n      # print 'DEPTH: min: ',np.amin(de),' and max: ',np.amax(de)\n      \n      de = sm.resize(de,size,order=1,mode='constant', preserve_range=True)\n      return de\n\n  def process_scan(self, msg):\n    \"\"\"Preprocess serial scan: clip horizontal field of view, clip at 1's and ignore 0's, smooth over 4 bins.\"\"\"\n    # field of view should follow camera: \n    #    wide-angle camera: -60 to 60. \n    #    normal camera: -35 to 35.\n    ranges=[1 if r > 1 or r==0 else r for r in msg.ranges]\n    # clip left 45degree range from 0:45 reversed with right 45degree range from the last 45:\n    ranges=list(reversed(ranges[:self.FLAGS.field_of_view/2]))+list(reversed(ranges[-self.FLAGS.field_of_view/2:]))\n    # add some smoothing by averaging over 4 neighboring bins\n    ranges = [sum(ranges[i*self.FLAGS.smooth_scan:i*self.FLAGS.smooth_scan+self.FLAGS.smooth_scan])/self.FLAGS.smooth_scan for i in range(int(len(ranges)/self.FLAGS.smooth_scan))]\n    # make it a numpy array\n    de = np.asarray(ranges).reshape((1,-1))\n    # if list(de.shape) != self.model.output_size: # reshape if necessary\n    #   de = sm.resize(de,self.model.output_size,order=1,mode='constant', preserve_range=True)\n    return de\n    \n  def compressed_image_callback(self, msg):\n    \"\"\" Process serial image data with process_rgb and concatenate frames if necessary\"\"\"\n    im = self.process_rgb_compressed(msg)\n    if len(im)!=0: \n      self.process_input(im)\n  \n  def image_callback(self, msg):\n    \"\"\" Process serial image data with process_rgb and concatenate frames if necessary\"\"\"\n    self.time_im_received.append(time.time())\n    im = self.process_rgb(msg)\n    if len(im)!=0: \n      if 'nfc' in self.FLAGS.network: # when features are concatenated, multiple images should be kept.\n        self.nfc_images.append(im)\n        if len(self.nfc_images) < self.FLAGS.n_frames: return\n        else:\n          # concatenate last n-frames\n          im = np.concatenate(np.asarray(self.nfc_images[-self.FLAGS.n_frames:]),axis=2)\n          self.nfc_images = self.nfc_images[-self.FLAGS.n_frames+1:] # concatenate last n-1-frames\n      self.process_input(im)\n    \n  def depth_callback(self, msg):\n    im = self.process_depth(msg)\n    if len(im)!=0 and self.FLAGS.auxiliary_depth:\n      self.target_depth = im\n  \n  def scan_depth_callback(self, msg):\n    im = self.process_scan(msg)\n    if len(im)!=0:\n      self.depth = im\n      # calculate depth loss on the fly\n      if len(self.depth_prediction) != 0:\n        # print(\"pred: {0} trg: {1}\".format(self.depth_prediction, self.depth))\n        self.depth_loss.append(np.mean((self.depth_prediction - self.depth.flatten())**2))\n  \n  def supervised_callback(self, data):\n    \"\"\"Get target control from the /supervised_vel node\"\"\"\n    # print 'received control'\n\n    if not self.ready: return\n    self.target_control = [data.linear.x,\n      data.linear.y,\n      data.linear.z,\n      data.angular.x,\n      data.angular.y,\n      data.angular.z]\n\n  def finished_callback(self,msg):\n    \"\"\"When run is finished:\n        sample 10 batches from the replay buffer,\n        apply gradient descent on the model,\n        write log file and checkpoints away\n    \"\"\"\n    if self.ready and not self.finished:\n      print('neural control deactivated. @ time: {}'.format(time.time()))\n\n      self.ready=False\n      self.finished=True\n      if self.start_time!=0: self.driving_duration = rospy.get_time() - self.start_time\n\n      # Update importance weights if driving duration was long enough\n      if self.driving_duration > self.FLAGS.minimum_collision_free_duration and self.FLAGS.lifelonglearning:\n        print(\"[rosinterface]: Update importance weights.\")\n        self.update_importance_weights()\n\n      \n      if self.replay_buffer.size()>=self.FLAGS.batch_size and not self.FLAGS.evaluate:\n        losses_train, depth_predictions = self.train_model()\n        self.save_summary(losses_train, depth_predictions)\n      else:\n        self.save_summary()\n\n      self.reset_variables()  \n\n  #--------------------------------\n  # Extra functions\n  #--------------------------------\n  \n  def process_input(self, im):\n    \"\"\"Process the inputs: images, targets, auxiliary tasks\n      Predict control based on the inputs.\n      Plot auxiliary predictions.\n      Fill replay buffer.\n    \"\"\"\n    # skip a number of frames to lower the actual control rate\n    # independently of the image frame rate\n    if self.skip_frames != 0:\n      self.img_index+=1\n      if self.img_index % (self.skip_frames+1) != 0:\n        return\n\n    aux_depth=[] # variable to keep predicted depth \n    trgt = -100.\n    \n    # Evaluate the input in your network\n    trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []\n    trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []\n    control, aux_results = self.model.forward([im], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)\n    if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']\n    \n    ### SEND CONTROL\n    control = control[0]\n    # print control\n    if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha\n      action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control\n    else:\n      action = control\n    \n    msg = Twist()\n\n    if self.FLAGS.noise == 'ou':\n      noise = self.exploration_noise.noise()\n      # exploration noise\n      if self.FLAGS.epsilon != 0 and not self.FLAGS.evaluate: action = noise[3]*self.FLAGS.action_bound if np.random.binomial(1, self.FLAGS.epsilon) else action\n      # general distortion\n      msg.linear.y = (not self.FLAGS.evaluate)*noise[1]*self.FLAGS.sigma_y\n      msg.linear.z = (not self.FLAGS.evaluate)*noise[2]*self.FLAGS.sigma_z\n      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))\n    \n    elif self.FLAGS.noise == 'uni':\n      # exploration noise\n      if self.FLAGS.epsilon != 0 and not self.FLAGS.evaluate: action = np.random.uniform(-self.FLAGS.action_bound, self.FLAGS.action_bound) if np.random.binomial(1, self.FLAGS.epsilon) else action\n      # general distortion\n      # msg.linear.x = self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)\n      msg.linear.y = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_y, self.FLAGS.sigma_y)\n      msg.linear.z = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_z, self.FLAGS.sigma_z)\n      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))\n    else:\n      raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))\n     \n    # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.\n    if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: \n      msg.linear.x = 0. + np.random.binomial(1, 0.1)\n    else:\n      msg.linear.x = self.FLAGS.speed\n\n    self.action_pub.publish(msg)\n    self.time_ctr_send.append(time.time())\n\n    ### keep track of imitation loss on the fly\n    if len(self.target_control) != 0:\n      self.imitation_loss.append((self.target_control[5]-action)**2)\n\n    if not self.FLAGS.dont_show_depth and len(aux_depth) != 0 and not self.finished:\n      aux_depth = aux_depth.flatten()\n      self.depth_pub.publish(aux_depth)\n      aux_depth = []\n      \n    # ADD EXPERIENCE REPLAY\n    if not self.FLAGS.evaluate and trgt != -100 and not self.finished:\n      experience={'state':im,\n                  'action':action,\n                  'trgt':trgt}\n      if self.FLAGS.auxiliary_depth: experience['target_depth']=trgt_depth\n      self.replay_buffer.add(experience)\n      # print(\"added experience: {0} vs {1}\".format(action, trgt))\n\n  def backward_step_model(self, inputs, targets, aux_info, losses_train, depth_predictions):\n    \"\"\"Apply gradient step with a backward pass\n    \"\"\"\n    # in case the batch size is -1 the full replay buffer is send back\n    if self.FLAGS.auxiliary_depth: \n      depth_targets=aux_info['target_depth'].reshape(-1,55,74)\n    else:\n      depth_targets=[]\n  \n    if len(inputs) != 0:\n      losses = self.model.backward(inputs,targets[:].reshape(-1,1),depth_targets)\n    \n      for k in losses.keys(): \n        try:\n          losses_train[k].append(losses[k])\n        except:\n          losses_train[k]=[losses[k]]\n    # create a depth prediction map of the auxiliary task on the first batch\n    # if b==0 and self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:\n    #   depth_predictions = tools.plot_depth(inputs, aux_info['target_depth'].reshape(-1,55,74))\n    \n    return losses_train, depth_predictions\n\n  def update_importance_weights(self):\n    \"\"\"Update the importance weights on data in the replay buffer\n    \"\"\"\n    # get full replay buffer to take one gradient step\n    if self.FLAGS.buffer_size == -1 and self.FLAGS.batch_size == -1:\n      inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)\n      losses_train, depth_predictions = self.backward_step_model(inputs, targets, aux_info, losses_train, depth_predictions)\n    else:\n      # go over all data in the replay buffer over different batches\n      # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)):\n      for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), self.FLAGS.max_gradient_steps)):\n        inputs, targets, aux_info = self.replay_buffer.sample_batch(self.FLAGS.batch_size)\n        losses_train, depth_predictions = self.backward_step_model(inputs, targets, aux_info, losses_train, depth_predictions)\n\n\n  def train_model(self):\n    \"\"\"Sample a batch from the replay buffer and train on it\n    \"\"\"\n    # Train model from experience replay:\n    # Train the model with batchnormalization out of the image callback loop\n    depth_predictions = []\n    losses_train = {}\n    \n    # get full replay buffer to take one gradient step\n    if self.FLAGS.buffer_size == -1 and self.FLAGS.batch_size == -1:\n      inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)\n      losses_train, depth_predictions = self.backward_step_model(inputs, targets, aux_info, losses_train, depth_predictions)\n    else:\n      # go over all data in the replay buffer over different batches\n      # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)):\n      for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), self.FLAGS.max_gradient_steps)):\n        inputs, targets, aux_info = self.replay_buffer.sample_batch(self.FLAGS.batch_size)\n        losses_train, depth_predictions = self.backward_step_model(inputs, targets, aux_info, losses_train, depth_predictions)\n\n    return losses_train, depth_predictions\n\n  def reset_variables(self):\n    \"\"\"After each roll out some field variables should be reset.\n    They are collected here.\n    \"\"\"    \n    # self.accumlosses = {}\n    self.current_distance = 0\n    self.last_pose = []\n    self.nfc_images = []\n    self.furthest_point = 0\n    self.world_name = ''\n    if self.runs['train']%20==0 and not self.FLAGS.evaluate:\n      # Save a checkpoint every 20 runs.\n      self.model.save(self.logfolder)\n      print('model saved [run {0}]'.format(self.runs['train']))\n    self.time_im_received=[]\n    self.time_ctr_send=[]\n\n    self.model.reset_metrics()\n    \n    self.start_time=0\n    self.imitation_loss=[]\n    self.depth_loss=[]\n    self.driving_duration=-1\n    self.img_index=0    \n    self.fsm_index = 0\n\n    if self.FLAGS.empty_buffer: self.replay_buffer.clear()    \n\n  def save_summary(self, losses_train={}, depth_predictions=[]):\n    \"\"\"Collect all field variables and save them for visualization in tensorboard\n    \"\"\"\n    # Gather all info to build a proper summary and string of results\n    k='train' if not self.FLAGS.evaluate else 'test'\n    self.average_distances[k]= self.average_distances[k]-self.average_distances[k]/(self.runs[k]+1)\n    self.average_distances[k] = self.average_distances[k]+self.current_distance/(self.runs[k]+1)\n    self.runs[k]+=1\n    sumvar={}\n    result_string='{0}: run {1}'.format(time.strftime('%H:%M'),self.runs[k])\n    vals={'current':self.current_distance, 'furthest':self.furthest_point}\n    for d in ['current', 'furthest']:\n      name='Distance_{0}_{1}'.format(d,'train' if not self.FLAGS.evaluate else 'test')\n      if len(self.world_name)!=0: name='{0}_{1}'.format(name,self.world_name)\n      sumvar[name]=vals[d]\n      result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])\n    for k in losses_train.keys():\n      name={'total':'Loss_train_total'}\n      name['ce']='Loss_train_ce'\n      sumvar[name[k]]=np.mean(losses_train[k])\n      result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))\n    \n    # get all metrics of this episode and add them to var\n    results = self.model.get_metrics()\n    for k in results.keys(): \n      sumvar[k] = results[k]\n      result_string='{0}, {1}:{2}'.format(result_string, k, results[k])\n    \n    if self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:\n      sumvar[\"depth_predictions\"]=depth_predictions\n    # add driving duration (collision free)\n    if self.driving_duration != -1: \n      result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)\n      sumvar['driving_time']=self.driving_duration\n    # add imitation loss\n    if len(self.imitation_loss)!=0:\n      result_string='{0}, imitation_loss: {1:0.3}'.format(result_string, np.mean(self.imitation_loss))\n      sumvar['imitation_loss']=np.mean(self.imitation_loss)\n    # add depth loss\n    if len(self.depth_loss)!=0:\n      result_string='{0}, depth_loss: {1:0.3f}, depth_loss_var: {2:0.3f}'.format(result_string, np.mean(self.depth_loss), np.var(self.depth_loss))\n      sumvar['depth_loss']=np.mean(self.depth_loss)\n    if len(self.time_ctr_send) > 10 and len(self.time_im_received) > 10:\n      # calculate control-rates and rgb-rates from differences\n      avg_ctr_rate = 1/np.mean([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])\n      std_ctr_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])\n      avg_im_rate = 1/np.mean([self.time_im_received[i+1]-self.time_im_received[i] for i in range(1,len(self.time_im_received)-1)]) #skip first image delay as network still needs to 'startup'\n      std_im_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])\n\n      result_string='{0}, control_rate: {1:0.3f}, image_rate: {2:0.3f} , control_delay_std: {1:0.3f}, image_delay_std: {2:0.3f} '.format(result_string, avg_ctr_rate, avg_im_rate, std_ctr_delays, std_im_delays)\n    try:\n      self.model.summarize(sumvar)\n    except Exception as e:\n      print('failed to write', e)\n      pass\n    else:\n      print(result_string)\n    # ! Note: tf_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts\n    # Script starts next run once this file is updated.\n    try:\n      f=open(os.path.join(self.logfolder,'tf_log'),'a')\n      f.write(result_string)\n      f.write('\\n')\n      f.close()\n    except Exception as e:\n      print('failed to write txt tf_log {}'.format(e))\n      print('retry after sleep 60')\n      time.sleep(60)\n      f=open(os.path.join(self.logfolder,'tf_log'),'a')\n      f.write(result_string)\n      f.write('\\n')\n      f.close()\n",
-			"file": "pilot/rosinterface.py",
-			"file_size": 22240,
-			"file_write_time": 131858833953116827,
-			"settings":
-			{
-				"buffer_size": 23193,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "scripts/save_results_as_pdf.py",
-			"settings":
-			{
-				"buffer_size": 16353,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "pilot/main.py",
-			"settings":
-			{
-				"buffer_size": 21126,
+				"buffer_size": 6551,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -578,7 +532,43 @@
 			"file": "pilot/model.py",
 			"settings":
 			{
-				"buffer_size": 31851,
+				"buffer_size": 32354,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pilot/rosinterface.py",
+			"settings":
+			{
+				"buffer_size": 24352,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/train_in_singularity.sh",
+			"settings":
+			{
+				"buffer_size": 1100,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pilot/replay_buffer.py",
+			"settings":
+			{
+				"buffer_size": 4987,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pilot/main.py",
+			"settings":
+			{
+				"buffer_size": 21418,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -629,25 +619,34 @@
 	],
 	"file_history":
 	[
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/launch.sh",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/osb_yellow_barrel.yaml",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/pilot/main.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params_old.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params.yaml",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/train_in_singularity.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/pilot/replay_buffer.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/LLL_train_params_debug.yaml",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/pilot/offline.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params.yaml",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-18_real-world-lifelong-learning.md",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/train_in_singularity.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/condor_online.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/launch.sh",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/LLL_train_params_10_0001.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/LLL_train_params_0001.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/LLL_train_params_10.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params_old.yaml",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/pilot/main.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/LLL_train_params.yaml",
 		"/users/visics/kkelchte/.bashrc",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/depth_heuristic.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/save_results_as_pdf.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/pilot/rosinterface.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/osb_yellow_barrel.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params.yaml",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/pilot/replay_buffer.py",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-18_real-world-lifelong-learning.md",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_real_world_LLL.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/dag_train.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/condor_offline.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/fsm.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/forest.yaml",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/scripts/evaluate_in_singularity.sh",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_real.launch",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot_online/pilot.sublime-project",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/robot/turtle_real.yaml",
@@ -694,7 +693,6 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/oracle_turtle_fsm.yaml",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-09-24_noise_augmentation.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/clean_dataset.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/depth_heuristic.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/random_slow.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/osb_yellow_barrel_blue.world",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/osb_carton_box.world",
@@ -748,15 +746,7 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/combined.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/ceiling.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/passway_door.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/passway_arc.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/radiator_left.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/radiator_right.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/radiator.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/test.yaml",
-		"/users/visics/kkelchte/PenO/Rubric",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/models/pipes_1/model.sdf",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/models/pipes_3/model.sdf",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/models/pipes_2/model.sdf"
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/passway_arc.yaml"
 	],
 	"find":
 	{
@@ -774,6 +764,23 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"sorted",
+			"total",
+			"targets",
+			"inputs",
+			"self.FLAGS.",
+			"self.FLAGS.max_batch_size",
+			"self.FLAGS.",
+			"300",
+			"100",
+			"LLL_train_params",
+			"--not_nice",
+			"tf.trainable_variables()",
+			"import pdb; pdb.set_trace()",
+			"return",
+			"online_LLL",
+			"_lifelonglearning",
+			"40",
 			"self.driving_duration",
 			"batch_",
 			"number_of_runs",
@@ -884,24 +891,7 @@
 			"--non_expert_weight 1 --combine_factor_outputs weighted_average ",
 			"static_ensemble",
 			"results",
-			"_save_model",
-			"mkdir",
-			"save",
-			"doorway",
-			"mobile",
-			"v2",
-			"7",
-			"6",
-			"5",
-			"3",
-			"3_",
-			"2",
-			"bn1",
-			"v1",
-			"cp8",
-			"pool",
-			"cp4",
-			"10*60"
+			"_save_model"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -919,7 +909,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -928,15 +918,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5223,
+						"buffer_size": 6551,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4506,
-								4506
+								6017,
+								6017
 							]
 						],
 						"settings":
@@ -944,83 +934,57 @@
 							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 738.0,
+						"translation.y": 160.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params.yaml",
+					"file": "pilot/model.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 222,
+						"buffer_size": 32354,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								23864,
+								23864
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/YAML/YAML.sublime-syntax"
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params_old.yaml",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 186,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/YAML/YAML.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 7565.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 2,
 					"file": "pilot/rosinterface.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 23193,
+						"buffer_size": 24352,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								16733,
-								16733
+								19513,
+								19513
 							]
 						],
 						"settings":
@@ -1030,27 +994,55 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4992.0,
+						"translation.y": 2601.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "scripts/train_in_singularity.sh",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1100,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								347,
+								347
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
 					"buffer": 4,
-					"file": "scripts/save_results_as_pdf.py",
+					"file": "pilot/replay_buffer.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 16353,
+						"buffer_size": 4987,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								13852,
-								13852
+								2382,
+								2382
 							]
 						],
 						"settings":
@@ -1060,10 +1052,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4892.0,
+						"translation.y": 612.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
@@ -1072,15 +1064,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 21126,
+						"buffer_size": 21418,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								15995,
-								15995
+								12905,
+								12905
 							]
 						],
 						"settings":
@@ -1090,40 +1082,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 3328.0,
+						"translation.y": 3026.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "pilot/model.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 31851,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								29169,
-								29169
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 10353.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
 					"type": "text"
 				}
 			]
@@ -1182,24 +1144,96 @@
 		"selected_items":
 		[
 			[
-				"tra",
-				"simulation_supervised/simulation_supervised/python/train_params_old.yaml"
+				"off",
+				"pilot_online/pilot/offline.py"
 			],
 			[
-				"trai",
-				"simulation_supervised/simulation_supervised/python/train_params.yaml"
+				"sin tra",
+				"pilot_online/scripts/train_in_singularity.sh"
+			],
+			[
+				"LLL",
+				"simulation_supervised/simulation_supervised/python/LLL_train_params_debug.yaml"
+			],
+			[
+				"repla",
+				"pilot_online/pilot/replay_buffer.py"
 			],
 			[
 				"mai",
 				"pilot_online/pilot/main.py"
 			],
 			[
-				"save",
-				"pilot_online/scripts/save_results_as_pdf.py"
+				"LLL_",
+				"simulation_supervised/simulation_supervised/python/LLL_train_params.yaml"
+			],
+			[
+				"tra",
+				"simulation_supervised/simulation_supervised/python/train_params_old.yaml"
+			],
+			[
+				"mod",
+				"pilot_online/pilot/model.py"
+			],
+			[
+				"co on",
+				"pilot_online/scripts/condor_online.py"
 			],
 			[
 				"la",
 				"pilot_online/scripts/launch.sh"
+			],
+			[
+				"rosi",
+				"pilot_online/pilot/rosinterface.py"
+			],
+			[
+				"run",
+				"simulation_supervised/simulation_supervised/python/run_script.py"
+			],
+			[
+				"ma",
+				"pilot_online/pilot/main.py"
+			],
+			[
+				"tra par",
+				"simulation_supervised/simulation_supervised/python/train_params.yaml"
+			],
+			[
+				"tra par ol",
+				"simulation_supervised/simulation_supervised/python/train_params_old.yaml"
+			],
+			[
+				"tra in ",
+				"pilot_online/scripts/train_in_singularity.sh"
+			],
+			[
+				".ba",
+				"kkelchte/.bashrc"
+			],
+			[
+				"dep heu",
+				"simulation_supervised/simulation_supervised_control/python/depth_heuristic.py"
+			],
+			[
+				"tur si",
+				"simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch"
+			],
+			[
+				"con on",
+				"pilot_online/scripts/condor_online.py"
+			],
+			[
+				"trai in",
+				"pilot_online/scripts/train_in_singularity.sh"
+			],
+			[
+				"trai",
+				"simulation_supervised/simulation_supervised/python/train_params.yaml"
+			],
+			[
+				"save",
+				"pilot_online/scripts/save_results_as_pdf.py"
 			],
 			[
 				"yell",
@@ -1226,20 +1260,8 @@
 				"simulation_supervised/simulation_supervised/python/train_params.yaml"
 			],
 			[
-				"run",
-				"simulation_supervised/simulation_supervised/python/run_script.py"
-			],
-			[
-				"mod",
-				"pilot_online/pilot/model.py"
-			],
-			[
 				"para tr",
 				"simulation_supervised/simulation_supervised/python/train_params.yaml"
-			],
-			[
-				".ba",
-				"kkelchte/.bashrc"
 			],
 			[
 				".bas",
@@ -1262,10 +1284,6 @@
 				"pilot_online/pilot/replay_buffer.py"
 			],
 			[
-				"off",
-				"pilot_online/pilot/offline.py"
-			],
-			[
 				"con of",
 				"pilot_online/scripts/condor_offline.py"
 			],
@@ -1276,10 +1294,6 @@
 			[
 				"2018",
 				"kkelchte.github.io/docs/2018-10-29_online_LLL.md"
-			],
-			[
-				"rosi",
-				"pilot_online/pilot/rosinterface.py"
 			],
 			[
 				"tur sim",
@@ -1458,20 +1472,12 @@
 				"kkelchte.github.io/docs/2018-10-18_real-world-lifelong-learning.md"
 			],
 			[
-				"tra par",
-				"simulation_supervised/simulation_supervised/python/train_coll_q_net_params.yaml"
-			],
-			[
 				"para",
 				"simulation_supervised/simulation_supervised/python/params.yaml"
 			],
 			[
 				"2018 fa",
 				"kkelchte.github.io/docs/2018-08-28_factoring_control.md"
-			],
-			[
-				"co on",
-				"pilot/scripts/condor_online.py"
 			],
 			[
 				"dat",
@@ -1508,10 +1514,6 @@
 			[
 				"eva ",
 				"simulation_supervised/simulation_supervised/python/eva_params_slow.yaml"
-			],
-			[
-				"ma",
-				"pilot/pilot/main.py"
 			],
 			[
 				"ran slo",
@@ -1622,10 +1624,6 @@
 				"simulation_supervised/simulation_supervised_demo/launch/drone_real.launch"
 			],
 			[
-				"con on",
-				"pilot/scripts/condor_online.py"
-			],
-			[
 				"cre\t",
 				"simulation_supervised/simulation_supervised_tools/python/create_dataset.py"
 			],
@@ -1656,42 +1654,6 @@
 			[
 				"20 fa",
 				"kkelchte.github.io/docs/2018-08-28_factoring_control.md"
-			],
-			[
-				"la\t",
-				"pilot/scripts/launch.sh"
-			],
-			[
-				"tur",
-				"simulation_supervised/simulation_supervised_demo/launch/turtle_real.launch"
-			],
-			[
-				"tur si",
-				"simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch"
-			],
-			[
-				"dro re",
-				"simulation_supervised/simulation_supervised_demo/launch/drone_real.launch"
-			],
-			[
-				"con ma",
-				"simulation_supervised/simulation_supervised_tools/python/control_mapping.py"
-			],
-			[
-				"con",
-				"simulation_supervised/simulation_supervised/config/fsm/console_nn_turtle_fsm.yaml"
-			],
-			[
-				"fs",
-				"simulation_supervised/simulation_supervised_tools/python/fsm.py"
-			],
-			[
-				"loa",
-				"simulation_supervised/simulation_supervised/launch/load_params.launch"
-			],
-			[
-				"uti",
-				"tf_cnnvis/tf_cnnvis/utils.py"
 			]
 		],
 		"width": 0.0

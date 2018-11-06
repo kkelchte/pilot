@@ -13,12 +13,11 @@ import argparse
 
 class ReplayBuffer(object):
 
-    def __init__(self, FLAGS, random_seed=123):
+    def __init__(self, buffer_size=-1, random_seed=123):
       """
       The right side of the deque contains the most recent experiences 
       """
-      self.FLAGS=FLAGS
-      self.buffer_size = FLAGS.buffer_size if FLAGS.buffer_size != -1 else 10000000
+      self.buffer_size = buffer_size if buffer_size != -1 else 1000000
       self.count = 0
       self.buffer = deque()
       self.num_steps = 1 #num
@@ -37,7 +36,7 @@ class ReplayBuffer(object):
           self.buffer.popleft()
 
       self.buffer.append(experience)
-    
+
     def size(self):      
       return self.count
     
@@ -55,8 +54,8 @@ class ReplayBuffer(object):
       # for k in batch[0].keys():
       #   aux_batch[k]=np.array([_[k] for _ in batch])
 
-      if input_batch.shape[0] > self.FLAGS.max_batch_size: input_batch=input_batch[:self.FLAGS.max_batch_size]
-      if target_batch.shape[0] > self.FLAGS.max_batch_size: target_batch=target_batch[:self.FLAGS.max_batch_size]
+      if input_batch.shape[0] > max_batch_size: input_batch=input_batch[:max_batch_size]
+      if target_batch.shape[0] > max_batch_size: target_batch=target_batch[:max_batch_size]
       
 
       return input_batch, target_batch, aux_batch

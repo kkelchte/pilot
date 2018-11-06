@@ -3,6 +3,7 @@ import numpy as np
 import tools
 import sys
 import data
+import collections
 
 import tensorflow as tf
 
@@ -52,8 +53,8 @@ def run_episode(mode, sumvar, model, update_importance_weights=False):
       if mode=='train':
         # model.backward(inputs, targets=targets, depth_targets=target_depth, sumvar=sumvar)
         losses = model.backward(inputs, targets=targets, depth_targets=target_depth, sumvar=sumvar)
-        for k in losses.keys():
-          results[k].append(losses[k])
+        for k in losses.keys(): # in case list over the batch is returned, take the mean
+          results[k].append(losses[k] if not isinstance(losses[k], collections.Iterable) else np.mean(losses[k]))
       elif mode=='val' or mode=='test':
         _, aux_results = model.forward(inputs, auxdepth=False, targets=targets, depth_targets=target_depth)
       if index == 1 and mode=='val' and FLAGS.plot_depth: 

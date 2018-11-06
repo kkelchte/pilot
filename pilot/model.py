@@ -447,8 +447,9 @@ class Model(object):
       else:
         # targets should be class indices like [0,1,2, ... action_dim] for classes [-1,0,1]
         one_hot=tf.squeeze(tf.one_hot(self.targets, depth=self.FLAGS.action_quantity, on_value=1., off_value=0., axis=-1),[1])
-        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=endpoints['outputs'], weights=self.FLAGS.control_weight)
-      
+        # self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=endpoints['outputs'], weights=self.FLAGS.control_weight)
+        self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=endpoints['outputs'], weights=self.FLAGS.control_weight, loss_collection=None, reduction=tf.losses.Reduction.NONE)
+        tf.losses.add_loss(tf.reduce_sum(self.loss))
       #add regularization loss for lifelonglearning
       self.lll_losses={}
       if self.FLAGS.lifelonglearning:
@@ -465,7 +466,7 @@ class Model(object):
       
       # self.total_loss = self.loss + self.FLAGS.lll_weight * self.lll_loss
       # self.total_loss = self.FLAGS.lll_weight * self.lll_loss
-      self.total_loss = tf.losses.get_total_loss()
+      self.total_loss = tf.losses.get_total_loss(add_regularization_losses=False)
     
   def define_train(self):
     '''applying gradients to the weights from normal loss function
@@ -533,7 +534,7 @@ class Model(object):
     # metrics = {}
     aux_results = {}   
 
-    if auxdepth: 
+    if auxdepth and 'aux_depth_reshaped' in self.endpoints['eval'].keys(): 
       aux_results['d']=results.pop(0)
 
     # print "target: ", targets
@@ -596,6 +597,7 @@ class Model(object):
     _ = results.pop(0) # train_op
     
     losses={'total':results.pop(0)}
+    # set of separate cross entropy losses of batchsize
     losses['ce']=results.pop(0)
 
     if self.FLAGS.lifelonglearning:
