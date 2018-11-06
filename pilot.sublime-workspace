@@ -540,7 +540,7 @@
 			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 29771,
+				"buffer_size": 31425,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -557,7 +557,7 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_online_LLL.md",
 			"settings":
 			{
-				"buffer_size": 5223,
+				"buffer_size": 6551,
 				"line_ending": "Unix"
 			}
 		}
@@ -966,22 +966,22 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 29771,
+						"buffer_size": 31425,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6827,
-								6827
+								5492,
+								5492
 							]
 						],
 						"settings":
 						{
 							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
-						"translation.x": 0.0,
+						"translation.x": 1000.0,
 						"translation.y": 510.0,
 						"zoom_level": 1.0
 					},
@@ -1024,15 +1024,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5223,
+						"buffer_size": 6551,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4111,
-								4111
+								0,
+								0
 							]
 						],
 						"settings":
