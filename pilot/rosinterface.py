@@ -277,10 +277,11 @@ class PilotNode(object):
 
       self.ready=False
       self.finished=True
-      if self.start_time!=0: self.driving_duration = rospy.get_time() - self.start_time
+      if self.start_time!=0: 
+        self.driving_duration = rospy.get_time() - self.start_time
 
       # Update importance weights if driving duration was long enough
-      if self.driving_duration > self.FLAGS.minimum_collision_free_duration and self.FLAGS.lifelonglearning:
+      if self.driving_duration > self.FLAGS.minimum_collision_free_duration and self.FLAGS.update_importance_weights:
         print("[rosinterface]: Update importance weights.")
         self.update_importance_weights()
 
@@ -311,7 +312,7 @@ class PilotNode(object):
         return
 
     aux_depth=[] # variable to keep predicted depth 
-    trgt = -100.
+    trgt = []
     
     # Evaluate the input in your network
     trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
@@ -322,26 +323,31 @@ class PilotNode(object):
     
     ### SEND CONTROL
     control = control[0]
-    # print control
-    if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
+    
+    # POLICY MIXING
+    if len(trgt) != 0 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
       action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
     else:
       action = control
     
     msg = Twist()
 
+    # Epsilon-Exploration with exponential decay
+    epsilon=self.FLAGS.epsilon*np.exp(-self.runs['train']*self.FLAGS.epsilon_decay)
+    
     if self.FLAGS.noise == 'ou':
       noise = self.exploration_noise.noise()
       # exploration noise
-      if self.FLAGS.epsilon != 0 and not self.FLAGS.evaluate: action = noise[3]*self.FLAGS.action_bound if np.random.binomial(1, self.FLAGS.epsilon) else action
+      if epsilon > 10**-2 and not self.FLAGS.evaluate: 
+        action = noise[3]*self.FLAGS.action_bound if np.random.binomial(1, epsilon) else action
       # general distortion
       msg.linear.y = (not self.FLAGS.evaluate)*noise[1]*self.FLAGS.sigma_y
       msg.linear.z = (not self.FLAGS.evaluate)*noise[2]*self.FLAGS.sigma_z
-      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))
-    
+      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))    
     elif self.FLAGS.noise == 'uni':
       # exploration noise
-      if self.FLAGS.epsilon != 0 and not self.FLAGS.evaluate: action = np.random.uniform(-self.FLAGS.action_bound, self.FLAGS.action_bound) if np.random.binomial(1, self.FLAGS.epsilon) else action
+      if epsilon  > 10**-2 and not self.FLAGS.evaluate: 
+        action = np.random.uniform(-self.FLAGS.action_bound, self.FLAGS.action_bound) if np.random.binomial(1, epsilon) else action
       # general distortion
       # msg.linear.x = self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
       msg.linear.y = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_y, self.FLAGS.sigma_y)
@@ -349,10 +355,10 @@ class PilotNode(object):
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
-     
+    
     # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
     if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: 
-      msg.linear.x = 0. + np.random.binomial(1, 0.1)
+      msg.linear.x = 0. + self.FLAGS.speed*np.random.binomial(1, 0.1)
     else:
       msg.linear.x = self.FLAGS.speed
 
@@ -369,7 +375,7 @@ class PilotNode(object):
       aux_depth = []
       
     # ADD EXPERIENCE REPLAY
-    if not self.FLAGS.evaluate and trgt != -100 and not self.finished:
+    if not self.FLAGS.evaluate and trgt != -100 and not self.finished and len(trgt) != 0:
       experience={'state':im,
                   'action':action,
                   'trgt':trgt}
@@ -386,7 +392,8 @@ class PilotNode(object):
     else:
       depth_targets=[]
   
-    if len(inputs) != 0:
+    if len(inputs) != 0 and len(targets) != 0:
+      # losses = self.model.backward(inputs,targets,depth_targets)
       losses = self.model.backward(inputs,targets[:].reshape(-1,1),depth_targets)
     
       for k in losses.keys(): 
@@ -394,6 +401,8 @@ class PilotNode(object):
           losses_train[k].append(losses[k])
         except:
           losses_train[k]=[losses[k]]
+    else:
+      print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))
     # create a depth prediction map of the auxiliary task on the first batch
     # if b==0 and self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:
     #   depth_predictions = tools.plot_depth(inputs, aux_info['target_depth'].reshape(-1,55,74))
@@ -403,12 +412,18 @@ class PilotNode(object):
   def update_importance_weights(self):
     """Update the importance weights on ALL data in the replay buffer
     """
-    # get full replay buffer to take one gradient step
+    # get full replay buffer to calculate new importance weights
     inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)
-    if len(inputs) == 0: return
+
+    # Possible extension: if hard replay buffer combine the two datasets...
+
+    if len(inputs) == 0 or len(targets) == 0: 
+      print("Nothing in replay buffer, so nothing to update.")
+      return
     self.model.update_importance_weights(inputs)
     # update star variables
-    self.model.sess.run([tf.assign(self.model.star_variables[v.name], v) for v in tf.trainable_variables()])
+    if self.FLAGS.lifelonglearning:
+      self.model.sess.run([tf.assign(self.model.star_variables[v.name], v) for v in self.model.copied_trainable_variables])
   
   def train_model(self):
     """Sample a batch from the replay buffer and train on it
@@ -421,9 +436,9 @@ class PilotNode(object):
     # get full replay buffer to take one gradient step
     if self.FLAGS.buffer_size == -1 and self.FLAGS.batch_size == -1:
       inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)
-      if len(inputs) == 0: return losses_train, depth_predictions
-      print("len inputs "+str(len(inputs)))
-      print("len targets "+str(len(targets)))
+      if len(inputs) == 0: 
+        return losses_train, depth_predictions
+      
       # if there is a hard replay buffer that is full, use it for your batch
       if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
         print("inputs: {}".format(inputs.shape))

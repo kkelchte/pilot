@@ -224,7 +224,7 @@ def main(_):
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
   parser.add_argument("--max_gradient_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
   parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
-  parser.add_argument("--max_batch_size", default=200, type=int, help="Define the max size of the batch (only if batch_size is -1).")
+  parser.add_argument("--max_batch_size", default=100, type=int, help="Define the max size of the batch (only if batch_size is -1).")
   
 
   # other  

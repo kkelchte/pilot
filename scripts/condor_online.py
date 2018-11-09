@@ -116,12 +116,12 @@ condor_submit.write("match_list_length = 6 \n")
 condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCode == 0 ) || HoldReasonCode == 26\n")
 
 
-# blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
-#             && (machine != \"estragon.esat.kuleuven.be\") \
-#             && (machine != \"vladimir.esat.kuleuven.be\") \
-#             && (machine != \"cancer.esat.kuleuven.be\") \
-#             && (machine != \"libra.esat.kuleuven.be\") "
-blacklist=""
+blacklist=" && (machine != \"quartz.esat.kuleuven.be\") \
+            && (machine != \"realgar.esat.kuleuven.be\") \
+            && (machine != \"vladimir.esat.kuleuven.be\") \
+            && (machine != \"cancer.esat.kuleuven.be\") \
+            && (machine != \"libra.esat.kuleuven.be\") "
+# blacklist=""
 # greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
 greenlist=""
 condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
@@ -158,7 +158,8 @@ executable.write("echo started executable within singularity. \n")
 # in case of copy all to /esat/opal
 executable.write("cd /esat/opal/kkelchte/docker_home \n")
 
-executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra \n")
+# executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra \n")
+executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra_no_build \n")
 executable.write("roscd simulation_supervised/python \n")
 executable.write("echo PWD: $PWD \n")
 

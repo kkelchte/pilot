@@ -348,10 +348,10 @@ class Model(object):
 
     # Add model variables for importance_weights for current dataset
     gradients=[]
-    batchsize = 50
+    batchsize = 10
     # batchsize = 1
     #number of batches of 200
-    N=int(inputs.shape[0]/batchsize)
+    N=min(int(inputs.shape[0]/batchsize), 10000) # should not train on more than 10000 batches.
     print('[model.py]: update importance weights on {0} batches of batchsize {1}.'.format(N, batchsize))
     
 
@@ -375,12 +375,12 @@ class Model(object):
     # divide to get the mean absolute value
     gradients = [g/(batchsize*N) for g in gradients]
 
-    new_weights=[gradients[i] + self.sess.run(self.importance_weights[v.name]) for i,v in enumerate(self.copied_trainable_variables)]
+    # take average of last weight and new weights which implies an exponential forgetting
+    new_weights=[(gradients[i] + self.sess.run(self.importance_weights[v.name]))/2 for i,v in enumerate(self.copied_trainable_variables)]
 
     # for i,v in enumerate(self.copied_trainable_variables):
     #   print("{0} {1} {2}".format(v.name,self.importance_weights[v.name].shape, gradients[i].shape))
     
-
     # assign these values to the importance weight variables
     self.sess.run([tf.assign(self.importance_weights[v.name], new_weights[i]) for i,v in enumerate(self.copied_trainable_variables)])
     
@@ -449,7 +449,7 @@ class Model(object):
         one_hot=tf.squeeze(tf.one_hot(self.targets, depth=self.FLAGS.action_quantity, on_value=1., off_value=0., axis=-1),[1])
         # self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=endpoints['outputs'], weights=self.FLAGS.control_weight)
         self.loss = tf.losses.softmax_cross_entropy(onehot_labels=one_hot, logits=endpoints['outputs'], weights=self.FLAGS.control_weight, loss_collection=None, reduction=tf.losses.Reduction.NONE)
-        tf.losses.add_loss(tf.reduce_sum(self.loss))
+        tf.losses.add_loss(tf.reduce_mean(self.loss))
       #add regularization loss for lifelonglearning
       self.lll_losses={}
       if self.FLAGS.lifelonglearning:
@@ -562,10 +562,12 @@ class Model(object):
     depth_targets: batch of depth labels
     sumvar: summary variables dictionary to which values can be added.
     '''
+    assert(len(inputs)==len(targets), "inputs ({0}) and targets ({1}) are not of same shape.".format(inputs.shape, targets.shape))
     tensors = [self.train_op]
     feed_dict = {self.inputs: inputs}
     feed_dict[self.targets]= self.continuous_to_discrete(targets) if self.FLAGS.discrete else targets
     
+
     # append loss
     tensors.append(self.total_loss)
     tensors.append(self.loss)

@@ -34,9 +34,28 @@
 # 4. others for offline training (see main.py) for online (see run_script.py)
 
 # ------------TRAIN ONLINE------
-python condor_online.py -t online_yellow_barrel/old --not_nice --wall_time $((5*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((500)) --paramfile train_params_old.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-python condor_online.py -t online_yellow_barrel/default --not_nice --wall_time $((5*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((500)) --paramfile train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
-python condor_online.py -t online_yellow_barrel/default_hard --not_nice --wall_time $((5*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((500)) --paramfile train_params_hard_replay.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
+
+# Big buffer with and without lifelonglearning
+# for i in 0 ; do
+#   python condor_online.py -t online_yellow_barrel/big_buffer/${i}_train --wall_time $((15*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((1000)) --paramfile train_params_old.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
+#   python condor_online.py -t online_yellow_barrel/LLL_big_buffer/${i}_train --wall_time $((15*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((1000)) --paramfile LLL_train_params_old.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
+# done
+
+# Empty recent buffer with and without lifelonglearning
+for i in 0 1 2; do
+  python condor_online.py -t online_yellow_barrel/recent_buffer/noLL/${i} --wall_time $((4*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((1000)) --paramfile train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
+  python condor_online.py -t online_yellow_barrel/recent_buffer/LL_10/${i} --wall_time $((4*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((1000)) --paramfile LLL_train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
+  python condor_online.py -t online_yellow_barrel/recent_buffer/LL_10_60/${i} --wall_time $((4*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((1000)) --paramfile LLL_train_params_60.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
+done
+
+# Empty recent buffer but keep hard replay buffer with and without lifelonglearning 
+for i in 0 1 2; do
+  python condor_online.py -t online_yellow_barrel/hard_buffer/noLL/${i} --wall_time $((4*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((1000)) --paramfile train_params_hard_replay.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
+  python condor_online.py -t online_yellow_barrel/hard_buffer/LL_10/${i} --wall_time $((4*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((1000)) --paramfile LLL_train_params_hard_replay.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
+done
+
+# python condor_online.py -t online_yellow_barrel/default --not_nice --wall_time $((5*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((500)) --paramfile train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
+# python condor_online.py -t online_yellow_barrel/default_hard --not_nice --wall_time $((5*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((500)) --paramfile train_params_hard_replay.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 --evaluate_every 10
 
 
 # python condor_online.py -t online_yellow_barrel/lll_1/lr01 --wall_time $((2*60*60)) -w osb_yellow_barrel --robot turtle_sim --fsm nn_turtle_fsm -n $((300)) --paramfile LLL_train_params.yaml --x_pos 0.45 --x_var 0.15 --yaw_var 1 --yaw_or 1.57 
