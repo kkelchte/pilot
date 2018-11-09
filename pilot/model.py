@@ -54,6 +54,7 @@ class Model(object):
                 'tiny':tiny_net,
                 'tiny_v1':tiny_net_v1,
                 'tiny_v2':tiny_net_v2,
+                'tiny_v2r':tiny_net_v2_r,
                 'tiny_v3':tiny_net_v3,
                 'tiny_v4':tiny_net_v4,
                 'tiny_CAM':tiny_CAM_net}
@@ -229,6 +230,7 @@ class Model(object):
         versions={'tiny': tiny_net,
                   'tiny_v1': tiny_net_v1,
                   'tiny_v2': tiny_net_v2,
+                  'tiny_v2r': tiny_net_v2_r,
                   'tiny_v3': tiny_net_v3,
                   'tiny_v4': tiny_net_v4,
                   'tiny_CAM': tiny_CAM_net}
