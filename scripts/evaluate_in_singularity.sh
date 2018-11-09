@@ -9,12 +9,12 @@ roscd simulation_supervised/python
 # Redo online experiments on different models
 
 
-for d in sandbox_forest sandbox_canyon canyon_sandbox canyon_forest ; do
+for d in canyon_forest sandbox_forest sandbox_canyon canyon_sandbox  ; do
   for sd in noLL LL_1 LL_10 ; do 
     echo "-------$d/$sd"
     w1="$(echo $d | cut -d _ -f 1)"
-    w2="$(echo $d | cut -d _ -f 1)"
-    python run_script.py -t LLL_doshico_final/$d/$sd/0_eva2 -pe sing -pp pilot/pilot -m LLL_doshico_final/$d/$sd/0 -w $w1 -w $w2 -p eva_params.yaml -n 10 --robot drone_sim --fsm oracle_nn_drone_fsm -e
+    w2="$(echo $d | cut -d _ -f 2)"
+    python run_script.py -t LLL_doshico_final/$d/$sd/0_eva2 -pe sing -pp pilot/pilot -m LLL_doshico_final/$d/$sd/0 -w $w1 -w $w2 -p eva_params.yaml -n 6 --robot drone_sim --fsm oracle_nn_drone_fsm -e
     sleep 60
   done
 done
