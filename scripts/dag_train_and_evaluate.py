@@ -50,16 +50,19 @@ print("\nDAG_TRAIN_AND_EVALUATE settings:")
 for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
+models=range(FLAGS.number_of_models)
+# models=[1,2]
+
 ##########################################################################################################################
 # STEP 2 For each model launch condor_offline without submitting
-for model in range(FLAGS.number_of_models):
+for model in models:
   command = "python condor_offline.py -t {0}/{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train, 1361*model+531)
   for e in others: command=" {0} {1}".format(command, e)
   save_call(command)
 
 ##########################################################################################################################
 # STEP 3 Add for each model an online condor job without submitting for evaluation/training online
-for model in range(FLAGS.number_of_models):
+for model in models:
   command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --checkpoint_path {0}/{1} --wall_time {4} --random_seed {5}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva, 1361*model+531)
   break_next = False
   for e in others: 
@@ -93,21 +96,21 @@ except OSError:
   print("Found existing log folder: {0}/{1}{2}".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
 with open(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_'),'w') as df:
   df.write("# File name: dag_file_"+FLAGS.log_tag.replace('/','_')+" \n")
-  for model in range(FLAGS.number_of_models):
+  for model in models:
     df.write("JOB m{0}_train {1}/{2}{3}/{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
     df.write("JOB m{0}_eva {1}/{2}{3}/{0}_eva/condor/online.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("JOB results {1}/{2}{3}/results/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("JOB report {1}/{2}{3}/report/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("\n")
-  for model in range(FLAGS.number_of_models):
+  for model in models:
     df.write("PARENT m{0}_train CHILD m{0}_eva\n".format(model))
   eva_jobs=""  
-  for model in range(FLAGS.number_of_models): eva_jobs="{0} m{1}_eva".format(eva_jobs, model)
+  for model in models: eva_jobs="{0} m{1}_eva".format(eva_jobs, model)
   df.write("PARENT {0} CHILD results\n".format(eva_jobs))
   df.write("PARENT results CHILD report\n")
   df.write("\n")
   if not FLAGS.dont_retry:
-    for model in range(FLAGS.number_of_models): 
+    for model in models: 
       df.write("Retry m{0}_train 2 \n".format(model))
       df.write("Retry m{0}_eva 3 \n".format(model))
     df.write("Retry results 2 \n")

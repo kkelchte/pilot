@@ -550,16 +550,8 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md",
 			"settings":
 			{
-				"buffer_size": 10674,
+				"buffer_size": 13966,
 				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "scripts/evaluate_in_singularity.sh",
-			"settings":
-			{
-				"buffer_size": 3745,
 				"line_ending": "Unix"
 			}
 		},
@@ -568,7 +560,6 @@
 			"settings":
 			{
 				"buffer_size": 41055,
-				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		}
@@ -618,19 +609,19 @@
 	],
 	"file_history":
 	[
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train_and_evaluate.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/evaluate_in_singularity.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/save_results_as_pdf.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/__init__.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/tiny_net_v2_r.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/control_mapping.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params_no_break_and_turn.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train_and_evaluate.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/offline.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-10-29_online_LLL.md",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/launch.sh",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/rosinterface.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/depth_heuristic.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params.yaml",
@@ -763,6 +754,11 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"range(FLAGS.number_of_models)",
+			"--number_of_models 1",
+			"canyon",
+			"sandbox",
+			"forest",
 			"--wall_time_train",
 			"load_config",
 			"LLL_doshico_final/forest_small_reg/0/2018-11-07_1220",
@@ -885,12 +881,7 @@
 			"copy",
 			"floor_bended",
 			"tiny",
-			"number_of_maps",
-			"data.angular.z*=aggressiveness",
-			"aggressiveness",
-			"max_time =",
-			"max_time = ",
-			"speed"
+			"number_of_maps"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -908,7 +899,7 @@
 	"groups":
 	[
 		{
-			"selected": 3,
+			"selected": 4,
 			"sheets":
 			[
 				{
@@ -938,7 +929,7 @@
 						"translation.y": 3411.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
@@ -968,7 +959,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -998,7 +989,7 @@
 						"translation.y": 1700.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -1007,15 +998,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10674,
+						"buffer_size": 13966,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7601,
-								7601
+								13642,
+								13642
 							]
 						],
 						"settings":
@@ -1023,42 +1014,14 @@
 							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 1401.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "scripts/evaluate_in_singularity.sh",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3745,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 2097.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 4,
 					"file": "scripts/launch.sh",
 					"semi_transient": false,
 					"settings":
@@ -1070,8 +1033,8 @@
 						"selection":
 						[
 							[
-								16759,
-								16759
+								20691,
+								21105
 							]
 						],
 						"settings":
@@ -1079,10 +1042,10 @@
 							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 748.0,
+						"translation.y": 1513.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -1141,6 +1104,18 @@
 		"selected_items":
 		[
 			[
+				"la",
+				"pilot/scripts/launch.sh"
+			],
+			[
+				"dag",
+				"pilot/scripts/dag_train_and_evaluate.py"
+			],
+			[
+				"eva",
+				"pilot/scripts/evaluate_in_singularity.sh"
+			],
+			[
 				"sin ev",
 				"pilot/scripts/evaluate_in_singularity.sh"
 			],
@@ -1173,10 +1148,6 @@
 				"simulation_supervised/simulation_supervised/python/eva_params_no_break_and_turn.yaml"
 			],
 			[
-				"la",
-				"pilot/scripts/launch.sh"
-			],
-			[
 				"save",
 				"pilot/scripts/save_results_as_pdf.py"
 			],
@@ -1187,10 +1158,6 @@
 			[
 				"dro si",
 				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
-			],
-			[
-				"eva",
-				"pilot/scripts/evaluate_in_singularity.sh"
 			],
 			[
 				"dag tra ",
@@ -1451,10 +1418,6 @@
 			[
 				"con of",
 				"pilot/scripts/condor_offline.py"
-			],
-			[
-				"dag",
-				"pilot/scripts/dag_train_and_evaluate.py"
 			],
 			[
 				"cle",
