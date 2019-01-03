@@ -6,7 +6,6 @@ import time
 from collections import deque
 import random
 import numpy as np
-import tensorflow as tf
 
 import argparse
 

@@ -27,7 +27,7 @@ import argparse
 FLAGS=None
 
 full_set = {}
-im_size=(128,128,3)
+im_size=(3,128,128)
 de_size = (55,74)
 
 """
@@ -48,8 +48,8 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   global FLAGS, im_size, full_set, de_size, max_key, datasetdir
   '''Load lists of tuples refering to images from which random batches can be drawn'''
   FLAGS=_FLAGS
-  random.seed(FLAGS.random_seed)
-  np.random.seed(FLAGS.random_seed)
+  # random.seed(FLAGS.random_seed)
+  # np.random.seed(FLAGS.random_seed)
 
 
   im_size=size
@@ -167,9 +167,12 @@ def load_run_info(coord, run_list, set_list, checklist):
         for num in num_imgs:
           img_file = join(run_dir,'RGB', '{0:010d}.jpg'.format(num))
           img = sio.imread(img_file)
-          scale_height = int(np.floor(img.shape[0]/im_size[0]))
-          scale_width = int(np.floor(img.shape[1]/im_size[1]))
-          img = img[::scale_height,::scale_width]
+          # for pytorch: swap channels from last to first dimension
+          img = np.swapaxes(img,1,2)
+          img = np.swapaxes(img,0,1)
+          scale_height = int(np.floor(img.shape[1]/im_size[1]))
+          scale_width = int(np.floor(img.shape[2]/im_size[2]))
+          img = img[:,::scale_height,::scale_width]
           img = sm.resize(img,im_size,mode='constant').astype(float)
           assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
           imgs.append(img)
@@ -307,8 +310,11 @@ def generate_batch(data_type):
               # print('img_file {}'.format(img_file))
               # img = Image.open(img_file)
               img = sio.imread(img_file)
-              scale_height = int(np.floor(img.shape[0]/im_size[0]))
-              scale_width = int(np.floor(img.shape[1]/im_size[1]))
+              # Swap channel dimension from first to last
+              img = np.swapaxes(img,1,2)
+              img = np.swapaxes(img,0,1)
+              scale_height = int(np.floor(img.shape[1]/im_size[1]))
+              scale_width = int(np.floor(img.shape[2]/im_size[2]))
               img = img[::scale_height,::scale_width]
               img = sm.resize(img,im_size,mode='constant').astype(float) #.astype(np.float32)
               assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
@@ -415,7 +421,7 @@ if __name__ == '__main__':
   
   FLAGS=parser.parse_args()  
 
-  prepare_data(FLAGS, (128,128,3))
+  prepare_data(FLAGS, (3,128,128))
 
   for dt in 'train', 'val', 'test':
     print("------------------------")

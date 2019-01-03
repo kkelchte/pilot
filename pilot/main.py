@@ -10,12 +10,13 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 #from lxml import etree as ET
 import xml.etree.cElementTree as ET
-import tensorflow as tf
-import tensorflow.contrib.losses as losses
-import tensorflow.contrib.slim as slim
-from tensorflow.contrib.slim.python.slim import model_analyzer as ma
-from tensorflow.python.ops import variables as tf_variables
-from tensorflow.python.ops import random_ops
+
+# import tensorflow as tf
+# import tensorflow.contrib.losses as losses
+# import tensorflow.contrib.slim as slim
+# from tensorflow.contrib.slim.python.slim import model_analyzer as ma
+# from tensorflow.python.ops import variables as tf_variables
+# from tensorflow.python.ops import random_ops
 
 
 import numpy as np
@@ -25,12 +26,13 @@ import shutil
 import time
 import signal
 import argparse
-
+import random
+import torch
+import torch.backends.cudnn as cudnn
 
 from model import Model
-import tools
 import offline
-import models.mobile_net as mobile_net
+# import models.mobile_net as mobile_net
 
 
 # ===========================
@@ -156,7 +158,7 @@ def main(_):
   #   Model Parameters
   # ===========================
   parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
-  parser.add_argument("--network",default='mobile',type=str, help="Define the type of network (anything in models folder without _net.py): mobile, mobile_nfc, alex, squeeze, ...")
+  parser.add_argument("--network",default='tiny_net',type=str, help="Define the type of network (anything in models folder without _net.py): mobile, mobile_nfc, alex, squeeze, ...")
   parser.add_argument("--output_size",default=[55,74],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
   # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
   parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
@@ -179,11 +181,11 @@ def main(_):
   # parser.add_argument("--clip_grad", default=0, type=int, help="Specify the max gradient norm: default 0 is no clipping, recommended 4.")
   parser.add_argument("--min_depth", default=0.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
   parser.add_argument("--max_depth", default=5.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
-  parser.add_argument("--optimizer", default='adadelta', type=str, help="Specify optimizer, options: adam, adadelta, gradientdescent, rmsprop")
+  parser.add_argument("--optimizer", default='Adadelta', type=str, help="Specify optimizer, options: Adadelta, SGD")
   parser.add_argument("--no_batchnorm_learning",action='store_false', help="In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
   parser.add_argument("--initializer",default='xavier',type=str, help="Define the initializer: xavier or uniform [-init_scale, init_scale]")
 
-  parser.add_argument("--loss",default='mse',type=str, help="Define the loss: mse, huber or absolute")
+  parser.add_argument("--loss",default='MSE',type=str, help="Define the loss: MSE, CrossEntropy")
 
   parser.add_argument("--max_loss", default=100, type=float, help= "Define the maximum loss before it is clipped.")
   
@@ -232,8 +234,12 @@ def main(_):
   # if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
 
   np.random.seed(FLAGS.random_seed)
-  tf.set_random_seed(FLAGS.random_seed)
-  
+  random.seed(FLAGS.random_seed)
+  torch.manual_seed(FLAGS.random_seed)
+  torch.cuda.manual_seed(FLAGS.random_seed)
+  cudnn.benchmark = False
+  cudnn.deterministic = True
+
   if FLAGS.random_learning_rate:
     FLAGS.learning_rate = 10**np.random.uniform(-2,0)
   
@@ -287,23 +293,23 @@ def main(_):
     FLAGS=load_config(FLAGS, checkpoint_path)
     
   save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
-  config=tf.ConfigProto(allow_soft_placement=True)
+  # config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
-  config.gpu_options.allow_growth = True
+  # config.gpu_options.allow_growth = True
   # config.gpu_options.per_process_gpu_memory_fraction = 0.1
 
   # config.gpu_options.allow_growth = False
-  sess = tf.Session(config=config)
-  model = Model(FLAGS, sess)
-  writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
-  model.writer = writer
+  # sess = tf.Session(config=config)
+  model = Model(FLAGS)
+  # writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
+  # model.writer = writer
   
   def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')
     print('saving checkpoints')
     model.save(FLAGS.summary_dir+FLAGS.log_tag)
-    sess.close()
+    # sess.close()
     print('done.')
     sys.exit(0)
   signal.signal(signal.SIGINT, signal_handler)
@@ -319,7 +325,7 @@ def main(_):
           signal.pause()
         except Exception as e:
           print('! EXCEPTION: ',e)
-          sess.close()
+          # sess.close()
           print('done')
           sys.exit(0)
   else:
@@ -328,4 +334,5 @@ def main(_):
   
     
 if __name__ == '__main__':
-  tf.app.run() 
+  # execute only if run as the entry point into the program
+  main('')

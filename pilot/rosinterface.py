@@ -10,7 +10,6 @@ from os import path
 from tf import transformations
 
 from cv_bridge import CvBridge, CvBridgeError
-import tensorflow as tf
 
 bridge = CvBridge()
 
