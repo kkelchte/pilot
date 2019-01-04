@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 class Net(nn.Module):
 
-  def __init__(self, output_size = 10):
+  def __init__(self, output_size = 10, pretrained=False):
     super(Net, self).__init__()
     self.default_image_size=[3,128,128]
     # first define convolutional and linear operators
@@ -25,7 +25,7 @@ class Net(nn.Module):
     self.fc2 = nn.Linear(1024, output_size)
 
     
-  def forward(self, x, verbose=False):
+  def forward(self, x, train=False, verbose=False):
     # second: combine different operators in a forward pass.
     # Max pooling over a (2, 2) window
     if verbose: print x.size()

@@ -216,9 +216,12 @@ executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/py
 command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,FLAGS.python_script)
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
-# command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
-FLAGS.log_tag=FLAGS.log_tag+'/'+time.strftime("%Y-%m-%d_%I%M")
-command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
+
+# ----- CHANGED 04/01
+command="{0} --log_tag {1} ".format(command, FLAGS.log_tag) 
+# FLAGS.log_tag=FLAGS.log_tag+'/'+time.strftime("%Y-%m-%d_%I%M")
+# ----- CHANGED 04/01
+
 for e in others: command=" {0} {1}".format(command, e)
 print("Command: {0}".format(command))
 executable.write("{0}\n".format(command))

@@ -8,8 +8,6 @@ import warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
-#from lxml import etree as ET
-import xml.etree.cElementTree as ET
 
 # import tensorflow as tf
 # import tensorflow.contrib.losses as losses
@@ -32,67 +30,11 @@ import torch.backends.cudnn as cudnn
 
 from model import Model
 import offline
+
+import tools
 # import models.mobile_net as mobile_net
 
 
-# ===========================
-#   Save settings
-# ===========================
-def save_config(FLAGS, logfolder, file_name = "configuration"):
-  """
-  save all the FLAG values in a config file / xml file
-  """
-  print("Save configuration to: {}".format(logfolder))
-  root = ET.Element("conf")
-  flg = ET.SubElement(root, "flags")
-  
-  flags_dict=FLAGS.__dict__
-  for f in sorted(flags_dict.keys()):
-    # print f, flags_dict[f]
-    e = ET.SubElement(flg, f, name=f) 
-    e.text = str(flags_dict[f])
-    e.tail = "\n  "
-  tree = ET.ElementTree(root)
-  tree.write(os.path.join(logfolder,file_name+".xml"), encoding="us-ascii", xml_declaration=True, method="xml")
-
-# ===========================
-#   Load settings
-# ===========================
-def load_config(FLAGS, modelfolder, file_name = "configuration"):
-  """
-  save all the FLAG values in a config file / xml file
-  """
-  print("Load configuration from: ", modelfolder)
-  tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['auxiliary_depth', 'discrete']
-  intlist=['n_frames', 'num_outputs']
-  floatlist=['depth_multiplier','speed','action_bound']
-  stringlist=['network', 'data_format']
-  for child in tree.getroot().find('flags'):
-    try :
-      if child.attrib['name'] in boollist:
-        FLAGS.__setattr__(child.attrib['name'], child.text=='True')
-        print 'set:', child.attrib['name'], child.text=='True'
-      elif child.attrib['name'] in intlist:
-        FLAGS.__setattr__(child.attrib['name'], int(child.text))
-        print 'set:', child.attrib['name'], int(child.text)
-      elif child.attrib['name'] in floatlist:
-        FLAGS.__setattr__(child.attrib['name'], float(child.text))
-        print 'set:', child.attrib['name'], float(child.text)
-      elif child.attrib['name'] in stringlist:
-        # Temporary hack to load models from doshico
-        # if not FLAGS.network != 'mobile_nfc': 
-        FLAGS.__setattr__(child.attrib['name'], str(child.text))
-        print 'set:', child.attrib['name'], str(child.text)
-      # Temporary hack to load models from doshico
-      elif child.attrib['name'] == 'n_fc':
-        FLAGS.network='mobile_nfc'
-        print 'set: network to mobile_nfc'
-    except : 
-      print 'couldnt set:', child.attrib['name'], child.text
-      pass
-
-  return FLAGS
 
 # Use the main method for starting the training procedure and closing it in the end.
 def main(_):
@@ -131,7 +73,7 @@ def main(_):
   parser.add_argument("--verbose", action='store_false', help="Print output of ros verbose or not.")
   parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries.")
   parser.add_argument("-t","--log_tag", default='testing', type=str, help="Add log_tag to overcome overwriting of other log files.")
-  parser.add_argument("--device", default='/gpu:0', type=str, help= "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
+  parser.add_argument("--device", default='gpu', type=str, help= "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--owr", action='store_true', help="Overwrite existing logfolder when it is not testing.")
   parser.add_argument("--action_bound", default=1.0, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
@@ -160,6 +102,7 @@ def main(_):
   parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
   parser.add_argument("--network",default='tiny_net',type=str, help="Define the type of network (anything in models folder without _net.py): mobile, mobile_nfc, alex, squeeze, ...")
   parser.add_argument("--output_size",default=[55,74],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
+  parser.add_argument("--pretrained", action='store_true',help="Specify whether the network should be loaded with imagenet pretrained features.")
   # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
   parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
   parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
@@ -167,9 +110,9 @@ def main(_):
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   
   # INITIALIZATION
-  parser.add_argument("--checkpoint_path",default='mobilenet_025', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
+  parser.add_argument("--checkpoint_path",default='', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
   parser.add_argument("--continue_training",action='store_true', help="Continue training of the prediction layers. If false, initialize the prediction layers randomly.")
-  parser.add_argument("--scratch", action='store_true', help="Initialize full network randomly.")
+  # parser.add_argument("--scratch", action='store_true', help="Initialize full network randomly.")
 
   # TRAINING
   parser.add_argument("--depth_weight", default=1.0, type=float, help="Define the weight applied to the depth values in the loss relative to the control loss.")
@@ -197,6 +140,8 @@ def main(_):
 
   parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, state/action/target_variance, random_action")
   parser.add_argument("--prioritized_keeping", action='store_true', help="In case of True, the replay buffer only keeps replay data that is most likely to be sampled.")
+  parser.add_argument("--hard_replay_buffer", action='store_true', help="Add a replaybuffer with the hardest examples (according to the loss).")
+  parser.add_argument("--hard_batch_size", default=100, type=int, help="Define the amount of data in one batch coming from a hard replay buffer.")
 
   # ===========================
   #   Rosinterface Parameters
@@ -214,7 +159,10 @@ def main(_):
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
-  
+  parser.add_argument("--max_gradient_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
+  parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
+  parser.add_argument("--max_batch_size", default=100, type=int, help="Define the max size of the batch (only if batch_size is -1).")
+
   parser.add_argument("--break_and_turn", action='store_true', help="In case the robot should turn at zero forward speed by breaking.")
 
   parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
@@ -226,6 +174,7 @@ def main(_):
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings")
 
 
+  
   # FLAGS=parser.parse_args()
   try:
     FLAGS, others = parser.parse_known_args()
@@ -243,56 +192,60 @@ def main(_):
   if FLAGS.random_learning_rate:
     FLAGS.learning_rate = 10**np.random.uniform(-2,0)
   
-  FLAGS.summary_dir = os.path.join(os.getenv('HOME'),FLAGS.summary_dir)
-  print("summary dir: {}".format(FLAGS.summary_dir))
-  
-  start_ep=0 # used in case a model is found with same log_tag meaning that a job disconnected on condor and model can continue training.
+  # Create absolute paths where necessary
+  if FLAGS.summary_dir[0] != '/': FLAGS.summary_dir = os.path.join(os.getenv('HOME'),FLAGS.summary_dir)
+  if len(FLAGS.checkpoint_path) != 0 and FLAGS.checkpoint_path[0] != '/': FLAGS.checkpoint_path = os.path.join(FLAGS.summary_dir, FLAGS.checkpoint_path) 
   
   #Check log folders and if necessary remove:
+  # REMOVE 
   if FLAGS.log_tag == 'testing' or FLAGS.owr:
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
       shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
+  # SEARCH FOR PREVIOUS RUN
   elif not FLAGS.continue_training : # in case we are training from scratch/checkpoint and not evaluating
-    # check if previous run is there
-    found_previous_run=False
-    if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
-      found_previous_run=True
-      previous_run = FLAGS.summary_dir+FLAGS.log_tag
-    elif FLAGS.log_tag.split('/')[-1].startswith('2018'): # In case the last part of the log_tag is a date (running on condor)
+    found_previous_run=os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag)
+    previous_run = FLAGS.summary_dir+FLAGS.log_tag
+
+    # TO BECOME OBSOLETE AFTER DATE TAG IS TAKEN OUT OF CONDOR (!) 
+    # In case the last part of the log_tag is a date (running on condor)  
+    if FLAGS.log_tag.split('/')[-1].startswith('2018'): 
       run_dir=os.path.dirname(FLAGS.summary_dir+FLAGS.log_tag)
       previous_runs = sorted([run_dir+'/'+d for d in os.listdir(run_dir) if os.path.isdir(run_dir+'/'+d) and d.startswith('2018')])
       found_previous_run = len(previous_runs) >= 1
       if found_previous_run: 
         previous_run = previous_runs[-1] 
     
-    if found_previous_run:
-      # extract previous run
-      checkpoints=[fs for fs in os.listdir(previous_run) if fs.endswith('.meta')]
-      if os.path.isfile(previous_run+'/checkpoint') and os.path.isfile(previous_run+'/configuration.xml'): 
-        # if a checkpoint is found in current folder, use this folder as checkpoint path.
-        #raise NameError( 'Logfolder already exists, overwriting alert: '+ previous_run )
-        FLAGS.load_config = True
-        FLAGS.scratch = False
-        FLAGS.continue_training = True
-        FLAGS.checkpoint_path = previous_run[len(FLAGS.summary_dir):] #cut off summary_dir to get previous log_tag
-        checkpoint_model=open(previous_run+'/checkpoint').readlines()[0]
-        start_ep=int(int(checkpoint_model.split('-')[-1][:-2])/100)
-        print("Found model: {0} trained for {1} episodes in {2}".format(FLAGS.log_tag,start_ep, previous_run))
-      else:
-        shutil.rmtree(previous_run,ignore_errors=False)
+    # if found_previous_run:
+    # TODO: How to load previous model...
+          
+    # if found_previous_run:
+    #   # extract previous run
+    #   checkpoints=[fs for fs in os.listdir(previous_run) if fs.endswith('.meta')]
+    #   if os.path.isfile(previous_run+'/checkpoint') and os.path.isfile(previous_run+'/configuration.xml'): 
+    #     # if a checkpoint is found in current folder, use this folder as checkpoint path.
+    #     #raise NameError( 'Logfolder already exists, overwriting alert: '+ previous_run )
+    #     FLAGS.load_config = True
+    #     FLAGS.scratch = False
+    #     FLAGS.continue_training = True
+    #     FLAGS.checkpoint_path = previous_run[len(FLAGS.summary_dir):] #cut off summary_dir to get previous log_tag
+    #     checkpoint_model=open(previous_run+'/checkpoint').readlines()[0]
+    #     start_ep=int(int(checkpoint_model.split('-')[-1][:-2])/100)
+    #     print("Found model: {0} trained for {1} episodes in {2}".format(FLAGS.log_tag,start_ep, previous_run))
+    #   else:
+    #     shutil.rmtree(previous_run,ignore_errors=False)
   if not os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag): 
     os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
     
   if FLAGS.load_config:
-    checkpoint_path = FLAGS.checkpoint_path
-    if checkpoint_path[0]!='/': checkpoint_path = os.path.join(os.getenv('HOME'),'tensorflow/log',checkpoint_path)
-    if not os.path.isfile(checkpoint_path+'/checkpoint'):
-      checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/checkpoint')][-1]
-    if not os.path.isfile(checkpoint_path+'/configuration.xml'):
-      checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/configuration.xml')][-1]
-    FLAGS=load_config(FLAGS, checkpoint_path)
+    # checkpoint_path = FLAGS.checkpoint_path
+    # if checkpoint_path[0]!='/': checkpoint_path = os.path.join(os.getenv('HOME'),'tensorflow/log',checkpoint_path)
+    # if not os.path.isfile(checkpoint_path+'/checkpoint'):
+    #   checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/checkpoint')][-1]
+    # if not os.path.isfile(checkpoint_path+'/configuration.xml'):
+    #   checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/configuration.xml')][-1]
+    FLAGS=tools.load_config(FLAGS, FLAGS.checkpoint_path)
     
-  save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
+  tools.save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
   # config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
   # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
@@ -306,17 +259,16 @@ def main(_):
   # model.writer = writer
   
   def signal_handler(signal, frame):
-    print('You pressed Ctrl+C!')
-    print('saving checkpoints')
+    print('[main] You pressed Ctrl+C! Saving checkpoints')
     model.save(FLAGS.summary_dir+FLAGS.log_tag)
     # sess.close()
-    print('done.')
     sys.exit(0)
+
   signal.signal(signal.SIGINT, signal_handler)
-  print('------------Press Ctrl+C to end the learning') 
+  print('[main]------------Press Ctrl+C to end the learning') 
   
   if FLAGS.online: # online training/evaluating
-    print('Online training.')
+    print('[main] Online training.')
     import rosinterface
     rosnode = rosinterface.PilotNode(FLAGS, model, FLAGS.summary_dir+FLAGS.log_tag)
     while True:
@@ -329,8 +281,8 @@ def main(_):
           print('done')
           sys.exit(0)
   else:
-    print('Offline training.')
-    offline.run(FLAGS,model,start_ep)
+    print('[main] Offline training.')
+    offline.run(FLAGS,model)
   
     
 if __name__ == '__main__':

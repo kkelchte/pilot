@@ -103,7 +103,7 @@ def load_set(data_type):
   with multiple threads. In case of --load_data_in_ram, the imgs and depths are loaded as well.
   """
   if not os.path.exists(join(datasetdir, data_type+'_set.txt')):
-    print('Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
+    print('[data] Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
     return []
   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
   run_list = [ l.strip() for l in f.readlines() if len(l) > 2]
@@ -128,7 +128,7 @@ def load_run_info(coord, run_list, set_list, checklist):
   while not coord.should_stop():
     try:
       run_dir = run_list.pop()
-      print run_dir
+      print("[data] {0}".format(os.path.basename(run_dir)))
       # get list of all image numbers available in listdir
       imgs_jpg=[f for f in listdir(join(run_dir,'RGB')) if not f.startswith('.')]
       num_imgs=sorted([int(im[0:-4]) for im in imgs_jpg[::FLAGS.subsample]])

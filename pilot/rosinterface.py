@@ -66,8 +66,7 @@ class PilotNode(object):
     if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
     self.action_pub=rospy.Publisher('/nn_vel', Twist, queue_size=1)
 
-    self.model.reset_metrics()
-
+    
     rospy.Subscriber('/nn_start', Empty, self.ready_callback)
     rospy.Subscriber('/nn_stop', Empty, self.finished_callback)
 
@@ -96,19 +95,25 @@ class PilotNode(object):
         rospy.Subscriber(depth_topic, LaserScan, self.scan_depth_callback)
       else:
         rospy.Subscriber(depth_topic, Image, self.depth_callback)
-    if not self.FLAGS.real: # initialize the replay buffer
-      self.replay_buffer = ReplayBuffer(self.FLAGS, self.FLAGS.random_seed)
-      self.accumloss = 0
-      if rospy.has_param('gt_info'):
-        rospy.Subscriber(rospy.get_param('gt_info'), Odometry, self.gt_callback)
+    
+    self.replay_buffer = ReplayBuffer(self.FLAGS.buffer_size, self.FLAGS.random_seed)
+    if self.FLAGS.hard_replay_buffer:
+      self.hard_replay_buffer = ReplayBuffer(self.FLAGS.hard_batch_size, self.FLAGS.random_seed)
+      
+    self.accumloss = 0
+    if rospy.has_param('gt_info'):
+      rospy.Subscriber(rospy.get_param('gt_info'), Odometry, self.gt_callback)
 
     # Add some lines to debug delays:
     self.time_im_received=[]
     self.time_ctr_send=[]
 
     rospy.init_node('pilot', anonymous=True)  
-    
-       
+  
+  #--------------------------------
+  # Callbacks
+  #--------------------------------
+
   def ready_callback(self,msg):
     """ callback function that makes DNN policy starts the ready flag is set on 1 (for 3s)"""
     if not self.ready and self.finished:
@@ -157,8 +162,7 @@ class PilotNode(object):
       print(e)
     else:
       img = img[::2,::5,:]
-      size = self.model.input_size[1:]
-      img = sm.resize(img,size,mode='constant').astype(float)
+      img = sm.resize(img,self.model.input_size,mode='constant').astype(float)
       return img
 
   def process_rgb_compressed(self, msg):
@@ -171,8 +175,7 @@ class PilotNode(object):
     else:
       # 308x410 to 128x128
       img = img[::2,::3,:]
-      size = self.model.input_size[1:]
-      img = sm.resize(img,size,mode='constant').astype(float)
+      img = sm.resize(img,self.model.input_size,mode='constant').astype(float)
       return img
 
   def process_depth(self, msg):
@@ -246,93 +249,7 @@ class PilotNode(object):
       if len(self.depth_prediction) != 0:
         # print("pred: {0} trg: {1}".format(self.depth_prediction, self.depth))
         self.depth_loss.append(np.mean((self.depth_prediction - self.depth.flatten())**2))
-
-  def process_input(self, im):
-    """Process the inputs: images, targets, auxiliary tasks
-      Predict control based on the inputs.
-      Plot auxiliary predictions.
-      Fill replay buffer.
-    """
-    # skip a number of frames to lower the actual control rate
-    # independently of the image frame rate
-    if self.skip_frames != 0:
-      self.img_index+=1
-      if self.img_index % (self.skip_frames+1) != 0:
-        return
-
-    aux_depth=[] # variable to keep predicted depth 
-    trgt = -100.
-    inpt=im
-    
-    if self.FLAGS.evaluate: ### EVALUATE
-      trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
-      trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-      control, aux_results = self.model.forward([inpt], auxdepth= not self.FLAGS.dont_show_depth,targets=trgt, depth_targets=trgt_depth)
-      if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth and len(aux_results)>0: aux_depth = aux_results['d']
-    else: ###TRAINING
-      # Get necessary labels, if label is missing wait...
-      def check_field(target_name):
-        if len (target_name) == 0:
-          # print('Waiting for target {}'.format(target_name))
-          return False
-        else:
-          return True
-      if not check_field(self.target_control): return
-      else: 
-        trgt = self.target_control[5]
-      if self.FLAGS.auxiliary_depth:
-        if not check_field(self.target_depth): 
-          return
-        else: 
-          trgt_depth = copy.deepcopy(self.target_depth)
-      control, aux_results = self.model.forward([inpt], auxdepth=not self.FLAGS.dont_show_depth)
-      if not self.FLAGS.dont_show_depth and self.FLAGS.auxiliary_depth: aux_depth = aux_results['d']
-    
-    ### SEND CONTROL
-    control = control[0]
-    # print control
-    if trgt != -100 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
-      action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
-    else:
-      action = control
-    msg = Twist()
-    msg.linear.x = self.FLAGS.speed 
-    if self.FLAGS.noise == 'ou':
-      noise = self.exploration_noise.noise()
-      msg.linear.y = (not self.FLAGS.evaluate)*noise[1]*self.FLAGS.sigma_y
-      msg.linear.z = (not self.FLAGS.evaluate)*noise[2]*self.FLAGS.sigma_z
-      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))
-    elif self.FLAGS.noise == 'uni':
-      # msg.linear.x = self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
-      msg.linear.y = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_y, self.FLAGS.sigma_y)
-      msg.linear.z = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_z, self.FLAGS.sigma_z)
-      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
-    else:
-      raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
-    # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
-    if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: msg.linear.x = 0. + np.random.binomial(1, 0.1)
-
-    self.action_pub.publish(msg)
-    self.time_ctr_send.append(time.time())
-
-    ### keep track of imitation loss on the fly
-    if len(self.target_control) != 0:
-      self.imitation_loss.append((self.target_control[5]-action)**2)
-
-    if not self.FLAGS.dont_show_depth and len(aux_depth) != 0 and not self.finished:
-      aux_depth = aux_depth.flatten()
-      self.depth_pub.publish(aux_depth)
-      aux_depth = []
-      
-    # ADD EXPERIENCE REPLAY
-    if not self.FLAGS.evaluate and trgt != -100:
-      experience={'state':im,
-                  'action':action,
-                  'trgt':trgt}
-      if self.FLAGS.auxiliary_depth: experience['target_depth']=trgt_depth
-      self.replay_buffer.add(experience)
-      # print("added experience: {0} vs {1}".format(action, trgt))
-
+  
   def supervised_callback(self, data):
     """Get target control from the /supervised_vel node"""
     # print 'received control'
@@ -344,7 +261,7 @@ class PilotNode(object):
       data.angular.x,
       data.angular.y,
       data.angular.z]
-      
+
   def finished_callback(self,msg):
     """When run is finished:
         sample 10 batches from the replay buffer,
@@ -360,113 +277,268 @@ class PilotNode(object):
         self.driving_duration = rospy.get_time() - self.start_time
 
       
-      # Train model from experience replay:
-      # Train the model with batchnormalization out of the image callback loop
-      depth_predictions = []
-      losses_train = {}
-      if self.replay_buffer.size()>self.FLAGS.batch_size and not self.FLAGS.evaluate:
-        for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)):
-          inputs, targets, aux_info = self.replay_buffer.sample_batch(self.FLAGS.batch_size)
-          if b==0:
-            if self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:
-              depth_predictions = tools.plot_depth(inputs, aux_info['target_depth'].reshape(-1,55,74))
-          depth_targets=[]
-          if self.FLAGS.auxiliary_depth: 
-            depth_targets=aux_info['target_depth'].reshape(-1,55,74)
-          losses = self.model.backward(inputs,targets[:].reshape(-1,1),depth_targets)
-          for k in losses.keys(): 
-            try:
-              losses_train[k].append(losses[k])
-            except:
-              losses_train[k]=[losses[k]]
-      
-      # Gather all info to build a proper summary and string of results
-      k='train' if not self.FLAGS.evaluate else 'test'
-      self.average_distances[k]= self.average_distances[k]-self.average_distances[k]/(self.runs[k]+1)
-      self.average_distances[k] = self.average_distances[k]+self.current_distance/(self.runs[k]+1)
-      self.runs[k]+=1
-      sumvar={}
-      result_string='{0}: run {1}'.format(time.strftime('%H:%M'),self.runs[k])
-      vals={'current':self.current_distance, 'furthest':self.furthest_point}
-      for d in ['current', 'furthest']:
-        name='Distance_{0}_{1}'.format(d,'train' if not self.FLAGS.evaluate else 'test')
-        if len(self.world_name)!=0: name='{0}_{1}'.format(name,self.world_name)
-        sumvar[name]=vals[d]
-        result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
-      for k in losses_train.keys():
-        name={'total':'Loss_train_total'}
-        sumvar[name[k]]=np.mean(losses_train[k])
-        result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
-      
-      # get all metrics of this episode and add them to var
-      results = self.model.get_metrics()
-      for k in results.keys(): 
-        sumvar[k] = results[k]
-        result_string='{0}, {1}:{2}'.format(result_string, k, results[k])
-      
-      if self.FLAGS.plot_depth and self.FLAGS.auxiliary_depth:
-        sumvar["depth_predictions"]=depth_predictions
-      # add driving duration (collision free)
-      if self.driving_duration != -1: 
-        result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)
-        sumvar['driving_time']=self.driving_duration
-      # add imitation loss
-      if len(self.imitation_loss)!=0:
-        result_string='{0}, imitation_loss: {1:0.3}'.format(result_string, np.mean(self.imitation_loss))
-        sumvar['imitation_loss']=np.mean(self.imitation_loss)
-      # add depth loss
-      if len(self.depth_loss)!=0:
-        result_string='{0}, depth_loss: {1:0.3f}, depth_loss_var: {2:0.3f}'.format(result_string, np.mean(self.depth_loss), np.var(self.depth_loss))
-        sumvar['depth_loss']=np.mean(self.depth_loss)
-      if len(self.time_ctr_send) > 10 and len(self.time_im_received) > 10:
-        # calculate control-rates and rgb-rates from differences
-        avg_ctr_rate = 1/np.mean([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
-        std_ctr_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
-        avg_im_rate = 1/np.mean([self.time_im_received[i+1]-self.time_im_received[i] for i in range(1,len(self.time_im_received)-1)]) #skip first image delay as network still needs to 'startup'
-        std_im_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
-
-        result_string='{0}, control_rate: {1:0.3f}, image_rate: {2:0.3f} , control_delay_std: {1:0.3f}, image_delay_std: {2:0.3f} '.format(result_string, avg_ctr_rate, avg_im_rate, std_ctr_delays, std_im_delays)
-      try:
-        self.model.summarize(sumvar)
-      except Exception as e:
-        print('failed to write', e)
-        pass
+      if self.replay_buffer.size()>=self.FLAGS.batch_size and not self.FLAGS.evaluate:
+        losses_train, depth_predictions = self.train_model()
+        self.save_summary(losses_train, depth_predictions)
       else:
-        print(result_string)
-      # ! Note: tf_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts
-      # Script starts next run once this file is updated.
-      try:
-        f=open(os.path.join(self.logfolder,'tf_log'),'a')
-        f.write(result_string)
-        f.write('\n')
-        f.close()
-      except Exception as e:
-        print('failed to write txt tf_log {}'.format(e))
-        print('retry after sleep 60')
-        time.sleep(60)
-        f=open(os.path.join(self.logfolder,'tf_log'),'a')
-        f.write(result_string)
-        f.write('\n')
-        f.close()
-      # self.accumlosses = {}
-      self.current_distance = 0
-      self.last_pose = []
-      self.nfc_images = []
-      self.furthest_point = 0
-      self.world_name = ''
-      if self.runs['train']%20==0 and not self.FLAGS.evaluate:
-        # Save a checkpoint every 20 runs.
-        self.model.save(self.logfolder)
-        print('model saved [run {0}]'.format(self.runs['train']))
-      self.time_im_received=[]
-      self.time_ctr_send=[]
+        self.save_summary()
 
-      self.model.reset_metrics()
+      self.reset_variables()  
+
+  #--------------------------------
+  # Extra functions
+  #--------------------------------
+  
+  def process_input(self, im):
+    """Process the inputs: images, targets, auxiliary tasks
+      Predict control based on the inputs.
+      Plot auxiliary predictions.
+      Fill replay buffer.
+    """
+    # skip a number of frames to lower the actual control rate
+    # independently of the image frame rate
+    if self.skip_frames != 0:
+      self.img_index+=1
+      if self.img_index % (self.skip_frames+1) != 0:
+        return
+
+    aux_depth=[] # variable to keep predicted depth 
+    trgt = []
+    
+    # Evaluate the input in your network
+    trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
+    trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
+    control, losses = self.model.predict(np.array([im]), targets=trgt)
+    
+    ### SEND CONTROL
+    control = control[0]
+    
+    # POLICY MIXING
+    if len(trgt) != 0 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
+      action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
+    else:
+      action = control
+    
+    msg = Twist()
+
+    # Epsilon-Exploration with exponential decay
+    epsilon=self.FLAGS.epsilon*np.exp(-self.runs['train']*self.FLAGS.epsilon_decay)
+    
+    if self.FLAGS.noise == 'ou':
+      noise = self.exploration_noise.noise()
+      # exploration noise
+      if epsilon > 10**-2 and not self.FLAGS.evaluate: 
+        action = noise[3]*self.FLAGS.action_bound if np.random.binomial(1, epsilon) else action
+      # general distortion
+      msg.linear.y = (not self.FLAGS.evaluate)*noise[1]*self.FLAGS.sigma_y
+      msg.linear.z = (not self.FLAGS.evaluate)*noise[2]*self.FLAGS.sigma_z
+      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))    
+    elif self.FLAGS.noise == 'uni':
+      # exploration noise
+      if epsilon  > 10**-2 and not self.FLAGS.evaluate: 
+        action = np.random.uniform(-self.FLAGS.action_bound, self.FLAGS.action_bound) if np.random.binomial(1, epsilon) else action
+      # general distortion
+      # msg.linear.x = self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
+      msg.linear.y = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_y, self.FLAGS.sigma_y)
+      msg.linear.z = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_z, self.FLAGS.sigma_z)
+      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
+    else:
+      raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
+    
+    # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
+    if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: 
+      msg.linear.x = 0. + self.FLAGS.speed*np.random.binomial(1, 0.1)
+    else:
+      msg.linear.x = self.FLAGS.speed
+
+    self.action_pub.publish(msg)
+    self.time_ctr_send.append(time.time())
+
+    ### keep track of imitation loss on the fly
+    if len(self.target_control) != 0:
+      self.imitation_loss.append((self.target_control[5]-action)**2)
+
+    if not self.FLAGS.dont_show_depth and len(aux_depth) != 0 and not self.finished:
+      aux_depth = aux_depth.flatten()
+      self.depth_pub.publish(aux_depth)
+      aux_depth = []
       
-      self.start_time=0
-      self.imitation_loss=[]
-      self.depth_loss=[]
-      self.driving_duration=-1
-      self.img_index=0    
-      self.fsm_index = 0          
+    # ADD EXPERIENCE REPLAY
+    if not self.FLAGS.evaluate and trgt != -100 and not self.finished and len(trgt) != 0:
+      experience={'state':im,
+                  'action':action,
+                  'trgt':trgt}
+      if self.FLAGS.auxiliary_depth: experience['target_depth']=trgt_depth
+      self.replay_buffer.add(experience)
+      # print("added experience: {0} vs {1}".format(action, trgt))
 
+  def backward_step_model(self, inputs, targets, aux_info, losses_train, depth_predictions):
+    """Apply gradient step with a backward pass
+    """
+    # in case the batch size is -1 the full replay buffer is send back 
+    if len(inputs) != 0 and len(targets) != 0:
+      losses = self.model.train(inputs,targets[:].reshape(-1,1))
+      for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
+    else:
+      print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
+    return losses_train, depth_predictions
+
+  def update_importance_weights(self):
+    """Update the importance weights on ALL data in the replay buffer
+    """
+    # get full replay buffer to calculate new importance weights
+    inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)
+
+    # Possible extension: if hard replay buffer combine the two datasets...
+
+    if len(inputs) == 0 or len(targets) == 0: 
+      print("Nothing in replay buffer, so nothing to update.")
+      return
+    self.model.update_importance_weights(inputs)
+    # update star variables
+    if self.FLAGS.lifelonglearning:
+      self.model.sess.run([tf.assign(self.model.star_variables[v.name], v) for v in self.model.copied_trainable_variables])
+  
+  def train_model(self):
+    """Sample a batch from the replay buffer and train on it
+    """
+    # Train model from experience replay:
+    # Train the model with batchnormalization out of the image callback loop
+    depth_predictions = []
+    losses_train = {}
+    
+    # get full replay buffer to take one gradient step
+    if self.FLAGS.buffer_size == -1 and self.FLAGS.batch_size == -1:
+      inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)
+      if len(inputs) == 0: 
+        return losses_train, depth_predictions
+      
+      # if there is a hard replay buffer that is full, use it for your batch
+      if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
+        print("inputs: {}".format(inputs.shape))
+        hard_inputs, hard_targets, hard_aux_info = self.hard_replay_buffer.get_all_data(self.FLAGS.hard_batch_size)
+        print("hardinputs: {}".format(hard_inputs.shape))
+        inputs = np.concatenate([inputs, hard_inputs], axis=0)
+        targets = np.concatenate([targets, hard_targets], axis=0)
+        # aux_info = np.concatenate([aux_info, hard_aux_info], axis=0)
+        print("inputs: {}".format(inputs.shape))
+        print("targets: {}".format(targets.shape))
+
+      losses_train, depth_predictions = self.backward_step_model(inputs, targets, [], losses_train, depth_predictions)
+      
+      # in case there is a hard replay buffer: fill it with the hardest examples over the inputs
+      if self.FLAGS.hard_replay_buffer and len(losses_train.keys()) != 0:
+        assert(len(list(losses_train['ce'][0]))==len(list(inputs)))
+        assert(len(list(losses_train['ce'][0]))==len(list(targets)))
+        sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train['ce'][0]), inputs.tolist())))]
+        sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['ce'][0]), targets.tolist())))]
+        # as all data in hard buffer was in batch we can clear the hard buffer totally
+        self.hard_replay_buffer.clear()
+        # and gradually add it with the hardest experiences till it is full.
+        for e in range(min(self.FLAGS.hard_batch_size, len(sorted_inputs))):
+          experience={'state':sorted_inputs[e],
+                  'action':None,
+                  'trgt':sorted_targets[e],
+                  'priority':losses_train['ce'][0][e]} 
+          self.hard_replay_buffer.add(experience)
+    else:
+      # go over all data in the replay buffer over different batches
+      # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)):
+      for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), self.FLAGS.max_gradient_steps)):
+        inputs, targets, aux_info = self.replay_buffer.sample_batch(self.FLAGS.batch_size)
+        losses_train, depth_predictions = self.backward_step_model(inputs, targets, aux_info, losses_train, depth_predictions)
+
+    return losses_train, depth_predictions
+
+  def reset_variables(self):
+    """After each roll out some field variables should be reset.
+    They are collected here.
+    """    
+    # self.accumlosses = {}
+    self.current_distance = 0
+    self.last_pose = []
+    self.nfc_images = []
+    self.furthest_point = 0
+    self.world_name = ''
+    if self.runs['train']%20==0 and not self.FLAGS.evaluate:
+      # Save a checkpoint every 20 runs.
+      self.model.save(self.logfolder)
+      print('model saved [run {0}]'.format(self.runs['train']))
+    self.time_im_received=[]
+    self.time_ctr_send=[]
+    
+    self.start_time=0
+    self.imitation_loss=[]
+    self.depth_loss=[]
+    self.driving_duration=-1
+    self.img_index=0    
+    self.fsm_index = 0
+
+    if self.FLAGS.empty_buffer: self.replay_buffer.clear()    
+
+  def save_summary(self, losses_train={}, depth_predictions=[]):
+    """Collect all field variables and save them for visualization in tensorboard
+    """
+    # Gather all info to build a proper summary and string of results
+    k='train' if not self.FLAGS.evaluate else 'test'
+    self.average_distances[k]= self.average_distances[k]-self.average_distances[k]/(self.runs[k]+1)
+    self.average_distances[k] = self.average_distances[k]+self.current_distance/(self.runs[k]+1)
+    self.runs[k]+=1
+    sumvar={}
+    result_string='{0}: run {1}'.format(time.strftime('%H:%M'),self.runs[k])
+    vals={'current':self.current_distance, 'furthest':self.furthest_point}
+    for d in ['current', 'furthest']:
+      name='Distance_{0}_{1}'.format(d,'train' if not self.FLAGS.evaluate else 'test')
+      if len(self.world_name)!=0: name='{0}_{1}'.format(name,self.world_name)
+      sumvar[name]=vals[d]
+      result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
+    for k in losses_train.keys():
+      name={'total':'Loss_train_total'}
+      name['ce']='Loss_train_ce'
+      # for lll_k in self.model.lll_losses.keys():
+      #   name['lll_'+lll_k]='Loss_train_lll_'+lll_k
+      sumvar[name[k]]=np.mean(losses_train[k])
+      result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
+    
+    
+    # add driving duration (collision free)
+    if self.driving_duration != -1: 
+      result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)
+      sumvar['driving_time']=self.driving_duration
+    # add imitation loss
+    if len(self.imitation_loss)!=0:
+      result_string='{0}, imitation_loss: {1:0.3}'.format(result_string, np.mean(self.imitation_loss))
+      sumvar['imitation_loss']=np.mean(self.imitation_loss)
+    # add depth loss
+    if len(self.depth_loss)!=0:
+      result_string='{0}, depth_loss: {1:0.3f}, depth_loss_var: {2:0.3f}'.format(result_string, np.mean(self.depth_loss), np.var(self.depth_loss))
+      sumvar['depth_loss']=np.mean(self.depth_loss)
+    if len(self.time_ctr_send) > 10 and len(self.time_im_received) > 10:
+      # calculate control-rates and rgb-rates from differences
+      avg_ctr_rate = 1/np.mean([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
+      std_ctr_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
+      avg_im_rate = 1/np.mean([self.time_im_received[i+1]-self.time_im_received[i] for i in range(1,len(self.time_im_received)-1)]) #skip first image delay as network still needs to 'startup'
+      std_im_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
+
+      result_string='{0}, control_rate: {1:0.3f}, image_rate: {2:0.3f} , control_delay_std: {1:0.3f}, image_delay_std: {2:0.3f} '.format(result_string, avg_ctr_rate, avg_im_rate, std_ctr_delays, std_im_delays)
+    # try:
+    #   self.model.summarize(sumvar)
+    # except Exception as e:
+    #   print('failed to write', e)
+    #   pass
+    print(result_string)
+    # ! Note: tf_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts
+    # Script starts next run once this file is updated.
+    try:
+      f=open(os.path.join(self.logfolder,'tf_log'),'a')
+      f.write(result_string)
+      f.write('\n')
+      f.close()
+    except Exception as e:
+      print('failed to write txt tf_log {}'.format(e))
+      print('retry after sleep 60')
+      time.sleep(60)
+      f=open(os.path.join(self.logfolder,'tf_log'),'a')
+      f.write(result_string)
+      f.write('\n')
+      f.close()

@@ -1,7 +1,8 @@
 
-import os
+import os, sys
 
 from models import *
+# from torchvision.models import *
 
 # import tensorflow as tf
 # import tensorflow.contrib.slim as slim
@@ -15,6 +16,8 @@ import torch.nn as nn
 
 """
 Build basic NN model
+
+Exit code: 2: failed to initialize checkpoint
 """
 class Model(object):
  
@@ -22,34 +25,36 @@ class Model(object):
     '''initialize model
     '''
     # INITIALIZE FIELDS
+    self.FLAGS=FLAGS
     self.action_dim = FLAGS.action_dim
     self.prefix = prefix
-    self.device = FLAGS.device
-    self.FLAGS=FLAGS
-    self.output_size=int(self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity)
+    self.device = torch.device("cuda:0" if torch.cuda.is_available() and 'gpu' in FLAGS.device else "cpu")
     self.epoch=0
-
-
+    self.output_size=int(self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity)
+    
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)
       # target: continuous value (-0.3) --> bin (2) --> label (0 0 1 0 0 0 0 0 0 0)
 
     # DEFINE NETWORK
     # define a network for training and for evaluation
-    self.net = eval(self.FLAGS.network).Net(self.output_size)
-    
+    try:
+      self.net = eval(self.FLAGS.network).Net(self.output_size, self.FLAGS.pretrained)
+    except:
+      print("[model] Failed to load model {0}.".format(self.FLAGS.network))
+      sys.exit(2)
+
+    self.input_size=self.net.default_image_size
     # load on GPU
-    self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # self.device = torch.device( "cpu")
     self.net.to(self.device)
-
     # to get a complexity idea, count number of weights in the network
     count=0
     for p in self.net.parameters():
       w=1
       for d in p.size(): w*=d
       count+=w
-    print("Total number of trainable parameters: {}".format(count))
+    print("[model] Total number of trainable parameters: {}".format(count))
 
     # DEFINE LOSS
     self.criterion = eval("nn.{0}Loss()".format(self.FLAGS.loss))
@@ -64,33 +69,46 @@ class Model(object):
     # DEFINE SUMMARIES
     # self.build_summaries()
 
+    if not self.FLAGS.pretrained or self.FLAGS.continue_training: 
+      self.initialize_network()
     # import pdb; pdb.set_trace()
 
 
   def initialize_network(self):
     """Initialize all parameters of the network conform the FLAGS configuration
     """
-    if self.FLAGS.scratch:
-      # scratch
+    if self.FLAGS.checkpoint_path == '':
       for p in self.net.parameters():
         try:
           # nn.init.constant_(p, 0.001)
           nn.init.xavier_uniform_(p)
         except:
           nn.init.normal_(p, 0, 0.1)
-    elif self.FLAGS.continue_training:
+      print("[model]: initialized model from scratch")
+    else:
       # load model checkpoint in its whole
-      #try:
-      # torch.load(PATH, strict=True)
-      pass
-    else: # Try to load as much as possible
-      # torch.load(PATH, strict=False)
-      pass
-
+      checkpoint=torch.load(self.FLAGS.checkpoint_path+'/my-model')
+      try:
+        self.net.load_state_dict(checkpoint['model_state_dict'], strict=self.FLAGS.continue_training)
+      except:
+        print("[model]: FAILED to load model {1} from {0} into {2}".format(self.FLAGS.checkpoint_path, 
+                                                                          checkpoint['network'],
+                                                                          self.network))
+        if self.FLAGS.continue_training: print("\t put continue_training FALSE to avoid strict matching.")
+        sys.exit(2)
+      else:
+        self.epoch = checkpoint['epoch']
+        print("[model]: loaded model from {0} at epoch: {1}".format(self.FLAGS.checkpoint_path, self.epoch))
+      if checkpoint['optimizer'] == self.FLAGS.optimizer:
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        print("[model]: loaded optimizer parameters from {0}".format(self.FLAGS.checkpoint_path))
+        
   def save(self, logfolder):
     '''save a checkpoint'''
     torch.save({
       'epoch': self.epoch,
+      'network': self.FLAGS.network,
+      'optimizer': self.FLAGS.optimizer,
       'optimizer_state_dict': self.optimizer.state_dict(),
       'model_state_dict': self.net.state_dict()}, logfolder+'/my-model')
   
@@ -150,29 +168,37 @@ class Model(object):
     else:
       return self.control_values[int(discrete_value)]
  
+  def discretize(self, continuous):
+    """With the use of previous methods, discretize numpy array of shape [nBatch, 1]
+        into target values one-hot encoded Torch Tensors of shape [nBatch, action_quantity] in case of a normal loss
+        or into target bins in case of a cross entropy loss.
+    """
+    bins = self.continuous_to_bins(continuous)
+    if self.FLAGS.loss == 'CrossEntropy': # return bins in (N) shape
+      return torch.from_numpy(bins).squeeze().type(torch.LongTensor) 
+    else: # normal loss like MSE : return one-hot vecotr
+      return torch.zeros(len(bins),self.FLAGS.action_quantity).scatter_(1,torch.from_numpy(bins),1.).type(torch.FloatTensor)
+      
   def predict(self, inputs, targets=[]):
     '''run forward pass and return prediction with loss if target is given
     inputs=batch of RGB images (Batch x Channel x Height x Width)
     targets = supervised target control (Batch x Action dim)
     '''
-    assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.net.default_image_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.net.default_image_size)
+    assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.input_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.input_size)
     inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
-    predictions = self.net.forward(inputs)
+    
+    predictions = self.net.forward(inputs, train=False)
 
     losses={}
     if len(targets) != 0: 
       assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
-      if self.FLAGS.discrete:
-        # TODO: add discretization code ...
-        targets = self.continuous_to_bins(targets)
-        targets = torch.zeros(len(targets),self.FLAGS.action_quantity).scatter_(1,torch.from_numpy(targets).unsqueeze(1),1.)
-      targets=torch.from_numpy(targets).type(torch.FloatTensor).to(self.device)
-      losses[self.FLAGS.loss] = self.criterion(predictions, targets).cpu().detach().numpy()
+      targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+      losses[self.FLAGS.loss] = self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy()
   
-    if self.FLAGS.discrete:
-      predictions = bins_to_continuous(torch.max(predictions, 1))
+    predictions=predictions.cpu().detach().numpy()
+    if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
 
-    return predictions.cpu().detach().numpy(), losses
+    return predictions, losses
     
 
   def train(self, inputs, targets):
@@ -181,26 +207,30 @@ class Model(object):
     targets: batch of control labels
     '''
     # Ensure correct shapes at the input
-    assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.net.default_image_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.net.default_image_size)
+    assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.input_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.input_size)
     assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
+
     # Ensure gradient buffers are zero
     self.optimizer.zero_grad()
 
-    # TODO: test if model parameter gradient buffers are empty as well.
     losses={'total':0}
     inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
-    predictions = self.net.forward(inputs)
-    targets=torch.from_numpy(targets).type(torch.FloatTensor).to(self.device)
-    losses[self.FLAGS.loss]=self.criterion(predictions, targets)
+    predictions = self.net.forward(inputs, train=True)
+    
+    targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+    losses[self.FLAGS.loss]=self.criterion(predictions, targets.to(self.device))
     losses['total']+=losses[self.FLAGS.loss] 
-    #TODO: add regularizers...
     losses['total'].backward() # fill gradient buffers with the gradient according to this loss
+    
     self.optimizer.step() # apply what is in the gradient buffers to the parameters
     self.epoch+=1
 
+    predictions=predictions.cpu().detach().numpy()
+    if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
+
     # ensure losses are of type numpy
     for k in losses: losses[k]=losses[k].cpu().detach().numpy()
-    return self.epoch, predictions.cpu().detach().numpy(), losses
+    return self.epoch, predictions, losses
     
   # CONTINUAL LEARNING
   def define_star_variables(self, endpoints):

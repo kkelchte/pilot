@@ -6,18 +6,18 @@ import time
 from collections import deque
 import random
 import numpy as np
+import tensorflow as tf
 
 import argparse
 
 
 class ReplayBuffer(object):
 
-    def __init__(self, FLAGS, random_seed=123):
+    def __init__(self, buffer_size=-1, random_seed=123):
       """
       The right side of the deque contains the most recent experiences 
       """
-      self.FLAGS=FLAGS
-      self.buffer_size = FLAGS.buffer_size
+      self.buffer_size = buffer_size if buffer_size != -1 else 1000000
       self.count = 0
       self.buffer = deque()
       self.num_steps = 1 #num
@@ -29,24 +29,36 @@ class ReplayBuffer(object):
         self.count += 1
       else:
         # Get rid of oldest buffer/run once it is smaller than number of steps
-        if len(self.buffer_list[0])<=self.num_steps:
-          self.count-=len(self.buffer_list.pop(0))
+        if len(self.buffer[0])<=self.num_steps:
+          self.count-=len(self.buffer.pop(0))
           self.count+=1
         else:
           self.buffer.popleft()
 
       self.buffer.append(experience)
-    
+
     def size(self):      
       return self.count
     
-    # def new_run(self):
-    #   self.current_buffer = deque()
-    #   self.buffer_list.append(self.current_buffer)
-
     def softmax(self, x):
       e_x = np.exp(x-np.max(x))
       return e_x/e_x.sum()
+
+    def get_all_data(self, max_batch_size):
+      # fill in a batch of size batch_size
+      # return an array of inputs, targets and auxiliary information
+      
+      input_batch = np.array([_['state'] for _ in self.buffer])
+      target_batch = np.array([_['trgt'] for _ in self.buffer])
+      aux_batch = {}
+      # for k in batch[0].keys():
+      #   aux_batch[k]=np.array([_[k] for _ in batch])
+
+      if input_batch.shape[0] > max_batch_size: input_batch=input_batch[:max_batch_size]
+      if target_batch.shape[0] > max_batch_size: target_batch=target_batch[:max_batch_size]
+      
+
+      return input_batch, target_batch, aux_batch
 
     def sample_batch(self, batch_size):
       # fill in a batch of size batch_size
@@ -64,7 +76,7 @@ class ReplayBuffer(object):
 
     def clear(self):
         self.buffer.clear()
-        # self.buffer_list = []
+        # self.buffer = []
         self.count = 0
 
 if __name__ == '__main__':
@@ -113,4 +125,4 @@ if __name__ == '__main__':
                                                                                                     # float(len(action[action==-1]))/FLAGS.batch_size, 
                                                                                                     # float(len(action[action==0]))/FLAGS.batch_size, 
                                                                                                     # float(len(action[action==1]))/FLAGS.batch_size))
-  # print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))
+# print("avg prop 0: {0} var prop 0: {1}".format(np.mean(prop_zero), np.var(prop_zero)))

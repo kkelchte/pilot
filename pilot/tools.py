@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import model
+#from lxml import etree as ET
+import xml.etree.cElementTree as ET
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -37,6 +39,66 @@ def save_append(mydict, mykey, myval):
     else:
       mydict[mykey]=[myval]
   return mydict
+
+# ===========================
+#   Save settings
+# ===========================
+def save_config(FLAGS, logfolder, file_name = "configuration"):
+  """
+  save all the FLAG values in a config file / xml file
+  """
+  print("[tools] Save configuration to: {}".format(logfolder))
+  root = ET.Element("conf")
+  flg = ET.SubElement(root, "flags")
+  
+  flags_dict=FLAGS.__dict__
+  for f in sorted(flags_dict.keys()):
+    # print f, flags_dict[f]
+    e = ET.SubElement(flg, f, name=f) 
+    e.text = str(flags_dict[f])
+    e.tail = "\n  "
+  tree = ET.ElementTree(root)
+  tree.write(os.path.join(logfolder,file_name+".xml"), encoding="us-ascii", xml_declaration=True, method="xml")
+
+# ===========================
+#   Load settings
+# ===========================
+def load_config(FLAGS, modelfolder, file_name = "configuration"):
+  """
+  save all the FLAG values in a config file / xml file
+  """
+  print("[tools] Load configuration from: ", modelfolder)
+  tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
+  boollist=['auxiliary_depth', 'discrete']
+  intlist=['n_frames', 'num_outputs']
+  floatlist=['depth_multiplier','speed','action_bound']
+  stringlist=['network', 'data_format']
+  for child in tree.getroot().find('flags'):
+    try :
+      if child.attrib['name'] in boollist:
+        FLAGS.__setattr__(child.attrib['name'], child.text=='True')
+        print 'set:', child.attrib['name'], child.text=='True'
+      elif child.attrib['name'] in intlist:
+        FLAGS.__setattr__(child.attrib['name'], int(child.text))
+        print 'set:', child.attrib['name'], int(child.text)
+      elif child.attrib['name'] in floatlist:
+        FLAGS.__setattr__(child.attrib['name'], float(child.text))
+        print 'set:', child.attrib['name'], float(child.text)
+      elif child.attrib['name'] in stringlist:
+        # Temporary hack to load models from doshico
+        # if not FLAGS.network != 'mobile_nfc': 
+        FLAGS.__setattr__(child.attrib['name'], str(child.text))
+        print 'set:', child.attrib['name'], str(child.text)
+      # Temporary hack to load models from doshico
+      elif child.attrib['name'] == 'n_fc':
+        FLAGS.network='mobile_nfc'
+        print 'set: network to mobile_nfc'
+    except : 
+      print 'couldnt set:', child.attrib['name'], child.text
+      pass
+
+  return FLAGS
+
 
 # def get_endpoint_activations(inputs, model):
 # 	'''Run forward through the network for this batch and return all activations

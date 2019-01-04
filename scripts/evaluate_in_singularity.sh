@@ -1,23 +1,11 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-# source .entrypoint_graph
-source .entrypoint_xpra_no_build
+source .entrypoint_graph
+# source .entrypoint_xpra_no_build
 roscd simulation_supervised/python
 
-
-# Redo online experiments on different models
-
-
-for d in canyon_forest sandbox_forest sandbox_canyon canyon_sandbox  ; do
-  for sd in noLL LL_1 LL_10 ; do 
-    echo "-------$d/$sd"
-    w1="$(echo $d | cut -d _ -f 1)"
-    w2="$(echo $d | cut -d _ -f 2)"
-    python run_script.py -t LLL_doshico_final/$d/$sd/0_eva2 -pe sing -pp pytorch_pilot/pilot -m LLL_doshico_final/$d/$sd/0 -w $w1 -w $w2 -p eva_params.yaml -n 6 --robot drone_sim --fsm oracle_nn_drone_fsm -e
-    sleep 60
-  done
-done
+python run_script.py -t test_online -pe sing -pp pytorch_pilot/pilot -m first_model -w canyon -w forest -w sandbox -p eva_params.yaml -n 3 --robot drone_sim --fsm oracle_nn_drone_fsm -e -g
 
 
 
