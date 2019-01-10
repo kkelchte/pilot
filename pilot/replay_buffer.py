@@ -29,13 +29,17 @@ class ReplayBuffer(object):
         self.count += 1
       else:
         # Get rid of oldest buffer/run once it is smaller than number of steps
-        if len(self.buffer[0])<=self.num_steps:
-          self.count-=len(self.buffer.pop(0))
-          self.count+=1
-        else:
-          self.buffer.popleft()
+        # if len(self.buffer[0])<=self.num_steps:
+        #   self.count-=len(self.buffer.pop(0))
+        #   self.count+=1
+        # else:
+        self.buffer.popleft()
 
       self.buffer.append(experience)
+
+    def remove(self):
+      self.buffer.popleft()
+      self.count-=1
 
     def size(self):      
       return self.count
@@ -56,14 +60,27 @@ class ReplayBuffer(object):
 
       if input_batch.shape[0] > max_batch_size: input_batch=input_batch[:max_batch_size]
       if target_batch.shape[0] > max_batch_size: target_batch=target_batch[:max_batch_size]
+
+      return input_batch, target_batch, aux_batch
+
+    def get_all_data_shuffled(self, max_batch_size=-1):
+      # fill in a batch of size batch_size
+      # return an array of inputs, targets and auxiliary information
       
+      shuffled_buffer = self.buffer
+      input_batch = np.array([_['state'] for _ in shuffled_buffer])
+      target_batch = np.array([_['trgt'] for _ in shuffled_buffer])
+      aux_batch = {}
+      
+      if max_batch_size != -1 and input_batch.shape[0] > max_batch_size: input_batch=input_batch[:max_batch_size]
+      if max_batch_size != -1 and target_batch.shape[0] > max_batch_size: target_batch=target_batch[:max_batch_size]
 
       return input_batch, target_batch, aux_batch
 
     def sample_batch(self, batch_size):
       # fill in a batch of size batch_size
       # return an array of inputs, targets and auxiliary information
-      assert batch_size < self.count, IOError('batchsize ',batch_size,' is bigger than buffer size: ',self.count)
+      assert batch_size <= self.count, IOError('batchsize ',batch_size,' is bigger than buffer size: ',self.count)
       batch=random.sample(self.buffer, batch_size)
 
       input_batch = np.array([_['state'] for _ in batch])

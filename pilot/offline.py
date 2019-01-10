@@ -82,6 +82,7 @@ def run(_FLAGS, model, start_ep=0):
     f.write(msg+'\n')
     f.close()
     sys.stdout.flush()
+    model.summarize(sumvars)
 
     # write checkpoint every x episodes
     if (ep%20==0 and ep!=0) or ep==FLAGS.max_episodes-1:

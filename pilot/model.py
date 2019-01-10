@@ -4,7 +4,7 @@ import os, sys
 from models import *
 # from torchvision.models import *
 
-# import tensorflow as tf
+import tensorflow as tf
 # import tensorflow.contrib.slim as slim
 # from tensorflow.contrib.slim import model_analyzer as ma
 # from tensorflow.python.ops import variables as tf_variables
@@ -13,6 +13,8 @@ import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn as nn
+
+
 
 """
 Build basic NN model
@@ -66,12 +68,15 @@ class Model(object):
     # if self.FLAGS.continue_training and self.FLAGS.lifelonglearning:
     #   self.define_star_variables(self.endpoints['train'])
 
-    # DEFINE SUMMARIES
-    # self.build_summaries()
+    # DEFINE SUMMARIES WITH TENSORBOARD
+    if self.FLAGS.tensorboard:
+      self.graph = tf.Graph()
+      self.summary_vars = {}
+      self.summary_ops = {}
+      self.writer = None
 
     if not self.FLAGS.pretrained or self.FLAGS.continue_training: 
       self.initialize_network()
-    # import pdb; pdb.set_trace()
 
 
   def initialize_network(self):
@@ -175,7 +180,10 @@ class Model(object):
     """
     bins = self.continuous_to_bins(continuous)
     if self.FLAGS.loss == 'CrossEntropy': # return bins in (N) shape
-      return torch.from_numpy(bins).squeeze().type(torch.LongTensor) 
+      bins = torch.from_numpy(bins).squeeze().type(torch.LongTensor)
+      if len(bins.shape) == 0: bins.unsqueeze_(-1)
+      return bins
+      # return torch.from_numpy(bins).type(torch.LongTensor) 
     else: # normal loss like MSE : return one-hot vecotr
       return torch.zeros(len(bins),self.FLAGS.action_quantity).scatter_(1,torch.from_numpy(bins),1.).type(torch.FloatTensor)
       
@@ -199,7 +207,6 @@ class Model(object):
     if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
 
     return predictions, losses
-    
 
   def train(self, inputs, targets):
     '''take backward pass from loss and apply gradient step
@@ -231,7 +238,42 @@ class Model(object):
     # ensure losses are of type numpy
     for k in losses: losses[k]=losses[k].cpu().detach().numpy()
     return self.epoch, predictions, losses
-    
+     
+  def add_summary_var(self, name):
+    '''given the name of the new variable
+    add an actual variable to  summary_vars
+    and add an operation to update the variable to summary_ops
+    '''
+    with self.graph.as_default():
+      with self.graph.device('/cpu:0'):
+        var_name = tf.Variable(0., trainable=False, name=name)
+        self.summary_vars[name]=var_name
+        self.summary_ops[name] = tf.summary.scalar(name, var_name)
+  
+  def summarize(self, sumvars):
+    '''write summary sumvars by defining variables to
+    summary_vars and calling summary_ops in a merge'''
+    try:
+      # Ensure that for each variable key a summary var is defined in the summary_vars and summary_ops fields
+      for k in sumvars.keys(): 
+        if k not in self.summary_vars.keys(): 
+          self.add_summary_var(k)
+      feed_dict={self.summary_vars[key]:sumvars[key] for key in sumvars.keys()}
+      with self.graph.as_default():
+        with self.graph.device('/cpu:0'):
+          sum_op = tf.summary.merge([self.summary_ops[key] for key in sumvars.keys()])
+      
+      config=tf.ConfigProto(allow_soft_placement=True)
+      config.gpu_options.allow_growth = True
+      with tf.Session(graph=self.graph, config=config) as sess:
+        summary_str = sess.run(sum_op, feed_dict=feed_dict)
+        if self.writer == None:  self.writer = tf.summary.FileWriter(self.FLAGS.summary_dir+self.FLAGS.log_tag, self.graph)
+        self.writer.add_summary(summary_str, self.epoch)
+        self.writer.flush()
+    except Exception as e:
+      if self.FLAGS.tensorboard: print("[model] failed to summarize: {}".format(e.message))
+      pass
+
   # CONTINUAL LEARNING
   def define_star_variables(self, endpoints):
     '''Define star variables for previous domains used in combination with the importance weights for a lifelong regularization term in the loss.

@@ -27,6 +27,9 @@ from rospy.numpy_msg import numpy_msg
 from rospy_tutorials.msg import Floats
 from nav_msgs.msg import Odometry
 
+from std_srvs.srv import Empty as Emptyservice
+from std_srvs.srv import EmptyRequest # for pausing and unpausing physics engine
+
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
@@ -39,14 +42,10 @@ class PilotNode(object):
   """
   
   def __init__(self, FLAGS, model, logfolder):
-    print('initialize pilot node')  
+    print('[rosinterface] initialize pilot node')  
     self.FLAGS=FLAGS
     # Initialize fields
-    self.logfolder = logfolder
-    f=open(os.path.join(self.logfolder,'tf_log'),'a')
-    f.write(self.FLAGS.log_tag)
-    f.write('\n')
-    f.close()
+    self.logfolder = logfolder    
     self.model = model 
     self.ready=False 
     self.finished=True
@@ -63,14 +62,13 @@ class PilotNode(object):
     self.target_depth = [] # field to keep the latest supervised depth
     self.nfc_images =[] #used by n_fc networks for building up concatenated frames
     self.exploration_noise = OUNoise(4, 0, self.FLAGS.ou_theta,1)
-    if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
-    self.action_pub=rospy.Publisher('/nn_vel', Twist, queue_size=1)
-
+    # if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
     
+    self.overtake_pub=rospy.Publisher('/overtake', Empty, queue_size=1)
+    self.action_pub=rospy.Publisher('/nn_vel', Twist, queue_size=1)
     rospy.Subscriber('/nn_start', Empty, self.ready_callback)
     rospy.Subscriber('/nn_stop', Empty, self.finished_callback)
-
-    # extract imitation loss from supervised velocity
+    # extract imitation loss from supervised velocity or use it for policy mixing
     rospy.Subscriber('/supervised_vel', Twist, self.supervised_callback)
     
     self.start_time = 0
@@ -108,7 +106,20 @@ class PilotNode(object):
     self.time_im_received=[]
     self.time_ctr_send=[]
 
-    rospy.init_node('pilot', anonymous=True)  
+    # Pausing and unpausing gazebo physics simulator
+    if self.FLAGS.pause_simulator:
+      self.pause_physics_client=rospy.ServiceProxy('/gazebo/pause_physics',Emptyservice)
+      self.unpause_physics_client=rospy.ServiceProxy('/gazebo/unpause_physics',Emptyservice)
+      
+    # initialize ROS node
+    rospy.init_node('pilot', anonymous=True)
+
+    # write tf_log to indicate to run_script initialization is finished.
+    f=open(os.path.join(self.logfolder,'tf_log'),'a')
+    f.write(self.FLAGS.log_tag)
+    f.write('\n')
+    f.close()
+
   
   #--------------------------------
   # Callbacks
@@ -122,10 +133,12 @@ class PilotNode(object):
       self.start_time = rospy.get_time()
       self.finished = False
       self.exploration_noise.reset()
+      self.last_pose=[]
+      self.furthest_point=0
       # choose one speed for this flight
       self.FLAGS.speed=self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
-      if rospy.has_param('evaluate'):
-        self.FLAGS.evaluate = rospy.get_param('evaluate')
+      if rospy.has_param('/evaluate'):
+        self.FLAGS.evaluate = rospy.get_param('/evaluate')
         print '--> set evaluate to: {0} with speed {1}'.format(self.FLAGS.evaluate, self.FLAGS.speed)
       if rospy.has_param('skip_frames'):
         self.skip_frames = rospy.get_param('skip_frames')
@@ -142,7 +155,7 @@ class PilotNode(object):
                     data.pose.pose.position.z]
     if len(self.last_pose)!= 0:
         self.current_distance += np.sqrt((self.last_pose[0,3]-current_pos[0])**2+(self.last_pose[1,3]-current_pos[1])**2)
-    self.furthest_point=max([self.furthest_point, np.sqrt(current_pos[0]**2+current_pos[1]**2)])
+    # self.furthest_point=max([self.furthest_point, np.sqrt(current_pos[0]**2+current_pos[1]**2)])
 
     # Get pose (rotation and translation) [DEPRECATED: USED FOR ODOMETRY]
     quaternion = (data.pose.pose.orientation.x,
@@ -276,12 +289,15 @@ class PilotNode(object):
       if self.start_time!=0: 
         self.driving_duration = rospy.get_time() - self.start_time
 
+      # if self.replay_buffer.size()>=self.FLAGS.batch_size and not self.FLAGS.evaluate:
+      #   losses_train, depth_predictions = self.train_model()
+      #   self.save_summary(losses_train, depth_predictions)
+      # else:
       
-      if self.replay_buffer.size()>=self.FLAGS.batch_size and not self.FLAGS.evaluate:
-        losses_train, depth_predictions = self.train_model()
-        self.save_summary(losses_train, depth_predictions)
-      else:
-        self.save_summary()
+      # TODO: IN CASE OF BUMP LABEL--> LABEL REPLAY BUFFER 
+      
+      # save separate run logging
+      self.save_summary()
 
       self.reset_variables()  
 
@@ -295,6 +311,11 @@ class PilotNode(object):
       Plot auxiliary predictions.
       Fill replay buffer.
     """
+    # Pause Gazebo
+    if self.FLAGS.pause_simulator and self.ready:
+      # print("[rosinterface] {0} pause simulator".format(time.strftime('%H:%M')))
+      self.pause_physics_client(EmptyRequest())
+
     # skip a number of frames to lower the actual control rate
     # independently of the image frame rate
     if self.skip_frames != 0:
@@ -303,19 +324,24 @@ class PilotNode(object):
         return
 
     aux_depth=[] # variable to keep predicted depth 
-    trgt = []
     
     # Evaluate the input in your network
     trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
     trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-    control, losses = self.model.predict(np.array([im]), targets=trgt)
+    control, _ = self.model.predict(np.array([im]))
     
     ### SEND CONTROL
     control = control[0]
     
+    ### IMITATION LOSS
+    if len(self.target_control) != 0:
+      self.imitation_loss.append((self.target_control[5]-control)**2)
+    
+
     # POLICY MIXING
     if len(trgt) != 0 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
-      action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
+      action = trgt if np.random.binomial(1, self.FLAGS.alpha) else control
+      # action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
     else:
       action = control
     
@@ -345,26 +371,19 @@ class PilotNode(object):
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
     
-    # if np.abs(msg.angular.z) > 0.3: msg.linear.x =  0.
-    if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: 
-      msg.linear.x = 0. + self.FLAGS.speed*np.random.binomial(1, 0.1)
+    if np.abs(msg.angular.z) > 0.3: 
+      msg.linear.x =  self.FLAGS.turn_speed
+      # if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: 
+      #   msg.linear.x = 0. + self.FLAGS.speed*np.random.binomial(1, 0.1)
     else:
       msg.linear.x = self.FLAGS.speed
 
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
 
-    ### keep track of imitation loss on the fly
-    if len(self.target_control) != 0:
-      self.imitation_loss.append((self.target_control[5]-action)**2)
-
-    if not self.FLAGS.dont_show_depth and len(aux_depth) != 0 and not self.finished:
-      aux_depth = aux_depth.flatten()
-      self.depth_pub.publish(aux_depth)
-      aux_depth = []
       
     # ADD EXPERIENCE REPLAY
-    if not self.FLAGS.evaluate and trgt != -100 and not self.finished and len(trgt) != 0:
+    if not self.FLAGS.evaluate and not self.finished and len(trgt) != 0:
       experience={'state':im,
                   'action':action,
                   'trgt':trgt}
@@ -372,16 +391,38 @@ class PilotNode(object):
       self.replay_buffer.add(experience)
       # print("added experience: {0} vs {1}".format(action, trgt))
 
-  def backward_step_model(self, inputs, targets, aux_info, losses_train, depth_predictions):
+    if self.replay_buffer.size()>=self.FLAGS.batch_size and not self.FLAGS.evaluate and not self.finished:
+      epoch, losses_train = self.train_model()
+      self.save_summary(losses_train)
+      # for i in range(10): self.replay_buffer.remove()
+      if epoch > self.FLAGS.max_episodes:
+        self.finished=True
+        self.ready=False
+        self.model.save(self.logfolder)
+        self.reset_variables()
+        self.overtake_pub.publish(Empty())
+        try:
+          with open(self.logfolder+'/fsm_log', 'a') as f: 
+            f.write('FINISHED\n')
+        except:
+          print('[rosinterface]: FAILED TO WRITE LOGFILE: {}'.format(self.logfolder+'/fsm_log'))
+
+    if self.FLAGS.pause_simulator and self.ready:
+      # print("[rosinterface] {0} unpause simulator".format(time.strftime('%H:%M')))
+      self.unpause_physics_client(EmptyRequest())
+
+
+
+  def backward_step_model(self, inputs, targets, aux_info, losses_train):
     """Apply gradient step with a backward pass
     """
     # in case the batch size is -1 the full replay buffer is send back 
     if len(inputs) != 0 and len(targets) != 0:
-      losses = self.model.train(inputs,targets[:].reshape(-1,1))
+      epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]))
       for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
     else:
       print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
-    return losses_train, depth_predictions
+    return epoch, losses_train
 
   def update_importance_weights(self):
     """Update the importance weights on ALL data in the replay buffer
@@ -404,51 +445,53 @@ class PilotNode(object):
     """
     # Train model from experience replay:
     # Train the model with batchnormalization out of the image callback loop
-    depth_predictions = []
     losses_train = {}
-    
-    # get full replay buffer to take one gradient step
-    if self.FLAGS.buffer_size == -1 and self.FLAGS.batch_size == -1:
-      inputs, targets, aux_info = self.replay_buffer.get_all_data(self.FLAGS.max_batch_size)
-      if len(inputs) == 0: 
-        return losses_train, depth_predictions
-      
-      # if there is a hard replay buffer that is full, use it for your batch
-      if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
-        print("inputs: {}".format(inputs.shape))
-        hard_inputs, hard_targets, hard_aux_info = self.hard_replay_buffer.get_all_data(self.FLAGS.hard_batch_size)
-        print("hardinputs: {}".format(hard_inputs.shape))
-        inputs = np.concatenate([inputs, hard_inputs], axis=0)
-        targets = np.concatenate([targets, hard_targets], axis=0)
-        # aux_info = np.concatenate([aux_info, hard_aux_info], axis=0)
-        print("inputs: {}".format(inputs.shape))
-        print("targets: {}".format(targets.shape))
 
-      losses_train, depth_predictions = self.backward_step_model(inputs, targets, [], losses_train, depth_predictions)
+    # 1. get the data from the replay buffer shuffled
+    inputs, targets, aux_info = self.replay_buffer.get_all_data_shuffled(self.FLAGS.max_batch_size)
+    if len(inputs) == 0: return losses_train
+    if len(targets) == 0: return losses_train
       
-      # in case there is a hard replay buffer: fill it with the hardest examples over the inputs
-      if self.FLAGS.hard_replay_buffer and len(losses_train.keys()) != 0:
-        assert(len(list(losses_train['ce'][0]))==len(list(inputs)))
-        assert(len(list(losses_train['ce'][0]))==len(list(targets)))
-        sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train['ce'][0]), inputs.tolist())))]
-        sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['ce'][0]), targets.tolist())))]
-        # as all data in hard buffer was in batch we can clear the hard buffer totally
-        self.hard_replay_buffer.clear()
-        # and gradually add it with the hardest experiences till it is full.
-        for e in range(min(self.FLAGS.hard_batch_size, len(sorted_inputs))):
-          experience={'state':sorted_inputs[e],
-                  'action':None,
-                  'trgt':sorted_targets[e],
-                  'priority':losses_train['ce'][0][e]} 
-          self.hard_replay_buffer.add(experience)
-    else:
-      # go over all data in the replay buffer over different batches
-      # for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), 10)):
-      for b in range(min(int(self.replay_buffer.size()/self.FLAGS.batch_size), self.FLAGS.max_gradient_steps)):
-        inputs, targets, aux_info = self.replay_buffer.sample_batch(self.FLAGS.batch_size)
-        losses_train, depth_predictions = self.backward_step_model(inputs, targets, aux_info, losses_train, depth_predictions)
+    # 1.b if there is a hard replay buffer that is full, use it for your batch
+    if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
+      hard_inputs, hard_targets, hard_aux_info = self.hard_replay_buffer.get_all_data_shuffled(self.FLAGS.hard_batch_size)
+      print("hardinputs: {}".format(hard_inputs.shape))
+      inputs = np.concatenate([inputs, hard_inputs], axis=0)
+      targets = np.concatenate([targets, hard_targets], axis=0)
+      # aux_info = np.concatenate([aux_info, hard_aux_info], axis=0)
+      # print("inputs: {}".format(inputs.shape))
+      # print("targets: {}".format(targets.shape))
 
-    return losses_train, depth_predictions
+    # 2. Loop over data grad_step times in batches
+    for grad_step in range(self.FLAGS.gradient_steps):
+      b=0
+      while b < len(inputs):
+        if len(inputs) >= b+self.FLAGS.batch_size:
+          input_batch = inputs[b:b+self.FLAGS.batch_size]
+          target_batch = targets[b:b+self.FLAGS.batch_size]
+        else:  
+          input_batch = inputs[b:]
+          target_batch = targets[b:]
+        epoch, losses_train = self.backward_step_model(input_batch, target_batch, [], losses_train)
+        b+=self.FLAGS.batch_size
+      
+    # 3. in case there is a hard replay buffer: fill it with the hardest examples over the inputs
+    if self.FLAGS.hard_replay_buffer and len(losses_train.keys()) != 0:
+      assert(len(list(losses_train[self.FLAGS.loss][0]))==len(list(inputs)))
+      assert(len(list(losses_train[self.FLAGS.loss][0]))==len(list(targets)))
+      sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), inputs.tolist())))]
+      sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), targets.tolist())))]
+      # as all data in hard buffer was in batch we can clear the hard buffer totally
+      self.hard_replay_buffer.clear()
+      # and gradually add it with the hardest experiences till it is full.
+      for e in range(min(self.FLAGS.hard_batch_size, len(sorted_inputs))):
+        experience={'state':sorted_inputs[e],
+                'action':None,
+                'trgt':sorted_targets[e],
+                'priority':losses_train['ce'][0][e]} 
+        self.hard_replay_buffer.add(experience)
+  
+    return epoch, losses_train
 
   def reset_variables(self):
     """After each roll out some field variables should be reset.
@@ -476,7 +519,7 @@ class PilotNode(object):
 
     if self.FLAGS.empty_buffer: self.replay_buffer.clear()    
 
-  def save_summary(self, losses_train={}, depth_predictions=[]):
+  def save_summary(self, losses_train={}):
     """Collect all field variables and save them for visualization in tensorboard
     """
     # Gather all info to build a proper summary and string of results
@@ -487,19 +530,19 @@ class PilotNode(object):
     sumvar={}
     result_string='{0}: run {1}'.format(time.strftime('%H:%M'),self.runs[k])
     vals={'current':self.current_distance, 'furthest':self.furthest_point}
-    for d in ['current', 'furthest']:
+    # for d in ['current', 'furthest']:
+    for d in ['current']:
       name='Distance_{0}_{1}'.format(d,'train' if not self.FLAGS.evaluate else 'test')
       if len(self.world_name)!=0: name='{0}_{1}'.format(name,self.world_name)
       sumvar[name]=vals[d]
       result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
     for k in losses_train.keys():
-      name={'total':'Loss_train_total'}
-      name['ce']='Loss_train_ce'
+      # name={'total':'Loss_train_total'}
+      # name['MSE']='Loss_train_MSE'
       # for lll_k in self.model.lll_losses.keys():
       #   name['lll_'+lll_k]='Loss_train_lll_'+lll_k
-      sumvar[name[k]]=np.mean(losses_train[k])
-      result_string='{0}, {1}:{2}'.format(result_string, name[k], np.mean(losses_train[k]))
-    
+      sumvar[k]=np.mean(losses_train[k])
+      result_string='{0}, {1}:{2}'.format(result_string, k, np.mean(losses_train[k]))
     
     # add driving duration (collision free)
     if self.driving_duration != -1: 
@@ -521,11 +564,11 @@ class PilotNode(object):
       std_im_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
 
       result_string='{0}, control_rate: {1:0.3f}, image_rate: {2:0.3f} , control_delay_std: {1:0.3f}, image_delay_std: {2:0.3f} '.format(result_string, avg_ctr_rate, avg_im_rate, std_ctr_delays, std_im_delays)
-    # try:
-    #   self.model.summarize(sumvar)
-    # except Exception as e:
-    #   print('failed to write', e)
-    #   pass
+    try:
+      self.model.summarize(sumvar)
+    except Exception as e:
+      print('failed to write', e)
+      pass
     print(result_string)
     # ! Note: tf_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts
     # Script starts next run once this file is updated.
@@ -542,3 +585,6 @@ class PilotNode(object):
       f.write(result_string)
       f.write('\n')
       f.close()
+
+
+

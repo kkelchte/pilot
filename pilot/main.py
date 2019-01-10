@@ -46,6 +46,8 @@ def main(_):
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
   parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=32,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--max_episodes",default=10,type=int,help="The maximum number of episodes (~runs through all the training data.)")
+  parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
   
   # ==========================
   #   Lifelonglearning Parameters
@@ -57,7 +59,6 @@ def main(_):
   # ==========================
   #   Offline Parameters
   # ==========================
-  parser.add_argument("--max_episodes",default=600,type=int,help="The maximum number of episodes (~runs through all the training data.)")
   parser.add_argument("--visualize_saliency_of_output",action='store_true',help="Visualize saliency maps of the output.")
   parser.add_argument("--visualize_deep_dream_of_output",action='store_true',help="Visualize gradient ascent maps for different extreme controls.")
   parser.add_argument("--visualize_activations",action='store_true',help="Visualize activation.")
@@ -100,8 +101,8 @@ def main(_):
   #   Model Parameters
   # ===========================
   parser.add_argument("--depth_multiplier",default=0.25,type=float, help= "Define the depth of the network in case of mobilenet.")
-  parser.add_argument("--network",default='tiny_net',type=str, help="Define the type of network (anything in models folder without _net.py): mobile, mobile_nfc, alex, squeeze, ...")
-  parser.add_argument("--output_size",default=[55,74],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
+  parser.add_argument("--network",default='tiny_net',type=str, help="Define the type of network: mobile, mobile_nfc, alex, squeeze, ...")
+  # parser.add_argument("--output_size",default=[55,74],type=int, nargs=2, help="Define the output size of the depth frame: 55x74 [drone], 1x26 [turtle], only used in case of depth_q_net.")
   parser.add_argument("--pretrained", action='store_true',help="Specify whether the network should be loaded with imagenet pretrained features.")
   # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
   parser.add_argument("--n_frames",default=3,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
@@ -124,15 +125,14 @@ def main(_):
   # parser.add_argument("--clip_grad", default=0, type=int, help="Specify the max gradient norm: default 0 is no clipping, recommended 4.")
   parser.add_argument("--min_depth", default=0.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
   parser.add_argument("--max_depth", default=5.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
-  parser.add_argument("--optimizer", default='Adadelta', type=str, help="Specify optimizer, options: Adadelta, SGD")
+  parser.add_argument("--optimizer", default='SGD', type=str, help="Specify optimizer, options: Adadelta, SGD")
   parser.add_argument("--no_batchnorm_learning",action='store_false', help="In case of no batchnorm learning, are the batch normalization params (alphas and betas) not further adjusted.")
   parser.add_argument("--initializer",default='xavier',type=str, help="Define the initializer: xavier or uniform [-init_scale, init_scale]")
 
   parser.add_argument("--loss",default='MSE',type=str, help="Define the loss: MSE, CrossEntropy")
 
-  parser.add_argument("--max_loss", default=100, type=float, help= "Define the maximum loss before it is clipped.")
-  
-  parser.add_argument("--clip_loss_to_max",action='store_true', help="Over time, allow only smaller losses by clipping the maximum allowed loss to the lowest maximum loss.")
+  # parser.add_argument("--max_loss", default=100, type=float, help= "Define the maximum loss before it is clipped.")
+  # parser.add_argument("--clip_loss_to_max",action='store_true', help="Over time, allow only smaller losses by clipping the maximum allowed loss to the lowest maximum loss.")
 
   # ===========================
   #   Replay Parameters
@@ -155,23 +155,21 @@ def main(_):
   parser.add_argument("--sigma_y", default=0.0, type=float, help= "sigma_y is the amount of noise in the y direction.")
   parser.add_argument("--sigma_yaw", default=0.0, type=float, help= "sigma_yaw is the amount of noise added to the steering angle.")
   parser.add_argument("--speed", default=1.3, type=float, help= "Define the forward speed of the quadrotor.")
+  parser.add_argument("--turn_speed", default=0.5, type=float, help= "Define the forward speed while turning.")
   parser.add_argument("--alpha",default=0., type=float, help="Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy..")
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
-  parser.add_argument("--max_gradient_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
+  parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
   parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
   parser.add_argument("--max_batch_size", default=100, type=int, help="Define the max size of the batch (only if batch_size is -1).")
 
-  parser.add_argument("--break_and_turn", action='store_true', help="In case the robot should turn at zero forward speed by breaking.")
-
-  parser.add_argument("--off_policy",action='store_true', help="In case the network is off_policy, the control is published on supervised_vel instead of cmd_vel.")
-  parser.add_argument("--dont_show_depth",action='store_true', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
-
-  parser.add_argument("--grad_steps", default=10, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
+  # parser.add_argument("--dont_show_depth",action='store_true', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 
   parser.add_argument("--field_of_view", default=104, type=int, help="The field of view of the camera cuts the depth scan in the range visible for the camera. Value should be even. Normal: 72 (-36:36), Wide-Angle: 120 (-60:60)")
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings")
+
+  parser.add_argument("--pause_simulator", action='store_true', help="Pause simulator during frame processing, making discrete steps.")
 
 
   
@@ -198,51 +196,22 @@ def main(_):
   
   #Check log folders and if necessary remove:
   # REMOVE 
-  if FLAGS.log_tag == 'testing' or FLAGS.owr:
+  if (FLAGS.log_tag == 'testing' or FLAGS.owr) and not FLAGS.online:
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
-      shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag,ignore_errors=False)
+      shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag, ignore_errors=False)
   # SEARCH FOR PREVIOUS RUN
-  elif not FLAGS.continue_training : # in case we are training from scratch/checkpoint and not evaluating
-    found_previous_run=os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag)
-    previous_run = FLAGS.summary_dir+FLAGS.log_tag
+  # elif not FLAGS.continue_training : # in case we are training from scratch/checkpoint and not evaluating
+  if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag) and os.path.isfile(FLAGS.summary_dir+FLAGS.log_tag+'/my-model') and os.path.isfile(FLAGS.summary_dir+FLAGS.log_tag+'/configuration.xml'):
+    print("[main.py]: found previous checkpoint from which training is continued: {0}".format(FLAGS.log_tag))
+    FLAGS.load_config = True
+    FLAGS.scratch = False
+    FLAGS.continue_training = True
+    FLAGS.checkpoint_path = FLAGS.log_tag
 
-    # TO BECOME OBSOLETE AFTER DATE TAG IS TAKEN OUT OF CONDOR (!) 
-    # In case the last part of the log_tag is a date (running on condor)  
-    if FLAGS.log_tag.split('/')[-1].startswith('2018'): 
-      run_dir=os.path.dirname(FLAGS.summary_dir+FLAGS.log_tag)
-      previous_runs = sorted([run_dir+'/'+d for d in os.listdir(run_dir) if os.path.isdir(run_dir+'/'+d) and d.startswith('2018')])
-      found_previous_run = len(previous_runs) >= 1
-      if found_previous_run: 
-        previous_run = previous_runs[-1] 
-    
-    # if found_previous_run:
-    # TODO: How to load previous model...
-          
-    # if found_previous_run:
-    #   # extract previous run
-    #   checkpoints=[fs for fs in os.listdir(previous_run) if fs.endswith('.meta')]
-    #   if os.path.isfile(previous_run+'/checkpoint') and os.path.isfile(previous_run+'/configuration.xml'): 
-    #     # if a checkpoint is found in current folder, use this folder as checkpoint path.
-    #     #raise NameError( 'Logfolder already exists, overwriting alert: '+ previous_run )
-    #     FLAGS.load_config = True
-    #     FLAGS.scratch = False
-    #     FLAGS.continue_training = True
-    #     FLAGS.checkpoint_path = previous_run[len(FLAGS.summary_dir):] #cut off summary_dir to get previous log_tag
-    #     checkpoint_model=open(previous_run+'/checkpoint').readlines()[0]
-    #     start_ep=int(int(checkpoint_model.split('-')[-1][:-2])/100)
-    #     print("Found model: {0} trained for {1} episodes in {2}".format(FLAGS.log_tag,start_ep, previous_run))
-    #   else:
-    #     shutil.rmtree(previous_run,ignore_errors=False)
   if not os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag): 
     os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
     
   if FLAGS.load_config:
-    # checkpoint_path = FLAGS.checkpoint_path
-    # if checkpoint_path[0]!='/': checkpoint_path = os.path.join(os.getenv('HOME'),'tensorflow/log',checkpoint_path)
-    # if not os.path.isfile(checkpoint_path+'/checkpoint'):
-    #   checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/checkpoint')][-1]
-    # if not os.path.isfile(checkpoint_path+'/configuration.xml'):
-    #   checkpoint_path = checkpoint_path+'/'+[mpath for mpath in sorted(os.listdir(checkpoint_path)) if os.path.isdir(checkpoint_path+'/'+mpath) and os.path.isfile(checkpoint_path+'/'+mpath+'/configuration.xml')][-1]
     FLAGS=tools.load_config(FLAGS, FLAGS.checkpoint_path)
     
   tools.save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
