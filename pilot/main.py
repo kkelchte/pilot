@@ -45,7 +45,7 @@ def main(_):
   # ==========================
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
   parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
-  parser.add_argument("--batch_size",default=32,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
   parser.add_argument("--max_episodes",default=10,type=int,help="The maximum number of episodes (~runs through all the training data.)")
   parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
   
@@ -116,6 +116,8 @@ def main(_):
   # parser.add_argument("--scratch", action='store_true', help="Initialize full network randomly.")
 
   # TRAINING
+
+  parser.add_argument("--il_weight", default=1.0, type=float, help="Define the weight of the Imitation Learning Loss in comparison to the Reinforcement Learning Loss.")
   parser.add_argument("--depth_weight", default=1.0, type=float, help="Define the weight applied to the depth values in the loss relative to the control loss.")
   parser.add_argument("--control_weight", default=1.0, type=float, help="Define the weight applied to the control loss.")
   parser.add_argument("--weight_decay",default=0.00004,type=float, help= "Weight decay of inception network")
@@ -171,8 +173,10 @@ def main(_):
 
   parser.add_argument("--pause_simulator", action='store_true', help="Pause simulator during frame processing, making discrete steps.")
 
+  parser.add_argument("--horizon", default=10, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
+  parser.add_argument("--save_every_num_epochs", default=100, type=int, help="Define after how many epochs a model should be saved while training online.")
+ 
 
-  
   # FLAGS=parser.parse_args()
   try:
     FLAGS, others = parser.parse_known_args()
@@ -192,8 +196,7 @@ def main(_):
   
   # Create absolute paths where necessary
   if FLAGS.summary_dir[0] != '/': FLAGS.summary_dir = os.path.join(os.getenv('HOME'),FLAGS.summary_dir)
-  if len(FLAGS.checkpoint_path) != 0 and FLAGS.checkpoint_path[0] != '/': FLAGS.checkpoint_path = os.path.join(FLAGS.summary_dir, FLAGS.checkpoint_path) 
-  
+
   #Check log folders and if necessary remove:
   # REMOVE 
   if (FLAGS.log_tag == 'testing' or FLAGS.owr) and not FLAGS.online:
@@ -208,6 +211,9 @@ def main(_):
     FLAGS.continue_training = True
     FLAGS.checkpoint_path = FLAGS.log_tag
 
+  if len(FLAGS.checkpoint_path) != 0 and FLAGS.checkpoint_path[0] != '/': 
+    FLAGS.checkpoint_path = os.path.join(FLAGS.summary_dir, FLAGS.checkpoint_path) 
+  
   if not os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag): 
     os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
     

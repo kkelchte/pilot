@@ -1,4 +1,3 @@
-
 import os, sys
 
 from models import *
@@ -60,7 +59,8 @@ class Model(object):
 
     # DEFINE LOSS
     self.criterion = eval("nn.{0}Loss()".format(self.FLAGS.loss))
-    
+    # self.collision_criterion=nn.MSELoss()
+    self.softmax = torch.nn.Softmax(dim=1) #assumes [Batch x Outputs]
     # DEFINE OPTIMIZER
     self.optimizer = eval("optim.{0}(self.net.parameters(), lr={1})".format(self.FLAGS.optimizer, self.FLAGS.learning_rate))
 
@@ -74,6 +74,10 @@ class Model(object):
       self.summary_vars = {}
       self.summary_ops = {}
       self.writer = None
+      config=tf.ConfigProto(allow_soft_placement=True)
+      config.gpu_options.allow_growth = True
+      self.sess=tf.Session(graph=self.graph, config=config)
+      
 
     if not self.FLAGS.pretrained or self.FLAGS.continue_training: 
       self.initialize_network()
@@ -201,14 +205,14 @@ class Model(object):
     if len(targets) != 0: 
       assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
       targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
-      losses[self.FLAGS.loss] = self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy()
+      losses['Loss_train_imitation_learning'] = self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy()
   
     predictions=predictions.cpu().detach().numpy()
     if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
 
     return predictions, losses
 
-  def train(self, inputs, targets):
+  def train(self, inputs, targets, actions=[], collisions=[]):
     '''take backward pass from loss and apply gradient step
     inputs: batch of images
     targets: batch of control labels
@@ -220,14 +224,33 @@ class Model(object):
     # Ensure gradient buffers are zero
     self.optimizer.zero_grad()
 
-    losses={'total':0}
+    losses={'Loss_train_total':0}
     inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
     predictions = self.net.forward(inputs, train=True)
     
     targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
-    losses[self.FLAGS.loss]=self.criterion(predictions, targets.to(self.device))
-    losses['total']+=losses[self.FLAGS.loss] 
-    losses['total'].backward() # fill gradient buffers with the gradient according to this loss
+    losses['Loss_train_imitation_learning']=self.criterion(predictions, targets.to(self.device))
+    losses['Loss_train_total']+=self.FLAGS.il_weight*losses['Loss_train_imitation_learning']
+    
+    if len(actions) == len(collisions) == len(inputs) and self.FLAGS.il_weight != 1:
+      # 1. from logits to probabilities with softmax for each output in batch
+      probabilities=self.softmax(predictions)
+      # 2. probabilities of corresponding actions
+      actions=self.continuous_to_bins(actions)
+      action_probabilities=torch.stack([probabilities[i, actions[i]] for i in range(len(probabilities))])
+      # 3. add MSE Loss for specific output of corresponding action with 1-collision probability
+      no_collisions=1-collisions 
+      # manual cross-entropy implementation sum(-target_probs*log(predicted_probs))
+      log_y=torch.log((action_probabilities+10**-8).type(torch.FloatTensor).to(self.device))
+      p=torch.from_numpy(no_collisions).type(torch.FloatTensor).to(self.device)
+      log_y_1=torch.log((1-action_probabilities+10**-8).type(torch.FloatTensor).to(self.device))
+      
+      losses['Loss_train_reinforcement_learning']=torch.mean(-p*log_y-(1-p)*log_y_1)
+      
+      # 4. add loss to Loss_train_total loss with corresponding weight.
+      losses['Loss_train_total']+=(1-self.FLAGS.il_weight)*losses['Loss_train_reinforcement_learning'] 
+    
+    losses['Loss_train_total'].backward() # fill gradient buffers with the gradient according to this loss
     
     self.optimizer.step() # apply what is in the gradient buffers to the parameters
     self.epoch+=1
@@ -237,6 +260,7 @@ class Model(object):
 
     # ensure losses are of type numpy
     for k in losses: losses[k]=losses[k].cpu().detach().numpy()
+    
     return self.epoch, predictions, losses
      
   def add_summary_var(self, name):
@@ -256,17 +280,14 @@ class Model(object):
     try:
       # Ensure that for each variable key a summary var is defined in the summary_vars and summary_ops fields
       for k in sumvars.keys(): 
-        if k not in self.summary_vars.keys(): 
+        if k not in self.summary_vars.keys(): #if k does not have variable and operation yet, add it
           self.add_summary_var(k)
       feed_dict={self.summary_vars[key]:sumvars[key] for key in sumvars.keys()}
       with self.graph.as_default():
         with self.graph.device('/cpu:0'):
           sum_op = tf.summary.merge([self.summary_ops[key] for key in sumvars.keys()])
       
-      config=tf.ConfigProto(allow_soft_placement=True)
-      config.gpu_options.allow_growth = True
-      with tf.Session(graph=self.graph, config=config) as sess:
-        summary_str = sess.run(sum_op, feed_dict=feed_dict)
+        summary_str = self.sess.run(sum_op, feed_dict=feed_dict)
         if self.writer == None:  self.writer = tf.summary.FileWriter(self.FLAGS.summary_dir+self.FLAGS.log_tag, self.graph)
         self.writer.add_summary(summary_str, self.epoch)
         self.writer.flush()

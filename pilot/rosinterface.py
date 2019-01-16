@@ -57,6 +57,7 @@ class PilotNode(object):
     # self.accumlosses = {} # gather losses and info over the run in a dictionary
     self.current_distance=0 # accumulative distance travelled from beginning of run used at evaluation
     self.furthest_point=0 # furthest point reached from spawning point at the beginning of run
+    self.initial_pos=[] # save starting position of drone  
     self.average_distances={'train':0, 'test':0} # running average over different runs
     self.target_control = [] # field to keep the latest supervised control
     self.target_depth = [] # field to keep the latest supervised depth
@@ -106,17 +107,18 @@ class PilotNode(object):
     self.time_im_received=[]
     self.time_ctr_send=[]
 
+    # initialize ROS node
+    rospy.init_node('pilot', anonymous=True)
+
     # Pausing and unpausing gazebo physics simulator
     if self.FLAGS.pause_simulator:
       self.pause_physics_client=rospy.ServiceProxy('/gazebo/pause_physics',Emptyservice)
       self.unpause_physics_client=rospy.ServiceProxy('/gazebo/unpause_physics',Emptyservice)
       
-    # initialize ROS node
-    rospy.init_node('pilot', anonymous=True)
 
-    # write tf_log to indicate to run_script initialization is finished.
-    f=open(os.path.join(self.logfolder,'tf_log'),'a')
-    f.write(self.FLAGS.log_tag)
+    # write nn_ready to indicate to run_script initialization is finished.
+    f=open(os.path.join(self.logfolder,'nn_ready'),'a')
+    f.write("{0}: start {1}".format(time.strftime('%H.%M.%S'),self.FLAGS.log_tag))
     f.write('\n')
     f.close()
 
@@ -130,11 +132,9 @@ class PilotNode(object):
     if not self.ready and self.finished:
       print('Neural control activated.')
       self.ready = True
-      self.start_time = rospy.get_time()
       self.finished = False
+      self.start_time = rospy.get_time()
       self.exploration_noise.reset()
-      self.last_pose=[]
-      self.furthest_point=0
       # choose one speed for this flight
       self.FLAGS.speed=self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
       if rospy.has_param('/evaluate'):
@@ -154,8 +154,11 @@ class PilotNode(object):
                     data.pose.pose.position.y,
                     data.pose.pose.position.z]
     if len(self.last_pose)!= 0:
-        self.current_distance += np.sqrt((self.last_pose[0,3]-current_pos[0])**2+(self.last_pose[1,3]-current_pos[1])**2)
-    # self.furthest_point=max([self.furthest_point, np.sqrt(current_pos[0]**2+current_pos[1]**2)])
+      self.current_distance += np.sqrt((self.last_pose[0,3]-current_pos[0])**2+(self.last_pose[1,3]-current_pos[1])**2)
+    if len(self.initial_pos) == 0:
+      self.initial_pos=current_pos
+    
+    self.furthest_point=max([self.furthest_point, np.sqrt((current_pos[0]-self.initial_pos[0])**2+(current_pos[1]-self.initial_pos[1])**2)])
 
     # Get pose (rotation and translation) [DEPRECATED: USED FOR ODOMETRY]
     quaternion = (data.pose.pose.orientation.x,
@@ -288,17 +291,16 @@ class PilotNode(object):
       self.finished=True
       if self.start_time!=0: 
         self.driving_duration = rospy.get_time() - self.start_time
+      if os.path.isfile(self.logfolder+'/fsm_log'):
+        bump=''
+        with open(self.logfolder+'/fsm_log', 'r') as f:
+          bump=f.readlines()[-1].strip().split(' ')[0]
+        # print("[rosinterface]: found fsm_file: {0}".format(bump))
+        if bump == 'BUMP' and not self.FLAGS.evaluate:
+          self.replay_buffer.annotate_collision(self.FLAGS.horizon)
 
-      # if self.replay_buffer.size()>=self.FLAGS.batch_size and not self.FLAGS.evaluate:
-      #   losses_train, depth_predictions = self.train_model()
-      #   self.save_summary(losses_train, depth_predictions)
-      # else:
-      
-      # TODO: IN CASE OF BUMP LABEL--> LABEL REPLAY BUFFER 
-      
       # save separate run logging
-      self.save_summary()
-
+      self.save_end_run(bump)
       self.reset_variables()  
 
   #--------------------------------
@@ -315,7 +317,10 @@ class PilotNode(object):
     if self.FLAGS.pause_simulator and self.ready:
       # print("[rosinterface] {0} pause simulator".format(time.strftime('%H:%M')))
       self.pause_physics_client(EmptyRequest())
-
+    
+    # keep track of pausing duration
+    pause_start = time.time()
+    
     # skip a number of frames to lower the actual control rate
     # independently of the image frame rate
     if self.skip_frames != 0:
@@ -385,40 +390,43 @@ class PilotNode(object):
     # ADD EXPERIENCE REPLAY
     if not self.FLAGS.evaluate and not self.finished and len(trgt) != 0:
       experience={'state':im,
-                  'action':action,
-                  'trgt':trgt}
+                  'action':float(action),
+                  'trgt':trgt,
+                  'collision':0}
       if self.FLAGS.auxiliary_depth: experience['target_depth']=trgt_depth
       self.replay_buffer.add(experience)
       # print("added experience: {0} vs {1}".format(action, trgt))
 
-    if self.replay_buffer.size()>=self.FLAGS.batch_size and not self.FLAGS.evaluate and not self.finished:
-      epoch, losses_train = self.train_model()
-      self.save_summary(losses_train)
-      # for i in range(10): self.replay_buffer.remove()
-      if epoch > self.FLAGS.max_episodes:
-        self.finished=True
-        self.ready=False
+    if self.replay_buffer.size() > (self.FLAGS.batch_size + self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0) and not self.FLAGS.evaluate and not self.finished and (not self.FLAGS.prefill or (self.replay_buffer.size() == self.FLAGS.buffer_size)):
+      self.epoch, losses_train = self.train_model()
+      # keep track of pausing duration
+      pause_duration = time.time() - pause_start
+      extra_info = self.replay_buffer.get_details()
+      extra_info['pause_duration']=pause_duration
+      self.save_summary(losses_train, extra_info)
+      if self.epoch%self.FLAGS.save_every_num_epochs == 1:
         self.model.save(self.logfolder)
-        self.reset_variables()
+
+      if self.epoch > self.FLAGS.max_episodes:
         self.overtake_pub.publish(Empty())
+        self.model.save(self.logfolder)
         try:
           with open(self.logfolder+'/fsm_log', 'a') as f: 
             f.write('FINISHED\n')
         except:
           print('[rosinterface]: FAILED TO WRITE LOGFILE: {}'.format(self.logfolder+'/fsm_log'))
-
+        self.finished_callback("")        
+    
     if self.FLAGS.pause_simulator and self.ready:
       # print("[rosinterface] {0} unpause simulator".format(time.strftime('%H:%M')))
       self.unpause_physics_client(EmptyRequest())
 
-
-
-  def backward_step_model(self, inputs, targets, aux_info, losses_train):
+  def backward_step_model(self, inputs, targets, actions, collisions, losses_train):
     """Apply gradient step with a backward pass
     """
     # in case the batch size is -1 the full replay buffer is send back 
     if len(inputs) != 0 and len(targets) != 0:
-      epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]))
+      epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
       for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
     else:
       print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
@@ -448,19 +456,17 @@ class PilotNode(object):
     losses_train = {}
 
     # 1. get the data from the replay buffer shuffled
-    inputs, targets, aux_info = self.replay_buffer.get_all_data_shuffled(self.FLAGS.max_batch_size)
-    if len(inputs) == 0: return losses_train
-    if len(targets) == 0: return losses_train
-      
+    inputs, targets, actions, collisions = self.replay_buffer.get_all_data_shuffled(self.FLAGS.max_batch_size, self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
+    if len(inputs) == 0: return self.epoch, losses_train
+    
     # 1.b if there is a hard replay buffer that is full, use it for your batch
     if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
-      hard_inputs, hard_targets, hard_aux_info = self.hard_replay_buffer.get_all_data_shuffled(self.FLAGS.hard_batch_size)
+      hard_inputs, hard_targets, hard_actions, hard_collisions = self.hard_replay_buffer.get_all_data_shuffled(self.FLAGS.hard_batch_size)
       print("hardinputs: {}".format(hard_inputs.shape))
       inputs = np.concatenate([inputs, hard_inputs], axis=0)
       targets = np.concatenate([targets, hard_targets], axis=0)
-      # aux_info = np.concatenate([aux_info, hard_aux_info], axis=0)
-      # print("inputs: {}".format(inputs.shape))
-      # print("targets: {}".format(targets.shape))
+      actions = np.concatenate([actions, hard_actions], axis=0)
+      collisions = np.concatenate([collisions, hard_collisions], axis=0)
 
     # 2. Loop over data grad_step times in batches
     for grad_step in range(self.FLAGS.gradient_steps):
@@ -469,24 +475,30 @@ class PilotNode(object):
         if len(inputs) >= b+self.FLAGS.batch_size:
           input_batch = inputs[b:b+self.FLAGS.batch_size]
           target_batch = targets[b:b+self.FLAGS.batch_size]
+          action_batch = actions[b:b+self.FLAGS.batch_size]
+          collision_batch = collisions[b:b+self.FLAGS.batch_size]
         else:  
           input_batch = inputs[b:]
           target_batch = targets[b:]
-        epoch, losses_train = self.backward_step_model(input_batch, target_batch, [], losses_train)
+          action_batch = actions[b:]
+          collision_batch = collisions[b:]
+        epoch, losses_train = self.backward_step_model(input_batch, target_batch, action_batch, collision_batch, losses_train)
         b+=self.FLAGS.batch_size
       
     # 3. in case there is a hard replay buffer: fill it with the hardest examples over the inputs
     if self.FLAGS.hard_replay_buffer and len(losses_train.keys()) != 0:
       assert(len(list(losses_train[self.FLAGS.loss][0]))==len(list(inputs)))
-      assert(len(list(losses_train[self.FLAGS.loss][0]))==len(list(targets)))
       sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), inputs.tolist())))]
       sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), targets.tolist())))]
+      sorted_actions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), actions.tolist())))]
+      sorted_collisions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), collisions.tolist())))]
       # as all data in hard buffer was in batch we can clear the hard buffer totally
       self.hard_replay_buffer.clear()
       # and gradually add it with the hardest experiences till it is full.
       for e in range(min(self.FLAGS.hard_batch_size, len(sorted_inputs))):
         experience={'state':sorted_inputs[e],
-                'action':None,
+                'action':sorted_actions[e],
+                'collision':sorted_collisions[e],
                 'trgt':sorted_targets[e],
                 'priority':losses_train['ce'][0][e]} 
         self.hard_replay_buffer.add(experience)
@@ -502,8 +514,9 @@ class PilotNode(object):
     self.last_pose = []
     self.nfc_images = []
     self.furthest_point = 0
+    self.initial_pos=[]    
     self.world_name = ''
-    if self.runs['train']%20==0 and not self.FLAGS.evaluate:
+    if self.runs['train']%5==0 and not self.FLAGS.evaluate:
       # Save a checkpoint every 20 runs.
       self.model.save(self.logfolder)
       print('model saved [run {0}]'.format(self.runs['train']))
@@ -519,43 +532,61 @@ class PilotNode(object):
 
     if self.FLAGS.empty_buffer: self.replay_buffer.clear()    
 
-  def save_summary(self, losses_train={}):
+  def save_summary(self, losses_train={}, extra_info={}):
     """Collect all field variables and save them for visualization in tensorboard
     """
     # Gather all info to build a proper summary and string of results
-    k='train' if not self.FLAGS.evaluate else 'test'
-    self.average_distances[k]= self.average_distances[k]-self.average_distances[k]/(self.runs[k]+1)
-    self.average_distances[k] = self.average_distances[k]+self.current_distance/(self.runs[k]+1)
-    self.runs[k]+=1
     sumvar={}
-    result_string='{0}: run {1}'.format(time.strftime('%H:%M'),self.runs[k])
+    result_string='time: {0}, epoch: {1}'.format(time.strftime('%H.%M.%S'),self.epoch)
+    for k in losses_train.keys():
+      sumvar[k]=np.mean(losses_train[k])
+      result_string='{0}, {1}:{2:0.5f}'.format(result_string, k, np.mean(losses_train[k]))
+    for k in extra_info.keys():
+      sumvar[k]=extra_info[k]
+      result_string='{0}, {1}:{2:0.5f}'.format(result_string, k, extra_info[k])
+    try:
+      self.model.summarize(sumvar)
+    except Exception as e:
+      print('failed to write', e)
+      pass
+    print(result_string)
+    # ! Note: nn_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts
+    # Script starts next run once this file is updated.
+    try:
+      with open(os.path.join(self.logfolder,'nn_log'),'a') as f:
+        f.write(result_string+' \n')
+    except Exception as e:
+      print('failed to write txt {0}/nn_log {1}'.format(self.logfolder, e))
+      
+  def save_end_run(self, result=""):
+    """At the end of a run, update nn_ready so run_script knows it can start the next run.
+    """
+    run_type='train' if not self.FLAGS.evaluate else 'test'
+    self.average_distances[run_type]= self.average_distances[run_type]-self.average_distances[run_type]/(self.runs[run_type]+1)
+    self.average_distances[run_type] = self.average_distances[run_type]+self.current_distance/(self.runs[run_type]+1)
+    self.runs[run_type]+=1
+
+    sumvar={}
+    result_string="start_time: {0}, run_number: {1}, run_type: {2}".format(time.strftime('%H.%M.%S'), self.runs[run_type], run_type)
+
+    if len(result)!= 0: result_string='{0}, {2}_result:{1}'.format(result_string, result, run_type)
+
     vals={'current':self.current_distance, 'furthest':self.furthest_point}
-    # for d in ['current', 'furthest']:
-    for d in ['current']:
+    for d in ['current', 'furthest']:
       name='Distance_{0}_{1}'.format(d,'train' if not self.FLAGS.evaluate else 'test')
       if len(self.world_name)!=0: name='{0}_{1}'.format(name,self.world_name)
       sumvar[name]=vals[d]
-      result_string='{0}, {1}:{2}'.format(result_string, name, vals[d])
-    for k in losses_train.keys():
-      # name={'total':'Loss_train_total'}
-      # name['MSE']='Loss_train_MSE'
-      # for lll_k in self.model.lll_losses.keys():
-      #   name['lll_'+lll_k]='Loss_train_lll_'+lll_k
-      sumvar[k]=np.mean(losses_train[k])
-      result_string='{0}, {1}:{2}'.format(result_string, k, np.mean(losses_train[k]))
+      result_string='{0}, {1}:{2:0.3f}'.format(result_string, name, vals[d])
     
     # add driving duration (collision free)
     if self.driving_duration != -1: 
-      result_string='{0}, driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)
-      sumvar['driving_time']=self.driving_duration
+      result_string='{0}, run_driving_duration: {1:0.3f}'.format(result_string, self.driving_duration)
+      sumvar['run_driving_time']=self.driving_duration
     # add imitation loss
     if len(self.imitation_loss)!=0:
-      result_string='{0}, imitation_loss: {1:0.3}'.format(result_string, np.mean(self.imitation_loss))
-      sumvar['imitation_loss']=np.mean(self.imitation_loss)
-    # add depth loss
-    if len(self.depth_loss)!=0:
-      result_string='{0}, depth_loss: {1:0.3f}, depth_loss_var: {2:0.3f}'.format(result_string, np.mean(self.depth_loss), np.var(self.depth_loss))
-      sumvar['depth_loss']=np.mean(self.depth_loss)
+      result_string='{0}, run_imitation_loss: {1:0.3f}'.format(result_string, np.mean(self.imitation_loss))
+      sumvar['run_imitation_loss']=np.mean(self.imitation_loss)
+    
     if len(self.time_ctr_send) > 10 and len(self.time_im_received) > 10:
       # calculate control-rates and rgb-rates from differences
       avg_ctr_rate = 1/np.mean([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
@@ -563,28 +594,17 @@ class PilotNode(object):
       avg_im_rate = 1/np.mean([self.time_im_received[i+1]-self.time_im_received[i] for i in range(1,len(self.time_im_received)-1)]) #skip first image delay as network still needs to 'startup'
       std_im_delays = np.std([self.time_ctr_send[i+1]-self.time_ctr_send[i] for i in range(len(self.time_ctr_send)-1)])
 
-      result_string='{0}, control_rate: {1:0.3f}, image_rate: {2:0.3f} , control_delay_std: {1:0.3f}, image_delay_std: {2:0.3f} '.format(result_string, avg_ctr_rate, avg_im_rate, std_ctr_delays, std_im_delays)
+      result_string='{0}, run_rate_control: {1:0.3f}, run_rate_image: {2:0.3f} , run_delay_std_control: {1:0.3f}, run_delay_std_image: {2:0.3f} '.format(result_string, avg_ctr_rate, avg_im_rate, std_ctr_delays, std_im_delays)
+    
+    # write it to tensorboard, output and nn_ready file.
     try:
       self.model.summarize(sumvar)
     except Exception as e:
       print('failed to write', e)
       pass
     print(result_string)
-    # ! Note: tf_log is used by evaluate_model train_model and train_and_evaluate_model in simulation_supervised/scripts
-    # Script starts next run once this file is updated.
     try:
-      f=open(os.path.join(self.logfolder,'tf_log'),'a')
-      f.write(result_string)
-      f.write('\n')
-      f.close()
+      with open(self.logfolder+'/nn_ready','a') as f:
+        f.write(result_string+' \n')
     except Exception as e:
-      print('failed to write txt tf_log {}'.format(e))
-      print('retry after sleep 60')
-      time.sleep(60)
-      f=open(os.path.join(self.logfolder,'tf_log'),'a')
-      f.write(result_string)
-      f.write('\n')
-      f.close()
-
-
-
+      print('failed to write txt {0}/nn_ready {1}'.format(self.logfolder, e))

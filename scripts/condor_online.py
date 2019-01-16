@@ -46,7 +46,7 @@ parser.add_argument("--gpumem",default=1900, type=int,help="define the number of
 parser.add_argument("--cpus",default=11, type=int,help="define the number of cpu cores.")
 parser.add_argument("--rammem",default=15, type=int,help="define the number of gigs required in your RAM.")
 parser.add_argument("--diskmem",default=100, type=int,help="define the number of gigs required on your HD.")
-parser.add_argument("--wall_time",default=60*60*3, help="After training a new condor job can be submitted to evaluate the model after.")
+parser.add_argument("--wall_time",default=60*60*2, help="After training a new condor job can be submitted to evaluate the model after.")
 parser.add_argument("--not_nice",action='store_true', help="In case you want higher priority.")
 
 #===========================
@@ -124,7 +124,7 @@ condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCo
 blacklist=""
 # greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
 greenlist=""
-condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
+condor_submit.write("Requirements = (machineowner == \"Visics\") && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
@@ -151,9 +151,10 @@ executable = open(shell_file,'w')
 
 executable.write("#!/bin/bash \n")
 executable.write("echo started executable within singularity. \n")
+# executable.write("cd /esat/opal/kkelchte/docker_home \n")
 executable.write("cd /tmp/home \n")
 executable.write("source .entrypoint_xpra \n")
-# executable.write("source /esat/opal/kkelchte/docker_home/.entrypoint_xpra \n")
+# executable.write("source .entrypoint_xpra_no_build \n")
 executable.write("roscd simulation_supervised/python \n")
 executable.write("echo PWD: $PWD \n")
 
@@ -214,12 +215,12 @@ sing.write("done \n")
 sing.write("echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running on $RemoteHost so continue...\" \n")
 sing.write("echo \"HOST: $RemoteHost\" \n")
 sing.write("\n")
-sing.write("echo check if gluster is accessible: \n")
 sing.write("sing_image=\"ros_gazebo_tensorflow_writable.img\"\n")
+# sing.write("echo check if gluster is accessible: \n")
 # sing.write("if [ -f /gluster/visics/singularity/$sing_image ] ; then \n")
 # sing.write("  sing_loc=\"/gluster/visics/singularity\" \n")
 # sing.write("else \n")
-sing.write("  sing_loc=\"/esat/opal/kkelchte/singularity_images\" \n")
+sing.write("sing_loc=\"/esat/opal/kkelchte/singularity_images\" \n")
 # sing.write("fi\n")
 sing.write("echo \"exec $1 in singularity image $sing_loc/$sing_image\"\n")
 
@@ -233,8 +234,6 @@ sing.write("cd $sing_loc\n")
 sing.write("pwd\n")
 sing.write("ls\n")
 sing.write("sleep 1\n")
-# sing.write("echo 'copy singularity image to /tmp'\n")
-# sing.write("cp $sing_loc/$sing_image /tmp\n")
 
 ###### Copy docker_home to local tmp
 sing.write("echo 'make home in tmp' \n")
@@ -249,31 +248,27 @@ sing.write("echo 'cp checkpoint' \n")
 if '--checkpoint_path' in others:
 	checkpoint_path=others[others.index('--checkpoint_path')+1]
 else:
-	checkpoint_path='mobilenet_025'
+	checkpoint_path=FLAGS.log_tag
 sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
-# if checkpoint_path != 'mobilenet_025':
-sing.write("if [ -e {1}/{2}{0}/checkpoint ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("cp {1}/{2}{0}/checkpoint {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("else \n")
-sing.write("cp {1}/{2}{0}/*/checkpoint {2}{0} || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("if [ -e {1}/{2}{0}/my-model ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+sing.write("cp {1}/{2}{0}/my-model {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# sing.write("else \n")
+# sing.write("echo 'failed to copy checkpoint' \n")
+# sing.write("cp {1}/{2}{0}/*/my-model {2}{0} || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
 sing.write("fi \n")
 sing.write("if [ -e {1}/{2}{0}/configuration.xml ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
 sing.write("cp {1}/{2}{0}/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("else \n")
-sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0}  || echo 'failed to copy configuration' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+# sing.write("else \n")
+# sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0}  || echo 'failed to copy configuration' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
 sing.write("fi \n")
 sing.write("echo 'cp tensorflow {0} project' \n".format(FLAGS.python_project))
-sing.write("ls {0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
 sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
-sing.write("cp -r {0}/tensorflow/tf_cnnvis tensorflow/ \n".format(FLAGS.home))
+# sing.write("cp -r {0}/tensorflow/tf_cnnvis tensorflow/ \n".format(FLAGS.home))
 sing.write("echo 'cp simulation_supervised' \n")
 sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 ######
 
-# sing.write("/usr/bin/singularity exec --nv /esat/opal/kkelchte/singularity_images/ros_gazebo_tensorflow_drone_ws.img $1 \n")
-# sing.write("/usr/bin/singularity exec --nv /gluster/visics/singularity/ros_gazebo_tensorflow_drone_ws.img $1 \n")
 sing.write("/usr/bin/singularity exec --nv $sing_loc/$sing_image $1 \n")
-# sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 \n")
 sing.write("retVal=$? \n")
 sing.write("echo \"got exit code $retVal\" \n")
 

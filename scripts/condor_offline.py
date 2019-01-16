@@ -44,6 +44,7 @@ parser.add_argument("-ps","--python_script",default='main.py', type=str, help="D
 #===========================
 #   Condor Machine Settings
 #===========================
+parser.add_argument("--gpunum",default=1, type=int,help="define the number of GPUs required.")
 parser.add_argument("--gpumem",default=1900, type=int,help="define the number of gigs required in your GPU.")
 parser.add_argument("--rammem",default=15, type=int,help="define the number of gigs required in your RAM.")
 parser.add_argument("--diskmem",default=50, type=int,help="define the number of gigs required on your HD.")
@@ -104,7 +105,7 @@ condor_submit = open(condor_file,'w')
 
 condor_submit.write("Universe         = vanilla\n")
 condor_submit.write("RequestCpus      = 4 \n")
-condor_submit.write("Request_GPUs     = 1 \n")
+condor_submit.write("Request_GPUs     = {0} \n".format(FLAGS.gpunum))
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
 
@@ -122,7 +123,8 @@ blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 #             (machine != \"chokai.esat.kuleuven.be\") && \
 #             (machine != \"pyrite.esat.kuleuven.be\") && \
 #             (machine != \"ymir.esat.kuleuven.be\") "
-condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} \n".format(FLAGS.gpumem, blacklist))
+gpu_requirements=" && (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) ".format(FLAGS.gpumem) if FLAGS.gpunum > 0 else ""
+condor_submit.write("Requirements = (machine =!= LastRemoteHost) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {0} {1}\n".format(blacklist, gpu_requirements))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
 if not FLAGS.not_nice: condor_submit.write("Niceuser = true \n")
