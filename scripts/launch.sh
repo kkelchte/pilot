@@ -52,44 +52,47 @@
 #
 #------------------------------------------------------------
 
-name="standard_il_2"
-dag_args="--number_of_models 3"
-condor_args="--not_nice --wall_time $((12*60*60))"
+# Online learning notes:
+# buffer_size of 100.000 requires 20G RAM
+
+name="standard_il2"
+dag_args="--number_of_models 2"
+condor_args="--wall_time $((20*60*60)) --rammem 20"
 script_args="--z_pos 1 -w esatv3 --random_seed 512"
-pytorch_args="--pause_simulator --online --alpha 0.5 --buffer_size 1000 --tensorboard --discrete --max_episodes 10000 --loss CrossEntropy --il_weight 1"
+pytorch_args="--learning_rate 0.1 --pause_simulator --buffer_size 100000 --batch_size 100 --online --alpha 0.5  --tensorboard --discrete --max_episodes 20000 --loss CrossEntropy --il_weight 1"
 python dag_train_online.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-# name="standard_rl_2"
-# dag_args="--number_of_models 3"
-# condor_args="--rammem 18 --wall_time $((12*60*60))"
-# script_args="--z_pos 1 -w esatv3 --random_seed 512"
-# pytorch_args="--pause_simulator --online --alpha 0. --buffer_size 100000 --tensorboard --discrete --max_episodes 80000 --loss CrossEntropy --il_weight 0"
-# python dag_train_online.py -t $name $dag_args $condor_args $script_args $pytorch_args
+name="standard_rl2"
+dag_args="--number_of_models 2"
+condor_args="--wall_time $((3*24*60*60)) --rammem 20"
+script_args="--z_pos 1 -w esatv3 --random_seed 512"
+pytorch_args="--learning_rate 0.1 --pause_simulator --buffer_size 100000 --batch_size 100 --online --alpha 0.5  --tensorboard --discrete --max_episodes 100000 --loss CrossEntropy --il_weight 0"
+python dag_train_online.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-# name="on_policy_il_2"
-# dag_args="--number_of_models 3"
-# condor_args="--wall_time $((12*60*60))"
+# name="on_policy_il"
+# dag_args="--number_of_models 1"
+# condor_args="--wall_time $((20*60*60))"
 # script_args="--z_pos 1 -w esatv3 --random_seed 512"
 # pytorch_args="--pause_simulator --online --alpha 0. --buffer_size 1000 --tensorboard --discrete --max_episodes 20000 --loss CrossEntropy --il_weight 1"
 # python dag_train_online.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-# name="off_policy_il_2"
-# dag_args="--number_of_models 3"
-# condor_args="--wall_time $((12*60*60))"
+# name="off_policy_il"
+# dag_args="--number_of_models 1"
+# condor_args="--wall_time $((20*60*60))"
 # script_args="--z_pos 1 -w esatv3 --random_seed 512"
 # pytorch_args="--pause_simulator --online --alpha 1. --buffer_size 1000 --tensorboard --discrete --max_episodes 20000 --loss CrossEntropy --il_weight 1"
 # python dag_train_online.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-# name="online_il_2"
-# dag_args="--number_of_models 3"
-# condor_args="--wall_time $((12*60*60))"
+# name="online_il"
+# dag_args="--number_of_models 1"
+# condor_args="--wall_time $((20*60*60))"
 # script_args="--z_pos 1 -w esatv3 --random_seed 512"
 # pytorch_args="--pause_simulator --online --alpha 0.5 --buffer_size 100 --tensorboard --discrete --max_episodes 20000 --loss CrossEntropy --il_weight 1"
 # python dag_train_online.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-# name="offline_il_2"
-# dag_args="--number_of_models 3"
-# condor_args=" --rammem 18 --wall_time $((12*60*60))"
+# name="offline_il"
+# dag_args="--number_of_models 1"
+# condor_args=" --rammem 18 --wall_time $((20*60*60))"
 # script_args="--z_pos 1 -w esatv3 --random_seed 512"
 # pytorch_args="--pause_simulator --online --alpha 0.5 --buffer_size 100000 --tensorboard --discrete --max_episodes 20000 --loss CrossEntropy --il_weight 1"
 # python dag_train_online.py -t $name $dag_args $condor_args $script_args $pytorch_args

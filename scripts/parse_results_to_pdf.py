@@ -101,15 +101,15 @@ for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
 log_root = FLAGS.home+'/'+FLAGS.summary_dir
-if 'nn_log' in os.listdir(log_root+FLAGS.mother_dir) and 'fsm_log' in os.listdir(log_root+'/'+FLAGS.mother_dir):
+if 'nn_ready' in os.listdir(log_root+FLAGS.mother_dir) and 'fsm_log' in os.listdir(log_root+'/'+FLAGS.mother_dir):
   # mother_dir is the logfolde to parse
   log_folders = [log_root+FLAGS.mother_dir]
 else:
   # subfolders of mother dir should be parsed
-  log_folders = sorted([ log_root+FLAGS.mother_dir+'/'+d for d in os.listdir(log_root+FLAGS.mother_dir) if (len(d) == 1 or d.startswith(FLAGS.startswith) or d.endswith(FLAGS.endswith)) and os.path.isdir(log_root+FLAGS.mother_dir+'/'+d) and not d=='DAG' and not d=='results' and not d=='report'])
+  log_folders = sorted([ log_root+FLAGS.mother_dir+'/'+d for d in os.listdir(log_root+FLAGS.mother_dir) if (len(d) == 1 or d.startswith(FLAGS.startswith) or d.endswith(FLAGS.endswith)) and os.path.isfile(log_root+FLAGS.mother_dir+'/'+d+'/nn_ready')])
 
 if len(log_folders)==0:
-  print("Woops, could not find anything "+log_root+FLAGS.mother_dir+" that startswith "+FLAGS.startswith+" and endswith "+FLAGS.endswith)
+  print("Woops, could not find anything "+log_root+FLAGS.mother_dir+" that startswith "+FLAGS.startswith+" and endswith "+FLAGS.endswith+" and has an nn_ready log.")
   sys.exit(1)
 else:
   print("Parsing "+str(len(log_folders))+" log_folders.")
@@ -130,7 +130,10 @@ for folder_index, folder in enumerate(log_folders):
   raw_log=tablib.Databook()
   # Parse online log_files: nn_ready and nn_log
   for file in ['nn_ready','nn_log']:
-    log_file=open(folder+'/'+file,'r').readlines()
+    try:
+      log_file=open(folder+'/'+file,'r').readlines()
+    except:
+      continue
     headers=[]
     for line in log_file:
       if len(line.split(',')) > 2:
@@ -145,8 +148,10 @@ for folder_index, folder in enumerate(log_folders):
             print("[{0}] failed to parse {1} term: {2}".format(os.path.basename(folder), log_file, term))
     # save data in csv
     data = tablib.Dataset(headers=headers)
+
     # loop again over data and fill it in table
-    for i in range(len(results[folder][headers[0]])):
+    if len(headers) == 0: continue
+    for i in range(max([len(results[folder][h]) for h in headers])):
       datapoint=[]
       for h in headers:
         try:
@@ -156,13 +161,17 @@ for folder_index, folder in enumerate(log_folders):
       data.append(datapoint)
     raw_log.add_sheet(data)
     # open(folder+'/'+file+'.xls','wb').write(data.xls)
-  open(folder+'/log.xls','wb').write(raw_log.xls)
+  if raw_log.size != 0:
+    open(folder+'/log.xls','wb').write(raw_log.xls)
 
 
   # parse current condor host from events.file.name
-  host=[f.split('.')[4] for f in os.listdir(folder) if f.startswith('events')][0]
-  save_append(results[folder], 'host', host)
-
+  try:
+    host=[f.split('.')[4] for f in os.listdir(folder) if f.startswith('events')][0]
+    save_append(results[folder], 'host', host)
+  except:
+    pass
+    
   # todo: add visualization maps
   # ...
 

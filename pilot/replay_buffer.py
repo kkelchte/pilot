@@ -48,10 +48,11 @@ class ReplayBuffer(object):
       e_x = np.exp(x-np.max(x))
       return e_x/e_x.sum()
 
-    def get_all_data(self, max_batch_size=-1, data_buffer=None):
+    def get_all_data(self, max_batch_size=-1, data_buffer=None, horizon=0):
       # fill in a batch of size batch_size
       # return an array of inputs, targets and auxiliary information
-      if data_buffer == None: data_buffer=self.buffer      
+      if data_buffer == None: data_buffer=self.buffer
+      data_buffer=data_buffer[:-horizon] if horizon != 0 else data_buffer      
       input_batch = np.array([_['state'] for _ in data_buffer])
       target_batch = np.array([_['trgt'] for _ in data_buffer])
       action_batch = np.array([_['action'] for _ in data_buffer])
@@ -76,11 +77,13 @@ class ReplayBuffer(object):
       return self.get_all_data(max_batch_size, shuffled_buffer)
 
 
-    def sample_batch(self, batch_size):
+    def sample_batch(self, batch_size, horizon=0):
       # fill in a batch of size batch_size
       # return an array of inputs, targets and auxiliary information
-      assert batch_size <= self.count, IOError('batchsize ',batch_size,' is bigger than buffer size: ',self.count)
-      batch=random.sample(self.buffer, batch_size)
+      
+      batch_size=min(self.size()-horizon, batch_size)
+      
+      batch=random.sample(self.buffer if horizon == 0 else self.buffer[:-horizon], batch_size)
 
       input_batch = np.array([_['state'] for _ in batch])
       target_batch = np.array([_['trgt'] for _ in batch])
@@ -92,10 +95,14 @@ class ReplayBuffer(object):
     def annotate_collision(self, horizon):
       """Annotate the experiences over the last horizon with a 1 for collision.
       """
-      last_experiences=[self.buffer.pop() for i in range(horizon)]
+      last_experiences=[]
+      try:
+        last_experiences=[self.buffer.pop() for i in range(horizon)]
+      except:
+        pass
       for e in last_experiences: e['collision']=1
       self.buffer.extend(reversed(last_experiences))
-
+      
     def clear(self):
       self.buffer.clear()
       # self.buffer = []

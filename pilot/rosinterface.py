@@ -318,6 +318,8 @@ class PilotNode(object):
       # print("[rosinterface] {0} pause simulator".format(time.strftime('%H:%M')))
       self.pause_physics_client(EmptyRequest())
     
+    import pdb; pdb.set_trace()
+
     # keep track of pausing duration
     pause_start = time.time()
     
@@ -397,7 +399,7 @@ class PilotNode(object):
       self.replay_buffer.add(experience)
       # print("added experience: {0} vs {1}".format(action, trgt))
 
-    if self.replay_buffer.size() > (self.FLAGS.batch_size + self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0) and not self.FLAGS.evaluate and not self.finished and (not self.FLAGS.prefill or (self.replay_buffer.size() == self.FLAGS.buffer_size)):
+    if self.replay_buffer.size() >= (self.FLAGS.batch_size + (self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)) and not self.FLAGS.evaluate and not self.finished and (not self.FLAGS.prefill or (self.replay_buffer.size() == self.FLAGS.buffer_size)):
       self.epoch, losses_train = self.train_model()
       # keep track of pausing duration
       pause_duration = time.time() - pause_start
@@ -421,17 +423,6 @@ class PilotNode(object):
       # print("[rosinterface] {0} unpause simulator".format(time.strftime('%H:%M')))
       self.unpause_physics_client(EmptyRequest())
 
-  def backward_step_model(self, inputs, targets, actions, collisions, losses_train):
-    """Apply gradient step with a backward pass
-    """
-    # in case the batch size is -1 the full replay buffer is send back 
-    if len(inputs) != 0 and len(targets) != 0:
-      epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
-      for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
-    else:
-      print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
-    return epoch, losses_train
-
   def update_importance_weights(self):
     """Update the importance weights on ALL data in the replay buffer
     """
@@ -448,21 +439,57 @@ class PilotNode(object):
     if self.FLAGS.lifelonglearning:
       self.model.sess.run([tf.assign(self.model.star_variables[v.name], v) for v in self.model.copied_trainable_variables])
   
+
   def train_model(self):
     """Sample a batch from the replay buffer and train on it
+    """
+    losses_train = {}
+
+    # take multiple gradient steps, each on a fresh sampled batch of data
+    for grad_step in range(self.FLAGS.gradient_steps):
+      if (grad_step%100) == 10:
+        print("[rosinterface]: take step {0} of {1}".format(grad_step, self.FLAGS.gradient_steps))
+      # sampling grows less than linear with batch size
+      inputs, targets, actions, collisions = self.replay_buffer.sample_batch(self.FLAGS.batch_size, horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
+      # training increases more than linear with batch size
+      epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
+      for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
+
+    return epoch, losses_train
+
+
+
+  def backward_step_model(self, inputs, targets, actions, collisions, losses_train):
+    """Apply gradient step with a backward pass: useless....
+    """
+    # in case the batch size is -1 the full replay buffer is send back 
+    if len(inputs) != 0 and len(targets) != 0:
+      epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
+      for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
+    else:
+      print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
+    return epoch, losses_train
+
+      
+  
+  def train_model_old(self):
+    """Sample total recent and hard buffer and loop over it with several gradient steps.
     """
     # Train model from experience replay:
     # Train the model with batchnormalization out of the image callback loop
     losses_train = {}
 
     # 1. get the data from the replay buffer shuffled
-    inputs, targets, actions, collisions = self.replay_buffer.get_all_data_shuffled(self.FLAGS.max_batch_size, self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
+    if self.replay_buffer.size() > self.FLAGS.batch_size * 2:
+      inputs, targets, actions, collisions = self.replay_buffer.get_all_data_shuffled(horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
+    else:
+      inputs, targets, actions, collisions = self.replay_buffer.get_all_data(horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
     if len(inputs) == 0: return self.epoch, losses_train
     
     # 1.b if there is a hard replay buffer that is full, use it for your batch
     if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
-      hard_inputs, hard_targets, hard_actions, hard_collisions = self.hard_replay_buffer.get_all_data_shuffled(self.FLAGS.hard_batch_size)
-      print("hardinputs: {}".format(hard_inputs.shape))
+      hard_inputs, hard_targets, hard_actions, hard_collisions = self.hard_replay_buffer.get_all_data()
+      # print("hardinputs: {}".format(hard_inputs.shape))
       inputs = np.concatenate([inputs, hard_inputs], axis=0)
       targets = np.concatenate([targets, hard_targets], axis=0)
       actions = np.concatenate([actions, hard_actions], axis=0)
@@ -471,7 +498,7 @@ class PilotNode(object):
     # 2. Loop over data grad_step times in batches
     for grad_step in range(self.FLAGS.gradient_steps):
       b=0
-      while b < len(inputs):
+      while b < len(inputs)-30: #don't train on a batch smaller than 30, it's not worth the delay.
         if len(inputs) >= b+self.FLAGS.batch_size:
           input_batch = inputs[b:b+self.FLAGS.batch_size]
           target_batch = targets[b:b+self.FLAGS.batch_size]
@@ -487,11 +514,16 @@ class PilotNode(object):
       
     # 3. in case there is a hard replay buffer: fill it with the hardest examples over the inputs
     if self.FLAGS.hard_replay_buffer and len(losses_train.keys()) != 0:
-      assert(len(list(losses_train[self.FLAGS.loss][0]))==len(list(inputs)))
-      sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), inputs.tolist())))]
-      sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), targets.tolist())))]
-      sorted_actions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), actions.tolist())))]
-      sorted_collisions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train[self.FLAGS.loss][0]), collisions.tolist())))]
+      inputs=inputs[:len(losses_train['Loss_train_total'])]
+      targets=targets[:len(losses_train['Loss_train_total'])]
+      actions=actions[:len(losses_train['Loss_train_total'])]
+      collisions=collisions[:len(losses_train['Loss_train_total'])]
+      
+      assert len(losses_train['Loss_train_total'])==len(inputs), "[rosinterface] Failed to update hard buffer due to {0} losses while {1} inputs.".format(len(losses_train['Loss_train_total']),len(inputs))
+      sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train['Loss_train_total']), inputs.tolist())))]
+      sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), targets.tolist())))]
+      sorted_actions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), actions.tolist())))]
+      sorted_collisions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), collisions.tolist())))]
       # as all data in hard buffer was in batch we can clear the hard buffer totally
       self.hard_replay_buffer.clear()
       # and gradually add it with the hardest experiences till it is full.
@@ -500,7 +532,7 @@ class PilotNode(object):
                 'action':sorted_actions[e],
                 'collision':sorted_collisions[e],
                 'trgt':sorted_targets[e],
-                'priority':losses_train['ce'][0][e]} 
+                'priority':losses_train['Loss_train_total'][e]} 
         self.hard_replay_buffer.add(experience)
   
     return epoch, losses_train
@@ -538,12 +570,12 @@ class PilotNode(object):
     # Gather all info to build a proper summary and string of results
     sumvar={}
     result_string='time: {0}, epoch: {1}'.format(time.strftime('%H.%M.%S'),self.epoch)
-    for k in losses_train.keys():
+    for k in sorted(losses_train.keys()):
       sumvar[k]=np.mean(losses_train[k])
       result_string='{0}, {1}:{2:0.5f}'.format(result_string, k, np.mean(losses_train[k]))
-    for k in extra_info.keys():
+    for k in sorted(extra_info.keys()):
       sumvar[k]=extra_info[k]
-      result_string='{0}, {1}:{2:0.5f}'.format(result_string, k, extra_info[k])
+      result_string='{0}, {1}:{2:0.2f}'.format(result_string, k, extra_info[k])
     try:
       self.model.summarize(sumvar)
     except Exception as e:

@@ -248,7 +248,7 @@ sing.write("echo 'cp checkpoint' \n")
 if '--checkpoint_path' in others:
 	checkpoint_path=others[others.index('--checkpoint_path')+1]
 else:
-	checkpoint_path=FLAGS.log_tag
+	checkpoint_path="tiny_net_scratch"
 sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
 sing.write("if [ -e {1}/{2}{0}/my-model ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
 sing.write("cp {1}/{2}{0}/my-model {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))

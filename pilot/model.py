@@ -13,7 +13,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
-
+import time
 
 """
 Build basic NN model
@@ -58,7 +58,7 @@ class Model(object):
     print("[model] Total number of trainable parameters: {}".format(count))
 
     # DEFINE LOSS
-    self.criterion = eval("nn.{0}Loss()".format(self.FLAGS.loss))
+    self.criterion = eval("nn.{0}Loss(reduction='none')".format(self.FLAGS.loss))
     # self.collision_criterion=nn.MSELoss()
     self.softmax = torch.nn.Softmax(dim=1) #assumes [Batch x Outputs]
     # DEFINE OPTIMIZER
@@ -83,6 +83,7 @@ class Model(object):
       self.initialize_network()
 
 
+
   def initialize_network(self):
     """Initialize all parameters of the network conform the FLAGS configuration
     """
@@ -102,7 +103,7 @@ class Model(object):
       except:
         print("[model]: FAILED to load model {1} from {0} into {2}".format(self.FLAGS.checkpoint_path, 
                                                                           checkpoint['network'],
-                                                                          self.network))
+                                                                          self.FLAGS.network))
         if self.FLAGS.continue_training: print("\t put continue_training FALSE to avoid strict matching.")
         sys.exit(2)
       else:
@@ -148,6 +149,7 @@ class Model(object):
     """
     if isinstance(continuous_value, np.ndarray):
       shape=continuous_value.shape
+      # TODO SPEED UP BY CREATING VECTOR AND FILLING IT, or multithreading???
       discrete_values=[]
       for c in continuous_value:
         discrete=0
@@ -205,7 +207,7 @@ class Model(object):
     if len(targets) != 0: 
       assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
       targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
-      losses['Loss_train_imitation_learning'] = self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy()
+      losses['Loss_train_imitation_learning'] = np.mean(self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy())
   
     predictions=predictions.cpu().detach().numpy()
     if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
@@ -245,13 +247,17 @@ class Model(object):
       p=torch.from_numpy(no_collisions).type(torch.FloatTensor).to(self.device)
       log_y_1=torch.log((1-action_probabilities+10**-8).type(torch.FloatTensor).to(self.device))
       
-      losses['Loss_train_reinforcement_learning']=torch.mean(-p*log_y-(1-p)*log_y_1)
+      # losses['Loss_train_reinforcement_learning']=torch.mean(-p*log_y-(1-p)*log_y_1)
+      losses['Loss_train_reinforcement_learning']=-p*log_y-(1-p)*log_y_1
       
       # 4. add loss to Loss_train_total loss with corresponding weight.
       losses['Loss_train_total']+=(1-self.FLAGS.il_weight)*losses['Loss_train_reinforcement_learning'] 
     
-    losses['Loss_train_total'].backward() # fill gradient buffers with the gradient according to this loss
-    
+    # stime=time.time()
+    mean_loss=torch.mean(losses['Loss_train_total'])
+    mean_loss.backward() # fill gradient buffers with the gradient according to this loss
+    # print("backward time: ", time.time()-stime)
+
     self.optimizer.step() # apply what is in the gradient buffers to the parameters
     self.epoch+=1
 

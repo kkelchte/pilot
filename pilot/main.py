@@ -111,7 +111,7 @@ def main(_):
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   
   # INITIALIZATION
-  parser.add_argument("--checkpoint_path",default='', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
+  parser.add_argument("--checkpoint_path",default='tiny_net_scratch', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")
   parser.add_argument("--continue_training",action='store_true', help="Continue training of the prediction layers. If false, initialize the prediction layers randomly.")
   # parser.add_argument("--scratch", action='store_true', help="Initialize full network randomly.")
 
@@ -164,7 +164,7 @@ def main(_):
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
   parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
   parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
-  parser.add_argument("--max_batch_size", default=100, type=int, help="Define the max size of the batch (only if batch_size is -1).")
+  parser.add_argument("--max_batch_size", default=-1, type=int, help="Define the max size of the batch (only if batch_size is -1).")
 
   # parser.add_argument("--dont_show_depth",action='store_true', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 
@@ -174,7 +174,7 @@ def main(_):
   parser.add_argument("--pause_simulator", action='store_true', help="Pause simulator during frame processing, making discrete steps.")
 
   parser.add_argument("--horizon", default=10, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
-  parser.add_argument("--save_every_num_epochs", default=100, type=int, help="Define after how many epochs a model should be saved while training online.")
+  parser.add_argument("--save_every_num_epochs", default=1000, type=int, help="Define after how many epochs a model should be saved while training online.")
  
 
   # FLAGS=parser.parse_args()
@@ -230,9 +230,14 @@ def main(_):
   # config.gpu_options.allow_growth = False
   # sess = tf.Session(config=config)
   model = Model(FLAGS)
+
+  
   # writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   # model.writer = writer
   
+  # model.save(FLAGS.summary_dir+FLAGS.log_tag)
+  # import pdb; pdb.set_trace()
+
   def signal_handler(signal, frame):
     print('[main] You pressed Ctrl+C! Saving checkpoints')
     model.save(FLAGS.summary_dir+FLAGS.log_tag)
