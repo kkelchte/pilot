@@ -103,6 +103,14 @@ class PilotNode(object):
     if rospy.has_param('gt_info'):
       rospy.Subscriber(rospy.get_param('gt_info'), Odometry, self.gt_callback)
 
+    # Recovery cameras
+    if rospy.has_param('recovery'):
+      if rospy.get_param('recovery') and rospy.has_param('rgb_image_left') and rospy.has_param('rgb_image_right'):
+        print("[rosinterface]: using recovery cameras with topics: {0} and {1}".format(rospy.get_param('rgb_image_left'),rospy.get_param('rgb_image_right')))
+        rospy.Subscriber(rospy.get_param('rgb_image_left'), Image, self.image_callback, callback_args='left')
+        rospy.Subscriber(rospy.get_param('rgb_image_right'), Image, self.image_callback, callback_args='right')
+    self.recovery_images={}
+
     # Add some lines to debug delays:
     self.time_im_received=[]
     self.time_ctr_send=[]
@@ -114,7 +122,7 @@ class PilotNode(object):
     if self.FLAGS.pause_simulator:
       self.pause_physics_client=rospy.ServiceProxy('/gazebo/pause_physics',Emptyservice)
       self.unpause_physics_client=rospy.ServiceProxy('/gazebo/unpause_physics',Emptyservice)
-      
+    
 
     # write nn_ready to indicate to run_script initialization is finished.
     f=open(os.path.join(self.logfolder,'nn_ready'),'a')
@@ -238,19 +246,24 @@ class PilotNode(object):
     if len(im)!=0: 
       self.process_input(im)
   
-  def image_callback(self, msg):
+  def image_callback(self, msg, camera_type='straight'):
     """ Process serial image data with process_rgb and concatenate frames if necessary"""
+    # print("[rosinterface] got image of camera type: {0}".format(camera_type))
     self.time_im_received.append(time.time())
     im = self.process_rgb(msg)
     if len(im)!=0: 
-      if 'nfc' in self.FLAGS.network: # when features are concatenated, multiple images should be kept.
+      # when features are concatenated, multiple images should be kept.
+      if 'nfc' in self.FLAGS.network: 
         self.nfc_images.append(im)
         if len(self.nfc_images) < self.FLAGS.n_frames: return
         else:
           # concatenate last n-frames
           im = np.concatenate(np.asarray(self.nfc_images[-self.FLAGS.n_frames:]),axis=2)
           self.nfc_images = self.nfc_images[-self.FLAGS.n_frames+1:] # concatenate last n-1-frames
-      self.process_input(im)
+      if camera_type=='straight':
+        self.process_input(im)
+      else:
+        self.recovery_images[camera_type]=im
     
   def depth_callback(self, msg):
     im = self.process_depth(msg)
@@ -318,7 +331,7 @@ class PilotNode(object):
       # print("[rosinterface] {0} pause simulator".format(time.strftime('%H:%M')))
       self.pause_physics_client(EmptyRequest())
     
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
 
     # keep track of pausing duration
     pause_start = time.time()
@@ -394,10 +407,17 @@ class PilotNode(object):
       experience={'state':im,
                   'action':float(action),
                   'trgt':trgt,
+                  # 'mtime':rospy.get_time(),
                   'collision':0}
       if self.FLAGS.auxiliary_depth: experience['target_depth']=trgt_depth
       self.replay_buffer.add(experience)
-      # print("added experience: {0} vs {1}".format(action, trgt))
+      for k in self.recovery_images.keys():
+        if len(self.recovery_images[k])!=0:
+          experience['state']=self.recovery_images[k][:]
+          experience['trgt']=trgt+self.FLAGS.recovery_compensation if k == 'right' else trgt-self.FLAGS.recovery_compensation
+          del self.recovery_images[k]
+          self.replay_buffer.add(experience)
+      # print("replaybuffer size: {0}".format(self.replay_buffer.size()))
 
     if self.replay_buffer.size() >= (self.FLAGS.batch_size + (self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)) and not self.FLAGS.evaluate and not self.finished and (not self.FLAGS.prefill or (self.replay_buffer.size() == self.FLAGS.buffer_size)):
       self.epoch, losses_train = self.train_model()

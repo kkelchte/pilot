@@ -4,6 +4,46 @@
 		"selected_items":
 		[
 			[
+				"data",
+				"data_folder"
+			],
+			[
+				"or",
+				"origin_arrow_map"
+			],
+			[
+				"ground",
+				"ground_truth_listener"
+			],
+			[
+				"exp",
+				"experience"
+			],
+			[
+				"reco",
+				"recovery_images"
+			],
+			[
+				"camera",
+				"camera_type"
+			],
+			[
+				"image",
+				"image_callback"
+			],
+			[
+				"adu",
+				"adjust_yaw_goto"
+			],
+			[
+				"cur",
+				"current_waypoint_index"
+			],
+			[
+				"behav",
+				"behavior_arbitration"
+			],
+			[
 				"yaw",
 				"yaw_drone"
 			],
@@ -22,10 +62,6 @@
 			[
 				"way",
 				"waypoints"
-			],
-			[
-				"cur",
-				"current_waypoint_index"
 			],
 			[
 				"goto",
@@ -78,10 +114,6 @@
 			[
 				"world",
 				"world_file"
-			],
-			[
-				"data",
-				"data_location"
 			],
 			[
 				"cre",
@@ -186,10 +218,6 @@
 			[
 				"mother",
 				"mother_dir"
-			],
-			[
-				"image",
-				"image_path"
 			],
 			[
 				"save",
@@ -486,88 +514,25 @@
 			[
 				"ty",
 				"noise_type"
-			],
-			[
-				"noise",
-				"noise_type"
-			],
-			[
-				"txt",
-				"txt_set"
-			],
-			[
-				"moth",
-				"mother_dir"
-			],
-			[
-				"acti",
-				"activation_maps"
-			],
-			[
-				"skip",
-				"skip_frames"
-			],
-			[
-				"camera",
-				"camera_rate"
-			],
-			[
-				"control_",
-				"control_mapping"
 			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-01-03_transition_tf_pytorch.md",
+			"file": "pilot/main.py",
 			"settings":
 			{
-				"buffer_size": 5947,
+				"buffer_size": 17982,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "scripts/evaluate_in_singularity.sh",
+			"file": "/esat/opal/kkelchte/docker_home/.entrypoint_graph",
 			"settings":
 			{
-				"buffer_size": 1761,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/objects.yaml",
-			"settings":
-			{
-				"buffer_size": 822,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/esatv3.yaml",
-			"settings":
-			{
-				"buffer_size": 552,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
-			"settings":
-			{
-				"buffer_size": 32130,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/behavior_arbitration.py",
-			"settings":
-			{
-				"buffer_size": 12327,
+				"buffer_size": 1520,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -576,24 +541,25 @@
 			"file": "pilot/rosinterface.py",
 			"settings":
 			{
-				"buffer_size": 28838,
+				"buffer_size": 30032,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
+			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/esatv3.yaml",
 			"settings":
 			{
-				"buffer_size": 4944,
+				"buffer_size": 1016,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
+			"file": "pilot/replay_buffer.py",
 			"settings":
 			{
-				"buffer_size": 9681,
+				"buffer_size": 9572,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -603,33 +569,14 @@
 			"settings":
 			{
 				"buffer_size": 17030,
-				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/replay_buffer.py",
+			"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
 			"settings":
 			{
-				"buffer_size": 7736,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "pilot/model.py",
-			"settings":
-			{
-				"buffer_size": 18192,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "pilot/main.py",
-			"settings":
-			{
-				"buffer_size": 17817,
+				"buffer_size": 10549,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -671,63 +618,65 @@
 	},
 	"expanded_folders":
 	[
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io",
-		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor",
-		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_gazebo",
-		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_gazebo/launch"
 	],
 	"file_history":
 	[
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/esatv3.yaml",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/data.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv3.world",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/klaas_robots/urdf/kinect_camera.urdf.xacro",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/robot/turtle_sim.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/launch/load_params.launch",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_cam_and_kinect.urdf.xacro",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/quadrotor.gazebo.xacro",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/robot/drone_sim.yaml",
+		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_kinect.urdf.xacro",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/evaluate_in_singularity.sh",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/rosinterface.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/replay_buffer.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/behavior_arbitration.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/esatv3.yaml",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv3_debug.world",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/objects.world",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-01-03_transition_tf_pytorch.md",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/model.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/main.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv3_backup.world",
+		"/esat/opal/kkelchte/docker_home/tmp.world",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/objects.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/src/BehaviourArbitration.cpp",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/control_mapping.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/models/esat_corridor_v3/esat_round.dae",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/parameters/turtle_esat_v2.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/fsm.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/show_control.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/launch.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/evaluate_in_singularity.sh",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/console_display.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/model.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/condor_offline.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/dag_train_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/parse_results_to_pdf.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/save_results_as_pdf.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/condor_online.py",
 		"/esat/opal/kkelchte/docker_home/.entrypoint_xpra",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/main.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/template/report.tex",
 		"/esat/opal/kkelchte/docker_home/.entrypoint_graph",
 		"/esat/opal/kkelchte/docker_home/.entrypoint_xpra_no_build",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/launch/load_params.launch",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/offline.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/behavior_arbitration.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/depth_heuristic.py",
 		"/users/visics/kkelchte/.bashrc",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv3.world",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/replay_buffer.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/scripts/launch_python/sing.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/data.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
-		"/esat/opal/kkelchte/docker_home/drone_ws/src/hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/oracle_drone_fsm.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv1.world",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv2.world",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/robot/turtle_sim.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/default.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/canyon.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/forest.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/nn_drone_fsm.yaml",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/robot/drone_sim.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/tools.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/models/tiny_net.py",
@@ -799,17 +748,7 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/corridor_generator.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/generators/extension_generator.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/extensions/config/floor.yaml",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/tiny_CAM_net.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/opal_launch.sh",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_real.launch",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/robot/drone_real.yaml",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/dag_train.py",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2018-02-14_settingupturtlebot.md",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/fsm/key_nn_fsm.yaml",
-		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/utils.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis/tf_cnnvis/tf_cnnvis.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/launch/joy_teleop.launch",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/opal_launch.py"
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/tiny_CAM_net.py"
 	],
 	"find":
 	{
@@ -827,6 +766,67 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"collision",
+			"images.txt",
+			"log_folder",
+			"RGB",
+			"1",
+			"4",
+			"satc",
+			"concatenate",
+			"0.5",
+			"2",
+			"_30",
+			"kinect_right_30",
+			"size",
+			"image_callback",
+			"        ",
+			"recovery_images",
+			"image_callback",
+			"_image",
+			"image",
+			"_image",
+			"image",
+			"rgb_image",
+			"60",
+			"left",
+			"r",
+			"-54,-2.7",
+			"2.7",
+			"3.69",
+			"56.88",
+			"57.61",
+			"33.65",
+			"model",
+			",",
+			"],[",
+			"5000",
+			"print",
+			"model",
+			"] [",
+			",",
+			"current_waypoint_index",
+			",",
+			"],[",
+			"yaw_difference",
+			" ",
+			"cylinder_.61",
+			">",
+			"], [",
+			"],[",
+			"...",
+			"],...,[-",
+			"...",
+			"</light>",
+			"light",
+			"<model",
+			"        <scale>1 1 1</scale>\n        <link name='link'>\n          <pose frame=''>-0.176127 8.52094 0.5 0 -0 0</pose>\n          <velocity>0 0 0 0 -0 0</velocity>\n          <acceleration>0 0 0 0 -0 0</acceleration>\n          <wrench>0 0 0 0 -0 0</wrench>\n        </link>\n      </model>\n",
+			"<link name='link'>\n        <inertial>\n          <mass>1</mass>\n          <inertia>\n            <ixx>0.1</ixx>\n            <ixy>0</ixy>\n            <ixz>0</ixz>\n            <iyy>0.1</iyy>\n            <iyz>0</iyz>\n            <izz>0.1</izz>\n          </inertia>\n        </inertial>\n        <collision name='collision'>\n          <geometry>\n            <sphere>\n              <radius>0.5</radius>\n            </sphere>\n          </geometry>\n          <max_contacts>10</max_contacts>\n          <surface>\n            <contact>\n              <ode/>\n            </contact>\n            <bounce/>\n            <friction>\n              <torsional>\n                <ode/>\n              </torsional>\n              <ode/>\n            </friction>\n          </surface>\n        </collision>\n        <visual name='visual'>\n          <geometry>\n            <sphere>\n              <radius>0.5</radius>\n            </sphere>\n          </geometry>\n          <material>\n            <script>\n              <name>Gazebo/Grey</name>\n              <uri>file://media/materials/scripts/gazebo.material</uri>\n            </script>\n          </material>\n        </visual>\n        <self_collide>0</self_collide>\n        <kinematic>0</kinematic>\n      </link>\n    </model>",
+			"goto_weight",
+			"image_callback",
+			"get_control",
+			"print",
+			"yaw_goal",
 			"pdb",
 			"yaw_amplifier",
 			"25",
@@ -893,68 +893,7 @@
 			"_2",
 			"buffer",
 			"imitation",
-			"collision",
-			"straight",
-			"right",
-			"total_count",
-			"1",
-			"200",
-			"0.3",
-			"epoch",
-			"json",
-			"name=\"",
-			"name",
-			"standard_rl",
-			"4*60*60",
-			"dag_file_",
-			"shutil.rmtree",
-			"number_of_models",
-			"rammem",
-			"not_nice",
-			"l",
-			"k]",
-			"k",
-			"image_delay_std",
-			"k",
-			"delay",
-			"rate",
-			"control_rate",
-			"Loss_train_imitation",
-			"RL_loss",
-			"total",
-			"IL_loss",
-			"result",
-			"mother_dir",
-			"FLAGS",
-			"mother_dir",
-			"ready_keys",
-			"level",
-			"offline_results.keys()",
-			"FLAGS.mother_dir",
-			"mother_dir",
-			" the root directory: default is /esat/opal/kkelchte/docker_home/tensorflow/log",
-			"home",
-			"1000",
-			"max_duration",
-			"10**-4",
-			"self.FLAGS.loss",
-			"MSE_collision",
-			"no_collisions",
-			"tf_log",
-			"FLAGS.evaluate",
-			"evaluate",
-			"logfolder",
-			"softmax",
-			"action",
-			"target",
-			"shuffled_buffer",
-			"buffer",
-			"self",
-			"trgt",
-			"target",
-			"def",
-			"bump",
-			"logfolder"
+			"collision"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -972,52 +911,54 @@
 	"groups":
 	[
 		{
-			"selected": 5,
+			"selected": 4,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-01-03_transition_tf_pytorch.md",
+					"file": "pilot/main.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5947,
+						"buffer_size": 17982,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2439,
-								2439
+								13351,
+								13351
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 15.0,
+						"translation.y": 1755.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "scripts/evaluate_in_singularity.sh",
+					"file": "/esat/opal/kkelchte/docker_home/.entrypoint_graph",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1761,
+						"buffer_size": 1520,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								646,
-								646
+								956,
+								956
 							]
 						],
 						"settings":
@@ -1028,35 +969,37 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/config/environment/objects.yaml",
+					"file": "pilot/rosinterface.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 822,
+						"buffer_size": 30032,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								754,
-								754
+								4223,
+								4223
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/YAML/YAML.sublime-syntax"
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 357.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
@@ -1065,15 +1008,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 552,
+						"buffer_size": 1016,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								516,
-								516
+								37,
+								37
 							]
 						],
 						"settings":
@@ -1084,24 +1027,24 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
 					"buffer": 4,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/run_script.py",
+					"file": "pilot/replay_buffer.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 32130,
+						"buffer_size": 9572,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								29757,
-								29757
+								3151,
+								3151
 							]
 						],
 						"settings":
@@ -1111,134 +1054,14 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 8460.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_control/python/behavior_arbitration.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 12327,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								4608,
-								4608
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1427.0,
+						"translation.y": 1125.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
-					"file": "pilot/rosinterface.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 28838,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								12979,
-								12979
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 3357.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 7,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 4944,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								4068,
-								4068
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/XML/XML.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 635.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
-					"type": "text"
-				},
-				{
-					"buffer": 8,
-					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 9681,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								105,
-								105
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 7,
-					"type": "text"
-				},
-				{
-					"buffer": 9,
+					"buffer": 5,
 					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/create_dataset.py",
 					"semi_transient": false,
 					"settings":
@@ -1250,8 +1073,8 @@
 						"selection":
 						[
 							[
-								9749,
-								9749
+								7648,
+								7648
 							]
 						],
 						"settings":
@@ -1261,57 +1084,31 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1410.0,
+						"translation.y": 2250.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 11,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 10,
-					"file": "pilot/replay_buffer.py",
+					"buffer": 6,
+					"file": "/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 7736,
+						"buffer_size": 10549,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3828,
-								3828
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1080.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 8,
-					"type": "text"
-				},
-				{
-					"buffer": 11,
-					"file": "pilot/model.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 18192,
-						"regions":
-						{
-						},
-						"selection":
-						[
+								2495,
+								2495
+							],
 							[
-								12218,
-								12218
+								2523,
+								2523
 							]
 						],
 						"settings":
@@ -1321,40 +1118,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 3858.0,
+						"translation.y": 840.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 12,
-					"type": "text"
-				},
-				{
-					"buffer": 12,
-					"file": "pilot/main.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 17817,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								12315,
-								12315
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1756.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 9,
+					"stack_index": 3,
 					"type": "text"
 				}
 			]
@@ -1413,20 +1180,152 @@
 		"selected_items":
 		[
 			[
-				"esa",
+				"data",
+				"pytorch_pilot/pilot/data.py"
+			],
+			[
+				"cre",
+				"simulation_supervised/simulation_supervised_tools/python/create_dataset.py"
+			],
+			[
+				"esat v3 ya",
 				"simulation_supervised/simulation_supervised/config/environment/esatv3.yaml"
 			],
 			[
-				"run scr",
-				"simulation_supervised/simulation_supervised/python/run_script.py"
+				"e",
+				"simulation_supervised/simulation_supervised_demo/worlds/esatv3.world"
+			],
+			[
+				"repl",
+				"pytorch_pilot/pilot/replay_buffer.py"
+			],
+			[
+				"kine",
+				"klaas_robots/urdf/kinect_camera.urdf.xacro"
+			],
+			[
+				"rosin",
+				"pytorch_pilot/pilot/rosinterface.py"
+			],
+			[
+				"mai",
+				"pytorch_pilot/pilot/main.py"
+			],
+			[
+				"dro s im yam",
+				"simulation_supervised/simulation_supervised/config/robot/drone_sim.yaml"
+			],
+			[
+				"quadrotor_with_cam_and_kinect",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_cam_and_kinect.urdf.xacro"
+			],
+			[
+				"quadrotor.gazebo.xacro",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor.gazebo.xacro"
+			],
+			[
+				".engr",
+				"docker_home/.entrypoint_graph"
+			],
+			[
+				"spa",
+				"hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch"
+			],
+			[
+				"dr si la",
+				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
+			],
+			[
+				"quadrotor_with_cam_and_kinect.urdf.xacro",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_cam_and_kinect.urdf.xacro"
+			],
+			[
+				"qua wi kin",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor_with_kinect.urdf.xacro"
+			],
+			[
+				"qua",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor.gazebo.xacro"
+			],
+			[
+				"repla",
+				"pytorch_pilot/pilot/replay_buffer.py"
+			],
+			[
+				"ro",
+				"pytorch_pilot/pilot/rosinterface.py"
+			],
+			[
+				"spaw",
+				"hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch"
+			],
+			[
+				"quadr",
+				"hector_quadrotor/hector_quadrotor_description/urdf/quadrotor.gazebo.xacro"
+			],
+			[
+				"dron sim ya",
+				"simulation_supervised/simulation_supervised/config/robot/drone_sim.yaml"
+			],
+			[
+				"tur sim ",
+				"simulation_supervised/simulation_supervised/config/robot/turtle_sim.yaml"
+			],
+			[
+				"load",
+				"simulation_supervised/simulation_supervised/launch/load_params.launch"
+			],
+			[
+				"dron sim",
+				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
 			],
 			[
 				"run",
 				"simulation_supervised/simulation_supervised/python/run_script.py"
 			],
 			[
+				"gt lin",
+				"simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py"
+			],
+			[
+				"esatv3",
+				"simulation_supervised/simulation_supervised_demo/worlds/esatv3.world"
+			],
+			[
+				"esatv3 de",
+				"simulation_supervised/simulation_supervised_demo/worlds/esatv3_debug.world"
+			],
+			[
+				"sing",
+				"pytorch_pilot/scripts/evaluate_in_singularity.sh"
+			],
+			[
+				"esatv",
+				"simulation_supervised/simulation_supervised_demo/worlds/esatv3_backup.world"
+			],
+			[
+				"beha",
+				"simulation_supervised/simulation_supervised_control/python/behavior_arbitration.py"
+			],
+			[
+				"es",
+				"simulation_supervised/simulation_supervised_demo/worlds/esatv3.world"
+			],
+			[
+				"obj",
+				"simulation_supervised/simulation_supervised_demo/worlds/objects.world"
+			],
+			[
 				"esat",
+				"simulation_supervised/simulation_supervised_demo/worlds/esatv3.world"
+			],
+			[
+				"esa",
 				"simulation_supervised/simulation_supervised/config/environment/esatv3.yaml"
+			],
+			[
+				"run scr",
+				"simulation_supervised/simulation_supervised/python/run_script.py"
 			],
 			[
 				"dro si",
@@ -1449,10 +1348,6 @@
 				"simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py"
 			],
 			[
-				"beha",
-				"simulation_supervised/simulation_supervised_control/python/behavior_arbitration.py"
-			],
-			[
 				"esat r",
 				"simulation_supervised/simulation_supervised_demo/models/esat_corridor_v3/esat_round.dae"
 			],
@@ -1463,10 +1358,6 @@
 			[
 				"grou",
 				"simulation_supervised/simulation_supervised_tools/python/visualizers/ground_truth_listener.py"
-			],
-			[
-				"mai",
-				"pytorch_pilot/pilot/main.py"
 			],
 			[
 				"contr ma",
@@ -1489,19 +1380,11 @@
 				"simulation_supervised/simulation_supervised_tools/python/create_dataset.py"
 			],
 			[
-				"rosin",
-				"pytorch_pilot/pilot/rosinterface.py"
-			],
-			[
 				"eva ",
 				"pytorch_pilot/scripts/evaluate_in_singularity.sh"
 			],
 			[
 				"sin",
-				"pytorch_pilot/scripts/evaluate_in_singularity.sh"
-			],
-			[
-				"sing",
 				"pytorch_pilot/scripts/evaluate_in_singularity.sh"
 			],
 			[
@@ -1521,24 +1404,12 @@
 				"simulation_supervised/simulation_supervised_tools/python/visualizers/show_control.py"
 			],
 			[
-				"dron sim",
-				"simulation_supervised/simulation_supervised_demo/launch/drone_sim.launch"
-			],
-			[
 				"lau",
 				"pytorch_pilot/scripts/launch.sh"
 			],
 			[
 				"mod",
 				"pytorch_pilot/pilot/model.py"
-			],
-			[
-				"repl",
-				"pytorch_pilot/pilot/replay_buffer.py"
-			],
-			[
-				"es",
-				"simulation_supervised/simulation_supervised/config/environment/esatv3.yaml"
 			],
 			[
 				"fsm",
@@ -1645,20 +1516,12 @@
 				"simulation_supervised/simulation_supervised_control/python/depth_heuristic.py"
 			],
 			[
-				"esat v3 ya",
-				"simulation_supervised/simulation_supervised/config/environment/esatv3.yaml"
-			],
-			[
 				"repl\t",
 				"pytorch_pilot/pilot/replay_buffer.py"
 			],
 			[
 				"off",
 				"pytorch_pilot/pilot/offline.py"
-			],
-			[
-				"repla",
-				"pytorch_pilot/pilot/replay_buffer.py"
 			],
 			[
 				"con",
@@ -1669,16 +1532,8 @@
 				"simulation_supervised/simulation_supervised/config/environment/esatv3.yaml"
 			],
 			[
-				"load",
-				"simulation_supervised/simulation_supervised/launch/load_params.launch"
-			],
-			[
 				"cont",
 				"simulation_supervised/simulation_supervised_tools/python/control_mapping.py"
-			],
-			[
-				"data",
-				"pytorch_pilot/pilot/data.py"
 			],
 			[
 				"grou tru l",
@@ -1687,10 +1542,6 @@
 			[
 				"crea da pa",
 				"simulation_supervised/simulation_supervised_tools/python/create_dataset.py"
-			],
-			[
-				"spa",
-				"hector_quadrotor/hector_quadrotor_gazebo/launch/spawn_quadrotor.launch"
 			],
 			[
 				" be",
@@ -1839,90 +1690,6 @@
 			[
 				"dag cre",
 				"pytorch_pilot/scripts/dag_create_data.py"
-			],
-			[
-				"tin v r",
-				"pytorch_pilot/pilot/models/tiny_net_v2_r.py"
-			],
-			[
-				"sin ev",
-				"pilot/scripts/evaluate_in_singularity.sh"
-			],
-			[
-				"tin v2",
-				"pilot/pilot/models/tiny_net_v2_r.py"
-			],
-			[
-				"__",
-				"pilot/pilot/models/__init__.py"
-			],
-			[
-				"tin",
-				"pilot/pilot/models/tiny_net_v2.py"
-			],
-			[
-				"con ma",
-				"simulation_supervised/simulation_supervised_tools/python/control_mapping.py"
-			],
-			[
-				"20 ll ",
-				"kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md"
-			],
-			[
-				"dag tra ",
-				"pilot/scripts/dag_train_and_evaluate.py"
-			],
-			[
-				"LLLdo",
-				"kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md"
-			],
-			[
-				"2018",
-				"kkelchte.github.io/docs/2018-10-29_online_LLL.md"
-			],
-			[
-				"tiny",
-				"pilot/pilot/models/tiny_net_v4.py"
-			],
-			[
-				"dep heu",
-				"simulation_supervised/simulation_supervised_control/python/depth_heuristic.py"
-			],
-			[
-				"sing eva",
-				"pilot/scripts/evaluate_in_singularity.sh"
-			],
-			[
-				"sav",
-				"pilot/scripts/save_results_as_pdf.py"
-			],
-			[
-				"2018 do",
-				"kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md"
-			],
-			[
-				"2018 dos",
-				"kkelchte.github.io/docs/2018-10-29_LLL_on_doshico.md"
-			],
-			[
-				"tur sim",
-				"simulation_supervised/simulation_supervised_demo/launch/turtle_sim.launch"
-			],
-			[
-				"tur re ",
-				"simulation_supervised/simulation_supervised/config/robot/turtle_real.yaml"
-			],
-			[
-				"tur re",
-				"simulation_supervised/simulation_supervised_demo/launch/turtle_real.launch"
-			],
-			[
-				"wid an",
-				"klaas_robots/urdf/wide_angle_camera.urdf.xacro"
-			],
-			[
-				"turt bur ",
-				"klaas_robots/urdf/turtlebot3_burger.urdf.xacro"
 			]
 		],
 		"width": 0.0
@@ -1957,7 +1724,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 50.0,
+	"side_bar_width": 174.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

@@ -10,6 +10,7 @@ import numpy as np
 
 import argparse
 
+import matplotlib.pyplot as plt
 
 class ReplayBuffer(object):
 
@@ -35,6 +36,7 @@ class ReplayBuffer(object):
         # else:
         self.buffer.popleft()
 
+      # print("[replaybuffer] added experience: {0}".format([experience[k] for k in ['action','trgt']]))
       self.buffer.append(experience)
 
     def remove(self):
@@ -94,6 +96,10 @@ class ReplayBuffer(object):
 
     def annotate_collision(self, horizon):
       """Annotate the experiences over the last horizon with a 1 for collision.
+      (!) Note that this is not compatible with recovery camera's
+      for this an extension is required translating the horizon in time period (ms)
+      and using the 'time' stamps of the experiences to annotate the experiences within this horizon period.
+      --> shorter and easier hack is to multiply horizon with 3 for recovery from main arguments.
       """
       last_experiences=[]
       try:
@@ -107,6 +113,34 @@ class ReplayBuffer(object):
       self.buffer.clear()
       # self.buffer = []
       self.count = 0
+
+    def export_buffer(self, data_folder, speed=0.8):
+      """export buffer to file system as dataset:
+      /.../log/${data_folder}/RGB/0000000x.jpg
+      /.../log/${data_folder}/Depth/0000000x.jpg
+      /.../log/${data_folder}/control_info.txt
+      todo: Add data_folder incrementation over different runs...
+      todo: add gt_listener position overview function
+      """
+      # loop over experiences and concatenate files and save images
+      if os.path.isdir("{0}/RGB".format(data_folder)):
+        os.makedirs("{0}/RGB".format(data_folder))
+      for index, e in enumerate(self.buffer):
+        if 'state' in e.keys():
+          plt.imshow(e['state'])
+          plt.savefig("{0}/RGB/{1:010d}.jpg".format(data_folder, index))
+        if 'trgt' in e.keys():
+          with open("{0}/control_info.txt".format(data_folder),'a') as f:
+            f.write("{0:010d} {1} 0 0 0 0 {2}".format(index, speed, e['trgt']))
+        if 'collision' in e.keys():
+          with open("{0}/collision_info.txt".format(data_folder),'a') as f:
+            f.write("{0:010d} {1} 0 0 0 0 {2}".format(index, speed, e['collision']))
+        if 'action' in e.keys():
+          with open("{0}/action_info.txt".format(data_folder),'a') as f:
+            f.write("{0:010d} {1} 0 0 0 0 {2}".format(index, speed, e['action']))
+
+
+      raise NotImplementedError()
 
     def get_details(self,keys="all"):
       """Return dictionary details on current state of the replay buffer:

@@ -10,13 +10,13 @@ roscd simulation_supervised/python
 # COMMAND
 
 # TESTING BA with WAYPOINTS
-name="testing_waypoints"
-script_args="--z_pos 1 -w objects --random_seed 512  --owr -g"
-pytorch_args="--pause_simulator --learning_rate 0.1 --buffer_size 5000 --batch_size 5000 --gradient_steps 100 --online --alpha 1 --tensorboard --discrete --max_episodes 2 --prefill --loss CrossEntropy --il_weight 1 --turn_speed 0. --speed 0.8"
+name="testing_recovery_cameras"
+script_args="--z_pos 1 -w esatv3 --random_seed 512  --owr -g -r"
+pytorch_args="--pause_simulator --learning_rate 0.1 --buffer_size 10000 --batch_size 10000 --gradient_steps 100 --online --alpha 1 --tensorboard --discrete --max_episodes 2 --prefill --loss CrossEntropy --il_weight 1 --turn_speed 0.8 --speed 0.8"
 
 
 # TRAIN WITHOUT STOPPING
-# name="no_stopping"
+# name="no_stopping_2"
 # script_args="--z_pos 1 -w esatv3 --random_seed 512  --owr -g"
 # pytorch_args="--pause_simulator --learning_rate 0.1 --buffer_size 5000 --batch_size 5000 --gradient_steps 100 --online --alpha 1 --tensorboard --discrete --max_episodes 2 --prefill --loss CrossEntropy --il_weight 1 --turn_speed 0.8 --speed 0.8"
 

@@ -165,6 +165,7 @@ def main(_):
   parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
   parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
   parser.add_argument("--max_batch_size", default=-1, type=int, help="Define the max size of the batch (only if batch_size is -1).")
+  parser.add_argument("--recovery_compensation", default=1, type=float, help="Define amount the neural network should compensate for the to-be-recovered movement.")
 
   # parser.add_argument("--dont_show_depth",action='store_true', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
 
