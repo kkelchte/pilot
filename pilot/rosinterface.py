@@ -185,8 +185,13 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
-      img = img[::2,::5,:]
+      img = np.swapaxes(img,1,2)
+      img = np.swapaxes(img,0,1)
+      scale_height = int(np.floor(img.shape[1]/self.model.input_size[1]))
+      scale_width = int(np.floor(img.shape[2]/self.model.input_size[2]))
+      img = img[:,::scale_height,::scale_width]
       img = sm.resize(img,self.model.input_size,mode='constant').astype(float)
+      
       return img
 
   def process_rgb_compressed(self, msg):
@@ -311,7 +316,18 @@ class PilotNode(object):
         # print("[rosinterface]: found fsm_file: {0}".format(bump))
         if bump == 'BUMP' and not self.FLAGS.evaluate:
           self.replay_buffer.annotate_collision(self.FLAGS.horizon)
+        # elif bump == 'success':
+        #   pass
+        # else:
+        #   bump='BUMP'
 
+      # export full buffer
+      if not self.FLAGS.evaluate and self.FLAGS.export_buffer:
+        self.pause_physics_client(EmptyRequest())
+        data_folder=self.FLAGS.data_root+self.FLAGS.log_tag+'/{0:05d}'.format(self.runs['train'])
+        self.replay_buffer.export_buffer(data_folder)
+        self.unpause_physics_client(EmptyRequest())
+      
       # save separate run logging
       self.save_end_run(bump)
       self.reset_variables()  
@@ -330,8 +346,7 @@ class PilotNode(object):
     if self.FLAGS.pause_simulator and self.ready:
       # print("[rosinterface] {0} pause simulator".format(time.strftime('%H:%M')))
       self.pause_physics_client(EmptyRequest())
-    
-    # import pdb; pdb.set_trace()
+        
 
     # keep track of pausing duration
     pause_start = time.time()
@@ -400,27 +415,30 @@ class PilotNode(object):
 
     self.action_pub.publish(msg)
     self.time_ctr_send.append(time.time())
-
-      
+    
     # ADD EXPERIENCE REPLAY
-    if not self.FLAGS.evaluate and not self.finished and len(trgt) != 0:
+    if not self.FLAGS.evaluate and not self.finished and len(trgt) != 0 and not self.FLAGS.no_training:
       experience={'state':im,
                   'action':float(action),
-                  'trgt':trgt,
-                  # 'mtime':rospy.get_time(),
+                  'trgt':np.squeeze(trgt),
+                  'speed':msg.linear.x,
                   'collision':0}
-      if self.FLAGS.auxiliary_depth: experience['target_depth']=trgt_depth
+      if self.FLAGS.auxiliary_depth: 
+        experience['target_depth']=trgt_depth
       self.replay_buffer.add(experience)
       for k in self.recovery_images.keys():
         if len(self.recovery_images[k])!=0:
-          experience['state']=self.recovery_images[k][:]
-          experience['trgt']=trgt+self.FLAGS.recovery_compensation if k == 'right' else trgt-self.FLAGS.recovery_compensation
+          experience={'state':self.recovery_images[k][:],
+                  'action':float(action),
+                  'trgt':np.squeeze(trgt)+self.FLAGS.recovery_compensation if k == 'right' else np.squeeze(trgt)-self.FLAGS.recovery_compensation,
+                  'speed':msg.linear.x,
+                  'collision':0}
           del self.recovery_images[k]
           self.replay_buffer.add(experience)
       # print("replaybuffer size: {0}".format(self.replay_buffer.size()))
 
     if self.replay_buffer.size() >= (self.FLAGS.batch_size + (self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)) and not self.FLAGS.evaluate and not self.finished and (not self.FLAGS.prefill or (self.replay_buffer.size() == self.FLAGS.buffer_size)):
-      self.epoch, losses_train = self.train_model()
+      losses_train = self.train_model()
       # keep track of pausing duration
       pause_duration = time.time() - pause_start
       extra_info = self.replay_buffer.get_details()
@@ -437,7 +455,7 @@ class PilotNode(object):
             f.write('FINISHED\n')
         except:
           print('[rosinterface]: FAILED TO WRITE LOGFILE: {}'.format(self.logfolder+'/fsm_log'))
-        self.finished_callback("")        
+        # self.finished_callback("")        
     
     if self.FLAGS.pause_simulator and self.ready:
       # print("[rosinterface] {0} unpause simulator".format(time.strftime('%H:%M')))
@@ -459,7 +477,6 @@ class PilotNode(object):
     if self.FLAGS.lifelonglearning:
       self.model.sess.run([tf.assign(self.model.star_variables[v.name], v) for v in self.model.copied_trainable_variables])
   
-
   def train_model(self):
     """Sample a batch from the replay buffer and train on it
     """
@@ -467,17 +484,19 @@ class PilotNode(object):
 
     # take multiple gradient steps, each on a fresh sampled batch of data
     for grad_step in range(self.FLAGS.gradient_steps):
-      if (grad_step%100) == 10:
+      if (grad_step%100) == 99:
         print("[rosinterface]: take step {0} of {1}".format(grad_step, self.FLAGS.gradient_steps))
       # sampling grows less than linear with batch size
       inputs, targets, actions, collisions = self.replay_buffer.sample_batch(self.FLAGS.batch_size, horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
       # training increases more than linear with batch size
-      epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
+      self.epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
       for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
+      if self.FLAGS.gradient_steps > 100 and (grad_step%100) == 99:
+        self.save_summary(losses)
 
-    return epoch, losses_train
+    self.replay_buffer.update(self.FLAGS.buffer_update_rule)
 
-
+    return losses_train
 
   def backward_step_model(self, inputs, targets, actions, collisions, losses_train):
     """Apply gradient step with a backward pass: useless....
@@ -488,9 +507,7 @@ class PilotNode(object):
       for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
     else:
       print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
-    return epoch, losses_train
-
-      
+    return epoch, losses_train     
   
   def train_model_old(self):
     """Sample total recent and hard buffer and loop over it with several gradient steps.
@@ -582,7 +599,7 @@ class PilotNode(object):
     self.img_index=0    
     self.fsm_index = 0
 
-    if self.FLAGS.empty_buffer: self.replay_buffer.clear()    
+    # if self.FLAGS.empty_buffer: self.replay_buffer.clear()    
 
   def save_summary(self, losses_train={}, extra_info={}):
     """Collect all field variables and save them for visualization in tensorboard

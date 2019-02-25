@@ -107,12 +107,15 @@ def load_set(data_type):
     return []
   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
   run_list = [ l.strip() for l in f.readlines() if len(l) > 2]
+  run_dict = {i:l for i,l in enumerate(run_list)}
+  index_list = run_dict.keys()
+  
   f.close() 
-  set_list = []
-  checklist = []
+  set_list = [None]*len(run_list)
+  checklist = [True]*len(run_list)
   try:
     coord=tf.train.Coordinator()
-    threads = [threading.Thread(target=load_run_info, args=(coord, run_list, set_list, checklist)) for i in range(FLAGS.num_threads)]
+    threads = [threading.Thread(target=load_run_info, args=(coord, run_dict, index_list, set_list, checklist)) for i in range(FLAGS.num_threads)]
     for t in threads: t.start()
     coord.join(threads, stop_grace_period_secs=30)
   except RuntimeError as e:
@@ -123,11 +126,12 @@ def load_set(data_type):
       print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
   return set_list
 
-def load_run_info(coord, run_list, set_list, checklist):
+def load_run_info(coord, run_dict, index_list, set_list, checklist):
   """Load information from run with multiple threads"""
   while not coord.should_stop():
     try:
-      run_dir = run_list.pop()
+      run_index = index_list.pop()
+      run_dir = run_dict[run_index]
       print("[data] {0}".format(os.path.basename(run_dir)))
       # get list of all image numbers available in listdir
       imgs_jpg=[f for f in listdir(join(run_dir,'RGB')) if not f.startswith('.')]
@@ -220,13 +224,15 @@ def load_run_info(coord, run_list, set_list, checklist):
           depths.append(de)
 
       # add all data to the dataset
-      set_list.append({'name':run_dir, 'controls':control_list, 'num_imgs':num_imgs, 'imgs':imgs, 'num_depths':depth_list, 'depths':depths})
+      #set_list.append({'name':run_dir, 'controls':control_list, 'num_imgs':num_imgs, 'imgs':imgs, 'num_depths':depth_list, 'depths':depths})
+      set_list[run_index]={'name':run_dir, 'controls':control_list, 'num_imgs':num_imgs, 'imgs':imgs, 'num_depths':depth_list, 'depths':depths}
       
     except IndexError as e:
       coord.request_stop()
     except Exception as e:
       print('Problem in loading data: {0} @ {1}'.format(e.message, run_dir))
-      checklist.append(False)
+      checklist[run_index]=False
+      # checklist.append(False)
       coord.request_stop()
 
 def generate_batch(data_type):

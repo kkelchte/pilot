@@ -123,8 +123,9 @@ blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 #             (machine != \"chokai.esat.kuleuven.be\") && \
 #             (machine != \"pyrite.esat.kuleuven.be\") && \
 #             (machine != \"ymir.esat.kuleuven.be\") "
-gpu_requirements=" && (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) ".format(FLAGS.gpumem) if FLAGS.gpunum > 0 else ""
-condor_submit.write("Requirements = (machine =!= LastRemoteHost) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {0} {1}\n".format(blacklist, gpu_requirements))
+#&& (CUDARuntimeVersion == 9.2)
+gpu_requirements=" && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) ".format(FLAGS.gpumem) if FLAGS.gpunum > 0 else ""
+condor_submit.write("Requirements = ( machineowner == \"Visics\" ) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {0} {1}\n".format(blacklist, gpu_requirements))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
 if not FLAGS.not_nice: condor_submit.write("Niceuser = true \n")
@@ -187,8 +188,10 @@ if FLAGS.python_script == 'main.py':
   # if os.path.isdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag): # log_tag is still motherdir/run_number (without date tag)
   try:
     # search for checkpoint and config file in current directory and sub directories
-    date_dirs = [FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d for d in ['.']+sorted(os.listdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag)) if os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/checkpoint') and os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/configuration.xml')]
-    checkpoint_file=date_dirs[-1]+'/checkpoint'
+    # date_dirs = [FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d for d in ['.']+sorted(os.listdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag)) if os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/checkpoint') and os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/configuration.xml')]
+    date_dirs = [FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d for d in ['.']+sorted(os.listdir(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag)) if os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/my-model') and os.path.isfile(FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+'/'+d+'/configuration.xml')]
+    # checkpoint_file=date_dirs[-1]+'/checkpoint'
+    checkpoint_file=date_dirs[-1]+'/my-model'
     conf_file=date_dirs[-1]+'/configuration.xml'
     if date_dirs[-1].split('/')[-1].startswith('2018'): # incase model is saved in date-tagged folder
       date_tag=date_dirs[-1].split('/')[-1]
@@ -202,9 +205,10 @@ if FLAGS.python_script == 'main.py':
     if '--checkpoint_path' in others:
       checkpoint_path=others[others.index('--checkpoint_path')+1]
     else:
-      checkpoint_path='mobilenet_025'
+      checkpoint_path='tiny_net_scratch'
     executable.write('mkdir -p /tmp/{0}{1} \n'.format(FLAGS.summary_dir,checkpoint_path))
-    executable.write('cp {0}/{1}{2}/checkpoint /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
+    # executable.write('cp {0}/{1}{2}/checkpoint /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
+    executable.write('cp {0}/{1}{2}/my-model /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
     executable.write('cp {0}/{1}{2}/configuration.xml /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
 
   executable.write('export HOME=/tmp \n')
@@ -212,9 +216,10 @@ if FLAGS.python_script == 'main.py':
 else:
   executable.write("export HOME={0}\n".format(FLAGS.home))
 
-executable.write("export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.1/lib64 \n")
+executable.write("export LD_LIBRARY_PATH=/esat/opal/kkelchte/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.1/lib64 \n")
 executable.write("source /users/visics/kkelchte/tensorflow_1.8/bin/activate \n")
-executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/tf_cnnvis \n".format(FLAGS.home, FLAGS.python_project+'/..'))
+executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/{1} \n".format(FLAGS.home, FLAGS.python_project+'/..'))
+# executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/tf_cnnvis \n".format(FLAGS.home, FLAGS.python_project+'/..'))
 command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,FLAGS.python_script)
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
@@ -224,19 +229,21 @@ command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
 # FLAGS.log_tag=FLAGS.log_tag+'/'+time.strftime("%Y-%m-%d_%I%M")
 # ----- CHANGED 04/01
 
-for e in others: command=" {0} {1}".format(command, e)
+for e in others: command="{0} {1}".format(command, e)
 print("Command: {0}".format(command))
 executable.write("{0}\n".format(command))
 executable.write("retVal=$? \n")
 executable.write("echo \"check exit code: $retVal\" \n")
 
-executable.write("if [ -e /tmp/{0}{1}/checkpoint ] ; then \n".format(FLAGS.summary_dir, FLAGS.log_tag))
-executable.write("echo \"[condor_script] change checkpoint with sed\"\n")
-executable.write("sed -i 's/\/tmp/{0}/' /tmp/{1}{2}/checkpoint \n".format(FLAGS.home.replace('/','\/'), FLAGS.summary_dir, FLAGS.log_tag))
-executable.write("fi \n") 
+if FLAGS.python_script == 'main.py':
+  # Only relevant for tensorflow checkpoint
+  # executable.write("if [ -e /tmp/{0}{1}/checkpoint ] ; then \n".format(FLAGS.summary_dir, FLAGS.log_tag))
+  # executable.write("echo \"[condor_script] change checkpoint with sed\"\n")
+  # executable.write("sed -i 's/\/tmp/{0}/' /tmp/{1}{2}/checkpoint \n".format(FLAGS.home.replace('/','\/'), FLAGS.summary_dir, FLAGS.log_tag))
+  # executable.write("fi \n") 
 
-executable.write("echo \"[condor_script] copy back $(date +%F_%H:%M)\"\n")
-executable.write("cp -r /tmp/{0}* {1}/{0} \n".format(FLAGS.summary_dir, FLAGS.home))
+  executable.write("echo \"[condor_script] copy back $(date +%F_%H:%M)\"\n")
+  executable.write("cp -r /tmp/{0}* {1}/{0} \n".format(FLAGS.summary_dir, FLAGS.home))
 
 executable.write("if [ $retVal -ne 0 ]; then \n")
 executable.write("    echo Error \n")
@@ -244,7 +251,7 @@ executable.write("    exit $retVal \n")
 executable.write("fi \n")
 executable.write("echo \"[condor_script] done: $(date +%F_%H:%M)\"\n")
 
-if FLAGS.evaluate_after: # create default run_script call for evaluating with reuse_default canyons on turtle with 20 runs
+if FLAGS.evaluate_after: # DEPRECATED create default run_script call for evaluating with reuse_default canyons on turtle with 20 runs
 	command_online="-t {0} ".format(FLAGS.log_tag)
 	if FLAGS.not_nice: command_online="{0} --not_nice ".format(command_online)
 	command_online="{0} --gpumem {1} ".format(command_online, FLAGS.gpumem)

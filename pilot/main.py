@@ -163,7 +163,10 @@ def main(_):
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
   parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
-  parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
+  # parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
+  parser.add_argument("--buffer_update_rule", default='nothing',type=str, help="nothing: FIFO buffer. empty: empty buffer after each training step. TODO: hard: drop certain partition of recent frames and keep only hardest.")
+  parser.add_argument("--buffer_hard_ratio", default=1,type=float, help="if buffer_update_rule == hard, arange this ratio of the buffer's samples according to how hard they are and drop the rest, to be filled with recent frames.")
+  
   parser.add_argument("--max_batch_size", default=-1, type=int, help="Define the max size of the batch (only if batch_size is -1).")
   parser.add_argument("--recovery_compensation", default=1, type=float, help="Define amount the neural network should compensate for the to-be-recovered movement.")
 
@@ -173,10 +176,13 @@ def main(_):
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings")
 
   parser.add_argument("--pause_simulator", action='store_true', help="Pause simulator during frame processing, making discrete steps.")
+  parser.add_argument("--export_buffer", action='store_true', help="Save the replaybuffer as dataset after each run.")
+  parser.add_argument("--no_training", action='store_true', help="avoid saving to the replay buffer and taking gradient steps.")
 
-  parser.add_argument("--horizon", default=10, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
+  parser.add_argument("--horizon", default=0, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
   parser.add_argument("--save_every_num_epochs", default=1000, type=int, help="Define after how many epochs a model should be saved while training online.")
- 
+  
+  print("[main.py] Found {0} cuda devices available.".format(torch.cuda.device_count()))
 
   # FLAGS=parser.parse_args()
   try:

@@ -16,12 +16,12 @@ class Net(nn.Module):
     super(Net, self).__init__()
     self.default_image_size=[3,224,224]
 
-    self.network = models.resnet18(pretrained=pretrained)
-    self.network.fc = nn.Linear(512, output_size)
+    self.network = models.squeezenet1_0(pretrained=pretrained)
+    self.network.classifier[1]=nn.Conv2d(512,output_size,kernel_size=(1, 1), stride=(1, 1))
+    self.network.num_classes=output_size
 
   def forward(self, x, train=False, verbose=False):
     if verbose: print x.size()
-
     if train:
       self.network.train()
     else:

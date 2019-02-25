@@ -14,19 +14,26 @@ class Net(nn.Module):
 
   def __init__(self, output_size = 10, pretrained=False):
     super(Net, self).__init__()
-    self.default_image_size=[3,224,224]
+    self.default_image_size=[3,299,299]
 
-    self.network = models.resnet18(pretrained=pretrained)
-    self.network.fc = nn.Linear(512, output_size)
+    self.network = models.inception_v3(pretrained=pretrained)
 
-  def forward(self, x, train=False, verbose=False):
+    # Handle the auxilary net
+    num_ftrs = self.network.AuxLogits.fc.in_features
+    self.network.AuxLogits.fc = nn.Linear(num_ftrs, output_size)
+    # Handle the primary net
+    num_ftrs = self.network.fc.in_features
+    self.network.fc = nn.Linear(num_ftrs,output_size)
+
+
+  def forward(self, x, train=False, verbose=True):
     if verbose: print x.size()
 
     if train:
       self.network.train()
     else:
       self.network.eval()
-    outputs = self.network(x)
+    outputs,_ = self.network(x)
     if verbose: print outputs.size()
     return outputs
 

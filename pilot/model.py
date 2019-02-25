@@ -229,8 +229,8 @@ class Model(object):
     losses={'Loss_train_total':0}
     inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
     predictions = self.net.forward(inputs, train=True)
-    
     targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+    
     losses['Loss_train_imitation_learning']=self.criterion(predictions, targets.to(self.device))
     losses['Loss_train_total']+=self.FLAGS.il_weight*losses['Loss_train_imitation_learning']
     

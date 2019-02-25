@@ -72,7 +72,8 @@ for model in range(FLAGS.number_of_models):
 
 ##########################################################################################################################
 # STEP 5 Call a python script that creates a report
-command="python condor_offline.py -t {0}/report --dont_submit -pp pytorch_pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 10*60, FLAGS.summary_dir)
+# command="python condor_offline.py -t {0}/report --dont_submit -pp pytorch_pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 10*60, FLAGS.summary_dir)
+command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpunum 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
 for e in others: command=" {0} {1}".format(command, e)
 save_call(command)
 

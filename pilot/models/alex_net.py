@@ -16,8 +16,8 @@ class Net(nn.Module):
     super(Net, self).__init__()
     self.default_image_size=[3,224,224]
 
-    self.network = models.resnet18(pretrained=pretrained)
-    self.network.fc = nn.Linear(512, output_size)
+    self.network = models.alexnet(pretrained=pretrained)
+    self.network.classifier[6]=nn.Linear(4096, output_size)
 
   def forward(self, x, train=False, verbose=False):
     if verbose: print x.size()

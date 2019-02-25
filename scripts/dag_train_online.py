@@ -60,7 +60,7 @@ for model in models:
 
 ##########################################################################################################################
 # STEP 3 Call a python script that parses the results and prints some stats
-command="python condor_offline.py -t {0}/results --dont_submit --rammem 3 --gpunum 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
+command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpunum 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
 for e in others: command=" {0} {1}".format(command, e)
 save_call(command)
 

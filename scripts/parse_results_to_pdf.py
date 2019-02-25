@@ -101,12 +101,12 @@ for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
 log_root = FLAGS.home+'/'+FLAGS.summary_dir
-if 'nn_ready' in os.listdir(log_root+FLAGS.mother_dir) and 'fsm_log' in os.listdir(log_root+'/'+FLAGS.mother_dir):
+if 'tf_log' in os.listdir(log_root+FLAGS.mother_dir) or ('nn_ready' in os.listdir(log_root+FLAGS.mother_dir) and 'fsm_log' in os.listdir(log_root+'/'+FLAGS.mother_dir)):
   # mother_dir is the logfolde to parse
   log_folders = [log_root+FLAGS.mother_dir]
 else:
   # subfolders of mother dir should be parsed
-  log_folders = sorted([ log_root+FLAGS.mother_dir+'/'+d for d in os.listdir(log_root+FLAGS.mother_dir) if (len(d) == 1 or d.startswith(FLAGS.startswith) or d.endswith(FLAGS.endswith)) and os.path.isfile(log_root+FLAGS.mother_dir+'/'+d+'/nn_ready')])
+  log_folders = sorted([ log_root+FLAGS.mother_dir+'/'+d for d in os.listdir(log_root+FLAGS.mother_dir) if (len(d) == 1 or d.startswith(FLAGS.startswith) or d.endswith(FLAGS.endswith)) and (os.path.isfile(log_root+FLAGS.mother_dir+'/'+d+'/nn_ready') or os.path.isfile(log_root+FLAGS.mother_dir+'/'+d+'/tf_log'))])
 
 if len(log_folders)==0:
   print("Woops, could not find anything "+log_root+FLAGS.mother_dir+" that startswith "+FLAGS.startswith+" and endswith "+FLAGS.endswith+" and has an nn_ready log.")
@@ -116,6 +116,7 @@ else:
 
 # store keys related at run frequency and not at epoch frequency
 run_keys=[]
+
 #--------------------------------------------------------------------------------
 #
 # STEP 2: parse all info from nn_log and nn_ready files and save it in dictionary
@@ -124,12 +125,15 @@ run_keys=[]
 
 results = {}
 
-for folder_index, folder in enumerate(log_folders):
+run_images={}
+
+for folder_index, folder in enumerate(sorted(log_folders)):
   print("\n {0}/{1}: {2} \n".format(folder_index+1, len(log_folders),folder))
   results[folder] = {}
+  run_images[folder]=[]
   raw_log=tablib.Databook()
   # Parse online log_files: nn_ready and nn_log
-  for file in ['nn_ready','nn_log']:
+  for file in ['nn_ready','nn_log','tf_log']:
     try:
       log_file=open(folder+'/'+file,'r').readlines()
     except:
@@ -174,6 +178,10 @@ for folder_index, folder in enumerate(log_folders):
     
   # todo: add visualization maps
   # ...
+
+  # add run images
+  if os.path.isdir(folder+'/runs'):
+    run_images[folder].extend([folder+'/runs/'+f for f in sorted(os.listdir(folder+'/runs')) if f.endswith('png')])
 
   print("Overview parsed information: ")
   for k in sorted(results[folder].keys()):
@@ -232,7 +240,7 @@ for f in log_folders:
 all_keys=list(set(all_keys))
 
 # group interesting keys and leave out some keys to avoid an overdose of information
-black_keys=["run_delay_std_control", "run_delay_std_image", 'Distance_current_test_esatv3', 'Distance_furthest_test_esatv3']
+black_keys=["run_delay_std_control", "run_delay_std_image", 'Distance_current_test_esatv3', 'Distance_furthest_test_esatv3', 'run']
 for k in black_keys:
   if k in all_keys:
     all_keys.remove(k)
@@ -240,6 +248,8 @@ for k in black_keys:
 for key in sorted(all_keys):
   # add one plot of offline training with validation accuracy against training accuracy
   plt.clf()
+  plt.cla()
+  plt.close()
   fig=plt.figure(figsize=(10,10))
   legend=[]
   all_fail=True
@@ -260,6 +270,13 @@ for key in sorted(all_keys):
     fig_name=log_root+FLAGS.mother_dir+'/report/'+key+'.jpg'
     plt.savefig(fig_name,bbox_inches='tight')
     report, line_index = add_figure(report, line_index, fig_name, FLAGS.mother_dir)
+
+# add runs if they are available:
+report.insert(line_index,"\\section{RUNS}\n")
+for folder in run_images.keys():
+  report.insert(line_index,"\\section{RUNS}\n")
+  for im in run_images[folder]:
+    report, line_index = add_figure(report, line_index, im, caption=os.path.basename(im).replace('_',' '))
 
 #--------------------------------------------------------------------------------
 #
@@ -333,16 +350,19 @@ for l in report: latex_file.write(l)
 latex_file.close()
 
 exit=subprocess.call(shlex.split("pdflatex -output-directory {0}/report {0}/report/report.tex".format(log_root+FLAGS.mother_dir))) 
-if not exit == 0: #in case pdf creation fails quit and start somewhere else
-  sys.exit(exit)
+# if not exit == 0: #in case pdf creation fails quit and start somewhere else
+#   sys.exit(exit)
 
 # Step 5: send it with mailx
-p_msg = subprocess.Popen(shlex.split("echo {0} : {1} is finished.".format(time.strftime("%Y-%m-%d_%I:%M:%S"), log_root+FLAGS.mother_dir)), stdout=subprocess.PIPE)
 mailcommand="mailx -s {0} -a {1} ".format(log_root+FLAGS.mother_dir, log_root+FLAGS.mother_dir+'/report/report.pdf')
 for f in log_folders: 
   if os.path.isfile(f+'/log.xls'): mailcommand+=" -a {0}/log.xls".format(f)
+p_msg = subprocess.Popen(shlex.split("echo {0} : {1} is finished.".format(time.strftime("%Y-%m-%d_%I:%M:%S"), log_root+FLAGS.mother_dir)), stdout=subprocess.PIPE)
 p_mail = subprocess.Popen(shlex.split(mailcommand+" klaas.kelchtermans@esat.kuleuven.be"),stdin=p_msg.stdout, stdout=subprocess.PIPE)
 print(p_mail.communicate())
+
+# wait a second.
+time.sleep(5)
 
 # Step 6: put report also in archive
 shutil.copyfile(log_root+FLAGS.mother_dir+'/report/report.pdf', '{0}/{1}archive/{2}.pdf'.format(FLAGS.home,FLAGS.summary_dir, FLAGS.mother_dir.replace('/','_')) )

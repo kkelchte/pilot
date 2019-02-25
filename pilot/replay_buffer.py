@@ -2,7 +2,7 @@
 Data structure for implementing experience replay
 Author: Patrick Emami
 """
-import time
+import time, os, shutil
 from collections import deque
 import random
 import numpy as np
@@ -10,7 +10,7 @@ import numpy as np
 
 import argparse
 
-import matplotlib.pyplot as plt
+import skimage.io as sio
 
 class ReplayBuffer(object):
 
@@ -78,21 +78,40 @@ class ReplayBuffer(object):
       shuffled_buffer = [self.buffer[i] for i in shuffled_indices]
       return self.get_all_data(max_batch_size, shuffled_buffer)
 
-
     def sample_batch(self, batch_size, horizon=0):
-      # fill in a batch of size batch_size
-      # return an array of inputs, targets and auxiliary information
-      
+      """
+      sample in a batch of size batch_size
+      in case batch size can take full buffer, return full buffer
+      return an array of inputs, targets and auxiliary information
+      """
       batch_size=min(self.size()-horizon, batch_size)
-      
+    
+      # sample from population unique instances, so doubles won't be there
+      # if batch size can take the full buffer, it will
       batch=random.sample(self.buffer if horizon == 0 else self.buffer[:-horizon], batch_size)
-
+      
       input_batch = np.array([_['state'] for _ in batch])
       target_batch = np.array([_['trgt'] for _ in batch])
       action_batch = np.array([_['action'] for _ in batch])
       collision_batch = np.array([_['collision'] for _ in batch])
       
       return input_batch, target_batch, action_batch, collision_batch
+
+    def update(self, update_rule='nothing', losses=[], hard_ratio=0):
+      """Update after each training step the replay buffer according to an update rule
+      nothing: 'dont do anything to update'
+      empty: 'empty the buffer'
+      hard: 'fill in ratio of buffer with hard samples and remove the rest'
+      """
+      if update_rule== 'nothing':
+        return
+      elif update_rule == 'empty':
+        self.clear()
+        return
+      elif update_rule == 'hard':
+        raise NotImplementedError('[replay_buffer]: hard update rule has not been implemented yet.')
+      else:
+        raise NotImplementedError('[replay_buffer]: update rule is unknown.')
 
     def annotate_collision(self, horizon):
       """Annotate the experiences over the last horizon with a 1 for collision.
@@ -114,33 +133,39 @@ class ReplayBuffer(object):
       # self.buffer = []
       self.count = 0
 
-    def export_buffer(self, data_folder, speed=0.8):
+    def export_buffer(self, data_folder):
       """export buffer to file system as dataset:
-      /.../log/${data_folder}/RGB/0000000x.jpg
-      /.../log/${data_folder}/Depth/0000000x.jpg
+      /.../log/${data_folder}/RGB/0000000x.png
+      /.../log/${data_folder}/Depth/0000000x.png
       /.../log/${data_folder}/control_info.txt
       todo: Add data_folder incrementation over different runs...
       todo: add gt_listener position overview function
       """
+      stime=time.time()
+      if not data_folder.startswith('/'):
+        data_folder=os.environ['HOME']+'/'+data_folder
       # loop over experiences and concatenate files and save images
-      if os.path.isdir("{0}/RGB".format(data_folder)):
-        os.makedirs("{0}/RGB".format(data_folder))
+      if os.path.isdir(data_folder): 
+        print("[replaybuffer] delete existing data folder: {0}.".format(data_folder))
+        shutil.rmtree(data_folder)
+      os.makedirs("{0}/RGB".format(data_folder))
       for index, e in enumerate(self.buffer):
         if 'state' in e.keys():
-          plt.imshow(e['state'])
-          plt.savefig("{0}/RGB/{1:010d}.jpg".format(data_folder, index))
+          img=e['state'][:]
+          if img.shape[0]==3:
+            img=np.swapaxes(np.swapaxes(e['state'],0,1),1,2)
+          sio.imsave("{0}/RGB/{1:010d}.png".format(data_folder, index),img)
         if 'trgt' in e.keys():
           with open("{0}/control_info.txt".format(data_folder),'a') as f:
-            f.write("{0:010d} {1} 0 0 0 0 {2}".format(index, speed, e['trgt']))
+            f.write("{0:010d} {1} 0 0 0 0 {2}\n".format(index, e['speed'] if 'speed' in e.keys() else 0.8, e['trgt']))
         if 'collision' in e.keys():
           with open("{0}/collision_info.txt".format(data_folder),'a') as f:
-            f.write("{0:010d} {1} 0 0 0 0 {2}".format(index, speed, e['collision']))
+            f.write("{0:010d} {1}\n".format(index, e['collision']))
         if 'action' in e.keys():
           with open("{0}/action_info.txt".format(data_folder),'a') as f:
-            f.write("{0:010d} {1} 0 0 0 0 {2}".format(index, speed, e['action']))
-
-
-      raise NotImplementedError()
+            f.write("{0:010d} {1} 0 0 0 0 {2}\n".format(index, e['speed'] if 'speed' in e.keys() else 0.8, e['action']))
+      print("[replaybuffer] saving batch duration: {0:0.2f}s in folder {1}".format(time.time()-stime, data_folder))
+      return
 
     def get_details(self,keys="all"):
       """Return dictionary details on current state of the replay buffer:
@@ -199,12 +224,18 @@ if __name__ == '__main__':
     mybuffer.add({'state':np.zeros((1,1))+100+i,
                 'action':np.random.choice([-1,0,1],p=[0.1,0.1,0.8]),
                 'trgt':np.random.choice([-1,0,1],p=[0.1,0.1,0.8]),
+                'speed':0.8,
                 'collision':0})
   
   print("\n content of the mybuffer: \n")
   # mybuffer.to_string()
 
   print mybuffer.get_details()
+
+
+  # import pdb; pdb.set_trace()
+  mybuffer.export_buffer("{0}/tmp_data".format(os.environ['HOME']))
+
 
   # prop_zero=[]
   # for i in range(10):

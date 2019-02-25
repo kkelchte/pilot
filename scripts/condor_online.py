@@ -124,7 +124,7 @@ condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCo
 blacklist=""
 # greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
 greenlist=""
-condor_submit.write("Requirements = (machineowner == \"Visics\") && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
+condor_submit.write("Requirements = (HasSingularity) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
@@ -215,27 +215,9 @@ sing.write("done \n")
 sing.write("echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running on $RemoteHost so continue...\" \n")
 sing.write("echo \"HOST: $RemoteHost\" \n")
 sing.write("\n")
-sing.write("sing_image=\"ros_gazebo_tensorflow_writable.img\"\n")
-# sing.write("echo check if gluster is accessible: \n")
-# sing.write("if [ -f /gluster/visics/singularity/$sing_image ] ; then \n")
-# sing.write("  sing_loc=\"/gluster/visics/singularity\" \n")
-# sing.write("else \n")
-sing.write("sing_loc=\"/esat/opal/kkelchte/singularity_images\" \n")
-# sing.write("fi\n")
-sing.write("echo \"exec $1 in singularity image $sing_loc/$sing_image\"\n")
-
-# sing.write("echo \"exec $1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow_drone_ws.img\" \n")
-# sing.write("cd /esat/opal/kkelchte/singularity_images\n")
-# sing.write("cd /gluster/visics/singularity\n")
-# sing.write(" ls /esat/opal/kkelchte/singularity_images\n")
-# sing.write("ls /gluster/visics/singularity\n")
-
-sing.write("cd $sing_loc\n")
-sing.write("pwd\n")
-sing.write("ls\n")
-sing.write("sleep 1\n")
 
 ###### Copy docker_home to local tmp
+# copy docker_home
 sing.write("echo 'make home in tmp' \n")
 sing.write("mkdir -p /tmp/home \n")
 sing.write("cd /tmp/home \n")
@@ -268,7 +250,32 @@ sing.write("echo 'cp simulation_supervised' \n")
 sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 ######
 
-sing.write("/usr/bin/singularity exec --nv $sing_loc/$sing_image $1 \n")
+sing.write("sing_image=\"ros_gazebo_tensorflow_writable.img\"\n")
+# sing.write("echo check if gluster is accessible: \n")
+# sing.write("if [ -f /gluster/visics/singularity/$sing_image ] ; then \n")
+# sing.write("  sing_loc=\"/gluster/visics/singularity\" \n")
+# sing.write("else \n")
+sing.write("sing_loc=\"/esat/opal/kkelchte/singularity_images\" \n")
+# sing.write("fi\n")
+sing.write("echo \"exec $1 in singularity image $sing_loc/$sing_image\"\n")
+
+# sing.write("echo \"exec $1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow_drone_ws.img\" \n")
+# sing.write("cd /esat/opal/kkelchte/singularity_images\n")
+# sing.write("cd /gluster/visics/singularity\n")
+# sing.write(" ls /esat/opal/kkelchte/singularity_images\n")
+# sing.write("ls /gluster/visics/singularity\n")
+
+# sing.write("cd $sing_loc\n")
+# sing.write("pwd\n")
+# sing.write("ls\n")
+# sing.write("sleep 1\n")
+# sing.write("/usr/bin/singularity exec --nv $sing_loc/$sing_image $1 \n")
+
+# copy singularity image
+sing.write("echo cp $sing_loc/$sing_image /tmp\n")
+sing.write("cp $sing_loc/$sing_image /tmp\n")
+
+sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 \n")
 sing.write("retVal=$? \n")
 sing.write("echo \"got exit code $retVal\" \n")
 
