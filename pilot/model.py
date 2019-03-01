@@ -208,8 +208,10 @@ class Model(object):
     if len(targets) != 0: 
       assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
       targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
-      losses['Loss_train_imitation_learning'] = np.mean(self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy())
-  
+      losses['imitation_learning'] = np.mean(self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy())
+      # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
+      if self.FLAGS.discrete: losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
+        
     predictions=predictions.cpu().detach().numpy()
     if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
 
@@ -227,13 +229,13 @@ class Model(object):
     # Ensure gradient buffers are zero
     self.optimizer.zero_grad()
 
-    losses={'Loss_train_total':0}
+    losses={'total':0}
     inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
     predictions = self.net.forward(inputs, train=True)
     targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+    losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
     
-    losses['Loss_train_imitation_learning']=self.criterion(predictions, targets.to(self.device))
-    losses['Loss_train_total']+=self.FLAGS.il_weight*losses['Loss_train_imitation_learning']
+    losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']
     
     if len(actions) == len(collisions) == len(inputs) and self.FLAGS.il_weight != 1:
       # 1. from logits to probabilities with softmax for each output in batch
@@ -249,26 +251,29 @@ class Model(object):
       log_y_1=torch.log((1-action_probabilities+10**-8).type(torch.FloatTensor).to(self.device))
       
       # losses['Loss_train_reinforcement_learning']=torch.mean(-p*log_y-(1-p)*log_y_1)
-      losses['Loss_train_reinforcement_learning']=-p*log_y-(1-p)*log_y_1
+      losses['reinforcement_learning']=-p*log_y-(1-p)*log_y_1
       
       # 4. add loss to Loss_train_total loss with corresponding weight.
-      losses['Loss_train_total']+=(1-self.FLAGS.il_weight)*losses['Loss_train_reinforcement_learning'] 
+      losses['total']+=(1-self.FLAGS.il_weight)*losses['reinforcement_learning'] 
     
     # stime=time.time()
-    mean_loss=torch.mean(losses['Loss_train_total'])
+    mean_loss=torch.mean(losses['total'])
     mean_loss.backward() # fill gradient buffers with the gradient according to this loss
     # print("backward time: ", time.time()-stime)
 
     self.optimizer.step() # apply what is in the gradient buffers to the parameters
     self.epoch+=1
 
-    predictions=predictions.cpu().detach().numpy()
-    if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
+    predictions_list=predictions.cpu().detach().numpy()
+    if self.FLAGS.discrete: predictions_list = self.bins_to_continuous(np.argmax(predictions_list, 1))
 
     # ensure losses are of type numpy
     for k in losses: losses[k]=losses[k].cpu().detach().numpy()
     
-    return self.epoch, predictions, losses
+    # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
+    if self.FLAGS.discrete: losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
+    
+    return self.epoch, predictions_list, losses
      
   def add_summary_var(self, name):
     '''given the name of the new variable

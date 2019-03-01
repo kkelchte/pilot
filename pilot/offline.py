@@ -104,7 +104,14 @@ def run(_FLAGS, model, start_ep=0):
     print('saved checkpoint')
     model.save(FLAGS.summary_dir+FLAGS.log_tag)
 
+
   # if FLAGS.visualize_saliency_of_output:
+  #   # Select hard images from last test set
+  #   for index, ok, batch in data.generate_batch('test'):
+  #     inputs = np.array([_['img'] for _ in batch])
+  #     targets = np.array([[_['ctr']] for _ in batch])
+  #     predictions, losses = model.predict(inputs, targets)
+      
   #   tools.visualize_saliency_of_output(FLAGS, model)
 
   # if FLAGS.visualize_deep_dream_of_output:
