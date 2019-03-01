@@ -190,7 +190,7 @@ class PilotNode(object):
       scale_height = int(np.floor(img.shape[1]/self.model.input_size[1]))
       scale_width = int(np.floor(img.shape[2]/self.model.input_size[2]))
       img = img[:,::scale_height,::scale_width]
-      img = sm.resize(img,self.model.input_size,mode='constant').astype(float)
+      img = sm.resize(img,self.model.input_size,mode='constant').astype(np.float16)
       
       return img
 
@@ -204,7 +204,7 @@ class PilotNode(object):
     else:
       # 308x410 to 128x128
       img = img[::2,::3,:]
-      img = sm.resize(img,self.model.input_size,mode='constant').astype(float)
+      img = sm.resize(img,self.model.input_size,mode='constant').astype(np.float16)
       return img
 
   def process_depth(self, msg):

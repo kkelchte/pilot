@@ -61,11 +61,23 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   datasetdir = join(FLAGS.data_root, FLAGS.dataset)
   
   train_set = load_set('train') #if not FLAGS.hdf5 else load_set_hdf5('train')
+  # images=train_set[0]['imgs']
+  # res=[(np.mean(img[0,:,:]),np.mean(img[1,:,:]),np.mean(img[2,:,:]),np.std(img[0,:,:]),np.std(img[1,:,:]),np.std(img[2,:,:])) for img in images]
+  # print("mean: {0}, {1}, {2}, stds {3},{4},{5}".format(np.mean([r[0] for r in res]),
+  #                                                     np.mean([r[1] for r in res]),
+  #                                                     np.mean([r[2] for r in res]),
+  #                                                     np.mean([r[3] for r in res]),
+  #                                                     np.mean([r[4] for r in res]),
+  #                                                     np.mean([r[5] for r in res])))
+  
+  # import pdb; pdb.set_trace()
   val_set=load_set('val') #if not FLAGS.hdf5 else load_set_hdf5('val')
   test_set=load_set('test')
   full_set={'train':train_set, 'val':val_set, 'test':test_set}
 
-  
+  # mean: -0.00393295288086, -0.0494995117188, -0.0966186523438, stds 0.237182617188,0.2060546875,0.18505859375
+  # mean: 0.349365234375, -0.0396118164062, -0.375244140625, stds 1.087890625,0.8623046875,0.71875
+  # mean: 0.49609375, 0.450439453125, 0.4033203125, stds 0.237182617188,0.2060546875,0.18505859375
 # def load_set_hdf5(data_type):
 #   """Load a type (train, val or test) of set in the set_list
 #   as a tuple: first tuple element the directory of the fligth 
@@ -177,7 +189,13 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist):
           scale_height = int(np.floor(img.shape[1]/im_size[1]))
           scale_width = int(np.floor(img.shape[2]/im_size[2]))
           img = img[:,::scale_height,::scale_width]
-          img = sm.resize(img,im_size,mode='constant').astype(float)
+          img = sm.resize(img,im_size,mode='constant').astype(np.float16)
+          if FLAGS.shifted_input:
+            img -= 0.5
+          elif FLAGS.scaled_input:
+            for i in range(3): 
+              img[i,:,:]-=FLAGS.scale_means[i]
+              img[i,:,:]/=FLAGS.scale_stds[i]
           assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
           imgs.append(img)
       # Add depth links if files exist
@@ -208,7 +226,7 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist):
 
       # Load depth in RAM and preprocess
       depths=[]
-      if FLAGS.load_data_in_ram:
+      if FLAGS.load_data_in_ram and False:
         for num in depth_list:
           depth_file = join(run_dir,'Depth', '{0:010d}.jpg'.format(num))
           de = sio.imread(depth_file)
@@ -281,19 +299,19 @@ def generate_batch(data_type):
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
       options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
-      if FLAGS.normalize_over_actions and count_controls[0] >= FLAGS.batch_size/3.: # if '0' is full
+      if FLAGS.normalized_output and count_controls[0] >= FLAGS.batch_size/3.: # if '0' is full
         # take out all frames with 0 in control
         options = [i for i in options if np.abs(data_set[run_ind]['controls'][i]) > 0.3]
-      if FLAGS.normalize_over_actions and count_controls[-1] >= FLAGS.batch_size/3.: # if '-1' is full
+      if FLAGS.normalized_output and count_controls[-1] >= FLAGS.batch_size/3.: # if '-1' is full
         # take out all frames with -1 in control
         options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==-1)]
-      if FLAGS.normalize_over_actions and count_controls[1] >= FLAGS.batch_size/3.: # if '-1' is full
+      if FLAGS.normalized_output and count_controls[1] >= FLAGS.batch_size/3.: # if '-1' is full
         # take out all frames with -1 in control
         options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==+1)]
       if not len(options) == 0: # in case there are still frames left...
         frame_ind = random.choice(options)
       else:
-        print("[data.py]: failed to normalize actions due to not enough options...")
+        # print("[data.py]: failed to normalize actions due to not enough options...")
         options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
         frame_ind = random.choice(options)
 
@@ -322,7 +340,13 @@ def generate_batch(data_type):
               scale_height = int(np.floor(img.shape[1]/im_size[1]))
               scale_width = int(np.floor(img.shape[2]/im_size[2]))
               img = img[::scale_height,::scale_width]
-              img = sm.resize(img,im_size,mode='constant').astype(float) #.astype(np.float32)
+              img = sm.resize(img,im_size,mode='constant').astype(np.float16) #.astype(np.float32)
+              if FLAGS.shifted_input:
+                img -= 0.5
+              elif FLAGS.scaled_input:
+                for i in range(3): 
+                  img[i,:,:]-=FLAGS.scale_means[i]
+                  img[i,:,:]/=FLAGS.scale_stds[i]
               assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
               de = []
               try:
@@ -423,7 +447,7 @@ if __name__ == '__main__':
   parser.add_argument("--network",default='mobile',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
-  parser.add_argument("--normalize_over_actions", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
+  parser.add_argument("--normalized_output", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
   
   FLAGS=parser.parse_args()  
 

@@ -52,7 +52,7 @@ def run_episode(mode, sumvar, model, update_importance_weights=False):
 
 def run(_FLAGS, model, start_ep=0):
   global FLAGS
-
+  
   FLAGS=_FLAGS
   start_time=time.time()
   data.prepare_data(FLAGS, model.input_size)

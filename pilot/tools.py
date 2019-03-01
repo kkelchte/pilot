@@ -100,6 +100,13 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   return FLAGS
 
 
+
+# ===========================
+#   Visualization Techniques
+# ===========================
+# def plot... to be continued.
+
+
 # def get_endpoint_activations(inputs, model):
 # 	'''Run forward through the network for this batch and return all activations
 # 	of all intermediate endpoints

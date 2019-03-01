@@ -42,7 +42,7 @@
 			"path": "/esat/opal/kkelchte/docker_home"
 		},
 		{
-			"path": "/esat/opal/kkelchte/docker_home/tensorflow/tf_cnnvis"
+			"path": "/esat/opal/kkelchte/docker_home/tensorflow/pytorch-cnn-visualizations"
 		}
 	]
 }

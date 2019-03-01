@@ -41,7 +41,7 @@ parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=st
 parser.add_argument("--wall_time_train", default=3*60*60, type=int, help="Maximum time job is allowed to train.")
 # parser.add_argument("--wall_time_eva", default=3*60*60, type=int, help="Maximum time job is allowed to evaluate.")
 parser.add_argument("--dont_retry", action='store_true', help="Don't retry if job ends with exit code != 1 --> usefull for debugging as previous log-files are overwritten.")
-
+parser.add_argument('--seeds', default=[123,456,789],nargs='+', help="Seeds to use over different models.")
 
 FLAGS, others = parser.parse_known_args()
 
@@ -53,7 +53,7 @@ print("Others: {0}".format(others))
 ##########################################################################################################################
 # STEP 2 For each model launch condor_offline without submitting
 for model in range(FLAGS.number_of_models):
-  command = "python condor_offline.py -t {0}/{1} --dont_submit --summary_dir {2} --wall_time {3}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train)
+  command = "python condor_offline.py -t {0}/{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train, FLAGS.seeds[model%len(FLAGS.seeds)])
   for e in others: command=" {0} {1}".format(command, e)
   save_call(command)
 
