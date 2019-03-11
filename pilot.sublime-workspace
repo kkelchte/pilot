@@ -4,6 +4,46 @@
 		"selected_items":
 		[
 			[
+				"chek",
+				"checkpoint_path"
+			],
+			[
+				"cut",
+				"cutend"
+			],
+			[
+				"folder_",
+				"folder_index"
+			],
+			[
+				"folder",
+				"folder_names"
+			],
+			[
+				"longes",
+				"longest_row"
+			],
+			[
+				"data",
+				"datapoint"
+			],
+			[
+				"log",
+				"log_folders"
+			],
+			[
+				"tot",
+				"total_vals"
+			],
+			[
+				"total",
+				"total_means"
+			],
+			[
+				"don",
+				"dont_mail"
+			],
+			[
 				"save",
 				"savefig"
 			],
@@ -86,10 +126,6 @@
 			[
 				"buf",
 				"buffer_size"
-			],
-			[
-				"data",
-				"data_folder"
 			],
 			[
 				"or",
@@ -214,10 +250,6 @@
 			[
 				"current",
 				"current_color"
-			],
-			[
-				"log",
-				"log_folder"
 			],
 			[
 				"tran",
@@ -482,92 +514,33 @@
 			[
 				"load_",
 				"load_data_in_ram"
-			],
-			[
-				"impor",
-				"update_importance_weights"
-			],
-			[
-				"dri",
-				"driving_duration"
-			],
-			[
-				"fo",
-				"forest"
-			],
-			[
-				"accura",
-				"accuracy_train"
-			],
-			[
-				"acc",
-				"accuracy_val"
-			],
-			[
-				"offline",
-				"offline_results"
-			],
-			[
-				"osb_",
-				"osb_yellow_barrel_blue"
-			],
-			[
-				"impo",
-				"update_importance_weights"
 			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "pilot/main.py",
+			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_notes_on_experiments.md",
 			"settings":
 			{
-				"buffer_size": 19240,
+				"buffer_size": 9351,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/offline.py",
+			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_reproduce_results.md",
 			"settings":
 			{
-				"buffer_size": 4627,
-				"encoding": "UTF-8",
+				"buffer_size": 875,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pilot/tools.py",
+			"file": "scripts/combine_results.py",
 			"settings":
 			{
-				"buffer_size": 21701,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "pilot/model.py",
-			"settings":
-			{
-				"buffer_size": 18668,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "pilot/models/alex_net.py",
-			"settings":
-			{
-				"buffer_size": 778,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "pilot/data.py",
-			"settings":
-			{
-				"buffer_size": 23084,
+				"buffer_size": 8340,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -576,16 +549,42 @@
 			"file": "scripts/launch.sh",
 			"settings":
 			{
-				"buffer_size": 6052,
+				"buffer_size": 6079,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "scripts/dag_train.py",
+			"file": "pilot/model.py",
 			"settings":
 			{
-				"buffer_size": 6914,
+				"buffer_size": 18716,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/users/visics/kkelchte/.bashrc",
+			"settings":
+			{
+				"buffer_size": 17594,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pilot/offline.py",
+			"settings":
+			{
+				"buffer_size": 4640,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pilot/data.py",
+			"settings":
+			{
+				"buffer_size": 23105,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -627,11 +626,26 @@
 	},
 	"expanded_folders":
 	[
-		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch-cnn-visualizations",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch-cnn-visualizations/src"
+		"/users/visics/kkelchte/blogs/kkelchte.github.io",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/imgs"
 	],
 	"file_history":
 	[
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot.sublime-project",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/main.py",
+		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/domain_ABC_textured.world",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/parse_results_to_pdf.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/condor_offline.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/model.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/dag_train_online.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/dag_train.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/launch.sh",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/data.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/tools.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/offline.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/condor_online.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/models/alex_net.py",
 		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/rosinterface.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_notes_on_experiments.md",
@@ -745,21 +759,7 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params_slow.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/segment.world",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/train_in_singularity.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/tools.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/data.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/condor_offline.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/tiny_net_v3.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/tiny_net_v1.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/mobile_net.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/tiny_net.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/alex_net_v3.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/alex_net_v2.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/alex_net_v1.py",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/models/alex_net.py",
-		"/users/visics/raljundi/Code/MyOwnCode/tensorflow/LLL.ipynb",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_params.yaml",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/replay_buffer.py",
-		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/train_coll_q_net_params.yaml"
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/tools.py"
 	],
 	"find":
 	{
@@ -777,6 +777,21 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"pilotbeta",
+			"val",
+			"data_type",
+			"results[l][tag]",
+			"folder_names",
+			"i",
+			"5",
+			"results[l][tag]",
+			"key",
+			"learning_rate",
+			"logfolders",
+			"log_root+FLAGS.mother_dir",
+			"$",
+			"total_means",
+			"total_vals",
 			"10*500*60",
 			"max_episodes",
 			"500",
@@ -889,22 +904,7 @@
 			"yaw_difference",
 			" ",
 			"cylinder_.61",
-			">",
-			"], [",
-			"],[",
-			"...",
-			"],...,[-",
-			"...",
-			"</light>",
-			"light",
-			"<model",
-			"        <scale>1 1 1</scale>\n        <link name='link'>\n          <pose frame=''>-0.176127 8.52094 0.5 0 -0 0</pose>\n          <velocity>0 0 0 0 -0 0</velocity>\n          <acceleration>0 0 0 0 -0 0</acceleration>\n          <wrench>0 0 0 0 -0 0</wrench>\n        </link>\n      </model>\n",
-			"<link name='link'>\n        <inertial>\n          <mass>1</mass>\n          <inertia>\n            <ixx>0.1</ixx>\n            <ixy>0</ixy>\n            <ixz>0</ixz>\n            <iyy>0.1</iyy>\n            <iyz>0</iyz>\n            <izz>0.1</izz>\n          </inertia>\n        </inertial>\n        <collision name='collision'>\n          <geometry>\n            <sphere>\n              <radius>0.5</radius>\n            </sphere>\n          </geometry>\n          <max_contacts>10</max_contacts>\n          <surface>\n            <contact>\n              <ode/>\n            </contact>\n            <bounce/>\n            <friction>\n              <torsional>\n                <ode/>\n              </torsional>\n              <ode/>\n            </friction>\n          </surface>\n        </collision>\n        <visual name='visual'>\n          <geometry>\n            <sphere>\n              <radius>0.5</radius>\n            </sphere>\n          </geometry>\n          <material>\n            <script>\n              <name>Gazebo/Grey</name>\n              <uri>file://media/materials/scripts/gazebo.material</uri>\n            </script>\n          </material>\n        </visual>\n        <self_collide>0</self_collide>\n        <kinematic>0</kinematic>\n      </link>\n    </model>",
-			"goto_weight",
-			"image_callback",
-			"get_control",
-			"print",
-			"yaw_goal"
+			">"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -922,136 +922,46 @@
 	"groups":
 	[
 		{
-			"selected": 6,
+			"selected": 5,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "pilot/main.py",
+					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_notes_on_experiments.md",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 19240,
+						"buffer_size": 9351,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7818,
-								7818
+								7664,
+								7664
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 980.0,
+						"translation.y": 1440.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "pilot/offline.py",
-					"semi_transient": false,
+					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_reproduce_results.md",
+					"semi_transient": true,
 					"settings":
 					{
-						"buffer_size": 4627,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								4103,
-								4103
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 855.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "pilot/tools.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 21701,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								4689,
-								4689
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 540.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "pilot/model.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 18668,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1120,
-								1120
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 102.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "pilot/models/alex_net.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 778,
+						"buffer_size": 875,
 						"regions":
 						{
 						},
@@ -1064,32 +974,38 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
-					"file": "pilot/data.py",
+					"buffer": 2,
+					"file": "scripts/combine_results.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 23084,
+						"buffer_size": 8340,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								14264,
-								14264
+								7492,
+								7492
+							],
+							[
+								7544,
+								7544
+							],
+							[
+								7829,
+								7829
 							]
 						],
 						"settings":
@@ -1099,27 +1015,85 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4080.0,
+						"translation.y": 2312.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 3,
 					"file": "scripts/launch.sh",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6052,
+						"buffer_size": 6079,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3899,
-								3899
+								4096,
+								4096
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1095.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "pilot/model.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 18716,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6268,
+								6268
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1575.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "/users/visics/kkelchte/.bashrc",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 17594,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2538,
+								2538
 							]
 						],
 						"settings":
@@ -1129,27 +1103,27 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1262.0,
+						"translation.y": 762.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
 					"type": "text"
 				},
 				{
-					"buffer": 7,
-					"file": "scripts/dag_train.py",
+					"buffer": 6,
+					"file": "pilot/offline.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6914,
+						"buffer_size": 4640,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2986,
-								2986
+								1818,
+								1818
 							]
 						],
 						"settings":
@@ -1159,10 +1133,40 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 360.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "pilot/data.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 23105,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								12096,
+								12096
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3365.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
 					"type": "text"
 				}
 			]
@@ -1221,8 +1225,68 @@
 		"selected_items":
 		[
 			[
+				".bas",
+				"kkelchte/.bashrc"
+			],
+			[
+				"mai",
+				"pytorch_pilot_beta/pilot/main.py"
+			],
+			[
+				"data",
+				"pytorch_pilot_beta/pilot/data.py"
+			],
+			[
+				"dat",
+				"simulation_supervised/simulation_supervised_demo/worlds/domain_ABC_textured.world"
+			],
+			[
+				"off",
+				"pytorch_pilot_beta/pilot/offline.py"
+			],
+			[
+				"modl",
+				"pytorch_pilot_beta/pilot/model.py"
+			],
+			[
 				"lau",
 				"pytorch_pilot_beta/scripts/launch.sh"
+			],
+			[
+				"mode",
+				"pytorch_pilot_beta/pilot/model.py"
+			],
+			[
+				"dag tra on",
+				"pytorch_pilot_beta/scripts/dag_train_online.py"
+			],
+			[
+				"train",
+				"pytorch_pilot_beta/scripts/dag_train.py"
+			],
+			[
+				"pars",
+				"pytorch_pilot_beta/scripts/parse_results_to_pdf.py"
+			],
+			[
+				"main",
+				"pytorch_pilot_beta/pilot/main.py"
+			],
+			[
+				"con of",
+				"pytorch_pilot_beta/scripts/condor_offline.py"
+			],
+			[
+				"cond off",
+				"pytorch_pilot_beta/scripts/condor_offline.py"
+			],
+			[
+				"cond onl",
+				"pytorch_pilot_beta/scripts/condor_online.py"
+			],
+			[
+				"con off",
+				"pytorch_pilot_beta/scripts/condor_offline.py"
 			],
 			[
 				".bash",
@@ -1245,36 +1309,12 @@
 				"pytorch_pilot_beta/pilot/rosinterface.py"
 			],
 			[
-				".bas",
-				"kkelchte/.bashrc"
-			],
-			[
-				"off",
-				"pytorch_pilot_beta/pilot/offline.py"
-			],
-			[
 				"da",
 				"pytorch_pilot/scripts/dag_train.py"
 			],
 			[
 				"dag trai",
 				"pytorch_pilot/scripts/dag_train_online.py"
-			],
-			[
-				"mai",
-				"pytorch_pilot/pilot/main.py"
-			],
-			[
-				"data",
-				"pytorch_pilot/pilot/data.py"
-			],
-			[
-				"mode",
-				"pytorch_pilot/pilot/model.py"
-			],
-			[
-				"con of",
-				"pytorch_pilot/scripts/condor_offline.py"
 			],
 			[
 				"laun",
@@ -1301,10 +1341,6 @@
 				"simulation_supervised/simulation_supervised/python/run_script.py"
 			],
 			[
-				"con off",
-				"pytorch_pilot/scripts/condor_offline.py"
-			],
-			[
 				"dag tra",
 				"pytorch_pilot/scripts/dag_train.py"
 			],
@@ -1315,10 +1351,6 @@
 			[
 				"dag tr",
 				"pytorch_pilot/scripts/dag_train.py"
-			],
-			[
-				"pars",
-				"pytorch_pilot/scripts/parse_results_to_pdf.py"
 			],
 			[
 				"dag ",
@@ -1395,10 +1427,6 @@
 			[
 				"sing",
 				"simulation_supervised/simulation_supervised/scripts/launch_python/sing.sh"
-			],
-			[
-				"main",
-				"pytorch_pilot/pilot/main.py"
 			],
 			[
 				"replay",
@@ -1685,10 +1713,6 @@
 				"pytorch_pilot/scripts/dag_train_online.py"
 			],
 			[
-				"cond off",
-				"pytorch_pilot/scripts/condor_offline.py"
-			],
-			[
 				"dag",
 				"pytorch_pilot/scripts/dag_train_online.py"
 			],
@@ -1711,26 +1735,6 @@
 			[
 				"pdf",
 				"pytorch_pilot/scripts/save_results_as_pdf.py"
-			],
-			[
-				"rosint",
-				"pytorch_pilot/pilot/rosinterface.py"
-			],
-			[
-				"en",
-				"docker_home/.entrypoint_xpra"
-			],
-			[
-				"",
-				"pytorch_pilot/scripts/save_results_as_pdf.py"
-			],
-			[
-				"get re",
-				"pytorch_pilot/scripts/get_results.py"
-			],
-			[
-				"entr xp",
-				"docker_home/.entrypoint_xpra"
 			]
 		],
 		"width": 0.0
@@ -1765,7 +1769,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 72.0,
+	"side_bar_width": 304.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
