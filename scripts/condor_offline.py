@@ -125,7 +125,7 @@ blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 #             (machine != \"ymir.esat.kuleuven.be\") "
 #&& (CUDARuntimeVersion == 9.2)
 gpu_requirements=" && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) ".format(FLAGS.gpumem) if FLAGS.gpunum > 0 else ""
-condor_submit.write("Requirements = ( machineowner == \"Visics\" ) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {0} {1}\n".format(blacklist, gpu_requirements))
+condor_submit.write("Requirements = ( machineowner == \"Visics\" ) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {0} {1}\n".format(blacklist, gpu_requirements))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
 if not FLAGS.not_nice: condor_submit.write("Niceuser = true \n")
@@ -151,7 +151,7 @@ executable = open(shell_file,'w')
 executable.write("#!/bin/bash \n")
 executable.write("echo \"[condor_script] started executable for condor_offline: $(date +%F_%H:%M)\" \n")
 
-if FLAGS.python_script == 'main.py':
+if FLAGS.python_script == 'main.py' and False:
   # in case of offline training work locally in /tmp and copy dataset
   if '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
     dataset=others[others.index('--dataset')+1]
@@ -235,7 +235,7 @@ executable.write("{0}\n".format(command))
 executable.write("retVal=$? \n")
 executable.write("echo \"check exit code: $retVal\" \n")
 
-if FLAGS.python_script == 'main.py':
+if FLAGS.python_script == 'main.py' and False:
   # Only relevant for tensorflow checkpoint
   # executable.write("if [ -e /tmp/{0}{1}/checkpoint ] ; then \n".format(FLAGS.summary_dir, FLAGS.log_tag))
   # executable.write("echo \"[condor_script] change checkpoint with sed\"\n")

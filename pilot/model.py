@@ -110,7 +110,7 @@ class Model(object):
       else:
         self.epoch = checkpoint['epoch']
         print("[model]: loaded model from {0} at epoch: {1}".format(self.FLAGS.checkpoint_path, self.epoch))
-      if checkpoint['optimizer'] == self.FLAGS.optimizer:
+      if checkpoint['optimizer'] == self.FLAGS.optimizer and not 'scratch' in self.FLAGS.checkpoint_path:
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         print("[model]: loaded optimizer parameters from {0}".format(self.FLAGS.checkpoint_path))
         

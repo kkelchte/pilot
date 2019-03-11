@@ -90,6 +90,7 @@ parser.add_argument('--summary_dir', default='tensorflow/log/', type=str, help='
 parser.add_argument('--mother_dir', default='', type=str, help='if all runs are grouped in one mother directory in log: e.g. depth_q_net')
 parser.add_argument('--startswith', default='', type=str, help='Define sub folders in motherdir to parse.')
 parser.add_argument('--endswith', default='', type=str, help='Define sub folders in motherdir to parse.')
+parser.add_argument("--dont_mail", action='store_true', help="In case no mail is necessary, add this flag.")
 
 FLAGS, others = parser.parse_known_args()
 
@@ -290,9 +291,10 @@ for l in report:
 report[line_index] = ""
 
 # table mainly will contain those variables of which only one or few are available
-table_keys=['Distance_current_test_esatv3', 'Distance_furthest_test_esatv3','host']
+table_keys=['Distance_current_test_esatv3', 'Distance_furthest_test_esatv3','host','Loss_test_accuracy']
 
-start_table="\\begin{tabular}{|l|"+len(log_folders)*'c'+"|}\n"
+
+start_table="\\begin{tabular}{|l|"+len(log_folders)*'c'+'c'+"|}\n"
 report.insert(line_index, start_table)
 line_index+=1
 report.insert(line_index, "\\hline\n")
@@ -300,7 +302,7 @@ line_index+=1
 
 table_row="model: "
 for m in log_folders: table_row="{0} & {1} ".format(table_row, os.path.basename(m).replace('_', ' '))
-table_row="{0} \\\\ \n".format(table_row)
+table_row="{0} & total \\\\ \n".format(table_row)
 report.insert(line_index, table_row)
 line_index+=1
 report.insert(line_index, "\\hline \n")
@@ -309,20 +311,33 @@ line_index+=1
 for key in sorted(table_keys):
   # add keys at each row with filling in model's value in each column
   table_row="{0} ".format(key.replace('_',' '))
+  total_vals=[]
   for m in log_folders:
     try:
       if isinstance(results[m][key], collections.Iterable):
-        if type(results[m][key][0]) == float: #multiple floats --> take mean
+        if type(results[m][key][-1]) == float: #multiple floats --> take mean
           table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(results[m][key]), np.std(results[m][key]))
+          total_vals.append(np.mean(results[m][key]))
         else: #multiple strings
           for v in results[m][key]:  table_row="{0} & {1} ".format(table_row, v)
       else: #one value
         table_row="{0} & {1} ".format(table_row, results[m][key])
+        if not isinstance(results[m][key], str):
+          total_vals.append(results[m][key])
     except KeyError:
       pass
   if len(table_row) == len(key)+1: #don't add line if no information is there
     continue
   else:
+    # add total column info
+    if len(total_vals)!=0:
+      try:
+        table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(total_vals), np.std(total_vals))
+      except:
+        table_row="{0} & ".format(table_row)
+    else:
+      table_row="{0} & ".format(table_row)
+      
     table_row="{0} \\\\ \n".format(table_row)
     report.insert(line_index, table_row)
     line_index+=1
@@ -353,17 +368,18 @@ exit=subprocess.call(shlex.split("pdflatex -output-directory {0}/report {0}/repo
 # if not exit == 0: #in case pdf creation fails quit and start somewhere else
 #   sys.exit(exit)
 
-# Step 5: send it with mailx
-mailcommand="mailx -s {0} -a {1} ".format(log_root+FLAGS.mother_dir, log_root+FLAGS.mother_dir+'/report/report.pdf')
-for f in log_folders: 
-  if os.path.isfile(f+'/log.xls'): mailcommand+=" -a {0}/log.xls".format(f)
-p_msg = subprocess.Popen(shlex.split("echo {0} : {1} is finished.".format(time.strftime("%Y-%m-%d_%I:%M:%S"), log_root+FLAGS.mother_dir)), stdout=subprocess.PIPE)
-p_mail = subprocess.Popen(shlex.split(mailcommand+" klaas.kelchtermans@esat.kuleuven.be"),stdin=p_msg.stdout, stdout=subprocess.PIPE)
-print(p_mail.communicate())
+if not FLAGS.dont_mail:
+  # Step 5: send it with mailx
+  mailcommand="mailx -s {0} -a {1} ".format(log_root+FLAGS.mother_dir, log_root+FLAGS.mother_dir+'/report/report.pdf')
+  for f in log_folders: 
+    if os.path.isfile(f+'/log.xls'): mailcommand+=" -a {0}/log.xls".format(f)
+  p_msg = subprocess.Popen(shlex.split("echo {0} : {1} is finished.".format(time.strftime("%Y-%m-%d_%I:%M:%S"), log_root+FLAGS.mother_dir)), stdout=subprocess.PIPE)
+  p_mail = subprocess.Popen(shlex.split(mailcommand+" klaas.kelchtermans@esat.kuleuven.be"),stdin=p_msg.stdout, stdout=subprocess.PIPE)
+  print(p_mail.communicate())
 
-# wait a second.
-time.sleep(5)
+  # wait a second.
+  time.sleep(5)
 
-# Step 6: put report also in archive
-shutil.copyfile(log_root+FLAGS.mother_dir+'/report/report.pdf', '{0}/{1}archive/{2}.pdf'.format(FLAGS.home,FLAGS.summary_dir, FLAGS.mother_dir.replace('/','_')) )
+  # Step 6: put report also in archive
+  shutil.copyfile(log_root+FLAGS.mother_dir+'/report/report.pdf', '{0}/{1}archive/{2}.pdf'.format(FLAGS.home,FLAGS.summary_dir, FLAGS.mother_dir.replace('/','_')) )
 

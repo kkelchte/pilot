@@ -15,7 +15,7 @@ The data is collected from the data module.
 def run_episode(mode, sumvar, model, update_importance_weights=False):
   '''run over batches
   return different losses
-  type: 'train', 'val' or 'test'
+  type: 'train', 'validation' or 'test'
   '''
   start_time=time.time()
   data_loading_time = 0
@@ -33,7 +33,7 @@ def run_episode(mode, sumvar, model, update_importance_weights=False):
       if mode=='train':
         step, predictions, losses = model.train(inputs, targets)
         for k in losses.keys(): tools.save_append(results, k, losses[k])
-      elif mode=='val' or mode=='test':
+      elif mode=='validation' or mode=='test':
         predictions, losses = model.predict(inputs, targets)
         for k in losses.keys(): tools.save_append(results, k, losses[k])
     else:
@@ -45,7 +45,7 @@ def run_episode(mode, sumvar, model, update_importance_weights=False):
     model.update_importance_weights(np.asarray(all_inputs))
 
   for k in results.keys():
-    if len(results[k])!=0: sumvar['Loss_'+mode+'_'+k]=np.mean(results[k]) 
+    if len(results[k])!=0: sumvar[mode+'_'+k]=np.mean(results[k]) 
   print('>>{0} [{1[2]}/{1[1]}_{1[3]:02d}:{1[4]:02d}]: data {2}; calc {3}'.format(mode.upper(),tuple(time.localtime()[0:5]),
     tools.print_dur(data_loading_time),tools.print_dur(calculation_time)))
   return sumvar
@@ -70,7 +70,7 @@ def run(_FLAGS, model, start_ep=0):
     
     # ----------- validate episode
     # sumvar = run_episode('val', {}, model)
-    sumvar = run_episode('val', sumvar, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)
+    sumvar = run_episode('validation', sumvar, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)
 
     # get all metrics of this episode and add them to var
     # print end of episode
@@ -105,14 +105,18 @@ def run(_FLAGS, model, start_ep=0):
     model.save(FLAGS.summary_dir+FLAGS.log_tag)
 
 
-  # if FLAGS.visualize_saliency_of_output:
-  #   # Select hard images from last test set
-  #   for index, ok, batch in data.generate_batch('test'):
-  #     inputs = np.array([_['img'] for _ in batch])
-  #     targets = np.array([[_['ctr']] for _ in batch])
-  #     predictions, losses = model.predict(inputs, targets)
-      
-  #   tools.visualize_saliency_of_output(FLAGS, model)
+  if FLAGS.visualize_saliency_of_output:
+    # Select hard images from last test set
+    for index, ok, batch in data.generate_batch('test'):
+      inputs = np.array([_['img'] for _ in batch])
+      targets = np.array([[_['ctr']] for _ in batch])
+      predictions, losses = model.predict(inputs, targets)
+      print losses.keys()
+      import pdb; pdb.set_trace()
+      # --> loss is already mean ==> have to keep raw losses.
+      hard_input=[np.array(x) for _,x in reversed(sorted(zip(list(losses['imitation_learning']), inputs.tolist())))][0]
+      tools.visualize_saliency_of_output(FLAGS, model, hard_input)
+      break
 
   # if FLAGS.visualize_deep_dream_of_output:
   #   tools.deep_dream_of_extreme_control(FLAGS, model)

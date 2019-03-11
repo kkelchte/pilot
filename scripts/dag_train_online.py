@@ -40,6 +40,7 @@ parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to source of code on Opal.")
 parser.add_argument("--wall_time", default=3*60*60, type=int, help="Maximum time job is allowed to train.")
 parser.add_argument("--dont_retry", action='store_true', help="Don't retry if job ends with exit code != 1 --> usefull for debugging as previous log-files are overwritten.")
+parser.add_argument('--seeds', default=[123,456,789],nargs='+', help="Seeds to use over different models.")
 
 FLAGS, others = parser.parse_known_args()
 
@@ -54,7 +55,7 @@ models=range(FLAGS.number_of_models)
 ##########################################################################################################################
 # STEP 2 train each model online
 for model in models:
-  command="python condor_online.py -t {0}/{1} --dont_submit --home {2} --summary_dir {3} --wall_time {4} --random_seed {5}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time, 1361*model+531)
+  command="python condor_online.py -t {0}/seed_{1} --dont_submit --home {2} --summary_dir {3} --wall_time {4} --random_seed {5}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time, FLAGS.seeds[model%len(FLAGS.seeds)])
   for e in others: command=" {0} {1}".format(command, e)
   save_call(command)
 

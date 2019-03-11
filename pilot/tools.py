@@ -13,6 +13,8 @@ import os,sys,time
 
 import skimage.transform as sm
 
+
+
 # FLAGS = tf.app.flags.FLAGS
 
 """ 
@@ -104,7 +106,30 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
 # ===========================
 #   Visualization Techniques
 # ===========================
-# def plot... to be continued.
+def visualize_saliency_of_output(FLAGS, model, input_images=[], filter_pos=-1, cnn_layer=-1):
+  """
+  Extract the salience map of the output control node(s) for a predefined set of visualization images.
+  You can define the input_images as a list, if nothing is defined it uses the predefined images.
+  It saves the images in FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps/....png'.
+  FLAGS: the settings defined in main.py
+  model: the loaded pilot-model object
+  input_images: one or more images in an numpy array
+  """
+  # Extraction of guided backpropagation saliency maps from output  
+  # Create saliency map with guided backpropagation
+  inputs=torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.FloatTensor)
+  inputs.requires_grad=True  
+  if filter_pos != -1 or cnn_layer != -1:
+    raise NotImplementedError('cnn layer and filter position can not be defined yet')
+  else:
+    from guided_backprop import GuidedBackprop
+    BP = GuidedBackprop(model.net.network)
+    target = 1 if FLAGS.discrete else 0
+    gradient = BP.generate_gradients(inputs, target)
+    gradient = gradient - gradient.min()
+    gradient /= gradient.max()
+    plt.imshow(gradient.transpose(1,2,0))
+    plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
 
 
 # def get_endpoint_activations(inputs, model):

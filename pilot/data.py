@@ -71,9 +71,9 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   #                                                     np.mean([r[5] for r in res])))
   
   # import pdb; pdb.set_trace()
-  val_set=load_set('val') #if not FLAGS.hdf5 else load_set_hdf5('val')
+  val_set=load_set('validation') #if not FLAGS.hdf5 else load_set_hdf5('val')
   test_set=load_set('test')
-  full_set={'train':train_set, 'val':val_set, 'test':test_set}
+  full_set={'train':train_set, 'validation':val_set, 'test':test_set}
 
   # mean: -0.00393295288086, -0.0494995117188, -0.0966186523438, stds 0.237182617188,0.2060546875,0.18505859375
   # mean: 0.349365234375, -0.0396118164062, -0.375244140625, stds 1.087890625,0.8623046875,0.71875
@@ -270,7 +270,7 @@ def generate_batch(data_type):
   # When there is that much data applied that you can get more than 100 minibatches out
   # stick to 100, otherwise one epoch takes too long and the training is not updated
   # regularly enough.
-  max_num_of_batch = {'train':100, 'val':10, 'test':1000}
+  max_num_of_batch = {'train':100, 'validation':10, 'test':1000}
   # max_num_of_batch = {'train':1, 'val':1, 'test':1000}
   number_of_batches = min(int(number_of_frames/FLAGS.batch_size),max_num_of_batch[data_type])
   if number_of_batches == 0:  
