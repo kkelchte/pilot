@@ -558,16 +558,7 @@
 			"file": "pilot/model.py",
 			"settings":
 			{
-				"buffer_size": 19071,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "pilot/models/inception_net.py",
-			"settings":
-			{
-				"buffer_size": 1061,
+				"buffer_size": 18717,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -615,11 +606,12 @@
 	],
 	"file_history":
 	[
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_reproduce_results.md",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/offline.py",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/models/inception_net.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/launch.sh",
+		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_reproduce_results.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/data.py",
 		"/users/visics/kkelchte/.bashrc",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/offline.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/dag_train.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/dag_train_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot.sublime-project",
@@ -741,8 +733,7 @@
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/empty_world_with_wall.world",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised/python/eva_params_slow.yaml",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/segment.world",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/train_in_singularity.sh",
-		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot/tools.py"
+		"/esat/opal/kkelchte/docker_home/tensorflow/pilot/scripts/train_in_singularity.sh"
 	],
 	"find":
 	{
@@ -905,7 +896,7 @@
 	"groups":
 	[
 		{
-			"selected": 5,
+			"selected": 4,
 			"sheets":
 			[
 				{
@@ -935,7 +926,7 @@
 						"translation.y": 405.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -981,8 +972,8 @@
 						"selection":
 						[
 							[
-								7099,
-								7099
+								1823,
+								1823
 							]
 						],
 						"settings":
@@ -992,10 +983,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 732.0,
+						"translation.y": 417.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -1033,7 +1024,7 @@
 						"translation.y": 2297.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
@@ -1042,15 +1033,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 19071,
+						"buffer_size": 18717,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3440,
-								3440
+								2014,
+								2014
 							]
 						],
 						"settings":
@@ -1060,37 +1051,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 885.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "pilot/models/inception_net.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1061,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								997,
-								915
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 2055.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -1152,6 +1113,14 @@
 		"selected_items":
 		[
 			[
+				"off",
+				"pytorch_pilot_beta/pilot/offline.py"
+			],
+			[
+				"lau",
+				"pytorch_pilot_beta/scripts/launch.sh"
+			],
+			[
 				"data",
 				"pytorch_pilot_beta/pilot/data.py"
 			],
@@ -1180,16 +1149,8 @@
 				"simulation_supervised/simulation_supervised_demo/worlds/domain_ABC_textured.world"
 			],
 			[
-				"off",
-				"pytorch_pilot_beta/pilot/offline.py"
-			],
-			[
 				"modl",
 				"pytorch_pilot_beta/pilot/model.py"
-			],
-			[
-				"lau",
-				"pytorch_pilot_beta/scripts/launch.sh"
 			],
 			[
 				"mode",
@@ -1669,9 +1630,13 @@
 	"select_project":
 	{
 		"height": 500.0,
-		"last_filter": "",
+		"last_filter": "pyt\t",
 		"selected_items":
 		[
+			[
+				"pyt\t",
+				"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot.sublime-project"
+			],
 			[
 				"",
 				"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot.sublime-project"
@@ -1696,7 +1661,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 220.0,
+	"side_bar_width": 50.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
