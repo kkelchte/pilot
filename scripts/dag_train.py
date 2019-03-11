@@ -88,7 +88,7 @@ except OSError:
 with open(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_'),'w') as df:
   df.write("# File name: dag_file_"+FLAGS.log_tag+" \n")
   for model in range(FLAGS.number_of_models):
-    df.write("JOB m{0}_train {1}/{2}{3}/{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
+    df.write("JOB m{0}_train {1}/{2}{3}/seed_{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
     # df.write("JOB m{0}_eva {1}/{2}{3}/{0}_eva/condor/online.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   # df.write("JOB results {1}/{2}{3}/results/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("JOB report {1}/{2}{3}/report/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
