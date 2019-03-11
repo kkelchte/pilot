@@ -36,7 +36,8 @@ class Net(nn.Module):
     try:
       outputs,_ = self.network(x)
     except:
-      outputs = self.network(x)      
+      outputs = self.network(x)
+    # outputs,_ = self.network(x)
     if verbose: print outputs.size()
     return outputs
 
