@@ -523,16 +523,8 @@
 			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_notes_on_experiments.md",
 			"settings":
 			{
-				"buffer_size": 9351,
+				"buffer_size": 10034,
 				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_reproduce_results.md",
-			"settings":
-			{
-				"buffer_size": 875,
 				"line_ending": "Unix"
 			}
 		},
@@ -558,16 +550,17 @@
 			"file": "pilot/model.py",
 			"settings":
 			{
-				"buffer_size": 18716,
+				"buffer_size": 18717,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/users/visics/kkelchte/.bashrc",
+			"file": "pilot/models/inception_net.py",
 			"settings":
 			{
-				"buffer_size": 17594,
+				"buffer_size": 1089,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -584,7 +577,7 @@
 			"file": "pilot/data.py",
 			"settings":
 			{
-				"buffer_size": 23105,
+				"buffer_size": 23164,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -626,12 +619,13 @@
 	},
 	"expanded_folders":
 	[
-		"/users/visics/kkelchte/blogs/kkelchte.github.io",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs",
-		"/users/visics/kkelchte/blogs/kkelchte.github.io/imgs"
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot",
+		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/pilot/models"
 	],
 	"file_history":
 	[
+		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot.sublime-project",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/main.py",
 		"/esat/opal/kkelchte/docker_home/simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/domain_ABC_textured.world",
@@ -646,7 +640,6 @@
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/offline.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/scripts/condor_online.py",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/models/alex_net.py",
-		"/users/visics/kkelchte/.bashrc",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot/rosinterface.py",
 		"/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_notes_on_experiments.md",
 		"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot/scripts/dag_train_online.py",
@@ -922,7 +915,7 @@
 	"groups":
 	[
 		{
-			"selected": 5,
+			"selected": 4,
 			"sheets":
 			[
 				{
@@ -931,15 +924,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 9351,
+						"buffer_size": 10034,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7664,
-								7664
+								0,
+								0
 							]
 						],
 						"settings":
@@ -957,34 +950,6 @@
 				},
 				{
 					"buffer": 1,
-					"file": "/users/visics/kkelchte/blogs/kkelchte.github.io/docs/2019-02-22_reproduce_results.md",
-					"semi_transient": true,
-					"settings":
-					{
-						"buffer_size": 875,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 7,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
 					"file": "scripts/combine_results.py",
 					"semi_transient": false,
 					"settings":
@@ -1022,7 +987,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 2,
 					"file": "scripts/launch.sh",
 					"semi_transient": false,
 					"settings":
@@ -1050,20 +1015,20 @@
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 3,
 					"file": "pilot/model.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 18716,
+						"buffer_size": 18717,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6268,
-								6268
+								2748,
+								2748
 							]
 						],
 						"settings":
@@ -1073,44 +1038,44 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1575.0,
+						"translation.y": 1050.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
-					"file": "/users/visics/kkelchte/.bashrc",
+					"buffer": 4,
+					"file": "pilot/models/inception_net.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 17594,
+						"buffer_size": 1089,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2538,
-								2538
+								965,
+								965
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax",
+							"syntax": "Packages/Python/Python.sublime-syntax",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 762.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 5,
 					"file": "pilot/offline.py",
 					"semi_transient": false,
 					"settings":
@@ -1140,20 +1105,20 @@
 					"type": "text"
 				},
 				{
-					"buffer": 7,
+					"buffer": 6,
 					"file": "pilot/data.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 23105,
+						"buffer_size": 23164,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								12096,
-								12096
+								0,
+								0
 							]
 						],
 						"settings":
@@ -1747,7 +1712,7 @@
 		[
 			[
 				"",
-				"/esat/opal/kkelchte/docker_home/tensorflow/pilot/pilot.sublime-project"
+				"/esat/opal/kkelchte/docker_home/tensorflow/pytorch_pilot_beta/pilot.sublime-project"
 			]
 		],
 		"width": 380.0
