@@ -33,7 +33,10 @@ class Net(nn.Module):
       self.network.train()
     else:
       self.network.eval()
-    outputs,_ = self.network(x)
+    try:
+      outputs,_ = self.network(x)
+    except:
+      outputs = self.network(x)      
     if verbose: print outputs.size()
     return outputs
 
