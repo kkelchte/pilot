@@ -114,10 +114,11 @@ def load_set(data_type):
   as a dictionary {name, controls, num_imgs, num_depths}
   with multiple threads. In case of --load_data_in_ram, the imgs and depths are loaded as well.
   """
-  if not os.path.exists(join(datasetdir, data_type+'_set.txt')):
+  data_file=data_type+'_set.txt' if data_type != 'validation' else 'val_set.txt'
+  if not os.path.exists(join(datasetdir, data_file)):
     print('[data] Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
     return []
-  f = open(join(datasetdir, data_type+'_set.txt'), 'r')
+  f = open(join(datasetdir, data_file), 'r')
   run_list = [ l.strip() for l in f.readlines() if len(l) > 2]
   run_dict = {i:l for i,l in enumerate(run_list)}
   index_list = run_dict.keys()
