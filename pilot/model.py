@@ -101,10 +101,11 @@ class Model(object):
       checkpoint=torch.load(self.FLAGS.checkpoint_path+'/my-model')
       try:
         self.net.load_state_dict(checkpoint['model_state_dict'], strict=self.FLAGS.continue_training)
-      except:
-        print("[model]: FAILED to load model {1} from {0} into {2}".format(self.FLAGS.checkpoint_path, 
+      except Exception as e:
+        print("[model]: FAILED to load model {1} from {0} into {2}, {3}.".format(self.FLAGS.checkpoint_path, 
                                                                           checkpoint['network'],
-                                                                          self.FLAGS.network))
+                                                                          self.FLAGS.network,
+                                                                          e.message))
         if self.FLAGS.continue_training: print("\t put continue_training FALSE to avoid strict matching.")
         sys.exit(2)
       else:
@@ -271,7 +272,10 @@ class Model(object):
     for k in losses: losses[k]=losses[k].cpu().detach().numpy()
     
     # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
-    if self.FLAGS.discrete: losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
+    if self.FLAGS.discrete:
+      if not self.FLAGS.loss == 'CrossEntropy':
+        targets=np.argmax(targets,1)
+      losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
     
     return self.epoch, predictions_list, losses
      
