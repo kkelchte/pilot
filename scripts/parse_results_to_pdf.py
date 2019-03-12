@@ -291,7 +291,7 @@ for l in report:
 report[line_index] = ""
 
 # table mainly will contain those variables of which only one or few are available
-table_keys=['Distance_current_test_esatv3', 'Distance_furthest_test_esatv3','host','Loss_test_accuracy']
+table_keys=['Distance_current_test_esatv3', 'Distance_furthest_test_esatv3','host','test_accuracy']
 
 
 start_table="\\begin{tabular}{|l|"+len(log_folders)*'c'+'c'+"|}\n"
