@@ -273,8 +273,8 @@ class Model(object):
     
     # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
     if self.FLAGS.discrete:
-      if not self.FLAGS.loss == 'CrossEntropy':
-        targets=np.argmax(targets,1)
+      if not self.FLAGS.loss == 'CrossEntropy': 
+        targets=np.argmax(targets,1) # For MSE loss is targets one hot encoded
       losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
     
     return self.epoch, predictions_list, losses

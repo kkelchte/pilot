@@ -151,35 +151,44 @@ executable = open(shell_file,'w')
 executable.write("#!/bin/bash \n")
 executable.write("echo \"[condor_script] started executable for condor_offline: $(date +%F_%H:%M)\" \n")
 
-if FLAGS.python_script == 'main.py' and False:
-  # in case of offline training work locally in /tmp and copy dataset
-  if '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
-    dataset=others[others.index('--dataset')+1]
-    if os.path.isfile('{0}/{1}{2}.tar.gz'.format(FLAGS.home, FLAGS.data_root, dataset)):
-      executable.write("echo \"Copy compressed dataset to /tmp $(date +%H:%M:%S)\" \n")
-      executable.write("cp {0}/{1}{2}.tar.gz /tmp\n".format(FLAGS.home, FLAGS.data_root, dataset))
-      executable.write("echo \"extract dataset to /tmp $(date +%H:%M:%S)\" \n")
-      # extraction of 10 g took around 3min on opal
-      executable.write("tar -xzf /tmp/{0}.tar.gz -C /tmp \n".format(dataset))
-      executable.write("sed -i 's/esat\/opal\/kkelchte\/docker_home\/pilot_data/tmp/' /tmp/{0}/*.txt \n".format(dataset))
-    else:      
-      executable.write("echo \"Copy dataset as separate files to /tmp. $(date +%H:%M:%S)\" \n")
-      executable.write("while read line ; do \n")
-      executable.write("  cp -r $line /tmp\n")
-      executable.write("  echo /tmp/$(basename $line) >> /tmp/train_set.txt\n")
-      executable.write("done < {0}/{1}{2}/train_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
-      executable.write("while read line ; do \n")
-      executable.write("  cp -r $line /tmp\n")
-      executable.write("  echo /tmp/$(basename $line) >> /tmp/val_set.txt\n")
-      executable.write("done < {0}/{1}{2}/val_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
-      executable.write("while read line ; do \n")
-      executable.write("  cp -r $line /tmp\n")
-      executable.write("  echo /tmp/$(basename $line) >> /tmp/test_set.txt\n")
-      executable.write("done < {0}/{1}{2}/test_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
-      others[others.index('--dataset')+1]='.'
+# in case of offline training work locally in /tmp and copy dataset
+if FLAGS.python_script == 'main.py' and '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
+  dataset=others[others.index('--dataset')+1]
+  # find file
+  data_file=""
+  if os.path.isfile('/gluster/visics/kkelchte/pilot_data/{0}.tar'.format(dataset)):
+    data_file='/gluster/visics/kkelchte/pilot_data/{0}.tar'.format(dataset)
+  elif os.path.isfile('{0}/{1}{2}.tar'.format(FLAGS.home, FLAGS.data_root, dataset)):
+    data_file='{0}/{1}{2}.tar'.format(FLAGS.home, FLAGS.data_root, dataset)
+  if data_file:  
+    executable.write("CURRENTDIR=\"$PWD\"\n")
+    executable.write("cd /tmp\n")
+    executable.write("echo \"$(date +%H:%M:%S): Copy and extract tar dataset {0} to /tmp \" \n".format(data_file))
+    executable.write("tar xf {0}\n".format(data_file))
+    executable.write("echo \" $(date +%H:%M:%S) done.\" \n")
+    executable.write("cd $CURRENTDIR\n")
+    # executable.write("sed -i 's/esat\/opal\/kkelchte\/docker_home\/pilot_data/tmp/' /tmp/{0}/*.txt \n".format(dataset))
+  else:      
+    executable.write("echo \"Copy dataset as separate files to /tmp.\" \n")
+    executable.write("while read line ; do \n")
+    executable.write("  cp -r $line /tmp\n")
+    executable.write("  echo /tmp/$(basename $line) >> /tmp/train_set.txt\n")
+    executable.write("done < {0}/{1}{2}/train_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+    executable.write("while read line ; do \n")
+    executable.write("  cp -r $line /tmp\n")
+    executable.write("  echo /tmp/$(basename $line) >> /tmp/val_set.txt\n")
+    executable.write("done < {0}/{1}{2}/val_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+    executable.write("while read line ; do \n")
+    executable.write("  cp -r $line /tmp\n")
+    executable.write("  echo /tmp/$(basename $line) >> /tmp/test_set.txt\n")
+    executable.write("done < {0}/{1}{2}/test_set.txt \n".format(FLAGS.home, FLAGS.data_root, others[others.index('--dataset')+1]))
+    others[others.index('--dataset')+1]='.'
     executable.write("echo \"Finished data copy $(date +%H:%M:%S)\" \n")  
-    FLAGS.data_root='/tmp'
+  FLAGS.data_root='/tmp'
 
+
+if FLAGS.python_script == 'main.py' and False:
+  
   # create temporary log directory
   executable.write("mkdir -p /tmp/{0}{1} \n".format(FLAGS.summary_dir, FLAGS.log_tag))
   # adjust data_root to absolute path (as home environment will be set to /tmp)
@@ -212,7 +221,6 @@ if FLAGS.python_script == 'main.py' and False:
     executable.write('cp {0}/{1}{2}/configuration.xml /tmp/{1}{2} \n'.format(FLAGS.home,FLAGS.summary_dir,checkpoint_path))
 
   executable.write('export HOME=/tmp \n')
-
 else:
   executable.write("export HOME={0}\n".format(FLAGS.home))
 
