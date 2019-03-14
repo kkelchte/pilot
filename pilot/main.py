@@ -46,7 +46,7 @@ def main(_):
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
   parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
-  parser.add_argument("--max_episodes",default=10,type=int,help="The maximum number of episodes (~runs through all the training data.)")
+  parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
   parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
   
   # ==========================
@@ -221,6 +221,7 @@ def main(_):
     FLAGS.scratch = False
     FLAGS.continue_training = True
     FLAGS.checkpoint_path = FLAGS.log_tag
+
 
   if len(FLAGS.checkpoint_path) != 0 and FLAGS.checkpoint_path[0] != '/': 
     FLAGS.checkpoint_path = os.path.join(FLAGS.summary_dir, FLAGS.checkpoint_path) 

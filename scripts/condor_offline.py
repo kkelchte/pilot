@@ -104,7 +104,7 @@ except: pass
 condor_submit = open(condor_file,'w')
 
 condor_submit.write("Universe         = vanilla\n")
-condor_submit.write("RequestCpus      = 4 \n")
+condor_submit.write("RequestCpus      = 6 \n")
 condor_submit.write("Request_GPUs     = {0} \n".format(FLAGS.gpunum))
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
@@ -154,7 +154,7 @@ executable.write("echo \"[condor_script] started executable for condor_offline: 
 # in case of offline training work locally in /tmp and copy dataset
 if FLAGS.python_script == 'main.py' and '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
   dataset=others[others.index('--dataset')+1]
-  # find file
+  # find dataset in tar file on gluster or opal
   data_file=""
   if os.path.isfile('/gluster/visics/kkelchte/pilot_data/{0}.tar'.format(dataset)):
     data_file='/gluster/visics/kkelchte/pilot_data/{0}.tar'.format(dataset)
