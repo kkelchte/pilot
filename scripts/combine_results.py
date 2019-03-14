@@ -211,14 +211,14 @@ for tag in sorted(FLAGS.tags):
       print e
       pass
   if not all_fail:
-    plt.xlabel("Run" if tag in FLAGS.tags else "Epoch")
-    plt.ylabel(tag)
+    plt.xlabel("Step")
+    # plt.xlabel("Run" if tag in FLAGS.tags else "Epoch")
+    plt.ylabel(tag.replace('_',' '))
     if 'accuracy' in tag:
-      plt.ylabel('Accuracy')
+      # plt.ylabel('Accuracy')
       plt.ylim((0.5,1))
     plt.legend(handles=legend)
     fig_name=log_root+FLAGS.mother_dir+'/'+tag+'.jpg'
     plt.savefig(fig_name,bbox_inches='tight')
 
-sys.exit(0)
-
+  print("save figure: {0}".format(fig_name))

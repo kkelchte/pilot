@@ -45,7 +45,8 @@ class Model(object):
       print(e)
       print("[model] Failed to load model {0}.".format(self.FLAGS.network))
       sys.exit(2)
-
+    if self.FLAGS.pretrained:
+      print("[model] loaded imagenet pretrained weights.")
     self.input_size=self.net.default_image_size
     # load on GPU
     # self.device = torch.device( "cpu")

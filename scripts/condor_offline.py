@@ -104,7 +104,7 @@ except: pass
 condor_submit = open(condor_file,'w')
 
 condor_submit.write("Universe         = vanilla\n")
-condor_submit.write("RequestCpus      = 6 \n")
+condor_submit.write("RequestCpus      = 5 \n")
 condor_submit.write("Request_GPUs     = {0} \n".format(FLAGS.gpunum))
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))

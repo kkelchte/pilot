@@ -1,5 +1,5 @@
 """
-Version of ResNet using torchvision models
+Version of Inception using torchvision models
 TODO: check if indeed gradients are not secretely kept or bn weights updated during forward pass...
 """
 
@@ -26,7 +26,7 @@ class Net(nn.Module):
     self.network.fc = nn.Linear(num_ftrs,output_size)
 
 
-  def forward(self, x, train=False, verbose=True):
+  def forward(self, x, train=False, verbose=False):
     if verbose: print x.size()
 
     if train:
