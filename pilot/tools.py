@@ -132,6 +132,32 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[], filter_pos=-1, c
     plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
 
 
+# ==============================
+#   Calculate importance weights
+# ==============================
+def calculate_importance_weights(model, input_images=[], level='neuron'):
+  """
+  Importance weights are calculated in the same way as the memory away synapsys for the model provided.
+  For each image in input_images, the absolute value of the gradients are calculated 
+  for each part of the network with respect to the input and averaged over the images.
+  The level tag defines on which level of specificity the importance weight should be calculated.
+  Options are: 'neuron'(default), 'filter', 'layer'
+
+  The importance weights are solely estimated for convolutional and linear operations,
+  not for batch normalization.
+
+  Returns:
+  a list of importance weights in the shape corresponding to the level of specificity:
+  - neuron: same shape as the parameter (ChannelsxSizexSizexHiddenUnits)
+  - filter: 1D array with length HiddenUnits
+  - layer: 1 integer for each layer
+
+  """
+  
+
+
+
+
 # def get_endpoint_activations(inputs, model):
 # 	'''Run forward through the network for this batch and return all activations
 # 	of all intermediate endpoints

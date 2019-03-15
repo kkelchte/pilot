@@ -78,36 +78,6 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   # mean: -0.00393295288086, -0.0494995117188, -0.0966186523438, stds 0.237182617188,0.2060546875,0.18505859375
   # mean: 0.349365234375, -0.0396118164062, -0.375244140625, stds 1.087890625,0.8623046875,0.71875
   # mean: 0.49609375, 0.450439453125, 0.4033203125, stds 0.237182617188,0.2060546875,0.18505859375
-# def load_set_hdf5(data_type):
-#   """Load a type (train, val or test) of set in the set_list
-#   as a tuple: first tuple element the directory of the fligth 
-#   and the second the number of images taken in that flight
-#   """
-#   set_list = []
-#   if not os.path.exists(join(datasetdir, data_type+'_set.txt')):
-#     print('Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
-#     return []
-
-#   # open text file with list of data directories corresponding to the datatype
-#   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
-#   runs={} #dictionary with for each parent directory a list of all folders related to this datatype
-#   for r in sorted([ l.strip() for l in f.readlines() if len(l) > 2]):
-#     if os.path.dirname(r) in runs.keys():
-#       runs[os.path.dirname(r)].append(os.path.basename(r))  
-#     else :
-#       runs[os.path.dirname(r)] = [os.path.basename(r)]     
-#   for directory in runs.keys():
-#     data_file = h5py.File(directory+'/data.hdf5', 'r')
-#     for run in data_file.keys():
-#       set_list.append({'name':directory+'/'+str(run), 
-#                        'images':data_file[run]['RGB'][:],
-#                        'depths':data_file[run]['Depth'][:],
-#                        'controls':data_file[run]['control_info'][:]})
-#     data_file.close()
-#   f.close()
-#   if len(set_list)==0:
-#     print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
-#   return set_list
 
 def load_set(data_type):
   """Load a type (train, val or test) in the set_list
@@ -424,13 +394,39 @@ def generate_batch(data_type):
     if ok: b+=1
     yield b, ok, batch
     
+def get_all_inputs(data_type):
+  """Return a list of all data of that data type.
+  """
+  inputs=[]
+  for run in full_set[data_type]:
+    if FLAGS.load_data_in_ram:
+      inputs.extend(run['imgs'])
+    else:
+      for frame_ind in run['num_imgs']:
+        img_file = join(run['name'],'RGB', '{0:010d}.jpg'.format(frame_ind))
+        img = sio.imread(img_file)
+        img = np.swapaxes(img,1,2)
+        img = np.swapaxes(img,0,1)
+        scale_height = int(np.floor(img.shape[1]/im_size[1]))
+        scale_width = int(np.floor(img.shape[2]/im_size[2]))
+        img = img[::scale_height,::scale_width]
+        img = sm.resize(img,im_size,mode='constant').astype(np.float16) #.astype(np.float32)
+        if FLAGS.shifted_input:
+          img -= 0.5
+        elif FLAGS.scaled_input:
+          for i in range(3): 
+            img[i,:,:]-=FLAGS.scale_means[i]
+            img[i,:,:]/=FLAGS.scale_stds[i]
+        inputs.append(img)
+  return inputs
+
 
 #### FOR TESTING ONLY
   
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  parser.add_argument("--dataset", default="small", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="esatv3_expert_5K", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
@@ -443,18 +439,22 @@ if __name__ == '__main__':
   parser.add_argument("--max_depth", default=5.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
   
   parser.add_argument("--subsample", default=1, type=int, help="Subsample data over time: e.g. subsample 2 to get from 20fps to 10fps.")
+  parser.add_argument("--normalized_output", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
+  parser.add_argument("--shifted_input", action='store_true', help="Shift data from range 0,1 to -0.5,0.5")
+  parser.add_argument("--scaled_input", action='store_true', help="Scale the input to 0 mean and 1 std.")
+  parser.add_argument('--scale_means', default=[0.42, 0.46, 0.5],nargs='+', help="Means used for scaling the input around 0")
+  parser.add_argument('--scale_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
   parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
 
   parser.add_argument("--network",default='mobile',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
-  parser.add_argument("--normalized_output", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
   
   FLAGS=parser.parse_args()  
 
   prepare_data(FLAGS, (3,128,128))
 
-  for dt in 'train', 'val', 'test':
+  for dt in 'train', 'validation', 'test':
     print("------------------------")
     print("Datatype: {}".format(dt))
     print("Number of runs: {}".format(len(full_set[dt])))
@@ -462,19 +462,51 @@ if __name__ == '__main__':
     print("Number of depths: {}".format(sum([ len(s['num_depths']) for s in full_set[dt]])))
     print("Number of controls: {}".format(sum([ len(s['controls']) for s in full_set[dt]])))
   
-  start_time=time.time()
-  for index, ok, batch in generate_batch('train'):
-    print("Batch: {}".format(index))
-    inputs = np.array([_['img'] for _ in batch])
-    actions = np.array([[_['ctr']] for _ in batch])
-    target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
+  print len(get_all_inputs('validation'))
+  import pdb; pdb.set_trace()
+  # start_time=time.time()
+  # for index, ok, batch in generate_batch('train'):
+  #   print("Batch: {}".format(index))
+  #   inputs = np.array([_['img'] for _ in batch])
+  #   actions = np.array([[_['ctr']] for _ in batch])
+  #   target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
     
-    print("batchsize: {}".format(len(batch)))
-    print("images size: {}".format(inputs.shape))
-    print("actions size: {}".format(actions.shape))
-    print("depths size: {}".format(target_depth.shape if FLAGS.auxiliary_depth else 0))
+  #   print("batchsize: {}".format(len(batch)))
+  #   print("images size: {}".format(inputs.shape))
+  #   print("actions size: {}".format(actions.shape))
+  #   print("depths size: {}".format(target_depth.shape if FLAGS.auxiliary_depth else 0))
 
-    # import pdb; pdb.set_trace()  
+  #   # import pdb; pdb.set_trace()  
     
-  print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
+  # print('loading time one episode: {}'.format(tools.print_dur(time.time()-start_time)))
   
+# def load_set_hdf5(data_type):
+#   """Load a type (train, val or test) of set in the set_list
+#   as a tuple: first tuple element the directory of the fligth 
+#   and the second the number of images taken in that flight
+#   """
+#   set_list = []
+#   if not os.path.exists(join(datasetdir, data_type+'_set.txt')):
+#     print('Datatype {0} not available for dataset {1}.'.format(data_type, datasetdir))
+#     return []
+
+#   # open text file with list of data directories corresponding to the datatype
+#   f = open(join(datasetdir, data_type+'_set.txt'), 'r')
+#   runs={} #dictionary with for each parent directory a list of all folders related to this datatype
+#   for r in sorted([ l.strip() for l in f.readlines() if len(l) > 2]):
+#     if os.path.dirname(r) in runs.keys():
+#       runs[os.path.dirname(r)].append(os.path.basename(r))  
+#     else :
+#       runs[os.path.dirname(r)] = [os.path.basename(r)]     
+#   for directory in runs.keys():
+#     data_file = h5py.File(directory+'/data.hdf5', 'r')
+#     for run in data_file.keys():
+#       set_list.append({'name':directory+'/'+str(run), 
+#                        'images':data_file[run]['RGB'][:],
+#                        'depths':data_file[run]['Depth'][:],
+#                        'controls':data_file[run]['control_info'][:]})
+#     data_file.close()
+#   f.close()
+#   if len(set_list)==0:
+#     print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
+#   return set_list

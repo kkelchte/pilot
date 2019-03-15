@@ -100,21 +100,29 @@
 #   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 # done
 
-#---------------------------------------------- TEST
+#---------------------------------------------- GET BACK TO REALITY
 
-# Do first: rm test_alexnet/copy_dataset/DAG
-# name="test_alexnet/copy_dataset"
-# pytorch_args="--network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
-#  --continue_training --checkpoint_path alex_net_scratch --tensorboard --max_episodes 5000 --batch_size 100\
-#  --loss CrossEntropy --learning_rate 0.01"
-# dag_args="--number_of_models 1 --not_nice"
-# condor_args="--wall_time_train $((50*100/5*60+3600*2)) --rammem 7 --copy_dataset"
-# python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+for LR in 01 001 0001 ; do
+  name="squeeze_net/esatv3_expert_200K/$LR"
+  pytorch_args="--network squeeze_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
+  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*3*60+2*3600)) --rammem 6 --gpumem 2500 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 
+for LR in 01 001 0001 ; do
+  name="tiny_net/esatv3_expert_200K/$LR"
+  pytorch_args="--network tiny_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
+  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*1*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 
 
 #---------------------------------------------- GOING DEEPER INCEPTION-DENSE-RES NET
-for LR in 1 001 00001 ; do
+for LR in 01 0001 ; do
   name="inception_net_pretrained/esatv3_expert_200K/$LR"
   pytorch_args="--network inception_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
   --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
@@ -122,7 +130,7 @@ for LR in 1 001 00001 ; do
   condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 6 --gpumem 5000 --copy_dataset"
   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 done
-for LR in 1 001 00001 ; do
+for LR in 01 0001 ; do
   name="res18_net_pretrained/esatv3_expert_200K/$LR"
   pytorch_args="--network res18_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
   --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
@@ -130,7 +138,7 @@ for LR in 1 001 00001 ; do
   condor_args="--wall_time_train $((100*4*60+2*3600)) --rammem 6 --gpumem 1900 --copy_dataset"
   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 done
-for LR in 1 001 00001 ; do
+for LR in 01 0001 ; do
   name="dense_net_pretrained/esatv3_expert_200K/$LR"
   pytorch_args="--network dense_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
   --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
@@ -139,11 +147,26 @@ for LR in 1 001 00001 ; do
   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 done
 
-
+for LR in 01 0001 ; do
+  name="alex_net_pretrained/esatv3_expert_200K/$LR"
+  pytorch_args="--network alex_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
+  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*3*60+2*3600)) --rammem 6 --gpumem 1900 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
+for LR in 01 0001 ; do
+  name="vgg16_net_pretrained/esatv3_expert_200K/$LR"
+  pytorch_args="--network vgg16_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
+  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 6 --gpumem 6000 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 
 
 #---------------------------------------------- VGG16 OPTIMIZERS PRETRAINED
-# for LR in 1 001 00001 ; do
+# for LR in 1 00001 ; do
 #  for OP in SGD Adadelta Adam ; do 
 # for LR in 1 ; do
 #  for OP in SGD Adam ; do 
