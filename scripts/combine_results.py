@@ -193,7 +193,7 @@ for tag in sorted(FLAGS.tags):
   plt.clf()
   plt.cla()
   plt.close()
-  fig=plt.figure(figsize=(10,10))
+  fig=plt.figure(figsize=(5,5))
   legend=[]
   all_fail=True
   for folder_index,l in enumerate(log_folders): #loop over log_folders
@@ -214,11 +214,11 @@ for tag in sorted(FLAGS.tags):
     plt.xlabel("Step")
     # plt.xlabel("Run" if tag in FLAGS.tags else "Epoch")
     plt.ylabel(tag.replace('_',' '))
-    if 'accuracy' in tag:
+    if 'accuracy' in tag and np.amin(results[l][tag][:FLAGS.cutend]) > 0.5:
       # plt.ylabel('Accuracy')
       plt.ylim((0.5,1))
     plt.legend(handles=legend)
     fig_name=log_root+FLAGS.mother_dir+'/'+tag+'.jpg'
     plt.savefig(fig_name,bbox_inches='tight')
 
-  print("save figure: {0}".format(fig_name))
+  print("display {0}".format(fig_name))

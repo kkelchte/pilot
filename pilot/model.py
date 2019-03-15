@@ -235,6 +235,8 @@ class Model(object):
     inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
     predictions = self.net.forward(inputs, train=True)
     targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+    # cross entropy is sometimes numerically unstable...
+    # import pdb; pdb.set_trace()
     losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
     
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']
