@@ -122,10 +122,14 @@ def run(_FLAGS, model):
       tools.visualize_saliency_of_output(FLAGS, model, hard_input)
       break
 
-  # if FLAGS.calculate_importance_weights:
-  #   validation_input = data.
-  #   tools.calculate_importance_weights(model, validation_input, level='neuron')
+  if FLAGS.calculate_importance_weights:
+    # tools.calculate_importance_weights(model, data.get_all_inputs('validation'), level='neuron')
+    importance_weights=tools.calculate_importance_weights(model, data.get_all_inputs('train'), level='neuron')
+    import pickle
+    with open(FLAGS.summary_dir+FLAGS.log_tag+"/omegas",'wb') as f:
+      pickle.dump(importance_weights, f)
 
+    # import pdb; pdb.set_trace()
   # if FLAGS.visualize_deep_dream_of_output:
   #   tools.deep_dream_of_extreme_control(FLAGS, model)
 

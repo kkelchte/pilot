@@ -151,12 +151,30 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   - neuron: same shape as the parameter (ChannelsxSizexSizexHiddenUnits)
   - filter: 1D array with length HiddenUnits
   - layer: 1 integer for each layer
-
   """
-  
+  import torch
 
+  # collect importance / gradients in list
+  gradients=[0 for p in model.net.parameters()]
+  stime=time.time()
+  for img in input_images: #loop over input images
+    # ensure no gradients are still in the network
+    model.net.zero_grad()
+    # forward pass of one image through the network
+    y_pred=model.net(torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.float32).to(model.device))
+    # backward pass from the 2-norm of the output
+    torch.norm(y_pred, 2, dim=1).backward()    
+    for pindex, p in enumerate(model.net.parameters()):
+        g=p.grad.data.clone().detach().cpu().numpy()
+        gradients[pindex]+=np.abs(g)/len(input_images)
 
-
+  print("[tools] calculate_importance_weights duration {0}".format(time.time()-stime))
+  if level == 'neuron':
+    return gradients
+  elif level == 'filter':
+    raise NotImplementedError
+  else:
+    raise NotImplementedError
 
 # def get_endpoint_activations(inputs, model):
 # 	'''Run forward through the network for this batch and return all activations

@@ -46,6 +46,7 @@ def main(_):
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
   parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--clip",default=10**4,type=float,help="Clip gradients to avoid 'nan' loss values.")
   parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
   parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
   
@@ -55,6 +56,9 @@ def main(_):
   parser.add_argument("--lifelonglearning",action='store_true',help="In case there is a previous domain upon which the model was trained, use the lifelonglearning regularization to overcome forgetting.")
   parser.add_argument("--update_importance_weights",action='store_true',help="Update importance weights for all variables for this domain.")
   parser.add_argument("--lll_weight", default=1, type=float, help="Weight the lifelonglearning regularization term in the overall loss.")
+  parser.add_argument("--calculate_importance_weights",action='store_true',help="Calculate the importance weights at the end of training and save them as pickled object.")
+
+
   
   # ==========================
   #   Offline Parameters

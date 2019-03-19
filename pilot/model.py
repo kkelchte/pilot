@@ -264,6 +264,7 @@ class Model(object):
     mean_loss=torch.mean(losses['total'])
     mean_loss.backward() # fill gradient buffers with the gradient according to this loss
     # print("backward time: ", time.time()-stime)
+    torch.nn.utils.clip_grad_norm_(self.net.parameters(), self.FLAGS.clip)
 
     self.optimizer.step() # apply what is in the gradient buffers to the parameters
     self.epoch+=1
