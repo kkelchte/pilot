@@ -85,7 +85,6 @@ class Model(object):
       self.initialize_network()
 
 
-
   def initialize_network(self):
     """Initialize all parameters of the network conform the FLAGS configuration
     """
@@ -116,14 +115,20 @@ class Model(object):
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         print("[model]: loaded optimizer parameters from {0}".format(self.FLAGS.checkpoint_path))
         
-  def save(self, logfolder):
+  def save(self, logfolder, save_optimizer=True):
     '''save a checkpoint'''
-    torch.save({
-      'epoch': self.epoch,
-      'network': self.FLAGS.network,
-      'optimizer': self.FLAGS.optimizer,
-      'optimizer_state_dict': self.optimizer.state_dict(),
-      'model_state_dict': self.net.state_dict()}, logfolder+'/my-model')
+    if save_optimizer:
+      torch.save({
+        'epoch': self.epoch,
+        'network': self.FLAGS.network,
+        'optimizer': self.FLAGS.optimizer,
+        'optimizer_state_dict': self.optimizer.state_dict(),
+        'model_state_dict': self.net.state_dict()}, logfolder+'/my-model')
+    else:
+      torch.save({
+        'epoch': self.epoch,
+        'network': self.FLAGS.network,
+        'model_state_dict': self.net.state_dict()}, logfolder+'/my-model')
   
   def define_discrete_bins(self, action_bound, action_quantity):
     '''

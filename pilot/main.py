@@ -49,6 +49,7 @@ def main(_):
   parser.add_argument("--clip",default=10**4,type=float,help="Clip gradients to avoid 'nan' loss values.")
   parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
   parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
+  parser.add_argument("--create_scratch_checkpoint", action='store_true', help="Dont train, just save checkpoint before starting and quit.")
   
   # ==========================
   #   Lifelonglearning Parameters

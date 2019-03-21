@@ -58,10 +58,16 @@ def run(_FLAGS, model):
   
   FLAGS=_FLAGS
   start_time=time.time()
+
+  if FLAGS.create_scratch_checkpoint:
+    model.save(FLAGS.summary_dir+FLAGS.log_tag, save_optimizer=False)
+    sys.exit(0)
+
   data.prepare_data(FLAGS, model.input_size)
   print("data loading time: {0:0.0f}".format(time.time()-start_time))
   epoch=model.epoch
-  
+
+
   while epoch<FLAGS.max_episodes and not FLAGS.testing:
     # ep+=1
 

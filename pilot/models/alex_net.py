@@ -15,13 +15,12 @@ class Net(nn.Module):
   def __init__(self, output_size = 10, pretrained=False):
     super(Net, self).__init__()
     self.default_image_size=[3,224,224]
-
+    self.default_feature_size=256*6*6
     self.network = models.alexnet(pretrained=pretrained)
     self.network.classifier[6]=nn.Linear(4096, output_size)
 
   def forward(self, x, train=False, verbose=False):
     if verbose: print x.size()
-
     if train:
       self.network.train()
     else:
