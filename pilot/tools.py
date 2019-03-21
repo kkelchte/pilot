@@ -12,8 +12,7 @@ import numpy as np
 import os,sys,time
 
 import skimage.transform as sm
-
-
+import skimage.io as sio
 
 # FLAGS = tf.app.flags.FLAGS
 
@@ -101,6 +100,87 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
 
   return FLAGS
 
+# ===========================
+#   Load rgb image
+# ===========================
+def load_rgb(im_file="",im_size=[3,128,128], im_mode='CHW', im_norm='none', im_means=[0,0,0], im_stds=[1,1,1]):
+  """Load an RGB image file and return a numpy array of type float16 with values between [0:1]
+  args:
+  im_file: absolute path to file
+  im_size: list output image size, obviously in de corresponding image mode
+  im_mode: CHW for channel-first and HWC for channel-last image
+  im_norm: 'none', 'shifted' ~ move from 0:1 to -0.5:0.5, 'scale' for each channel (x-mean)/std
+  return:
+  numpy array
+  """
+  if not os.path.isfile(im_file):
+    raise IOError("File not found: {0}".format(im_file))
+  img = sio.imread(im_file)
+  # for pytorch: swap channels from last to first dimension
+  if im_mode != 'HWC':
+    img = np.swapaxes(img,1,2)
+    img = np.swapaxes(img,0,1)
+    scale_height = int(np.floor(img.shape[1]/im_size[1]))
+    scale_width = int(np.floor(img.shape[2]/im_size[2]))
+    img = img[:,::scale_height,::scale_width]
+    img=sm.resize(img,im_size,mode='constant').astype(np.float16)
+    if im_norm=='scaled':
+      for i in range(3): 
+        img[i,:,:]-=im_means[i]
+        img[i,:,:]/=im_stds[i]
+  else:
+    scale_height = int(np.floor(img.shape[0]/im_size[0]))
+    scale_width = int(np.floor(img.shape[1]/im_size[1]))
+    img = img[::scale_height,::scale_width,:]
+    img=sm.resize(img,im_size,mode='constant').astype(np.float16)
+    if im_norm=='scaled':
+      for i in range(3): 
+        img[:,:,i]-=im_means[i]
+        img[:,:,i]/=im_stds[i]
+
+  if im_norm=='shifted':
+    img -= 0.5
+
+  return img
+
+# ===========================
+#   Load Depth image
+# ===========================
+def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1, min_depth=0, max_depth=5):
+  """Load an depth image file and return a numpy array of type float16 with values between [0:1]
+  args:
+  im_file: absolute path to file
+  im_size: list output image size, obviously in de corresponding image mode
+  im_norm: 'none', 'shifted' ~ move from 0:1 to -0.5:0.5, 'scale' for each channel (x-mean)/std
+  im_mean: float for depth mean
+  im_std: float for depth std
+  min_depth: float in m for minimum trustable depth (d<minimum -> minimum)
+  max_depth: float in m for maximum trustable depth (d>maximum -> maximum)
+  return:
+  numpy array
+  """
+  if not os.path.isfile(im_file):
+    raise IOError("File not found: {0}".format(im_file))
+  img = sio.imread(im_file)
+  # for pytorch: swap channels from last to first dimension
+  scale_height = int(np.floor(img.shape[0]/im_size[0]))
+  scale_width = int(np.floor(img.shape[1]/im_size[1]))
+  img = img[::scale_height,::scale_width]
+  img=sm.resize(img,im_size,order=1,mode='constant',preserve_range=True).astype(np.float16)
+  img[img<10]=0
+  # scale to expected range between 0 and 5m
+  img=img * (1/255. * 5.)
+  # clip to minimum and maximum depth
+  img=np.minimum(np.maximum(img, min_depth),max_depth)
+  # scale to range 0:1
+  img/=5.
+  if im_norm=='scaled':
+    for i in range(3): 
+      img[:,:,i]-=im_means[i]
+      img[:,:,i]/=im_stds[i]
+  if im_norm=='shifted':
+    img -= 0.5
+  return img
 
 
 # ===========================
@@ -175,6 +255,9 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
     raise NotImplementedError
   else:
     raise NotImplementedError
+
+
+
 
 # def get_endpoint_activations(inputs, model):
 # 	'''Run forward through the network for this batch and return all activations

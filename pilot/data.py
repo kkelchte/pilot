@@ -152,21 +152,18 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist):
       imgs=[]
       if FLAGS.load_data_in_ram:
         for num in num_imgs:
-          img_file = join(run_dir,'RGB', '{0:010d}.jpg'.format(num))
-          img = sio.imread(img_file)
-          # for pytorch: swap channels from last to first dimension
-          img = np.swapaxes(img,1,2)
-          img = np.swapaxes(img,0,1)
-          scale_height = int(np.floor(img.shape[1]/im_size[1]))
-          scale_width = int(np.floor(img.shape[2]/im_size[2]))
-          img = img[:,::scale_height,::scale_width]
-          img = sm.resize(img,im_size,mode='constant').astype(np.float16)
           if FLAGS.shifted_input:
-            img -= 0.5
+            input_normalization='shifted'
           elif FLAGS.scaled_input:
-            for i in range(3): 
-              img[i,:,:]-=FLAGS.scale_means[i]
-              img[i,:,:]/=FLAGS.scale_stds[i]
+            input_normalization='scaled'
+          else:
+            input_normalization='none'
+          img = tools.load_rgb(im_file=join(run_dir,'RGB', '{0:010d}.jpg'.format(num)), 
+                              im_size=im_size, 
+                              im_mode='CHW',
+                              im_norm=input_normalization,
+                              im_means=FLAGS.scale_means,
+                              im_stds=FLAGS.scale_stds)
           assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
           imgs.append(img)
       # Add depth links if files exist
@@ -197,18 +194,10 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist):
 
       # Load depth in RAM and preprocess
       depths=[]
-      if FLAGS.load_data_in_ram and False:
+      if FLAGS.load_data_in_ram:
         for num in depth_list:
           depth_file = join(run_dir,'Depth', '{0:010d}.jpg'.format(num))
-          de = sio.imread(depth_file)
-          scale_height = int(np.floor(de.shape[0]/de_size[0]))
-          scale_width = int(np.floor(de.shape[1]/de_size[1]))
-          de = de[::scale_height,::scale_width]
-          de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
-          de[de<10]=0
-          de = de * (1/255. * 5.)
-          # clip to minimum and maximum depth
-          de = np.minimum(np.maximum(de, FLAGS.min_depth),FLAGS.max_depth)
+          de = tools.load_depth(im_file=depth_file,im_size=de_size, im_norm='none', min_depth=FLAGS.min_depth, max_depth=FLAGS.max_depth)
           assert len(de) != 0, '[data] Loading depth failed: {}'.format(depth_file)
           depths.append(de)
 
@@ -302,41 +291,25 @@ def generate_batch(data_type):
             def load_rgb_depth_image(run_ind, frame_ind):
               # load image
               img_file = join(data_set[run_ind]['name'],'RGB', '{0:010d}.jpg'.format(data_set[run_ind]['num_imgs'][frame_ind]))
-              # print('img_file {}'.format(img_file))
-              # img = Image.open(img_file)
-              img = sio.imread(img_file)
-              # Swap channel dimension from first to last
-              img = np.swapaxes(img,1,2)
-              img = np.swapaxes(img,0,1)
-              scale_height = int(np.floor(img.shape[1]/im_size[1]))
-              scale_width = int(np.floor(img.shape[2]/im_size[2]))
-              img = img[::scale_height,::scale_width]
-              img = sm.resize(img,im_size,mode='constant').astype(np.float16) #.astype(np.float32)
               if FLAGS.shifted_input:
-                img -= 0.5
+                input_normalization='shifted'
               elif FLAGS.scaled_input:
-                for i in range(3): 
-                  img[i,:,:]-=FLAGS.scale_means[i]
-                  img[i,:,:]/=FLAGS.scale_stds[i]
+                input_normalization='scaled'
+              else:
+                input_normalization='none'
+              img = tools.load_rgb(im_file=img_file, 
+                              im_size=im_size, 
+                              im_mode='CHW',
+                              im_norm=input_normalization,
+                              im_means=FLAGS.scale_means,
+                              im_stds=FLAGS.scale_stds)
               assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
-              de = []
               try:
                 depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['num_depths'][frame_ind]))
+                de = tools.load_depth(im_file=depth_file,im_size=de_size, im_norm='none', min_depth=FLAGS.min_depth, max_depth=FLAGS.max_depth)          
               except:
                 pass
-              else:
-                # de = Image.open(depth_file)
-                de = sio.imread(depth_file)
-                scale_height = int(np.floor(de.shape[0]/de_size[0]))
-                scale_width = int(np.floor(de.shape[1]/de_size[1]))
-                de = de[::scale_height,::scale_width]
-                # clip depth image with small values as they are due to image processing
-                de = sm.resize(de,de_size,order=1,mode='constant', preserve_range=True)
-                de[de<10]=0
-                de = de * (1/255. * 5.)
-                de = np.minimum(np.maximum(de, FLAGS.min_depth),FLAGS.max_depth)
-
-                if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['num_depths'][frame_ind], data_set[run_ind]['name']))
+              if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['num_depths'][frame_ind], data_set[run_ind]['name']))
               return img, de
             if '_nfc' in FLAGS.network:
               ims = []
@@ -426,7 +399,7 @@ def get_all_inputs(data_type):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  parser.add_argument("--dataset", default="esatv3_expert_5K", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="esatv3_expert_500", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
@@ -446,7 +419,7 @@ if __name__ == '__main__':
   parser.add_argument('--scale_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
   parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
 
-  parser.add_argument("--network",default='mobile',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  parser.add_argument("--network",default='tiny_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
   
@@ -462,6 +435,7 @@ if __name__ == '__main__':
     print("Number of depths: {}".format(sum([ len(s['num_depths']) for s in full_set[dt]])))
     print("Number of controls: {}".format(sum([ len(s['controls']) for s in full_set[dt]])))
   
+
   print len(get_all_inputs('validation'))
   import pdb; pdb.set_trace()
   # start_time=time.time()

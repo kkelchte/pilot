@@ -32,6 +32,8 @@ def run_episode(mode, sumvar, model, update_importance_weights=False):
     if ok:
       inputs = np.array([_['img'] for _ in batch])
       targets = np.array([[_['ctr']] for _ in batch])
+      # depths  = np.array([[_['depth']] for _ in batch])
+
       if update_importance_weights: all_inputs.append(inputs)
       if mode=='train':
         epoch, predictions, losses = model.train(inputs, targets)
