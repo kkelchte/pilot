@@ -3,6 +3,7 @@ import numpy as np
 import tools
 import sys
 import data
+import torch
 
 # import tensorflow as tf
 
@@ -14,7 +15,7 @@ This module scripts the procedure of running over episodes of training, validati
 The data is collected from the data module.
 """
 
-def run_episode(mode, sumvar, model, update_importance_weights=False):
+def run_episode(mode, sumvar, model):
   global epoch
   '''run over batches
   return different losses
@@ -30,24 +31,35 @@ def run_episode(mode, sumvar, model, update_importance_weights=False):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
     if ok:
-      inputs = np.array([_['img'] for _ in batch])
+      if len(batch[0]['img'].shape) > 3:
+        # for each sample in batch h_t is LxH --> has to become LxBxH
+        hs, cs = [], []
+        for _ in batch:
+          h, c = tools.get_hidden_state(_['prev_imgs'], model)
+          hs.append(torch.squeeze(h))
+          cs.append(torch.squeeze(c))
+        h_t=torch.stack(hs, dim=1)
+        c_t=torch.stack(cs, dim=1)
+        # assert(inputs.shape[0] == h_t.size()[1])
+        inputs = np.array([_['img'] for _ in batch])
+        if inputs.shape[0] != h_t.size()[1]:
+          print("offline.py: h_t {0} and inputs {1} dont fit: ".format(h_t.size(),inputs.shape))
+          import pdb; pdb.set_trace()
+        inputs=(torch.from_numpy(inputs).type(torch.FloatTensor).to(model.device),(h_t.to(model.device),c_t.to(model.device)))
+      else:
+        inputs = np.array([_['img'] for _ in batch])
       targets = np.array([[_['ctr']] for _ in batch])
-      # depths  = np.array([[_['depth']] for _ in batch])
 
-      if update_importance_weights: all_inputs.append(inputs)
       if mode=='train':
-        epoch, predictions, losses = model.train(inputs, targets)
+        epoch, predictions, losses, hidden_states = model.train(inputs, targets)
         for k in losses.keys(): tools.save_append(results, k, losses[k])
       elif mode=='validation' or mode=='test':
-        predictions, losses = model.predict(inputs, targets)
+        predictions, losses, hidden_states = model.predict(inputs, targets)
         for k in losses.keys(): tools.save_append(results, k, losses[k])
     else:
       print('Failed to run {}.'.format(mode))
     calculation_time+=(time.time()-start_calc_time)
     start_data_time = time.time()
-
-  if update_importance_weights:
-    model.update_importance_weights(np.asarray(all_inputs))
 
   for k in results.keys():
     if len(results[k])!=0: sumvar[mode+'_'+k]=np.mean(results[k]) 
@@ -77,12 +89,12 @@ def run(_FLAGS, model):
 
     # ----------- train episode: update importance weights on training data
     # sumvar = run_episode('train', {}, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)    
-    sumvar = run_episode('train', {}, model)    
+    # sumvar = run_episode('train', {}, model)    
     
     # ----------- validate episode
-    # sumvar = run_episode('val', {}, model)
+    sumvar = run_episode('validation', {}, model)
     # sumvar = run_episode('validation', sumvar, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)
-    sumvar = run_episode('validation', sumvar, model, False)
+    # sumvar = run_episode('validation', sumvar, model)
 
     # get all metrics of this episode and add them to var
     # print end of episode

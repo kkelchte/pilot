@@ -201,44 +201,60 @@ class Model(object):
     else: # normal loss like MSE : return one-hot vecotr
       return torch.zeros(len(bins),self.FLAGS.action_quantity).scatter_(1,torch.from_numpy(bins),1.).type(torch.FloatTensor)
       
-  def predict(self, inputs, targets=[]):
+  def predict(self, inputs, targets=[], lstm_info=()):
     '''run forward pass and return prediction with loss if target is given
     inputs=batch of RGB images (Batch x Channel x Height x Width)
     targets = supervised target control (Batch x Action dim)
     '''
-    assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.input_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.input_size)
-    inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
+    # assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.input_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.input_size)
+    if not isinstance(inputs, tuple):
+      inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
     
     predictions = self.net.forward(inputs, train=False)
-
+    hidden_states=()
+    if isinstance(predictions,tuple):
+      h_t, c_t=predictions[1]
+      predictions=predictions[0]
+      hidden_states=(h_t.cpu().detach().numpy(),
+                    c_t.cpu().detach().numpy())
     losses={}
     if len(targets) != 0: 
-      assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
+      # assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
       targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
       losses['imitation_learning'] = np.mean(self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy())
       # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
       if self.FLAGS.discrete: losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
-        
+
     predictions=predictions.cpu().detach().numpy()
+    
+
     if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
 
-    return predictions, losses
+    return predictions, losses, hidden_states
 
-  def train(self, inputs, targets, actions=[], collisions=[]):
+  def train(self, inputs, targets, actions=[], collisions=[], lstm_info=()):
     '''take backward pass from loss and apply gradient step
     inputs: batch of images
     targets: batch of control labels
     '''
     # Ensure correct shapes at the input
-    assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.input_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.input_size)
-    assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
+    # assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.input_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.input_size)
+    # assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
 
     # Ensure gradient buffers are zero
     self.optimizer.zero_grad()
 
     losses={'total':0}
-    inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
+    if not isinstance(inputs, tuple):
+      inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
     predictions = self.net.forward(inputs, train=True)
+    hidden_states=()
+    if isinstance(predictions,tuple):
+      h_t, c_t=predictions[1]
+      predictions=predictions[0]
+      hidden_states=(h_t.cpu().detach().numpy(),
+                    c_t.cpu().detach().numpy())
+
     targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
     # cross entropy is sometimes numerically unstable...
     # import pdb; pdb.set_trace()
@@ -286,7 +302,7 @@ class Model(object):
         targets=np.argmax(targets,1) # For MSE loss is targets one hot encoded
       losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
     
-    return self.epoch, predictions_list, losses
+    return self.epoch, predictions_list, losses, hidden_states
      
   def add_summary_var(self, name):
     '''given the name of the new variable

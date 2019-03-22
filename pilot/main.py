@@ -105,6 +105,7 @@ def main(_):
   parser.add_argument("--scaled_input", action='store_true', help="Scale the input to 0 mean and 1 std.")
   parser.add_argument('--scale_means', default=[0.42, 0.46, 0.5],nargs='+', help="Means used for scaling the input around 0")
   parser.add_argument('--scale_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
+  parser.add_argument("--time_length", default=10, type=int, help="In case of LSTM network, how long in time is network unrolled for training.")
   
   # ===========================
   #   Model Parameters

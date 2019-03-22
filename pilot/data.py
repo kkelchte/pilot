@@ -60,7 +60,17 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   # if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
   datasetdir = join(FLAGS.data_root, FLAGS.dataset)
   
-  train_set = load_set('train') #if not FLAGS.hdf5 else load_set_hdf5('train')
+  if False:
+    print("WARNING ONLY TRAINING DATA LOADED")
+    train_set = load_set('train')
+    full_set={'train':train_set}
+  else:
+    train_set = load_set('train') #if not FLAGS.hdf5 else load_set_hdf5('train')
+    val_set=load_set('validation') #if not FLAGS.hdf5 else load_set_hdf5('val')
+    test_set=load_set('test')
+    full_set={'train':train_set, 'validation':val_set, 'test':test_set}
+
+  # Calculating mean and standard deviation over channels
   # images=train_set[0]['imgs']
   # res=[(np.mean(img[0,:,:]),np.mean(img[1,:,:]),np.mean(img[2,:,:]),np.std(img[0,:,:]),np.std(img[1,:,:]),np.std(img[2,:,:])) for img in images]
   # print("mean: {0}, {1}, {2}, stds {3},{4},{5}".format(np.mean([r[0] for r in res]),
@@ -70,11 +80,6 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   #                                                     np.mean([r[4] for r in res]),
   #                                                     np.mean([r[5] for r in res])))
   
-  # import pdb; pdb.set_trace()
-  val_set=load_set('validation') #if not FLAGS.hdf5 else load_set_hdf5('val')
-  test_set=load_set('test')
-  full_set={'train':train_set, 'validation':val_set, 'test':test_set}
-
   # mean: -0.00393295288086, -0.0494995117188, -0.0966186523438, stds 0.237182617188,0.2060546875,0.18505859375
   # mean: 0.349365234375, -0.0396118164062, -0.375244140625, stds 1.087890625,0.8623046875,0.71875
   # mean: 0.49609375, 0.450439453125, 0.4033203125, stds 0.237182617188,0.2060546875,0.18505859375
@@ -141,7 +146,9 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist):
             except (IndexError): # In case control has no more lines though RGB has still images, stop anyway:
               return corresponding_imgs, control_list
           # clip at -1 and 1
-          if abs(ctr_val) > 1: ctr_val = np.sign(ctr_val)
+          ctr_val=max(min(FLAGS.action_bound,ctr_val), -FLAGS.action_bound)
+          # ctr.clip(FLAGS.action_bound,-FLAGS.action_bound)
+          # if abs(ctr_val) > 1: ctr_val = np.sign(ctr_val)
           control_list.append(ctr_val)
           corresponding_imgs.append(ni)
         return corresponding_imgs, control_list
@@ -194,7 +201,7 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist):
 
       # Load depth in RAM and preprocess
       depths=[]
-      if FLAGS.load_data_in_ram:
+      if FLAGS.load_data_in_ram and False:
         for num in depth_list:
           depth_file = join(run_dir,'Depth', '{0:010d}.jpg'.format(num))
           de = tools.load_depth(im_file=depth_file,im_size=de_size, im_norm='none', min_depth=FLAGS.min_depth, max_depth=FLAGS.max_depth)
@@ -216,7 +223,7 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist):
 def generate_batch(data_type):
   """ 
   input:
-    data_type: 'train', 'val' or 'test'
+    data_type: 'train', 'validation' or 'test'
   Generator object that gets a random batch when next() is called
   yields: 
   - index: of current batch relative to the data seen in this epoch.
@@ -232,7 +239,9 @@ def generate_batch(data_type):
   # regularly enough.
   max_num_of_batch = {'train':100, 'validation':10, 'test':1000}
   # max_num_of_batch = {'train':1, 'val':1, 'test':1000}
-  number_of_batches = min(int(number_of_frames/FLAGS.batch_size),max_num_of_batch[data_type])
+  number_of_batches = min(int(number_of_frames/(FLAGS.batch_size if not 'LSTM' in FLAGS.network else FLAGS.batch_size*FLAGS.time_length)),max_num_of_batch[data_type])
+  print('[data.py] number of batch per episode: {0}'.format(number_of_batches))
+
   if number_of_batches == 0:  
     print('Only {0} frames to fill {1} batch size, so set batch_size to {2}'.format(number_of_frames, FLAGS.batch_size, number_of_frames))
     FLAGS.batch_size = number_of_frames
@@ -258,7 +267,13 @@ def generate_batch(data_type):
     while batch_num < FLAGS.batch_size:
       # choose random index over all runs:
       run_ind = random.choice(range(len(data_set)))
-      options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
+      if 'nfc' in FLAGS.network:
+        max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames
+      elif 'LSTM' in FLAGS.network:
+        max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.time_length
+      else:
+        max_index=len(data_set[run_ind]['num_imgs'])
+      options=range(max_index)
       if FLAGS.normalized_output and count_controls[0] >= FLAGS.batch_size/3.: # if '0' is full
         # take out all frames with 0 in control
         options = [i for i in options if np.abs(data_set[run_ind]['controls'][i]) > 0.3]
@@ -304,13 +319,16 @@ def generate_batch(data_type):
                               im_means=FLAGS.scale_means,
                               im_stds=FLAGS.scale_stds)
               assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
-              try:
-                depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['num_depths'][frame_ind]))
-                de = tools.load_depth(im_file=depth_file,im_size=de_size, im_norm='none', min_depth=FLAGS.min_depth, max_depth=FLAGS.max_depth)          
-              except:
-                pass
-              if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['num_depths'][frame_ind], data_set[run_ind]['name']))
+              de=[]
+              # if False:
+              #   try:
+              #     depth_file = join(data_set[run_ind]['name'],'Depth', '{0:010d}.jpg'.format(data_set[run_ind]['num_depths'][frame_ind]))
+              #     de = tools.load_depth(im_file=depth_file,im_size=de_size, im_norm='none', min_depth=FLAGS.min_depth, max_depth=FLAGS.max_depth)          
+              #   except:
+              #     pass
+              #   if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['num_depths'][frame_ind], data_set[run_ind]['name']))
               return img, de
+            
             if '_nfc' in FLAGS.network:
               ims = []
               for frame in range(FLAGS.n_frames):
@@ -318,16 +336,35 @@ def generate_batch(data_type):
                 image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
                 ims.append(image)
               im = np.concatenate(ims, axis=2)
-              ctr = data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1]
+              ctr = np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.n_frames-1])
+              batch.append({'img':im, 'ctr':ctr, 'depth':de})       
+            elif 'LSTM' in FLAGS.network:
+              sample_dict={}
+              imgs = []
+              depths = []
+              for frame in range(FLAGS.time_length):
+                im, de = load_rgb_depth_image(run_ind, frame_ind+frame)
+                imgs.append(im)
+                # depths.append(de)
+              sample_dict['img']=np.asarray(imgs)
+              sample_dict['depth']=de
+              # load previous images for retrieving cell states
+              prev_imgs=[]
+              for frame in data_set[run_ind]['num_imgs']:
+                if frame >=frame_ind: break
+                im, de = load_rgb_depth_image(run_ind, frame)
+                prev_imgs.append(im)
+              prev_imgs=np.asarray(prev_imgs)
+              print(prev_imgs.shape)
+              sample_dict['prev_imgs']=prev_imgs
+              # load control
+              sample_dict['ctr']=np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length])
+              batch.append(sample_dict)
             else:
               im, de = load_rgb_depth_image(run_ind, frame_ind)
-              ctr = data_set[run_ind]['controls'][frame_ind]
-
-            # clip control avoiding values larger than 1
-            ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
-              
-            # append rgb image, control and depth to batch
-            batch.append({'img':im, 'ctr':ctr, 'depth':de})
+              ctr = np.asarray( data_set[run_ind]['controls'][frame_ind])
+              # append rgb image, control and depth to batch
+              batch.append({'img':im, 'ctr':ctr, 'depth':de})
             checklist.append(True)
           except IndexError as e:
             # print(e)
@@ -342,27 +379,39 @@ def generate_batch(data_type):
         #print(FLAGS.num_threads)
         threads = [threading.Thread(target=load_image_and_target, args=(coord, batch_indices, batch, checklist)) for i in range(FLAGS.num_threads)]
         for t in threads: t.start()
-        coord.join(threads, stop_grace_period_secs=5)
+        coord.join(threads, stop_grace_period_secs=15)
       except RuntimeError as e:
         print("threads are not stopping...",e)
+        # wait an extra 10 seconds...
+        # time.sleep(10)
       else:
         if len(checklist) != sum(checklist): ok=False
     else:
       # just combine the data in a batch
       for batch_num, run_ind, frame_ind in batch_indices:
-        img = data_set[run_ind]['imgs'][frame_ind]
-        try:
-          depth = data_set[run_ind]['depths'][frame_ind]
-        except:
-          depth=[]
-          # print("[data.py]: Problem loading depth in batch.")
-          pass
-        ctr = data_set[run_ind]['controls'][frame_ind]
-        # clip control avoiding values larger than 1
-        ctr=max(min(ctr,FLAGS.action_bound),-FLAGS.action_bound)
-        
-        # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
-        batch.append({'img':img, 'ctr':ctr, 'depth': depth})
+        if 'LSTM' in FLAGS.network:
+          img = np.asarray(data_set[run_ind]['imgs'][frame_ind:frame_ind+FLAGS.time_length])
+          prev_imgs=np.asarray(data_set[run_ind]['imgs'][:frame_ind])
+          try:
+            depth = np.asarray(data_set[run_ind]['depths'][frame_ind:frame_ind+FLAGS.time_length])
+          except:
+            depth=[]
+            # print("[data.py]: Problem loading depth in batch.")
+            pass
+          ctr = np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length])
+          # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
+          batch.append({'img':img, 'ctr':ctr, 'depth': depth, 'prev_imgs':prev_imgs})
+        else:
+          img = data_set[run_ind]['imgs'][frame_ind]
+          try:
+            depth = data_set[run_ind]['depths'][frame_ind]
+          except:
+            depth=[]
+            # print("[data.py]: Problem loading depth in batch.")
+            pass
+          ctr = data_set[run_ind]['controls'][frame_ind]
+          # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
+          batch.append({'img':img, 'ctr':ctr, 'depth': depth})
         ok=True
     if ok: b+=1
     yield b, ok, batch
@@ -392,6 +441,95 @@ def get_all_inputs(data_type):
             img[i,:,:]/=FLAGS.scale_stds[i]
         inputs.append(img)
   return inputs
+
+def generate_sliding_batch(data_type):
+  """ 
+  input:
+    data_type: 'train', 'validation' or 'test'
+  Generator object that gets a random batch when next() is called
+  yields: 
+  - index: of current batch relative to the data seen in this epoch.
+  - ok: boolean that defines if batch was loaded correctly
+  - imb: batch of input rgb images
+  - trgb: batch of corresponding control targets
+  - auxb: batch with auxiliary info
+  """
+  data_set=full_set[data_type]
+  
+
+
+  # number_of_frames = sum([len(run['num_imgs']) for run in data_set])
+  # # When there is that much data applied that you can get more than 100 minibatches out
+  # # stick to 100, otherwise one epoch takes too long and the training is not updated
+  # # regularly enough.
+  # max_num_of_batch = {'train':100, 'validation':10, 'test':1000}
+  # # max_num_of_batch = {'train':1, 'val':1, 'test':1000}
+  # number_of_batches = min(int(number_of_frames/(FLAGS.batch_size if not 'LSTM' in FLAGS.network else FLAGS.batch_size*FLAGS.time_length)),max_num_of_batch[data_type])
+  # print('[data.py] number of batch per episode: {0}'.format(number_of_batches))
+  # if number_of_batches == 0:  
+  #   print('Only {0} frames to fill {1} batch size, so set batch_size to {2}'.format(number_of_frames, FLAGS.batch_size, number_of_frames))
+  #   FLAGS.batch_size = number_of_frames
+  
+  # slide max over 5 runs otherwise there is too few logging
+  maximum_runs_per_episode=5
+  number_of_batches=min(len(data_set), maximum_runs_per_episode)
+
+
+  
+  b=0
+  while b < number_of_batches:
+    if b>0 and b%10==0:
+      print('batch {0} of {1}'.format(b,number_of_batches))
+    ok = True
+    # for each batch
+    batch=[]
+    # randomly choose run indices and clip length of runs towards the shortest run
+    # NOTE: this migth give issues when switching to RL as most information might be in end of run
+    #       although in that case WW-TBPTT will be used then.
+
+    # obtain input of time length 
+
+    if ok: b+=1
+    yield b, ok, batch
+
+def generate_fullyunrolled_batch(data_type):
+  """ 
+  input:
+    data_type: 'train', 'validation' or 'test'
+  Generator object that gets a random batch when next() is called
+  yields: 
+  - index: of current batch relative to the data seen in this epoch.
+  - ok: boolean that defines if batch was loaded correctly
+  - batch: dictionary with keys for information:
+      -imgs
+      -trgts
+  """
+  data_set=full_set[data_type]
+  
+  # slide max over 5 runs otherwise there is too few logging
+  maximum_runs_per_episode=5
+  number_of_batches=min(len(data_set), maximum_runs_per_episode)
+  
+  # shuffle run indices
+  run_indices = range(len(data_set))
+  np.random.shuffle(run_indices)
+
+  b=0
+  while b < number_of_batches:
+    if b>0 and b%10==0:
+      print('batch {0} of {1}'.format(b,number_of_batches))
+    ok = True
+    # one run corresponds to one batch
+    run_ind = run_indices[b]
+    batch={}
+    # load images
+    if FLAGS.load_data_in_ram:
+      batch['img']=np.asarray(data_set[run_ind]['imgs'][:])
+      batch['ctr']=np.asarray(data_set[run_ind]['controls'][:])
+      batch['depth']=[]
+      batch['prev_imgs']=[]
+    if ok: b+=1
+    yield b, ok, [batch]
 
 
 #### FOR TESTING ONLY
