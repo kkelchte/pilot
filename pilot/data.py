@@ -18,9 +18,10 @@ from PIL import Image
 
 import skimage.io as sio
 import skimage.transform as sm
-import matplotlib.pyplot as plt
 
 import argparse
+
+import matplotlib.pyplot as plt
 
 # import h5py
 
@@ -233,69 +234,103 @@ def generate_batch(data_type):
   - auxb: batch with auxiliary info
   """
   data_set=full_set[data_type]
-  number_of_frames = sum([len(run['num_imgs']) for run in data_set])
+  
   # When there is that much data applied that you can get more than 100 minibatches out
   # stick to 100, otherwise one epoch takes too long and the training is not updated
   # regularly enough.
+
   max_num_of_batch = {'train':100, 'validation':10, 'test':1000}
   # max_num_of_batch = {'train':1, 'val':1, 'test':1000}
-  number_of_batches = min(int(number_of_frames/(FLAGS.batch_size if not 'LSTM' in FLAGS.network else FLAGS.batch_size*FLAGS.time_length)),max_num_of_batch[data_type])
+  number_of_frames = sum([len(run['num_imgs']) for run in data_set])
+  number_of_batches = min(int(number_of_frames/(FLAGS.batch_size if not 'LSTM' in FLAGS.network else FLAGS.batch_size*max(FLAGS.time_length,1))),max_num_of_batch[data_type])
+  if 'LSTM' in FLAGS.network:
+    if FLAGS.time_length==-1: 
+      number_of_batches=1
+    if FLAGS.sliding_tbptt: # in case of sliding 1 step at a time, it requires N batches of data to get to the end of the sequence
+      number_of_batches=min([len(_['num_imgs'])-FLAGS.time_length for _ in data_set])
+
   print('[data.py] number of batch per episode: {0}'.format(number_of_batches))
 
   if number_of_batches == 0:  
     print('Only {0} frames to fill {1} batch size, so set batch_size to {2}'.format(number_of_frames, FLAGS.batch_size, number_of_frames))
     FLAGS.batch_size = number_of_frames
   
+  # used for sliding tbptt only:
+  sliding_frame_index=0
+  run_indices=[]
+
   b=0
   while b < number_of_batches:
     if b>0 and b%10==0:
       print('batch {0} of {1}'.format(b,number_of_batches))
     ok = True
     
-    # Sample indices from dataset
-    # from which threads can start loading
     batch=[]
-    batch_indices = []
     # checklist keeps track for each batch whether all the loaded data was loaded correctly
     checklist = []
     # list of samples to fill batch for threads to know what sample to load
     stime=time.time()
-    
-    # keep track of the distribution of controls
-    count_controls={-1:0, 0:0, 1:0}
-    batch_num=0
-    while batch_num < FLAGS.batch_size:
-      # choose random index over all runs:
-      run_ind = random.choice(range(len(data_set)))
-      if 'nfc' in FLAGS.network:
-        max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames
-      elif 'LSTM' in FLAGS.network:
-        max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.time_length
-      else:
-        max_index=len(data_set[run_ind]['num_imgs'])
-      options=range(max_index)
-      if FLAGS.normalized_output and count_controls[0] >= FLAGS.batch_size/3.: # if '0' is full
-        # take out all frames with 0 in control
-        options = [i for i in options if np.abs(data_set[run_ind]['controls'][i]) > 0.3]
-      if FLAGS.normalized_output and count_controls[-1] >= FLAGS.batch_size/3.: # if '-1' is full
-        # take out all frames with -1 in control
-        options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==-1)]
-      if FLAGS.normalized_output and count_controls[1] >= FLAGS.batch_size/3.: # if '-1' is full
-        # take out all frames with -1 in control
-        options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==+1)]
-      if not len(options) == 0: # in case there are still frames left...
-        frame_ind = random.choice(options)
-      else:
-        # print("[data.py]: failed to normalize actions due to not enough options...")
-        options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
-        frame_ind = random.choice(options)
+    # -------------------------------------------------------------------------------------------------------------------------------------
+    # STEP 1: SELECT DATASET INDICES FOR BATCH  
+    if FLAGS.sliding_tbptt and b>=1:
+      sliding_frame_index+=FLAGS.sliding_step_size
+      batch_indices=[(index, run_index, sliding_frame_index) for index, run_index in enumerate(run_indices)]
+      pass
+    else:
+      # Sample indices from dataset
+      # from which threads can start loading
+      batch_indices = []
+      # keep track of the distribution of controls
+      count_controls={-1:0, 0:0, 1:0}
+      batch_num=0
+      while batch_num < FLAGS.batch_size:
+        # choose random index over all runs:
+        run_ind = random.choice(range(len(data_set)))
+        if 'LSTM' in FLAGS.network and FLAGS.time_length==-1:
+          # if run indices are selected for fully unrolled bptt training can start as frame index is always 0
+          frame_ind = 0
+          batch_num += 1
+          batch_indices.append((batch_num, run_ind, frame_ind))
+          continue
+        if 'LSTM' in FLAGS.network and FLAGS.sliding_tbptt:
+          # if run indices are selected for sliding tbptt they should be kept over different batches
+          run_indices.append(run_ind)
+          frame_ind = 0
+          batch_num += 1
+          batch_indices.append((batch_num, run_ind, frame_ind))
+          continue
+        if 'nfc' in FLAGS.network:
+          max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames
+        elif 'LSTM' in FLAGS.network:
+          max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.time_length
+        else:
+          max_index=len(data_set[run_ind]['num_imgs'])
 
-      batch_num += 1
-      batch_indices.append((batch_num, run_ind, frame_ind))
-      ctr = data_set[run_ind]['controls'][frame_ind]
-      ctr_index = 0 if np.abs(ctr) < 0.3 else np.sign(ctr)
-      count_controls[ctr_index]+=1
+        options=range(max_index)
+        if FLAGS.normalized_output and count_controls[0] >= FLAGS.batch_size/3.: # if '0' is full
+          # take out all frames with 0 in control
+          options = [i for i in options if np.abs(data_set[run_ind]['controls'][i]) > 0.3]
+        if FLAGS.normalized_output and count_controls[-1] >= FLAGS.batch_size/3.: # if '-1' is full
+          # take out all frames with -1 in control
+          options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==-1)]
+        if FLAGS.normalized_output and count_controls[1] >= FLAGS.batch_size/3.: # if '-1' is full
+          # take out all frames with -1 in control
+          options = [i for i in options if not (np.abs(data_set[run_ind]['controls'][i]) > 0.3 and np.sign(data_set[run_ind]['controls'][i])==+1)]
+        if not len(options) == 0: # in case there are still frames left...
+          frame_ind = random.choice(options)
+        else:
+          # print("[data.py]: failed to normalize actions due to not enough options...")
+          options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
+          frame_ind = random.choice(options)
 
+        batch_num += 1
+        batch_indices.append((batch_num, run_ind, frame_ind))
+        ctr = data_set[run_ind]['controls'][frame_ind]
+        ctr_index = 0 if np.abs(ctr) < 0.3 else np.sign(ctr)
+        count_controls[ctr_index]+=1
+
+    # -------------------------------------------------------------------------------------------------------------------------------------
+    # STEP 2: LOAD DATA IN BATCH[]
     # print count_controls
     if not FLAGS.load_data_in_ram:
       # load data multithreaded style into RAM
@@ -342,7 +377,7 @@ def generate_batch(data_type):
               sample_dict={}
               imgs = []
               depths = []
-              for frame in range(FLAGS.time_length):
+              for frame in range(FLAGS.time_length if FLAGS.time_length != -1 else len(data_set[run_ind]['num_imgs'])):
                 im, de = load_rgb_depth_image(run_ind, frame_ind+frame)
                 imgs.append(im)
                 # depths.append(de)
@@ -355,7 +390,7 @@ def generate_batch(data_type):
                 im, de = load_rgb_depth_image(run_ind, frame)
                 prev_imgs.append(im)
               prev_imgs=np.asarray(prev_imgs)
-              print(prev_imgs.shape)
+              # print(prev_imgs.shape)
               sample_dict['prev_imgs']=prev_imgs
               # load control
               sample_dict['ctr']=np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length])
@@ -383,7 +418,8 @@ def generate_batch(data_type):
       except RuntimeError as e:
         print("threads are not stopping...",e)
         # wait an extra 10 seconds...
-        # time.sleep(10)
+        if 'LSTM' in FLAGS.network and (FLAGS.time_length == -1 or FLAGS.sliding_tbptt): 
+          time.sleep(10)
       else:
         if len(checklist) != sum(checklist): ok=False
     else:
@@ -442,94 +478,7 @@ def get_all_inputs(data_type):
         inputs.append(img)
   return inputs
 
-def generate_sliding_batch(data_type):
-  """ 
-  input:
-    data_type: 'train', 'validation' or 'test'
-  Generator object that gets a random batch when next() is called
-  yields: 
-  - index: of current batch relative to the data seen in this epoch.
-  - ok: boolean that defines if batch was loaded correctly
-  - imb: batch of input rgb images
-  - trgb: batch of corresponding control targets
-  - auxb: batch with auxiliary info
-  """
-  data_set=full_set[data_type]
-  
 
-
-  # number_of_frames = sum([len(run['num_imgs']) for run in data_set])
-  # # When there is that much data applied that you can get more than 100 minibatches out
-  # # stick to 100, otherwise one epoch takes too long and the training is not updated
-  # # regularly enough.
-  # max_num_of_batch = {'train':100, 'validation':10, 'test':1000}
-  # # max_num_of_batch = {'train':1, 'val':1, 'test':1000}
-  # number_of_batches = min(int(number_of_frames/(FLAGS.batch_size if not 'LSTM' in FLAGS.network else FLAGS.batch_size*FLAGS.time_length)),max_num_of_batch[data_type])
-  # print('[data.py] number of batch per episode: {0}'.format(number_of_batches))
-  # if number_of_batches == 0:  
-  #   print('Only {0} frames to fill {1} batch size, so set batch_size to {2}'.format(number_of_frames, FLAGS.batch_size, number_of_frames))
-  #   FLAGS.batch_size = number_of_frames
-  
-  # slide max over 5 runs otherwise there is too few logging
-  maximum_runs_per_episode=5
-  number_of_batches=min(len(data_set), maximum_runs_per_episode)
-
-
-  
-  b=0
-  while b < number_of_batches:
-    if b>0 and b%10==0:
-      print('batch {0} of {1}'.format(b,number_of_batches))
-    ok = True
-    # for each batch
-    batch=[]
-    # randomly choose run indices and clip length of runs towards the shortest run
-    # NOTE: this migth give issues when switching to RL as most information might be in end of run
-    #       although in that case WW-TBPTT will be used then.
-
-    # obtain input of time length 
-
-    if ok: b+=1
-    yield b, ok, batch
-
-def generate_fullyunrolled_batch(data_type):
-  """ 
-  input:
-    data_type: 'train', 'validation' or 'test'
-  Generator object that gets a random batch when next() is called
-  yields: 
-  - index: of current batch relative to the data seen in this epoch.
-  - ok: boolean that defines if batch was loaded correctly
-  - batch: dictionary with keys for information:
-      -imgs
-      -trgts
-  """
-  data_set=full_set[data_type]
-  
-  # slide max over 5 runs otherwise there is too few logging
-  maximum_runs_per_episode=5
-  number_of_batches=min(len(data_set), maximum_runs_per_episode)
-  
-  # shuffle run indices
-  run_indices = range(len(data_set))
-  np.random.shuffle(run_indices)
-
-  b=0
-  while b < number_of_batches:
-    if b>0 and b%10==0:
-      print('batch {0} of {1}'.format(b,number_of_batches))
-    ok = True
-    # one run corresponds to one batch
-    run_ind = run_indices[b]
-    batch={}
-    # load images
-    if FLAGS.load_data_in_ram:
-      batch['img']=np.asarray(data_set[run_ind]['imgs'][:])
-      batch['ctr']=np.asarray(data_set[run_ind]['controls'][:])
-      batch['depth']=[]
-      batch['prev_imgs']=[]
-    if ok: b+=1
-    yield b, ok, [batch]
 
 
 #### FOR TESTING ONLY
@@ -537,7 +486,7 @@ def generate_fullyunrolled_batch(data_type):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  parser.add_argument("--dataset", default="esatv3_expert_500", type=str, help="pick the dataset in data_root from which your movies can be found.")
+  parser.add_argument("--dataset", default="esatv3_expert_5K", type=str, help="pick the dataset in data_root from which your movies can be found.")
   parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
@@ -557,10 +506,15 @@ if __name__ == '__main__':
   parser.add_argument('--scale_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
   parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
 
-  parser.add_argument("--network",default='tiny_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  parser.add_argument("--network",default='tiny_LSTM_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
-  parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--batch_size",default=1,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--time_length", default=10, type=int, help="In case of LSTM network, how long in time is network unrolled for training.")
   
+  parser.add_argument("--sliding_tbptt", action='store_true', help="In case of LSTM network, slide over batches of data rather than sample randomly.")
+  
+
+
   FLAGS=parser.parse_args()  
 
   prepare_data(FLAGS, (3,128,128))
@@ -574,15 +528,23 @@ if __name__ == '__main__':
     print("Number of controls: {}".format(sum([ len(s['controls']) for s in full_set[dt]])))
   
 
-  print len(get_all_inputs('validation'))
-  import pdb; pdb.set_trace()
-  # start_time=time.time()
-  # for index, ok, batch in generate_batch('train'):
-  #   print("Batch: {}".format(index))
-  #   inputs = np.array([_['img'] for _ in batch])
-  #   actions = np.array([[_['ctr']] for _ in batch])
-  #   target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
+
+  start_time=time.time()
+  for index, ok, batch in generate_batch('train'):
+    print("Batch: {}".format(index))
+    inputs = np.array([_['img'] for _ in batch])
+    actions = np.array([[_['ctr']] for _ in batch])
+    target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
+    # prev_imgs = np.array([_['prev_img'] for _ in batch])
     
+    print inputs.shape
+    for i in range(10):
+      plt.imshow(np.transpose(inputs[0,i],(1,2,0)).astype(np.float32))
+      plt.tight_layout()
+      plt.savefig("test_{0}.jpg".format(i))
+    # import pdb; pdb.set_trace()
+
+  
   #   print("batchsize: {}".format(len(batch)))
   #   print("images size: {}".format(inputs.shape))
   #   print("actions size: {}".format(actions.shape))

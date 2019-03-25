@@ -159,7 +159,7 @@ class Model(object):
       shape=continuous_value.shape
       # TODO SPEED UP BY CREATING VECTOR AND FILLING IT, or multithreading???
       discrete_values=[]
-      for c in continuous_value:
+      for c in continuous_value.flatten():
         discrete=0
         for b in self.boundaries:
             if b < c:
@@ -214,13 +214,17 @@ class Model(object):
     hidden_states=()
     if isinstance(predictions,tuple):
       h_t, c_t=predictions[1]
-      predictions=predictions[0]
+      predictions=predictions[0].view(inputs[0].size()[0]*inputs[0].size()[1],self.FLAGS.action_quantity)
       hidden_states=(h_t.cpu().detach().numpy(),
                     c_t.cpu().detach().numpy())
     losses={}
     if len(targets) != 0: 
       # assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
       targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+      if len(targets.shape) == 2:
+        # Assumption: pytorch view (X,Y,3) --> (X*Y,3) arranges in the same way as pytorch (X,Y).flatten
+        targets=targets.flatten()
+      # import pdb; pdb.set_trace()
       losses['imitation_learning'] = np.mean(self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy())
       # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
       if self.FLAGS.discrete: losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
@@ -251,11 +255,16 @@ class Model(object):
     hidden_states=()
     if isinstance(predictions,tuple):
       h_t, c_t=predictions[1]
-      predictions=predictions[0]
+      predictions=predictions[0].view(inputs[0].size()[0]*inputs[0].size()[1],self.FLAGS.action_quantity)
       hidden_states=(h_t.cpu().detach().numpy(),
                     c_t.cpu().detach().numpy())
 
+    # import pdb; pdb.set_trace()
     targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+    if len(targets.shape) == 2:
+      # Assumption: pytorch view (X,Y,3) --> (X*Y,3) arranges in the same way as pytorch (X,Y).flatten
+      targets=targets.flatten()
+
     # cross entropy is sometimes numerically unstable...
     # import pdb; pdb.set_trace()
     losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))

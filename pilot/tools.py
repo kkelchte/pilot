@@ -198,7 +198,7 @@ def get_hidden_state(input_images, model):
   import torch
   if not model.net.rnn: raise(ValueError("Network does not contain rnn part."))
   h_t,c_t=model.net.get_init_state(1)
-  print("[tools] Obtaining hidden state after image sequence with length {0}".format(len(input_images)))
+  # print("[tools] Obtaining hidden state after image sequence with length {0}".format(len(input_images)))
   for index in range(len(input_images)):
     inputs=(torch.from_numpy(np.expand_dims(np.expand_dims(input_images[index],0),0)).type(torch.FloatTensor).to(model.device), 
             (h_t.to(model.device), c_t.to(model.device)))

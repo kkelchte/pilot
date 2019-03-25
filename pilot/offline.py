@@ -27,24 +27,30 @@ def run_episode(mode, sumvar, model):
   start_data_time = time.time()
   results={}
   all_inputs=[]
+  
+  hidden_states=()
+
   for index, ok, batch in data.generate_batch(mode):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
     if ok:
       if len(batch[0]['img'].shape) > 3:
-        # for each sample in batch h_t is LxH --> has to become LxBxH
-        hs, cs = [], []
-        for _ in batch:
-          h, c = tools.get_hidden_state(_['prev_imgs'], model)
-          hs.append(torch.squeeze(h))
-          cs.append(torch.squeeze(c))
-        h_t=torch.stack(hs, dim=1)
-        c_t=torch.stack(cs, dim=1)
+        if len(hidden_states) != 0 and FLAGS.sliding_tbptt:
+          h_t, c_t = (torch.from_numpy(hidden_states[0]),torch.from_numpy(hidden_states[1]))
+        else:
+          # for each sample in batch h_t is LxH --> has to become LxBxH
+          hs, cs = [], []
+          for _ in batch:
+            h, c = tools.get_hidden_state(_['prev_imgs'], model)
+            hs.append(torch.squeeze(h))
+            cs.append(torch.squeeze(c))
+          h_t=torch.stack(hs, dim=1)
+          c_t=torch.stack(cs, dim=1)
         # assert(inputs.shape[0] == h_t.size()[1])
         inputs = np.array([_['img'] for _ in batch])
         if inputs.shape[0] != h_t.size()[1]:
           print("offline.py: h_t {0} and inputs {1} dont fit: ".format(h_t.size(),inputs.shape))
-          import pdb; pdb.set_trace()
+          # import pdb; pdb.set_trace()
         inputs=(torch.from_numpy(inputs).type(torch.FloatTensor).to(model.device),(h_t.to(model.device),c_t.to(model.device)))
       else:
         inputs = np.array([_['img'] for _ in batch])
@@ -87,14 +93,16 @@ def run(_FLAGS, model):
 
     print('\n {0} : start episode: {1}'.format(FLAGS.log_tag, epoch))
 
+    debug=False
+    if debug: print("ALERT ONLY VALIDATION")
     # ----------- train episode: update importance weights on training data
     # sumvar = run_episode('train', {}, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)    
-    # sumvar = run_episode('train', {}, model)    
+    if not debug: sumvar = run_episode('train', {}, model)    
     
     # ----------- validate episode
-    sumvar = run_episode('validation', {}, model)
+    if debug: sumvar = run_episode('validation', {}, model)
     # sumvar = run_episode('validation', sumvar, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)
-    # sumvar = run_episode('validation', sumvar, model)
+    if not debug: sumvar = run_episode('validation', sumvar, model)
 
     # get all metrics of this episode and add them to var
     # print end of episode

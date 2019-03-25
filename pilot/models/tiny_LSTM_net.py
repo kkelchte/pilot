@@ -62,14 +62,17 @@ class Net(nn.Module):
     if verbose: print("r_in.size: {0}".format(r_in.size()))
     
     r_out, (h_n, h_c) = self.rnn(r_in, (hx, cx))
-    
     if verbose: print("r_out.size: {0}, h_n: {1}, h_c: {2}".format(r_out.size(), h_n.size(), h_c.size()))
     
-    # Take last output value in sequence
-    r_out2 = self.linear(r_out[:, -1, :])
+    # import pdb; pdb.set_trace()
+    f_in = r_out.contiguous().view(batch_size*timesteps, self.H)
+    if verbose: print("f_in.size: {0}".format(f_in.size()))
+    # calculate output over batch and time sequence
+    f_out = self.linear(f_in)
+    f_out = f_out.view(batch_size, timesteps, -1)
 
-    if verbose: print("r_out2: {0}".format(r_out2.size()))
-    return r_out2, (h_n, h_c)
+    if verbose: print("f_out: {0}".format(f_out.size()))
+    return f_out, (h_n, h_c)
     # return F.log_softmax(r_out2, dim=1)
 
 
