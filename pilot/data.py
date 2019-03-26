@@ -379,7 +379,7 @@ def generate_batch(data_type):
                 image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
                 ims.append(image)
               # im = np.concatenate(ims, axis=2)
-              im = np.asarray(ims, axis=2)
+              im = np.asarray(ims)
               ctr = np.asarray(data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1])
               batch.append({'img':im, 'ctr':ctr, 'depth':de})       
             elif 'LSTM' in FLAGS.network:

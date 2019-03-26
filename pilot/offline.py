@@ -34,7 +34,7 @@ def run_episode(mode, sumvar, model):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
     if ok:
-      if len(batch[0]['img'].shape) > 3:
+      if len(batch[0]['img'].shape) > 3 and 'LSTM' in FLAGS.network:
         if len(hidden_states) != 0 and FLAGS.sliding_tbptt:
           h_t, c_t = (torch.from_numpy(hidden_states[0]),torch.from_numpy(hidden_states[1]))
         else:
