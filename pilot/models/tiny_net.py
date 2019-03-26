@@ -40,7 +40,7 @@ class TinyNet(nn.Module):
 
 class Net(nn.Module):
 
-  def __init__(self, output_size = 10, pretrained=False):
+  def __init__(self, output_size = 10, pretrained=False, **kwargs):
     super(Net, self).__init__()
     if pretrained: raise NotImplementedError
     self.default_image_size=[3,128,128]

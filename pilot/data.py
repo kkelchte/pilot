@@ -242,12 +242,17 @@ def generate_batch(data_type):
   max_num_of_batch = {'train':100, 'validation':10, 'test':1000}
   # max_num_of_batch = {'train':1, 'val':1, 'test':1000}
   number_of_frames = sum([len(run['num_imgs']) for run in data_set])
-  number_of_batches = min(int(number_of_frames/(FLAGS.batch_size if not 'LSTM' in FLAGS.network else FLAGS.batch_size*max(FLAGS.time_length,1))),max_num_of_batch[data_type])
   if 'LSTM' in FLAGS.network:
     if FLAGS.time_length==-1: 
       number_of_batches=1
     elif FLAGS.sliding_tbptt: # in case of sliding 1 step at a time, it requires N batches of data to get to the end of the sequence
       number_of_batches=min([len(_['num_imgs'])-FLAGS.time_length for _ in data_set])
+    else:
+      number_of_batches = min(int(number_of_frames/(FLAGS.batch_size*max(FLAGS.time_length,1))),max_num_of_batch[data_type])
+  elif 'nfc' in FLAGS.network:
+    number_of_batches = min(int(number_of_frames/(FLAGS.batch_size*FLAGS.n_frames)),max_num_of_batch[data_type])
+  else:
+    number_of_batches = min(int(number_of_frames/FLAGS.batch_size),max_num_of_batch[data_type])
 
   print('[data.py] number of batch per episode: {0}'.format(number_of_batches))
 
@@ -367,14 +372,15 @@ def generate_batch(data_type):
               #   if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['num_depths'][frame_ind], data_set[run_ind]['name']))
               return img, de
             
-            if '_nfc' in FLAGS.network:
+            if 'nfc' in FLAGS.network:
               ims = []
               for frame in range(FLAGS.n_frames):
                 # target depth (de) is each time overwritten, only last frame is kept
                 image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
                 ims.append(image)
-              im = np.concatenate(ims, axis=2)
-              ctr = np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.n_frames-1])
+              # im = np.concatenate(ims, axis=2)
+              im = np.asarray(ims, axis=2)
+              ctr = np.asarray(data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1])
               batch.append({'img':im, 'ctr':ctr, 'depth':de})       
             elif 'LSTM' in FLAGS.network:
               sample_dict={}
@@ -454,7 +460,7 @@ def generate_batch(data_type):
             depth=[]
             # print("[data.py]: Problem loading depth in batch.")
             pass
-          ctr = data_set[run_ind]['controls'][frame_ind]
+          ctr = data_set[run_ind]['controls'][frame_ind if not 'nfc' in FLAGS.network else frame_ind+FLAGS.n_frames-1]
           # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
           batch.append({'img':img, 'ctr':ctr, 'depth': depth})
         ok=True
@@ -515,12 +521,13 @@ if __name__ == '__main__':
   parser.add_argument('--scale_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
   parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
 
-  parser.add_argument("--network",default='tiny_LSTM_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
+  parser.add_argument("--network",default='tiny_nfc_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--batch_size",default=1,type=int,help="Define the size of minibatches.")
   parser.add_argument("--time_length", default=10, type=int, help="In case of LSTM network, how long in time is network unrolled for training.")
   
   parser.add_argument("--sliding_tbptt", action='store_true', help="In case of LSTM network, slide over batches of data rather than sample randomly.")
+  parser.add_argument("--n_frames",default=5,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
   
 
 

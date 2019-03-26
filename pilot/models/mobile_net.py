@@ -14,7 +14,7 @@ import torchvision.models as models
 
 class Net(nn.Module):
 
-  def __init__(self, output_size = 10, pretrained=False):
+  def __init__(self, output_size = 10, pretrained=False, **kwargs):
     super(Net, self).__init__()
     self.default_image_size=[3,224,224]
     self.network = MobileNetV2(n_class=output_size)

@@ -108,7 +108,7 @@ for LR in 1 01 001 ; do
   pytorch_args="--network tiny_LSTM_net --checkpoint_path tiny_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
  --tensorboard --max_episodes 10000 --batch_size 5 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD --time_length 20 --subsample 10 --load_data_in_ram"
   dag_args="--number_of_models 1"
-  condor_args="--wall_time_train $((100*1*60+2*3600)) --rammem 9 --gpumem 1500"
+  condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 9 --gpumem 1500"
   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 done
 

@@ -13,18 +13,18 @@ import tiny_net
 
 class Net(nn.Module):
 
-  def __init__(self, output_size = 10, pretrained=False,feature_size=100, dropout=0, hidden_size=64, num_layers=2):
+  def __init__(self, output_size = 10, pretrained=False, dropout=0, **kwargs):
     super(Net, self).__init__()
     feature_network = tiny_net.Net(pretrained=pretrained)
-    self.H=hidden_size
-    self.L=num_layers
+    self.H=64
+    self.L=2
     self.default_image_size=feature_network.default_image_size
     self.cnn = feature_network.network.features
     self.rnn = nn.LSTM(input_size=feature_network.default_feature_size,
                       hidden_size=self.H,
                       num_layers=self.L,
                       batch_first=True,
-                      dropout=0)
+                      dropout=dropout)
     self.linear = nn.Linear(self.H, output_size)
 
   def get_init_state(self,B):

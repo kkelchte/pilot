@@ -39,8 +39,14 @@ class Model(object):
 
     # DEFINE NETWORK
     # define a network for training and for evaluation
+    network_arguments={'output_size':self.output_size,
+                       'pretrained':self.FLAGS.pretrained,
+                       'dropout':self.FLAGS.dropout,
+                       'n_frames':self.FLAGS.n_frames}
+
     try:
-      self.net = eval(self.FLAGS.network).Net(self.output_size, self.FLAGS.pretrained)
+      self.net = eval(self.FLAGS.network).Net(**network_arguments)
+      # self.net = eval(self.FLAGS.network).Net(self.output_size, self.FLAGS.pretrained)
     except Exception as e:
       print(e)
       print("[model] Failed to load model {0}.".format(self.FLAGS.network))
