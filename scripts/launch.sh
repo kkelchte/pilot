@@ -103,14 +103,14 @@
 #---------------------------------------------- LSTM TEST 
 
 # wwbptt
-for LR in 1 01 001 ; do
-  name="tiny_LSTM_net/wwbptt/$LR"
-  pytorch_args="--network tiny_LSTM_net --checkpoint_path tiny_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
- --tensorboard --max_episodes 10000 --batch_size 5 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD --time_length 20 --subsample 10"
-  dag_args="--number_of_models 1"
-  condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 9 --gpumem 1500 --copy_dataset"
-  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-done
+# for LR in 1 01 001 ; do
+#   name="tiny_LSTM_net/wwbptt/$LR"
+#   pytorch_args="--network tiny_LSTM_net --checkpoint_path tiny_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
+#  --tensorboard --max_episodes 10000 --batch_size 5 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD --time_length 20 --subsample 10"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 9 --gpumem 1500 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
 
 # sbptt
 for LR in 1 01 001 ; do
@@ -122,7 +122,7 @@ for LR in 1 01 001 ; do
   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 done
 
-# fbptt
+# # fbptt
 for LR in 1 01 001 ; do
   name="tiny_LSTM_net/fbptt/$LR"
   pytorch_args="--network tiny_LSTM_net --checkpoint_path tiny_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\

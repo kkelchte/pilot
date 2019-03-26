@@ -266,7 +266,7 @@ class Model(object):
       targets=targets.flatten()
 
     # cross entropy is sometimes numerically unstable...
-    # import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
     losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
     
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']

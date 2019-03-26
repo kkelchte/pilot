@@ -393,7 +393,7 @@ def generate_batch(data_type):
               # print(prev_imgs.shape)
               sample_dict['prev_imgs']=prev_imgs
               # load control
-              sample_dict['ctr']=np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length])
+              sample_dict['ctr']=np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length] if FLAGS.time_length != -1 else data_set[run_ind]['controls'][frame_ind:])
               batch.append(sample_dict)
             else:
               im, de = load_rgb_depth_image(run_ind, frame_ind)
@@ -426,15 +426,15 @@ def generate_batch(data_type):
       # just combine the data in a batch
       for batch_num, run_ind, frame_ind in batch_indices:
         if 'LSTM' in FLAGS.network:
-          img = np.asarray(data_set[run_ind]['imgs'][frame_ind:frame_ind+FLAGS.time_length])
+          img = np.asarray(data_set[run_ind]['imgs'][frame_ind:frame_ind+FLAGS.time_length] if FLAGS.time_length != -1 else data_set[run_ind]['imgs'][frame_ind:])
           prev_imgs=np.asarray(data_set[run_ind]['imgs'][:frame_ind])
           try:
-            depth = np.asarray(data_set[run_ind]['depths'][frame_ind:frame_ind+FLAGS.time_length])
+            depth = np.asarray(data_set[run_ind]['depths'][frame_ind:frame_ind+FLAGS.time_length] if FLAGS.time_length != -1 else data_set[run_ind]['imgs'][frame_ind:])
           except:
             depth=[]
             # print("[data.py]: Problem loading depth in batch.")
             pass
-          ctr = np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length])
+          ctr = np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length] if FLAGS.time_length != -1 else data_set[run_ind]['controls'][frame_ind:])
           # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
           batch.append({'img':img, 'ctr':ctr, 'depth': depth, 'prev_imgs':prev_imgs})
         else:
@@ -538,10 +538,12 @@ if __name__ == '__main__':
     # prev_imgs = np.array([_['prev_img'] for _ in batch])
     
     print inputs.shape
-    for i in range(10):
-      plt.imshow(np.transpose(inputs[0,i],(1,2,0)).astype(np.float32))
-      plt.tight_layout()
-      plt.savefig("test_{0}.jpg".format(i))
+    print actions.shape
+    
+    # for i in range(10):
+    #   plt.imshow(np.transpose(inputs[0,i],(1,2,0)).astype(np.float32))
+    #   plt.tight_layout()
+    #   plt.savefig("test_{0}.jpg".format(i))
     # import pdb; pdb.set_trace()
 
   
