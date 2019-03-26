@@ -94,16 +94,20 @@ def run(_FLAGS, model):
     print('\n {0} : start episode: {1}'.format(FLAGS.log_tag, epoch))
 
     debug=False
-    if debug: print("ALERT ONLY VALIDATION")
+    if debug: print("ALLERT ONLY VALIDATION")
     # ----------- train episode: update importance weights on training data
     # sumvar = run_episode('train', {}, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)    
     if not debug: sumvar = run_episode('train', {}, model)    
     
     # ----------- validate episode
+    # validate with FBPTT
+    time_length=FLAGS.time_length
+    FLAGS.time_length=-1
     if debug: sumvar = run_episode('validation', {}, model)
     # sumvar = run_episode('validation', sumvar, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)
     if not debug: sumvar = run_episode('validation', sumvar, model)
-
+    FLAGS.time_length=time_length
+    
     # get all metrics of this episode and add them to var
     # print end of episode
     tags_not_to_print=[]
