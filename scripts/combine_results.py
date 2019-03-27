@@ -104,10 +104,11 @@ log_folders=[log_root+f for f in FLAGS.log_folders]
 
 if len(FLAGS.log_folders)==0:
   log_folders=sorted([d[0] for d in os.walk(log_root+FLAGS.mother_dir) if 'tf_log' in os.listdir(d[0]) or ('nn_ready' in os.listdir(d[0]) and 'fsm_log' in os.listdir(d[0]))])
-
+elif sum([os.path.isfile(f+'/tf_log') for f in log_folders]) != len(log_folders):
+  log_folders=[d[0] for folder in FLAGS.log_folders for d in os.walk(log_root+folder) if 'tf_log' in os.listdir(d[0]) or ('nn_ready' in os.listdir(d[0]) and 'fsm_log' in os.listdir(d[0]))]
 
 if len(log_folders)==0:
-  print("Woops, could not find anything "+log_root+FLAGS.mother_dir+" that startswith "+FLAGS.startswith+" and endswith "+FLAGS.endswith+" and has an nn_ready log.")
+  print("Woops, could not find anything "+log_root+FLAGS.mother_dir+" and has an nn_ready log.")
   sys.exit(1)
 else:
   print("Parsing "+str(len(log_folders))+" log_folders.")
@@ -217,8 +218,19 @@ for tag in sorted(FLAGS.tags):
     if 'accuracy' in tag and np.amin(results[l][tag][:FLAGS.cutend]) > 0.5:
       # plt.ylabel('Accuracy')
       plt.ylim((0.5,1))
+      # plt.ylim((0.7,0.95))
     plt.legend(handles=legend)
-    fig_name=log_root+FLAGS.mother_dir+'/'+tag+'.jpg'
+    if FLAGS.mother_dir!='':
+      fig_name=log_root+FLAGS.mother_dir+'/'+tag+'.jpg'  
+    else:
+      union_folder=''
+      for p in log_folders[0].split('/'):
+        if p in log_folders[-1] and os.path.isdir(union_folder+'/'+p):
+          union_folder+='/'+p if len(p)!=0 else ''
+        else: break
+      fig_name=union_folder+'/'+tag+'.jpg'  
+    # import pdb; pdb.set_trace()
+    # print(os.path.dirname(log))
     plt.savefig(fig_name,bbox_inches='tight')
 
   print("display {0}".format(fig_name))
