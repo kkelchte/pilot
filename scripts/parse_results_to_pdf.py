@@ -241,12 +241,14 @@ for f in log_folders:
 all_keys=list(set(all_keys))
 
 # group interesting keys and leave out some keys to avoid an overdose of information
-black_keys=["run_delay_std_control", "run_delay_std_image", 'Distance_current_test_esatv3', 'Distance_furthest_test_esatv3', 'run']
+black_keys=["run_delay_std_control", "run_delay_std_image", 'Distance_current_test_esatv3', 'Distance_furthest_test_esatv3']
 for k in black_keys:
   if k in all_keys:
     all_keys.remove(k)
 
 for key in sorted(all_keys):
+  # skip the run index
+  if key =='run': continue
   # add one plot of offline training with validation accuracy against training accuracy
   plt.clf()
   plt.cla()
@@ -257,7 +259,10 @@ for key in sorted(all_keys):
   for i,l in enumerate(log_folders): #loop over log_folders
     try:
       color=(1.-(i+0.)/len(log_folders), 0.1, (i+0.)/len(log_folders))
-      plt.plot(range(len(results[l][key])),results[l][key],color=color)
+      if 'run' in all_keys:
+        plt.plot(results[l]['run'],results[l][key],color=color)
+      else:
+        plt.plot(range(len(results[l][key])),results[l][key],color=color)
       legend.append(mpatches.Patch(color=color, label=os.path.basename(l)))
       if len(results[l][key]) > 2 and type(results[l][key][0]) == float: 
         all_fail=False # in case all models have only 2 values or no float values don't show
