@@ -470,8 +470,10 @@ def generate_batch(data_type):
 def get_all_inputs(data_type):
   """Return a list of all data of that data type.
   """
+  stime=time.time()
   inputs=[]
-  for run in full_set[data_type]:
+  for index, run in enumerate(full_set[data_type]):
+    print("[data] loading {0} inputs: {1}/{2}.".format(data_type, index, len(full_set[data_type])))
     if FLAGS.load_data_in_ram:
       inputs.extend(run['imgs'])
     else:

@@ -87,7 +87,6 @@ def run(_FLAGS, model):
   print("data loading time: {0:0.0f}".format(time.time()-start_time))
   epoch=model.epoch
 
-
   while epoch<FLAGS.max_episodes and not FLAGS.testing:
     # ep+=1
 
@@ -140,7 +139,6 @@ def run(_FLAGS, model):
     print('saved checkpoint')
     model.save(FLAGS.summary_dir+FLAGS.log_tag)
 
-
   if FLAGS.visualize_saliency_of_output:
     # Select hard images from last test set
     for index, ok, batch in data.generate_batch('test'):
@@ -155,11 +153,11 @@ def run(_FLAGS, model):
       break
 
   if FLAGS.calculate_importance_weights:
-    # tools.calculate_importance_weights(model, data.get_all_inputs('validation'), level='neuron')
-    importance_weights=tools.calculate_importance_weights(model, data.get_all_inputs('train'), level='neuron')
-    import pickle
-    with open(FLAGS.summary_dir+FLAGS.log_tag+"/omegas",'wb') as f:
-      pickle.dump(importance_weights, f)
+    importance_weights=tools.calculate_importance_weights(model, data.get_all_inputs('validation'), level='neuron')
+    tools.visualize_importance_weights(importance_weights, FLAGS.summary_dir+FLAGS.log_tag)
+    # import pickle
+    # with open(FLAGS.summary_dir+FLAGS.log_tag+"/omegas",'wb') as f:
+    #   pickle.dump(importance_weights, f)
 
     # import pdb; pdb.set_trace()
   # if FLAGS.visualize_deep_dream_of_output:

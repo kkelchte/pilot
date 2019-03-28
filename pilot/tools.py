@@ -3,9 +3,6 @@ import model
 #from lxml import etree as ET
 import xml.etree.cElementTree as ET
 
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
 # import tensorflow as tf
 
@@ -219,6 +216,10 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[], filter_pos=-1, c
   """
   # Extraction of guided backpropagation saliency maps from output  
   # Create saliency map with guided backpropagation
+  import matplotlib as mpl
+  mpl.use('Agg')
+  import matplotlib.pyplot as plt
+
   inputs=torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.FloatTensor)
   inputs.requires_grad=True  
   if filter_pos != -1 or cnn_layer != -1:
@@ -230,6 +231,7 @@ def visualize_saliency_of_output(FLAGS, model, input_images=[], filter_pos=-1, c
     gradient = BP.generate_gradients(inputs, target)
     gradient = gradient - gradient.min()
     gradient /= gradient.max()
+
     plt.imshow(gradient.transpose(1,2,0))
     plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
 
@@ -255,28 +257,94 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   - layer: 1 integer for each layer
   """
   import torch
-
+  print("[tools] calculate_importance_weights")
   # collect importance / gradients in list
   gradients=[0 for p in model.net.parameters()]
   stime=time.time()
-  for img in input_images: #loop over input images
-    # ensure no gradients are still in the network
-    model.net.zero_grad()
-    # forward pass of one image through the network
-    y_pred=model.net(torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.float32).to(model.device))
-    # backward pass from the 2-norm of the output
-    torch.norm(y_pred, 2, dim=1).backward()    
-    for pindex, p in enumerate(model.net.parameters()):
-        g=p.grad.data.clone().detach().cpu().numpy()
-        gradients[pindex]+=np.abs(g)/len(input_images)
 
-  print("[tools] calculate_importance_weights duration {0}".format(time.time()-stime))
+  # for img in input_images: #loop over input images
+  #   # ensure no gradients are still in the network
+  #   model.net.zero_grad()
+  #   # forward pass of one image through the network
+  #   y_pred=model.net(torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.float32).to(model.device))
+  #   # backward pass from the 2-norm of the output
+  #   torch.norm(y_pred, 2, dim=1).backward()    
+  #   for pindex, p in enumerate(model.net.parameters()):
+  #       g=p.grad.data.clone().detach().cpu().numpy()
+  #       gradients[pindex]+=np.abs(g)/len(input_images)
+
+  # In one track for time considerations:
+  # ensure no gradients are still in the network
+  model.net.zero_grad()
+  # forward pass of one image through the network
+  y_pred=model.net(torch.from_numpy(np.asarray(input_images)).type(torch.float32).to(model.device))
+  # backward pass from the 2-norm of the output
+  torch.sum(torch.norm(y_pred,2,dim=1)).backward()
+  for pindex, p in enumerate(model.net.parameters()):
+      g=p.grad.data.clone().detach().cpu().numpy()
+      gradients[pindex]+=np.abs(g)/len(input_images)
+
+  print("[tools] duration {0}".format(time.time()-stime))
   if level == 'neuron':
     return gradients
   elif level == 'filter':
     raise NotImplementedError
   else:
     raise NotImplementedError
+
+
+
+def visualize_importance_weights(importance_weights, log_folder):
+  """
+  plot for each layer the percentage of non-zero importance weights ~ 'occupied space'
+  if histogram: plot a histogram over each layer's weights.
+  Note that importance weights of biases is not taken into account.
+  """
+  # import matplotlib as mpl
+  # mpl.use('Agg')
+  import matplotlib.pyplot as plt
+
+  freespace=[]
+  occupied=[]
+  for index, iw in enumerate(importance_weights):
+      # ignore the biases
+      if len(iw.shape)==1: continue
+      iw=iw.flatten()
+      assert(len(iw[iw==0])+len(iw[iw!=0])==len(iw))
+      freespace.append(float(len(iw[iw==0]))/len(iw))
+      occupied.append(float(len(iw[iw!=0]))/len(iw))
+  
+
+  plt.bar(range(len(occupied)),100)
+  plt.bar(range(len(occupied)),[o*100 for o in occupied])
+  for i,v in enumerate(occupied):
+      plt.text(i-0.25, 5, "{0:d}%".format(int(v*100)))
+  plt.xlabel('Layers')
+  plt.ylabel('Proportion')
+  plt.tight_layout()
+  plt.savefig(log_folder+'/occupancy.png')
+
+  plt.cla()
+  plt.bar(range(len(freespace)),100)
+  plt.bar(range(len(freespace)),[o*100 for o in freespace])
+  for i,v in enumerate(freespace):
+      plt.text(i-0.25, 5, "{0:d}%".format(int(v*100)))
+  plt.xlabel('Layers')
+  plt.ylabel('Proportion')
+  plt.tight_layout()
+  plt.savefig(log_folder+'/freespace.png')
+
+  if True:
+    # histogram for each layer
+    num_layers=sum([1 for iw in importance_weights if len(iw.shape) > 1])
+    f, axes = plt.subplots(num_layers, 1, figsize=(5,3*num_layers), sharex=True)
+    index=0
+    for iw in importance_weights:
+        if len(iw.shape)==1: continue
+        axes[index].set_title('Layer {0}'.format(index))
+        axes[index].hist(iw.flatten(), bins=50)
+        index+=1
+    plt.savefig(log_folder+'/histogram_importance_weights.png')
 
 
 
