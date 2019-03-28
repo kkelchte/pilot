@@ -363,7 +363,7 @@ class PilotNode(object):
     # Evaluate the input in your network
     trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
     trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-    control, _ = self.model.predict(np.array([im]))
+    control, _, _ = self.model.predict(np.array([im]))
     
     ### SEND CONTROL
     control = control[0]
@@ -396,7 +396,7 @@ class PilotNode(object):
       msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))    
     elif self.FLAGS.noise == 'uni':
       # exploration noise
-      if epsilon  > 10**-2 and not self.FLAGS.evaluate: 
+      if epsilon > 10**-2 and not self.FLAGS.evaluate: 
         action = np.random.uniform(-self.FLAGS.action_bound, self.FLAGS.action_bound) if np.random.binomial(1, epsilon) else action
       # general distortion
       # msg.linear.x = self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
@@ -406,6 +406,9 @@ class PilotNode(object):
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
     
+    if self.FLAGS.stochastic:
+      msg.angular.z = np.random.normal(action, scale=0.5)
+
     if np.abs(msg.angular.z) > 0.3: 
       msg.linear.x =  self.FLAGS.turn_speed
       # if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: 
@@ -489,7 +492,7 @@ class PilotNode(object):
       # sampling grows less than linear with batch size
       inputs, targets, actions, collisions = self.replay_buffer.sample_batch(self.FLAGS.batch_size, horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
       # training increases more than linear with batch size
-      self.epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
+      self.epoch, predictions, losses, hidden_states = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
       for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
       if self.FLAGS.gradient_steps > 100 and (grad_step%100) == 99:
         self.save_summary(losses)
@@ -503,7 +506,7 @@ class PilotNode(object):
     """
     # in case the batch size is -1 the full replay buffer is send back 
     if len(inputs) != 0 and len(targets) != 0:
-      epoch, predictions, losses = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
+      epoch, predictions, losses, hidden_states = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
       for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
     else:
       print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    

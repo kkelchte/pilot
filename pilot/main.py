@@ -175,6 +175,9 @@ def main(_):
   parser.add_argument("--alpha",default=0., type=float, help="Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy..")
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
+  
+  parser.add_argument("--stochastic", action='store_true', help="Used to make discrete actions more continuous by sampling gaussian around this value, with std 0.5.")
+  
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
   parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
   # parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
@@ -252,7 +255,7 @@ def main(_):
   # config.gpu_options.allow_growth = False
   # sess = tf.Session(config=config)
   model = Model(FLAGS)
-  
+
   
   # writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   # model.writer = writer
