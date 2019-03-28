@@ -257,6 +257,7 @@ class Model(object):
     losses={'total':0}
     if not isinstance(inputs, tuple):
       inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
+
     predictions = self.net.forward(inputs, train=True)
     hidden_states=()
     if isinstance(predictions,tuple):

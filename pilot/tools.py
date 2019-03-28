@@ -120,7 +120,7 @@ def load_rgb(im_file="",im_size=[3,128,128], im_mode='CHW', im_norm='none', im_m
     scale_height = int(np.floor(img.shape[1]/im_size[1]))
     scale_width = int(np.floor(img.shape[2]/im_size[2]))
     img = img[:,::scale_height,::scale_width]
-    img=sm.resize(img,im_size,mode='constant').astype(np.float16)
+    img=sm.resize(img,(3,im_size[1],im_size[2]),mode='constant').astype(np.float16)
     if im_norm=='scaled':
       for i in range(3): 
         img[i,:,:]-=im_means[i]

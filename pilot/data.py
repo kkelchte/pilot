@@ -304,7 +304,7 @@ def generate_batch(data_type):
           batch_num += 1
           batch_indices.append((batch_num, run_ind, frame_ind))
           continue
-        if 'nfc' in FLAGS.network:
+        if 'nfc' in FLAGS.network or '3d' in FLAGS.network:
           max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames
         elif 'LSTM' in FLAGS.network:
           max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.time_length
@@ -325,7 +325,7 @@ def generate_batch(data_type):
           frame_ind = random.choice(options)
         else:
           # print("[data.py]: failed to normalize actions due to not enough options...")
-          options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
+          options=range(len(data_set[run_ind]['num_imgs']) if not '_nfc' in FLAGS.network and not '3d' in FLAGS.network else len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames)
           frame_ind = random.choice(options)
 
         batch_num += 1
@@ -372,14 +372,16 @@ def generate_batch(data_type):
               #   if len(de) == 0: print('failed loading depth image: {0} from {1}'.format(data_set[run_ind]['num_depths'][frame_ind], data_set[run_ind]['name']))
               return img, de
             
-            if 'nfc' in FLAGS.network:
+            if 'nfc' in FLAGS.network or '3d' in FLAGS.network:
               ims = []
               for frame in range(FLAGS.n_frames):
                 # target depth (de) is each time overwritten, only last frame is kept
                 image, de = load_rgb_depth_image(run_ind, frame_ind+frame)
                 ims.append(image)
-              # im = np.concatenate(ims, axis=2)
-              im = np.asarray(ims)
+              if '3d' in FLAGS.network:
+                im = np.concatenate(ims, axis=0)
+              elif 'nfc' in FLAGS.network:
+                im = np.asarray(ims)
               ctr = np.asarray(data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1])
               batch.append({'img':im, 'ctr':ctr, 'depth':de})       
             elif 'LSTM' in FLAGS.network:
@@ -453,14 +455,21 @@ def generate_batch(data_type):
           # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
           batch.append({'img':img, 'ctr':ctr, 'depth': depth, 'prev_imgs':prev_imgs})
         else:
-          img = data_set[run_ind]['imgs'][frame_ind]
+          if 'nfc' in FLAGS.network or '3d' in FLAGS.network:
+            ims = [data_set[run_ind]['imgs'][frame_ind+frame] for frame in range(FLAGS.n_frames)]
+            if '3d' in FLAGS.network:
+              img = np.concatenate(ims, axis=0)
+            elif 'nfc' in FLAGS.network:
+              img = np.asarray(ims)
+          else:
+            img = data_set[run_ind]['imgs'][frame_ind]
           try:
             depth = data_set[run_ind]['depths'][frame_ind]
           except:
             depth=[]
             # print("[data.py]: Problem loading depth in batch.")
             pass
-          ctr = data_set[run_ind]['controls'][frame_ind if not 'nfc' in FLAGS.network else frame_ind+FLAGS.n_frames-1]
+          ctr = data_set[run_ind]['controls'][frame_ind if not 'nfc' in FLAGS.network  and not '3d' in FLAGS.network else frame_ind+FLAGS.n_frames-1]
           # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
           batch.append({'img':img, 'ctr':ctr, 'depth': depth})
         ok=True

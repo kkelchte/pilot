@@ -104,6 +104,15 @@
 
 
 
+# 3d CNN
+for LR in 1 01 001 ; do
+  name="tiny_3d_net/$LR"
+  pytorch_args="--network tiny_3d_net --checkpoint_path tiny_3d_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
+ --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 
 # # nfc
 # for LR in 1 01 001 ; do

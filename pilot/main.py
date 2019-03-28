@@ -252,7 +252,7 @@ def main(_):
   # config.gpu_options.allow_growth = False
   # sess = tf.Session(config=config)
   model = Model(FLAGS)
-
+  
   
   # writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
   # model.writer = writer
