@@ -201,7 +201,8 @@ class Model(object):
     bins = self.continuous_to_bins(continuous)
     if self.FLAGS.loss == 'CrossEntropy': # return bins in (N) shape
       bins = torch.from_numpy(bins).squeeze().type(torch.LongTensor)
-      if len(bins.shape) == 0: bins.unsqueeze_(-1)
+      if len(bins.shape) == 0: 
+        bins.unsqueeze_(-1)
       return bins
       # return torch.from_numpy(bins).type(torch.LongTensor) 
     else: # normal loss like MSE : return one-hot vecotr
@@ -227,10 +228,10 @@ class Model(object):
     if len(targets) != 0: 
       # assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
       targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
-      if len(targets.shape) == 2:
+      if len(targets.shape) == 3 and 'LSTM' in self.FLAGS.network:
         # Assumption: pytorch view (X,Y,3) --> (X*Y,3) arranges in the same way as pytorch (X,Y).flatten
-        targets=targets.flatten()
-      # import pdb; pdb.set_trace()
+        targets=np.expand_dims(targets.flatten(),axis=-1)
+
       losses['imitation_learning'] = np.mean(self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy())
       # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
       if self.FLAGS.discrete: losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
@@ -244,8 +245,8 @@ class Model(object):
 
   def train(self, inputs, targets, actions=[], collisions=[], lstm_info=()):
     '''take backward pass from loss and apply gradient step
-    inputs: batch of images
-    targets: batch of control labels
+    inputs: batch of images [B,C,H,W] or [B,T,C,H,W]
+    targets: batch of control labels [B,O] or [B,T,O]
     '''
     # Ensure correct shapes at the input
     # assert (len(inputs.shape) == 4 and list(inputs.shape[1:]) == self.input_size), "inputs shape: {0} instead of {1}".format(inputs.shape, self.input_size)
@@ -262,18 +263,15 @@ class Model(object):
     hidden_states=()
     if isinstance(predictions,tuple):
       h_t, c_t=predictions[1]
-      predictions=predictions[0].view(inputs[0].size()[0]*inputs[0].size()[1],self.FLAGS.action_quantity)
+      predictions=predictions[0].view(inputs[0].size()[0]*inputs[0].size()[1],self.output_size)
       hidden_states=(h_t.cpu().detach().numpy(),
                     c_t.cpu().detach().numpy())
-
-    # import pdb; pdb.set_trace()
-    targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
-    if len(targets.shape) == 2:
+    if len(targets.shape) == 3 and 'LSTM' in self.FLAGS.network:
       # Assumption: pytorch view (X,Y,3) --> (X*Y,3) arranges in the same way as pytorch (X,Y).flatten
-      targets=targets.flatten()
+      targets=np.expand_dims(targets.flatten(),axis=-1)
 
-    # cross entropy is sometimes numerically unstable...
-    # import pdb; pdb.set_trace()
+    targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+    
     losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
     
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']

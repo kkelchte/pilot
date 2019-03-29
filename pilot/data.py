@@ -383,6 +383,7 @@ def generate_batch(data_type):
               elif 'nfc' in FLAGS.network:
                 im = np.asarray(ims)
               ctr = np.asarray(data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1])
+              ctr = np.expand_dims(ctr,axis=-1)
               batch.append({'img':im, 'ctr':ctr, 'depth':de})       
             elif 'LSTM' in FLAGS.network:
               sample_dict={}
@@ -405,10 +406,12 @@ def generate_batch(data_type):
               sample_dict['prev_imgs']=prev_imgs
               # load control
               sample_dict['ctr']=np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length] if FLAGS.time_length != -1 else data_set[run_ind]['controls'][frame_ind:minimum_run_dir_length])
+              sample_dict['ctr']=np.expand_dims(sample_dict['ctr'],axis=-1)
+              # print(sample_dict['ctr'].shape)
               batch.append(sample_dict)
             else:
               im, de = load_rgb_depth_image(run_ind, frame_ind)
-              ctr = np.asarray( data_set[run_ind]['controls'][frame_ind])
+              ctr = np.expand_dims(np.asarray(data_set[run_ind]['controls'][frame_ind]), axis=-1)
               # append rgb image, control and depth to batch
               batch.append({'img':im, 'ctr':ctr, 'depth':de})
             checklist.append(True)
@@ -452,6 +455,7 @@ def generate_batch(data_type):
               # print("[data.py]: Problem loading depth in batch.")
               pass
             ctr = np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length])
+          ctr=np.expand_dims(ctr, axis=-1)
           # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
           batch.append({'img':img, 'ctr':ctr, 'depth': depth, 'prev_imgs':prev_imgs})
         else:
@@ -470,9 +474,11 @@ def generate_batch(data_type):
             # print("[data.py]: Problem loading depth in batch.")
             pass
           ctr = data_set[run_ind]['controls'][frame_ind if not 'nfc' in FLAGS.network  and not '3d' in FLAGS.network else frame_ind+FLAGS.n_frames-1]
+          ctr=np.expand_dims(ctr, axis=-1)
           # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
           batch.append({'img':img, 'ctr':ctr, 'depth': depth})
         ok=True
+    # print(batch[0]['ctr'].shape)
     if ok: b+=1
     yield b, ok, batch
     

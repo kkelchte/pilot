@@ -54,7 +54,7 @@ def run_episode(mode, sumvar, model):
         inputs=(torch.from_numpy(inputs).type(torch.FloatTensor).to(model.device),(h_t.to(model.device),c_t.to(model.device)))
       else:
         inputs = np.array([_['img'] for _ in batch])
-      targets = np.array([[_['ctr']] for _ in batch])
+      targets = np.array([_['ctr'] for _ in batch])
 
       if mode=='train':
         epoch, predictions, losses, hidden_states = model.train(inputs, targets)
@@ -143,7 +143,7 @@ def run(_FLAGS, model):
     # Select hard images from last test set
     for index, ok, batch in data.generate_batch('test'):
       inputs = np.array([_['img'] for _ in batch])
-      targets = np.array([[_['ctr']] for _ in batch])
+      targets = np.array([_['ctr'] for _ in batch])
       predictions, losses = model.predict(inputs, targets)
       print losses.keys()
       import pdb; pdb.set_trace()
