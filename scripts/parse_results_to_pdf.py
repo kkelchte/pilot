@@ -37,6 +37,28 @@ Possibly sends the pdf with email.
 #
 #--------------------------------------------------------------
 
+def clean_values(x,y):
+  """
+  Avoid doubles x-values by ensuring a monotonic increase in x, and ignoring the corresponding y.
+  Loop from back to front, if x-value is not lower than previous value, ignore it.
+  Working from back to front ensures correct (latest) values are used.
+  Return clean x and y without doubles.
+  """
+  clean_y=[]
+  clean_x=[]
+  x=list(reversed(x))
+  y=list(reversed(y))
+  previous_x=999999999
+  for i,v in enumerate(x):
+      if v<previous_x:
+          clean_x.append(v)
+          clean_y.append(y[i])
+          previous_x=v
+      # else:
+      #     print("ignore {}".format(v))
+  return list(reversed(clean_x)), list(reversed(clean_y))
+
+
 def save_append(dic, k, v):
   """Append a value to dictionary (dic)
   if it gives a key error, create a new list.
@@ -260,7 +282,8 @@ for key in sorted(all_keys):
     try:
       color=(1.-(i+0.)/len(log_folders), 0.1, (i+0.)/len(log_folders))
       if 'run' in all_keys:
-        plt.plot(results[l]['run'],results[l][key],color=color)
+        x,y=clean_values(list(results[l]['run']),list(results[l][key]))
+        plt.plot(x,y,color=color)
       else:
         plt.plot(range(len(results[l][key])),results[l][key],color=color)
       legend.append(mpatches.Patch(color=color, label=os.path.basename(l)))

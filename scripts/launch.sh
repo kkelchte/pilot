@@ -105,40 +105,40 @@
 
 
 # 3d CNN
-for LR in 1 01 001 ; do
-  name="tiny_3d_net_1/$LR"
-  pytorch_args="--network tiny_3d_net --n_frames 1 --continue_training --checkpoint_path tiny_3d_net_1_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
- --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
-  dag_args="--number_of_models 1"
-  condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
-  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-done
-for LR in 1 01 001 ; do
-  name="tiny_3d_net_3/$LR"
-  pytorch_args="--network tiny_3d_net --n_frames 3 --continue_training --checkpoint_path tiny_3d_net_3_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
- --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
-  dag_args="--number_of_models 1"
-  condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
-  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-done
+# for LR in 1 01 001 ; do
+#   name="tiny_3d_net_1/$LR"
+#   pytorch_args="--network tiny_3d_net --n_frames 1 --continue_training --checkpoint_path tiny_3d_net_1_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
+# for LR in 1 01 001 ; do
+#   name="tiny_3d_net_3/$LR"
+#   pytorch_args="--network tiny_3d_net --n_frames 3 --continue_training --checkpoint_path tiny_3d_net_3_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
 
-# # nfc
-for LR in 1 01 001 ; do
-  name="tiny_nfc_net_1/$LR"
-  pytorch_args="--network tiny_nfc_net --n_frames 1 --continue_training --checkpoint_path tiny_nfc_net_1_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
- --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
-  dag_args="--number_of_models 1"
-  condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
-  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-done
-for LR in 1 01 001 ; do
-  name="tiny_nfc_net_3/$LR"
-  pytorch_args="--network tiny_nfc_net --n_frames 3 --continue_training --checkpoint_path tiny_nfc_net_3_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
- --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
-  dag_args="--number_of_models 1"
-  condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
-  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-done
+# # # nfc
+# for LR in 1 01 001 ; do
+#   name="tiny_nfc_net_1/$LR"
+#   pytorch_args="--network tiny_nfc_net --n_frames 1 --continue_training --checkpoint_path tiny_nfc_net_1_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
+# for LR in 1 01 001 ; do
+#   name="tiny_nfc_net_3/$LR"
+#   pytorch_args="--network tiny_nfc_net --n_frames 3 --continue_training --checkpoint_path tiny_nfc_net_3_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
 
 
 # # wwbptt
@@ -236,49 +236,56 @@ done
 
 
 #---------------------------------------------- GOING DEEPER INCEPTION-DENSE-RES NET
-# for LR in 01 0001 ; do
-#   name="inception_net_pretrained/esatv3_expert_200K/$LR"
-#   pytorch_args="--network inception_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
-#   --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
-#   dag_args="--number_of_models 1"
-#   condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 6 --gpumem 5000 --copy_dataset"
-#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-# done
-# for LR in 01 0001 ; do
-#   name="res18_net_pretrained/esatv3_expert_200K/$LR"
-#   pytorch_args="--network res18_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
-#   --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
-#   dag_args="--number_of_models 1"
-#   condor_args="--wall_time_train $((100*4*60+2*3600)) --rammem 6 --gpumem 1900 --copy_dataset"
-#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-# done
-# for LR in 01 0001 ; do
-#   name="dense_net_pretrained/esatv3_expert_200K/$LR"
-#   pytorch_args="--network dense_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
-#   --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
-#   dag_args="--number_of_models 1"
-#   condor_args="--wall_time_train $((100*3*60+2*3600)) --rammem 6 --gpumem 6000 --copy_dataset"
-#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-# done
+for LR in 1 01 001; do
+  name="inception_net_finetune/$LR"
+  pytorch_args="--network inception_net --pretrained --feature_extract --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --clip 0.5\
+  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 6 --gpumem 5000 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
+for LR in 1 01 001; do
+  name="res18_net_finetune/$LR"
+  pytorch_args="--network res18_net --pretrained --feature_extract --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --clip 0.5\
+  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*4*60+2*3600)) --rammem 6 --gpumem 1900 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
+for LR in 1 01 001; do
+  name="dense_net_finetune/$LR"
+  pytorch_args="--network dense_net --pretrained --feature_extract --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --clip 0.5\
+  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*3*60+2*3600)) --rammem 6 --gpumem 6000 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 
-#for LR in 1 ; do
-#  name="alex_net_pretrained/esatv3_expert_200K/$LR"
-#  pytorch_args="--network alex_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --clip 0.5\
-#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
-#  dag_args="--number_of_models 1"
- # condor_args="--wall_time_train $((100*3*60+2*3600)) --rammem 6 --gpumem 1900 --copy_dataset"
- # python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-#done
-#for LR in 1 ; do
-#  name="vgg16_net_pretrained/esatv3_expert_200K/$LR"
-#  pytorch_args="--network vgg16_net --pretrained --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --clip 0.5\
-#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
-#  dag_args="--number_of_models 1"
-#  condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 6 --gpumem 6000 --copy_dataset"
-#  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-#done
+for LR in 1 01 001; do
+ name="alex_net_finetune/$LR"
+ pytorch_args="--network alex_net --pretrained --feature_extract --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --clip 0.5\
+ --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+ dag_args="--number_of_models 1"
+ condor_args="--wall_time_train $((100*3*60+2*3600)) --rammem 6 --gpumem 1900 --copy_dataset"
+ python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
+for LR in 1 01 001; do
+ name="vgg16_net_finetune/$LR"
+ pytorch_args="--network vgg16_net --pretrained --feature_extract --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --clip 0.5\
+ --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+ dag_args="--number_of_models 1"
+ condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 6 --gpumem 6000 --copy_dataset"
+ python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 
-
+for LR in 1 01 001; do
+ name="squeeze_net_finetune/$LR"
+ pytorch_args="--network squeeze_net --pretrained --feature_extract --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --clip 0.5\
+ --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD"
+ dag_args="--number_of_models 1"
+ condor_args="--wall_time_train $((100*5*60+2*3600)) --rammem 6 --gpumem 6000 --copy_dataset"
+ python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 #---------------------------------------------- VGG16 OPTIMIZERS PRETRAINED
 
 
