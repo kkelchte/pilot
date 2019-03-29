@@ -12,11 +12,14 @@ import torchvision.models as models
 
 class Net(nn.Module):
 
-  def __init__(self, output_size = 10, pretrained=False, **kwargs):
+  def __init__(self, output_size = 10, pretrained=False, feature_extract=False, **kwargs):
     super(Net, self).__init__()
     self.default_image_size=[3,224,224]
 
     self.network = models.squeezenet1_0(pretrained=pretrained)
+    if feature_extract:
+      for param in self.network.parameters(): param.requires_grad = False
+
     self.network.classifier[1]=nn.Conv2d(512,output_size,kernel_size=(1, 1), stride=(1, 1))
     self.network.num_classes=output_size
 

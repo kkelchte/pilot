@@ -12,7 +12,7 @@ import torchvision.models as models
 
 class Net(nn.Module):
 
-  def __init__(self, output_size = 10, pretrained=False, **kwargs):
+  def __init__(self, output_size = 10, pretrained=False, feature_extract=False, **kwargs):
     super(Net, self).__init__()
     self.default_image_size=[3,299,299]
 
@@ -20,9 +20,12 @@ class Net(nn.Module):
 
     # Handle the auxilary net
     num_ftrs = self.network.AuxLogits.fc.in_features
-    self.network.AuxLogits.fc = nn.Linear(num_ftrs, output_size)
+    # self.network.AuxLogits.fc = nn.Linear(num_ftrs, output_size)
     # Handle the primary net
     num_ftrs = self.network.fc.in_features
+
+    if feature_extract:
+      for param in self.network.parameters(): param.requires_grad = False
     self.network.fc = nn.Linear(num_ftrs,output_size)
 
 

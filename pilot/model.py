@@ -42,6 +42,7 @@ class Model(object):
     network_arguments={'output_size':self.output_size,
                        'pretrained':self.FLAGS.pretrained,
                        'dropout':self.FLAGS.dropout,
+                       'feature_extract': self.FLAGS.feature_extract,
                        'n_frames':self.FLAGS.n_frames}
 
     try:
@@ -154,7 +155,7 @@ class Model(object):
     assert len(self.boundaries) == action_quantity-1  
     print("[model.py]: Divided {0} discrete actions over {1} with boundaries {2}.".format(action_quantity, self.control_values, self.boundaries))
 
-  def continuous_to_bins(self, continuous_value):
+  def continuous_to_bins(self, continuous_value, as_tensor=False):
     """
     Change a continuous value from between [-bound:bound]
     to the corresponding discrete bin_index [0:action_quantity-1]
@@ -173,7 +174,11 @@ class Model(object):
             else:
                 break
         discrete_values.append(discrete)
-      return np.array(discrete_values).reshape(shape)
+      discrete_values=np.array(discrete_values).reshape(shape)
+      if as_tensor:
+        discrete_values=torch.from_numpy(np.asarray(discrete_values)).squeeze().type(torch.LongTensor)
+        if len(discrete_values.shape) == 0: discrete_values.unsqueeze_(-1)
+      return discrete_values
     else:
       discrete=0
       for b in self.boundaries:
@@ -181,9 +186,11 @@ class Model(object):
           return discrete
         else:
           discrete+=1
+      if as_tensor:
+        raise NotImplementedError
       return discrete
 
-  def bins_to_continuous(self, discrete_value, name=None):
+  def bins_to_continuous(self, discrete_value):
     """
     Changes a discrete value to the continuous value (center of the corresponding bin)
     [0,1,2] --> [-1,0,1]
@@ -192,22 +199,26 @@ class Model(object):
       return [self.control_values[int(v)] for v in discrete_value]
     else:
       return self.control_values[int(discrete_value)]
- 
+
   def discretize(self, continuous):
     """With the use of previous methods, discretize numpy array of shape [nBatch, 1]
         into target values one-hot encoded Torch Tensors of shape [nBatch, action_quantity] in case of a normal loss
         or into target bins in case of a cross entropy loss.
     """
     bins = self.continuous_to_bins(continuous)
-    if self.FLAGS.loss == 'CrossEntropy': # return bins in (N) shape
-      bins = torch.from_numpy(bins).squeeze().type(torch.LongTensor)
-      if len(bins.shape) == 0: 
-        bins.unsqueeze_(-1)
-      return bins
-      # return torch.from_numpy(bins).type(torch.LongTensor) 
-    else: # normal loss like MSE : return one-hot vecotr
-      return torch.zeros(len(bins),self.FLAGS.action_quantity).scatter_(1,torch.from_numpy(bins),1.).type(torch.FloatTensor)
-      
+    return torch.zeros(len(bins),self.FLAGS.action_quantity).scatter_(1,torch.from_numpy(bins),1.).type(torch.FloatTensor)
+
+  def accuracy(self, predictions, targets):
+    """Calculate the accuracy between the predictions and the targets
+    predictions: BxA (with A action quantity)
+    targets: BxA or Bx1 -> accepts both bins and discrete values
+    returns a float as accuracy [0:1]
+    """
+    if targets.shape[-1] == self.FLAGS.action_quantity: # in case of one hot values
+      targets=np.argmax(targets,1)
+    result=(torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
+    return result
+
   def predict(self, inputs, targets=[], lstm_info=()):
     '''run forward pass and return prediction with loss if target is given
     inputs=batch of RGB images (Batch x Channel x Height x Width)
@@ -226,19 +237,23 @@ class Model(object):
                     c_t.cpu().detach().numpy())
     losses={}
     if len(targets) != 0: 
-      # assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
-      targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+      # assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])  
       if len(targets.shape) == 3 and 'LSTM' in self.FLAGS.network:
         # Assumption: pytorch view (X,Y,3) --> (X*Y,3) arranges in the same way as pytorch (X,Y).flatten
         targets=np.expand_dims(targets.flatten(),axis=-1)
-
+      if self.FLAGS.discrete:
+        targets = self.discretize(targets) if not self.FLAGS.loss=='CrossEntropy' else self.continuous_to_bins(targets, as_tensor=True)  
+      else:
+        targets = torch.from_numpy(targets).type(torch.FloatTensor)
       losses['imitation_learning'] = np.mean(self.criterion(predictions, targets.to(self.device)).cpu().detach().numpy())
       # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
-      if self.FLAGS.discrete: losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
+      # import pdb; pdb.set_trace()
+      if self.FLAGS.loss != 'CrossEntropy': targets=np.argmax(targets,1) # For MSE loss is targets one hot encoded
+      if self.FLAGS.discrete: losses['accuracy'] =  self.accuracy(predictions,targets)
+      
 
     predictions=predictions.cpu().detach().numpy()
     
-
     if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
 
     return predictions, losses, hidden_states
@@ -269,12 +284,16 @@ class Model(object):
     if len(targets.shape) == 3 and 'LSTM' in self.FLAGS.network:
       # Assumption: pytorch view (X,Y,3) --> (X*Y,3) arranges in the same way as pytorch (X,Y).flatten
       targets=np.expand_dims(targets.flatten(),axis=-1)
-
-    targets = self.discretize(targets) if self.FLAGS.discrete else torch.from_numpy(targets).type(torch.FloatTensor)
+    
+    if self.FLAGS.discrete:
+      targets = self.discretize(targets) if not self.FLAGS.loss=='CrossEntropy' else self.continuous_to_bins(targets, as_tensor=True)
+    else:
+      targets = torch.from_numpy(targets).type(torch.FloatTensor)
     
     losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
-    
+    # print(losses['imitation_learning'])
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']
+    # print(losses['total'])
     
     if len(actions) == len(collisions) == len(inputs) and self.FLAGS.il_weight != 1:
       # 1. from logits to probabilities with softmax for each output in batch
@@ -296,8 +315,8 @@ class Model(object):
       losses['total']+=(1-self.FLAGS.il_weight)*losses['reinforcement_learning'] 
     
     # stime=time.time()
-    mean_loss=torch.mean(losses['total'])
-    mean_loss.backward() # fill gradient buffers with the gradient according to this loss
+    sum_loss=torch.sum(losses['total'])
+    sum_loss.backward() # fill gradient buffers with the gradient according to this loss
     # print("backward time: ", time.time()-stime)
     torch.nn.utils.clip_grad_norm_(self.net.parameters(), self.FLAGS.clip)
 
@@ -311,10 +330,7 @@ class Model(object):
     for k in losses: losses[k]=losses[k].cpu().detach().numpy()
     
     # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
-    if self.FLAGS.discrete:
-      if not self.FLAGS.loss == 'CrossEntropy': 
-        targets=np.argmax(targets,1) # For MSE loss is targets one hot encoded
-      losses['accuracy'] = (torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
+    if self.FLAGS.discrete: losses['accuracy'] = self.accuracy(predictions, targets)
     
     return self.epoch, predictions_list, losses, hidden_states
      

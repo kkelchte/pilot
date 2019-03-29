@@ -12,11 +12,13 @@ import torchvision.models as models
 
 class Net(nn.Module):
 
-  def __init__(self, output_size = 10, pretrained=False, **kwargs):
+  def __init__(self, output_size = 10, pretrained=False, feature_extract=False, **kwargs):
     super(Net, self).__init__()
     self.default_image_size=[3,224,224]
 
     self.network = models.vgg16(pretrained=pretrained)
+    if feature_extract:
+      for param in self.network.parameters(): param.requires_grad = False
     self.network.classifier[6]=nn.Linear(4096, output_size)
 
   def forward(self, x, train=False, verbose=False):

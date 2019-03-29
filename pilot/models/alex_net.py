@@ -12,13 +12,14 @@ import torchvision.models as models
 
 class Net(nn.Module):
 
-  # def __init__(self, output_size = 10, pretrained=False):
-  def __init__(self, output_size = 10, pretrained=False, **kwargs):
+  def __init__(self, output_size=10, pretrained=False, feature_extract=False, **kwargs):
     super(Net, self).__init__()
     self.default_image_size=[3,224,224]
-    self.default_feature_size=256*6*6
     self.network = models.alexnet(pretrained=pretrained)
-    self.network.classifier[6]=nn.Linear(4096, output_size)
+    self.default_feature_size = self.network.classifier[6].in_features
+    if feature_extract:
+      for param in self.network.parameters(): param.requires_grad = False
+    self.network.classifier[6]=nn.Linear(self.default_feature_size, output_size)
 
   def forward(self, x, train=False, verbose=False):
     if verbose: print x.size()
