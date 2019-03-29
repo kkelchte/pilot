@@ -153,11 +153,11 @@ def run(_FLAGS, model):
       break
 
   if FLAGS.calculate_importance_weights:
-    importance_weights=tools.calculate_importance_weights(model, data.get_all_inputs('validation'), level='neuron')
+    importance_weights=tools.calculate_importance_weights(model, data.get_all_inputs('train'), level='neuron')
+    import pickle
+    with open(FLAGS.summary_dir+FLAGS.log_tag+"/omegas",'wb') as f:
+      pickle.dump(importance_weights, f)
     tools.visualize_importance_weights(importance_weights, FLAGS.summary_dir+FLAGS.log_tag)
-    # import pickle
-    # with open(FLAGS.summary_dir+FLAGS.log_tag+"/omegas",'wb') as f:
-    #   pickle.dump(importance_weights, f)
 
     # import pdb; pdb.set_trace()
   # if FLAGS.visualize_deep_dream_of_output:

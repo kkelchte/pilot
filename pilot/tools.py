@@ -259,30 +259,33 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   import torch
   print("[tools] calculate_importance_weights")
   # collect importance / gradients in list
-  gradients=[0 for p in model.net.parameters()]
+  gradients=[0. for p in model.net.parameters()]
   stime=time.time()
 
-  # for img in input_images: #loop over input images
-  #   # ensure no gradients are still in the network
-  #   model.net.zero_grad()
-  #   # forward pass of one image through the network
-  #   y_pred=model.net(torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.float32).to(model.device))
-  #   # backward pass from the 2-norm of the output
-  #   torch.norm(y_pred, 2, dim=1).backward()    
-  #   for pindex, p in enumerate(model.net.parameters()):
-  #       g=p.grad.data.clone().detach().cpu().numpy()
-  #       gradients[pindex]+=np.abs(g)/len(input_images)
+  for img in input_images: #loop over input images
+    # ensure no gradients are still in the network
+    model.net.zero_grad()
+    # forward pass of one image through the network
+    y_pred=model.net(torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.float32).to(model.device))
+    # backward pass from the 2-norm of the output
+    torch.norm(y_pred, 2, dim=1).backward()    
+    for pindex, p in enumerate(model.net.parameters()):
+      try:
+        g=p.grad.data.clone().detach().cpu().numpy()
+        gradients[pindex]+=np.abs(g)/len(input_images)
+      except:
+        pass
 
-  # In one track for time considerations:
-  # ensure no gradients are still in the network
-  model.net.zero_grad()
-  # forward pass of one image through the network
-  y_pred=model.net(torch.from_numpy(np.asarray(input_images)).type(torch.float32).to(model.device))
-  # backward pass from the 2-norm of the output
-  torch.sum(torch.norm(y_pred,2,dim=1)).backward()
-  for pindex, p in enumerate(model.net.parameters()):
-      g=p.grad.data.clone().detach().cpu().numpy()
-      gradients[pindex]+=np.abs(g)/len(input_images)
+  # # In one track for time considerations:
+  # # ensure no gradients are still in the network
+  # model.net.zero_grad()
+  # # forward pass of one image through the network
+  # y_pred=model.net(torch.from_numpy(np.asarray(input_images)).type(torch.float32).to(model.device))
+  # # backward pass from the 2-norm of the output
+  # torch.sum(torch.norm(y_pred,2,dim=1)).backward()
+  # for pindex, p in enumerate(model.net.parameters()):
+  #     g=p.grad.data.clone().detach().cpu().numpy()
+  #     gradients[pindex]+=np.abs(g)/len(input_images)
 
   print("[tools] duration {0}".format(time.time()-stime))
   if level == 'neuron':
@@ -308,7 +311,7 @@ def visualize_importance_weights(importance_weights, log_folder):
   occupied=[]
   for index, iw in enumerate(importance_weights):
       # ignore the biases
-      if len(iw.shape)==1: continue
+      if isinstance(iw, float) or len(iw.shape)==1: continue
       iw=iw.flatten()
       assert(len(iw[iw==0])+len(iw[iw!=0])==len(iw))
       freespace.append(float(len(iw[iw==0]))/len(iw))
@@ -317,8 +320,8 @@ def visualize_importance_weights(importance_weights, log_folder):
 
   plt.bar(range(len(occupied)),100)
   plt.bar(range(len(occupied)),[o*100 for o in occupied])
-  for i,v in enumerate(occupied):
-      plt.text(i-0.25, 5, "{0:d}%".format(int(v*100)))
+  # for i,v in enumerate(occupied):
+  #     plt.text(i-0.25, 5, "{0:d}%".format(int(v*100)))
   plt.xlabel('Layers')
   plt.ylabel('Proportion')
   plt.tight_layout()
@@ -336,14 +339,19 @@ def visualize_importance_weights(importance_weights, log_folder):
 
   if True:
     # histogram for each layer
-    num_layers=sum([1 for iw in importance_weights if len(iw.shape) > 1])
+    num_layers=sum([1 for iw in importance_weights if not isinstance(iw,float) and len(iw.shape) > 1])
     f, axes = plt.subplots(num_layers, 1, figsize=(5,3*num_layers), sharex=True)
     index=0
     for iw in importance_weights:
-        if len(iw.shape)==1: continue
+      try:
+        if not isinstance(iw,int) and len(iw.shape)==1: continue
         axes[index].set_title('Layer {0}'.format(index))
         axes[index].hist(iw.flatten(), bins=50)
         index+=1
+      except:
+        pass
+
+    plt.tight_layout()
     plt.savefig(log_folder+'/histogram_importance_weights.png')
 
 

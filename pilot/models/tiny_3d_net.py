@@ -45,7 +45,7 @@ class Net(nn.Module):
     if pretrained: raise NotImplementedError
     self.default_image_size=[n_frames*3,128,128]
     self.default_feature_size=20*20*20
-    self.network=TinyNet(output_size=output_size)
+    self.network=TinyNet(output_size=output_size, n_frames=n_frames)
 
     
   def forward(self, x, train=False, verbose=False):
