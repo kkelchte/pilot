@@ -103,18 +103,20 @@ def run(_FLAGS, model):
     
     # ----------- validate episode
     # validate with SBPTT at 1
-    time_length=FLAGS.time_length
-    sliding_step_size=FLAGS.sliding_step_size
-    sliding_tbptt=FLAGS.sliding_tbptt
-    FLAGS.time_length=1
-    FLAGS.sliding_step_size=1
-    FLAGS.sliding_tbptt=True
+    if 'LSTM' in FLAGS.network:
+      time_length=FLAGS.time_length
+      sliding_step_size=FLAGS.sliding_step_size
+      sliding_tbptt=FLAGS.sliding_tbptt
+      FLAGS.time_length=1
+      FLAGS.sliding_step_size=1
+      FLAGS.sliding_tbptt=True
     if debug: sumvar = run_episode('validation', {}, model)
     # sumvar = run_episode('validation', sumvar, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)
     if not debug: sumvar = run_episode('validation', sumvar, model)
-    FLAGS.time_length=time_length
-    FLAGS.sliding_step_size=sliding_step_size
-    FLAGS.sliding_tbptt=sliding_tbptt
+    if 'LSTM' in FLAGS.network:
+      FLAGS.time_length=time_length
+      FLAGS.sliding_step_size=sliding_step_size
+      FLAGS.sliding_tbptt=sliding_tbptt
     
     # get all metrics of this episode and add them to var
     # print end of episode

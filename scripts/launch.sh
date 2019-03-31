@@ -103,21 +103,21 @@
 
 
 #---------------------------------------------- CONTINUOUS VS DISCRETE
-# for LR in 1 01 001 0001 00001; do
-#   name="continous_discrete/tiny_net/continuous/$LR"
-#   pytorch_args="--network tiny_net --checkpoint_path tiny_net_cont_scratch --continue_training --dataset esatv3_expert_200K --turn_speed 0.8 --speed 0.8\
-#  --tensorboard --max_episodes 20000 --batch_size 32 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --clip 1.0"
-#   dag_args="--number_of_models 1"
-#   condor_args="--wall_time_train $((100*1*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
-#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+for LR in 1 01 001 0001 00001; do
+  name="continous_discrete/tiny_net/continuous_stochastic/$LR"
+  pytorch_args="--network tiny_net --checkpoint_path tiny_net_cont_scratch --continue_training --dataset esatv3_expert_stochastic_200K --turn_speed 0.8 --speed 0.8\
+ --tensorboard --max_episodes 20000 --batch_size 32 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --clip 1.0"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((100*1*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 
-#   name="continous_discrete/tiny_net/discrete/$LR"
-#   pytorch_args="--network tiny_net --checkpoint_path tiny_net_scratch --continue_training --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
-#  --tensorboard --max_episodes 20000 --batch_size 32 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --clip 1.0"
-#   dag_args="--number_of_models 1"
-#   condor_args="--wall_time_train $((100*1*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
-#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
-# done
+ #  name="continous_discrete/tiny_net/discrete/$LR"
+ #  pytorch_args="--network tiny_net --checkpoint_path tiny_net_scratch --continue_training --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8\
+ # --tensorboard --max_episodes 20000 --batch_size 32 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --clip 1.0"
+ #  dag_args="--number_of_models 1"
+ #  condor_args="--wall_time_train $((100*1*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+ #  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 
 
 
