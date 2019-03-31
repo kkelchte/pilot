@@ -183,23 +183,34 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
 # ==============================
 #   Obtain Hidden State of LSTM 
 # ==============================
-def get_hidden_state(input_images, model):
+def get_hidden_state(input_images, model, device='cpu'):
   """
   A recurrent model is evaluated over the input images and the final hidden output and state is returned.
   args:
   input_images: ndarray of shape [T,C,H,W]
   model:  model with LSTM net
+  device: 'cpu' or 'gpu'
   returns tuple of torch tensors for cell and hidden state
   EXTENSION: add device option...
   """
   import torch
+  device = torch.device("cuda:0" if torch.cuda.is_available() and device=='gpu' else "cpu")
   if not model.net.rnn: raise(ValueError("Network does not contain rnn part."))
+  # move model to device:
+  # stime=time.time()
+  # print("move model: {0}".format(time.time()-stime))
   h_t,c_t=model.net.get_init_state(1)
   # print("[tools] Obtaining hidden state after image sequence with length {0}".format(len(input_images)))
-  for index in range(len(input_images)):
-    inputs=(torch.from_numpy(np.expand_dims(np.expand_dims(input_images[index],0),0)).type(torch.FloatTensor).to(model.device), 
-            (h_t.to(model.device), c_t.to(model.device)))
-    outputs, (h_t, c_t)=model.net.forward(inputs)
+  # for index in range(len(input_images)):
+  #   inputs=(torch.from_numpy(np.expand_dims(np.expand_dims(input_images[index],0),0)).type(torch.FloatTensor).to(device), 
+  #           (h_t.to(device), c_t.to(device)))
+  #   outputs, (h_t, c_t)=model.net.forward(inputs)
+  if len(input_images) != 0:
+    model.net.to(device)
+    inputs=(torch.from_numpy(np.expand_dims(input_images,0)).type(torch.FloatTensor).to(device),(h_t.to(device), c_t.to(device)))
+    outputs, (h_t,c_t) = model.net.forward(inputs)
+    model.net.to(model.device)
+  
   return (h_t.detach().cpu(), c_t.detach().cpu())
 
 # ===========================

@@ -246,7 +246,7 @@ def generate_batch(data_type):
     if FLAGS.time_length==-1: 
       number_of_batches=1
     elif FLAGS.sliding_tbptt: # in case of sliding 1 step at a time, it requires N batches of data to get to the end of the sequence
-      number_of_batches=min([len(_['num_imgs'])-FLAGS.time_length for _ in data_set])
+      number_of_batches=int(min([(len(_['num_imgs'])-FLAGS.time_length)/FLAGS.sliding_step_size for _ in data_set]))
     else:
       number_of_batches = min(int(number_of_frames/(FLAGS.batch_size*max(FLAGS.time_length,1))),max_num_of_batch[data_type])
   elif 'nfc' in FLAGS.network:
@@ -288,14 +288,17 @@ def generate_batch(data_type):
       # keep track of the distribution of controls
       count_controls={-1:0, 0:0, 1:0}
       batch_num=0
-      while batch_num < FLAGS.batch_size:
+      run_options=list(range(len(data_set)))
+      while batch_num < FLAGS.batch_size and len(run_options)!=0:
+        run_ind = random.choice(run_options)
         # choose random index over all runs:
-        run_ind = random.choice(range(len(data_set)))
         if 'LSTM' in FLAGS.network and FLAGS.time_length==-1:
           # if run indices are selected for fully unrolled bptt training can start as frame index is always 0
           frame_ind = 0
           batch_num += 1
           batch_indices.append((batch_num, run_ind, frame_ind))
+          # pick every run maximum once if it is fully used in training
+          del run_options[run_options.index(run_ind)]
           continue
         if 'LSTM' in FLAGS.network and FLAGS.sliding_tbptt:
           # if run indices are selected for sliding tbptt they should be kept over different batches
@@ -303,7 +306,9 @@ def generate_batch(data_type):
           frame_ind = 0
           batch_num += 1
           batch_indices.append((batch_num, run_ind, frame_ind))
-          continue
+          # pick every run maximum once if it is fully used in training
+          del run_options[run_options.index(run_ind)]
+          continue  
         if 'nfc' in FLAGS.network or '3d' in FLAGS.network:
           max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames
         elif 'LSTM' in FLAGS.network:
@@ -397,10 +402,11 @@ def generate_batch(data_type):
               sample_dict['depth']=de
               # load previous images for retrieving cell states
               prev_imgs=[]
-              for frame in data_set[run_ind]['num_imgs']:
-                if frame >=frame_ind: break
-                im, de = load_rgb_depth_image(run_ind, frame)
-                prev_imgs.append(im)
+              if not FLAGS.sliding_tbptt:
+                for frame in data_set[run_ind]['num_imgs']:
+                  if frame >=frame_ind: break
+                  im, de = load_rgb_depth_image(run_ind, frame)
+                  prev_imgs.append(im)
               prev_imgs=np.asarray(prev_imgs)
               # print(prev_imgs.shape)
               sample_dict['prev_imgs']=prev_imgs
@@ -440,24 +446,24 @@ def generate_batch(data_type):
       # just combine the data in a batch
       for batch_num, run_ind, frame_ind in batch_indices:
         if 'LSTM' in FLAGS.network:
+          batch_data={}
           if FLAGS.time_length == -1:
-            img=np.asarray(data_set[run_ind]['imgs'][frame_ind:minimum_run_dir_length])
-            prev_imgs=np.asarray([])
-            depth=np.asarray([])
-            ctr=np.asarray(data_set[run_ind]['controls'][frame_ind:minimum_run_dir_length])
+            batch_data['img']=np.asarray(data_set[run_ind]['imgs'][frame_ind:minimum_run_dir_length])
+            batch_data['prev_imgs']=np.asarray([])
+            batch_data['depth']=np.asarray([])
+            batch_data['ctr']=np.expand_dims(np.asarray(data_set[run_ind]['controls'][frame_ind:minimum_run_dir_length]),axis=-1)
           else:
-            img = np.asarray(data_set[run_ind]['imgs'][frame_ind:frame_ind+FLAGS.time_length])
-            prev_imgs=np.asarray(data_set[run_ind]['imgs'][:frame_ind])
+            batch_data['img'] = np.asarray(data_set[run_ind]['imgs'][frame_ind:frame_ind+FLAGS.time_length])
+            batch_data['prev_imgs'] = np.asarray(data_set[run_ind]['imgs'][:frame_ind]) if not FLAGS.sliding_tbptt else []
             try:
-              depth = np.asarray(data_set[run_ind]['depths'][frame_ind:frame_ind+FLAGS.time_length])
+              batch_data['depth'] = np.asarray(data_set[run_ind]['depths'][frame_ind:frame_ind+FLAGS.time_length])
             except:
-              depth=[]
+              batch_data['depth']=[]
               # print("[data.py]: Problem loading depth in batch.")
               pass
-            ctr = np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length])
-          ctr=np.expand_dims(ctr, axis=-1)
+            batch_data['ctr'] = np.expand_dims(np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length]),axis=-1)
           # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
-          batch.append({'img':img, 'ctr':ctr, 'depth': depth, 'prev_imgs':prev_imgs})
+          batch.append(batch_data)
         else:
           if 'nfc' in FLAGS.network or '3d' in FLAGS.network:
             ims = [data_set[run_ind]['imgs'][frame_ind+frame] for frame in range(FLAGS.n_frames)]

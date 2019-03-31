@@ -46,7 +46,7 @@ def main(_):
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
   parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
   parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
-  parser.add_argument("--clip",default=0.5,type=float,help="Clip gradients to avoid 'nan' loss values.")
+  parser.add_argument("--clip",default=1,type=float,help="Clip gradients to avoid 'nan' loss values.")
   parser.add_argument("--max_episodes",default=1000,type=int,help="The maximum number of episodes (~runs through all the training data.)")
   parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
   parser.add_argument("--create_scratch_checkpoint", action='store_true', help="Dont train, just save checkpoint before starting and quit.")

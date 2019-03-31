@@ -38,6 +38,7 @@ def run_episode(mode, sumvar, model):
         if len(hidden_states) != 0 and FLAGS.sliding_tbptt:
           h_t, c_t = (torch.from_numpy(hidden_states[0]),torch.from_numpy(hidden_states[1]))
         else:
+          stime=time.time()
           # for each sample in batch h_t is LxH --> has to become LxBxH
           hs, cs = [], []
           for _ in batch:
@@ -46,6 +47,7 @@ def run_episode(mode, sumvar, model):
             cs.append(torch.squeeze(c))
           h_t=torch.stack(hs, dim=1)
           c_t=torch.stack(cs, dim=1)
+          print("[offline] hiddenstate duration: {0:0.2f}".format(time.time()-stime))
         # assert(inputs.shape[0] == h_t.size()[1])
         inputs = np.array([_['img'] for _ in batch])
         if inputs.shape[0] != h_t.size()[1]:
@@ -97,15 +99,22 @@ def run(_FLAGS, model):
     # ----------- train episode: update importance weights on training data
     # sumvar = run_episode('train', {}, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)    
     if not debug: sumvar = run_episode('train', {}, model)    
+    # import pdb; pdb.set_trace()
     
     # ----------- validate episode
-    # validate with FBPTT
+    # validate with SBPTT at 1
     time_length=FLAGS.time_length
-    FLAGS.time_length=-1
+    sliding_step_size=FLAGS.sliding_step_size
+    sliding_tbptt=FLAGS.sliding_tbptt
+    FLAGS.time_length=1
+    FLAGS.sliding_step_size=1
+    FLAGS.sliding_tbptt=True
     if debug: sumvar = run_episode('validation', {}, model)
     # sumvar = run_episode('validation', sumvar, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)
     if not debug: sumvar = run_episode('validation', sumvar, model)
     FLAGS.time_length=time_length
+    FLAGS.sliding_step_size=sliding_step_size
+    FLAGS.sliding_tbptt=sliding_tbptt
     
     # get all metrics of this episode and add them to var
     # print end of episode
@@ -159,7 +168,7 @@ def run(_FLAGS, model):
       pickle.dump(importance_weights, f)
     tools.visualize_importance_weights(importance_weights, FLAGS.summary_dir+FLAGS.log_tag)
 
-    # import pdb; pdb.set_trace()
+  # import pdb; pdb.set_trace()
   # if FLAGS.visualize_deep_dream_of_output:
   #   tools.deep_dream_of_extreme_control(FLAGS, model)
 

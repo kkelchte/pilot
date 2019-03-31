@@ -31,6 +31,38 @@ Parse results from all subfolders of mother_dir
 # Utility functions
 #
 #--------------------------------------------------------------
+def clean_values(x,y, cutend=-1):
+  """
+  Avoid doubles x-values by ensuring a monotonic increase in x, and ignoring the corresponding y.
+  Loop from back to front, if x-value is not lower than previous value, ignore it.
+  Working from back to front ensures correct (latest) values are used.
+  Return clean x and y without doubles.
+  """
+  # cut end:
+  if cutend != -1:
+    new_x=[]
+    new_y=[]
+    for i,v in enumerate(x):
+      if v<cutend:
+        new_x.append(x[i])
+        new_y.append(y[i])
+  else:
+    new_x=x
+    new_y=y
+  clean_y=[]
+  clean_x=[]
+  x=list(reversed(new_x))
+  y=list(reversed(new_y))
+  previous_x=999999999
+  for i,v in enumerate(x):
+      if v<previous_x:
+          clean_x.append(v)
+          clean_y.append(y[i])
+          previous_x=v
+      # else:
+      #     print("ignore {}".format(v))
+  return list(reversed(clean_x)), list(reversed(clean_y))
+
 
 def save_append(dic, k, v):
   """Append a value to dictionary (dic)
@@ -103,7 +135,14 @@ log_root = FLAGS.home+'/'+FLAGS.summary_dir
 log_folders=[log_root+f for f in FLAGS.log_folders]
 
 if len(FLAGS.log_folders)==0:
-  log_folders=sorted([d[0] for d in os.walk(log_root+FLAGS.mother_dir) if 'tf_log' in os.listdir(d[0]) or ('nn_ready' in os.listdir(d[0]) and 'fsm_log' in os.listdir(d[0]))])
+  log_folders=[]
+  for root, dirs, files in os.walk(log_root+FLAGS.mother_dir):
+    dirs[:]=[d for d in dirs if not d[0]=='.']
+    if ('tf_log' in os.listdir(root) or ('nn_ready' in os.listdir(root) and 'fsm_log' in os.listdir(root))):
+      log_folders.append(root)
+  log_folders=sorted(log_folders)
+  # log_folders=sorted([d[0] for d in os.walk(log_root+FLAGS.mother_dir) if not os.path.basename(d[0]).startswith('.') and ('tf_log' in os.listdir(d[0]) or ('nn_ready' in os.listdir(d[0]) and 'fsm_log' in os.listdir(d[0])))])
+
 elif sum([os.path.isfile(f+'/tf_log') for f in log_folders]) != len(log_folders):
   log_folders=[d[0] for folder in FLAGS.log_folders for d in os.walk(log_root+folder) if 'tf_log' in os.listdir(d[0]) or ('nn_ready' in os.listdir(d[0]) and 'fsm_log' in os.listdir(d[0]))]
 
@@ -189,6 +228,7 @@ for t in FLAGS.tags:
 #--------------------------------------------------------------------------------
 
 # group interesting keys and leave out some keys to avoid an overdose of information
+# fig_name=''
 for tag in sorted(FLAGS.tags):
   # add one plot of offline training with validation accuracy against training accuracy
   plt.clf()
@@ -200,7 +240,13 @@ for tag in sorted(FLAGS.tags):
   for folder_index,l in enumerate(log_folders): #loop over log_folders
     try:
       color=(1.-(folder_index+0.)/len(log_folders), 0.1, (folder_index+0.)/len(log_folders))
-      plt.plot(range(len(results[l][tag][:FLAGS.cutend]))[::FLAGS.subsample],results[l][tag][:FLAGS.cutend][::FLAGS.subsample],color=color)
+      
+      if 'run' in results[l].keys():
+        x,y=clean_values(list(results[l]['run']),list(results[l][tag]), cutend=FLAGS.cutend)
+        plt.plot(x,y,color=color)
+      else:
+        # plt.plot(range(len(results[l][key])),results[l][key],color=color)
+        plt.plot(range(len(results[l][tag][:FLAGS.cutend]))[::FLAGS.subsample],results[l][tag][:FLAGS.cutend][::FLAGS.subsample],color=color)
       if len(FLAGS.legend_names) == len(log_folders):
         label=FLAGS.legend_names[folder_index]
       else:
@@ -233,4 +279,6 @@ for tag in sorted(FLAGS.tags):
     # print(os.path.dirname(log))
     plt.savefig(fig_name,bbox_inches='tight')
 
-  print("display {0}".format(fig_name))
+    print("display {0}".format(fig_name))
+  else:
+    print("all failed for tag {}".format(tag))
