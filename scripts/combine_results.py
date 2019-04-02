@@ -12,9 +12,10 @@ import xml.etree.cElementTree as ET
 
 
 import matplotlib as mpl
-mpl.use('Agg')
+# mpl.use('Agg')
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 import tablib
 
@@ -77,34 +78,6 @@ def save_append(dic, k, v):
   except KeyError:
     dic[k]=[v]
 
-def add_figure(report, line_index, image_path, caption=""):
-  if os.path.isfile(image_path):
-    report.insert(line_index, "\\begin{figure}[ht] \n")
-    line_index+=1
-    report.insert(line_index, "\\includegraphics[width=\\textwidth]{"+image_path+"}\n")
-    line_index+=1
-    if len(caption)==0: caption=image_path.split('/')[-3].replace('_',' ')
-    report.insert(line_index, "\\caption{"+caption.replace('_',' ')+"} \n")
-    # report.insert(line_index, "\\caption{"+image_path.split('/')[-3].replace('_',' ')+"/"+image_path.split('/')[-2].replace('_',' ')+": "+os.path.basename(image_path).replace('_',' ').split('.')[0]+"} \n")
-    line_index+=1   
-    report.insert(line_index, "\\end{figure} \n")
-    line_index+=1
-  else:
-    print("figure not found: {0}".format(image_path))
-  return report, line_index
-
-def add_table_val(row, key):
-  """takes the row-results, 
-  checks for a key and a list of results,
-  returns the mean and std (func) of the list as string."""
-  if key in row.keys():
-    if k == 'success': # show percentage
-      return "{0:0.0f} \% ({1:0.2f})".format(np.mean(row[key])*100, np.std(row[key]))
-    else:
-      return "{0:0.2f} ({1:0.2f})".format(np.mean(row[key]), np.std(row[key]))
-  else:
-    return ''
-
 
 #--------------------------------------------------------------
 #
@@ -116,6 +89,7 @@ parser = argparse.ArgumentParser(description='Get results, combine them and save
 parser.add_argument('--home', default='/esat/opal/kkelchte/docker_home', type=str, help='Define the root directory: default is /esat/opal/kkelchte/docker_home/tensorflow/log')
 parser.add_argument('--summary_dir', default='tensorflow/log/', type=str, help='Define the root directory: default is /esat/opal/kkelchte/docker_home/tensorflow/log')
 parser.add_argument('--mother_dir', default='', type=str, help='if all runs are grouped in one mother directory in log: e.g. depth_q_net')
+parser.add_argument('--blog_destination', default='', type=str, help='if image should be copied to blog imgs, specify the name.')
 parser.add_argument('--log_folders', default=[],nargs='+', help="Define sub folders in motherdir to parse.")
 parser.add_argument('--legend_names', default=[],nargs='+', help="Define the folder legends.")
 parser.add_argument('--tags', default=[],nargs='+', help="Select certain tag within log file that needs to be combined.")
@@ -152,7 +126,7 @@ if len(log_folders)==0:
 else:
   print("Parsing "+str(len(log_folders))+" log_folders.")
 
-
+colors=['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7']
 #------------------------------------------------------------------------------------------
 #
 # STEP 2: parse all info from tf_log, nn_log and nn_ready files and save it in dictionary
@@ -239,18 +213,19 @@ for tag in sorted(FLAGS.tags):
   all_fail=True
   for folder_index,l in enumerate(log_folders): #loop over log_folders
     try:
-      color=(1.-(folder_index+0.)/len(log_folders), 0.1, (folder_index+0.)/len(log_folders))
+      # color=(1.-(folder_index+0.)/len(log_folders), 0.1, (folder_index+0.)/len(log_folders))
+      color=colors[folder_index%len(colors)]
       
       if 'run' in results[l].keys():
         x,y=clean_values(list(results[l]['run']),list(results[l][tag]), cutend=FLAGS.cutend)
-        plt.plot(x,y,color=color)
+        plt.plot(x[::FLAGS.subsample],y[::FLAGS.subsample],color=color,linewidth=1)
       else:
         # plt.plot(range(len(results[l][key])),results[l][key],color=color)
         plt.plot(range(len(results[l][tag][:FLAGS.cutend]))[::FLAGS.subsample],results[l][tag][:FLAGS.cutend][::FLAGS.subsample],color=color)
       if len(FLAGS.legend_names) == len(log_folders):
         label=FLAGS.legend_names[folder_index]
       else:
-        label=l
+        label=os.path.basename(l)
       legend.append(mpatches.Patch(color=color, label=label.replace('_', ' ')))
       if len(results[l][tag][:FLAGS.cutend]) > 2 and type(results[l][tag][0]) == float: 
         all_fail=False # in case all models have only 2 values or no float values don't show
@@ -260,11 +235,14 @@ for tag in sorted(FLAGS.tags):
   if not all_fail:
     plt.xlabel("Step")
     # plt.xlabel("Run" if tag in FLAGS.tags else "Epoch")
-    plt.ylabel(tag.replace('_',' '))
+    ylabel=tag
+    if 'imitation_learning' in tag:
+      ylabel=tag.replace('imitation_learning', 'MSE')
+    plt.ylabel(ylabel.replace('_',' '))
     if 'accuracy' in tag and np.amin(results[l][tag][:FLAGS.cutend]) > 0.5:
       # plt.ylabel('Accuracy')
       plt.ylim((0.5,1))
-      # plt.ylim((0.7,0.95))
+      # plt.ylim((0.7,1))
     plt.legend(handles=legend)
     if FLAGS.mother_dir!='':
       fig_name=log_root+FLAGS.mother_dir+'/'+tag+'.jpg'  
@@ -275,10 +253,14 @@ for tag in sorted(FLAGS.tags):
           union_folder+='/'+p if len(p)!=0 else ''
         else: break
       fig_name=union_folder+'/'+tag+'.jpg'  
-    # import pdb; pdb.set_trace()
-    # print(os.path.dirname(log))
+    
     plt.savefig(fig_name,bbox_inches='tight')
-
-    print("display {0}".format(fig_name))
+    command="display {0}".format(fig_name)
+    print(command)
+    subprocess.call(shlex.split(command))
+    if FLAGS.blog_destination != "":
+      command="cp {0} /users/visics/kkelchte/blogs/kkelchte.github.io/imgs/{1}_{2}.jpg".format(fig_name, FLAGS.blog_destination, tag)
+      subprocess.call(shlex.split(command))
+      print(command)
   else:
     print("all failed for tag {}".format(tag))

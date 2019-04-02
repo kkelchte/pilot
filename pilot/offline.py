@@ -101,6 +101,10 @@ def run(_FLAGS, model):
     if not debug: sumvar = run_episode('train', {}, model)    
     # import pdb; pdb.set_trace()
     
+    # if FBPTT: don't validate after each training step:
+    if 'LSTM' in FLAGS.network and FLAGS.time_length==-1 and model.epoch%100 != 0:
+      continue
+
     # ----------- validate episode
     # validate with SBPTT at 1
     if 'LSTM' in FLAGS.network:

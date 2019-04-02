@@ -110,6 +110,8 @@ condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
 
 condor_submit.write("match_list_length = 4 \n")
+condor_submit.write("Rank = Mips \n")
+
 
 blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 		 	&& (machine != \"kochab.esat.kuleuven.be\") "
