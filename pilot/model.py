@@ -71,7 +71,7 @@ class Model(object):
     # self.collision_criterion=nn.MSELoss()
     self.softmax = torch.nn.Softmax(dim=1) #assumes [Batch x Outputs]
     # DEFINE OPTIMIZER
-    self.optimizer = eval("optim.{0}(self.net.parameters(), lr={1})".format(self.FLAGS.optimizer, self.FLAGS.learning_rate))
+    self.optimizer = eval("optim.{0}(self.net.parameters(), lr={1}, weight_decay={2})".format(self.FLAGS.optimizer, self.FLAGS.learning_rate, self.FLAGS.weight_decay))
 
     # DEFINE MAS REGULARIZER
     # if self.FLAGS.continue_training and self.FLAGS.lifelonglearning:

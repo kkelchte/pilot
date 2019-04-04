@@ -134,7 +134,7 @@ def main(_):
   parser.add_argument("--il_weight", default=1.0, type=float, help="Define the weight of the Imitation Learning Loss in comparison to the Reinforcement Learning Loss.")
   parser.add_argument("--depth_weight", default=1.0, type=float, help="Define the weight applied to the depth values in the loss relative to the control loss.")
   parser.add_argument("--control_weight", default=1.0, type=float, help="Define the weight applied to the control loss.")
-  parser.add_argument("--weight_decay",default=0.00004,type=float, help= "Weight decay of inception network")
+  parser.add_argument("--weight_decay",default=0.0,type=float, help= "Weight decay of inception network")
   parser.add_argument("--init_scale", default=0.0005, type=float, help= "Std of uniform initialization")
   parser.add_argument("--grad_mul_weight", default=0.001, type=float, help="Specify the amount the gradients of prediction layers.")
   parser.add_argument("--dropout", default=0.5, type=float, help="Specify the probability of dropout to keep the activation.")
