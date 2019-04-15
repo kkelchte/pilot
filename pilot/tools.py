@@ -67,7 +67,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   """
   print("[tools] Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['auxiliary_depth', 'discrete']
+  boollist=['auxiliary_depth', 'discrete','shifted_input','scaled_input']
   intlist=['n_frames', 'num_outputs']
   floatlist=['depth_multiplier','speed','action_bound']
   stringlist=['network', 'data_format']
@@ -88,9 +88,9 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
         FLAGS.__setattr__(child.attrib['name'], str(child.text))
         print 'set:', child.attrib['name'], str(child.text)
       # Temporary hack to load models from doshico
-      elif child.attrib['name'] == 'n_fc':
-        FLAGS.network='mobile_nfc'
-        print 'set: network to mobile_nfc'
+      # elif child.attrib['name'] == 'n_fc':
+      #   FLAGS.network='mobile_nfc'
+      #   print 'set: network to mobile_nfc'
     except : 
       print 'couldnt set:', child.attrib['name'], child.text
       pass
@@ -100,7 +100,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
 # ===========================
 #   Load rgb image
 # ===========================
-def load_rgb(im_file="",im_size=[3,128,128], im_mode='CHW', im_norm='none', im_means=[0,0,0], im_stds=[1,1,1]):
+def load_rgb(im_file="",im_object=[],im_size=[3,128,128], im_mode='CHW', im_norm='none', im_means=[0,0,0], im_stds=[1,1,1]):
   """Load an RGB image file and return a numpy array of type float16 with values between [0:1]
   args:
   im_file: absolute path to file
@@ -110,9 +110,15 @@ def load_rgb(im_file="",im_size=[3,128,128], im_mode='CHW', im_norm='none', im_m
   return:
   numpy array
   """
-  if not os.path.isfile(im_file):
-    raise IOError("File not found: {0}".format(im_file))
-  img = sio.imread(im_file)
+  if im_file!="":
+    if not os.path.isfile(im_file):
+      raise IOError("File not found: {0}".format(im_file))
+    img = sio.imread(im_file)
+  elif im_object!=[]:
+    img = im_object
+  else:
+    raise IOError("tools: load_rgb: no im_file or im_object provided.")
+    
   # for pytorch: swap channels from last to first dimension
   if im_mode != 'HWC':
     img = np.swapaxes(img,1,2)

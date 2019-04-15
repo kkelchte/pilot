@@ -16,13 +16,20 @@ class Net(nn.Module):
   def __init__(self, output_size=10, pretrained=False, n_frames=5, **kwargs):
     super(Net, self).__init__()
     feature_network = tiny_net.Net(pretrained=pretrained)
-    self.H=100
+    self.H=1024
     self.n_frames=n_frames
     self.default_feature_size=self.n_frames*feature_network.default_feature_size
     self.default_image_size=feature_network.default_image_size
     self.cnn = feature_network.network.features
-    self.linear1 = nn.Linear(self.default_feature_size, self.H)
-    self.linear2 = nn.Linear(self.H, output_size)
+    self.classifier=nn.Sequential(
+        nn.Linear(self.default_feature_size, self.H),
+        nn.ReLU(inplace=True),
+        nn.Linear(self.H, output_size)
+    )
+
+    # self.linear1 = nn.Linear(self.default_feature_size, self.H)
+
+    # self.linear2 = nn.Linear(self.H, output_size)
   
   def forward(self, x, train=False, verbose=False):
     """
@@ -49,8 +56,9 @@ class Net(nn.Module):
     if verbose: print("c_out.size: {0}".format(c_out.size()))
         
     # calculate output over batch and time sequence
-    f_h = self.linear1(f_in)
-    f_out = self.linear2(f_h)
+    f_out=self.classifier(f_in)
+    # f_h = self.linear1(f_in)
+    # f_out = self.linear2(f_h)
     # f_out = f_out.view(batch_size, self.n_frames, -1)
 
     if verbose: print("f_out: {0}".format(f_out.size()))

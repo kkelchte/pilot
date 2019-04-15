@@ -185,17 +185,29 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
-      img = np.swapaxes(img,1,2)
-      img = np.swapaxes(img,0,1)
-      scale_height = int(np.floor(img.shape[1]/self.model.input_size[1]))
-      scale_width = int(np.floor(img.shape[2]/self.model.input_size[2]))
-      img = img[:,::scale_height,::scale_width]
-      img = sm.resize(img,self.model.input_size,mode='constant').astype(np.float16)
-      
+      if self.FLAGS.shifted_input:
+        input_normalization='shifted'
+      elif self.FLAGS.scaled_input:
+        input_normalization='scaled'
+      else:
+        input_normalization='none'
+      img=tools.load_rgb(im_object=img, 
+                        im_size=self.model.input_size,
+                        im_mode='CHW',
+                        im_norm=input_normalization,
+                        im_means=self.FLAGS.scale_means,
+                        im_stds=self.FLAGS.scale_stds)
+      # img = np.swapaxes(img,1,2)
+      # img = np.swapaxes(img,0,1)
+      # scale_height = int(np.floor(img.shape[1]/self.model.input_size[1]))
+      # scale_width = int(np.floor(img.shape[2]/self.model.input_size[2]))
+      # img = img[:,::scale_height,::scale_width]
+      # img = sm.resize(img,self.model.input_size,mode='constant').astype(np.float16)
       return img
 
   def process_rgb_compressed(self, msg):
-    """ Convert RGB serial data to opencv image of correct size"""
+    """ [DEPRECATED] Convert RGB serial data to opencv image of correct size
+    """
     # if not self.ready or self.finished: return []
     try:
       img = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='passthrough')
@@ -258,13 +270,17 @@ class PilotNode(object):
     im = self.process_rgb(msg)
     if len(im)!=0: 
       # when features are concatenated, multiple images should be kept.
-      if 'nfc' in self.FLAGS.network: 
+      if 'nfc' in self.FLAGS.network or '3d' in self.FLAGS.network: 
         self.nfc_images.append(im)
         if len(self.nfc_images) < self.FLAGS.n_frames: return
         else:
           # concatenate last n-frames
-          im = np.concatenate(np.asarray(self.nfc_images[-self.FLAGS.n_frames:]),axis=2)
-          self.nfc_images = self.nfc_images[-self.FLAGS.n_frames+1:] # concatenate last n-1-frames
+          # im = np.concatenate(np.asarray(self.nfc_images[-self.FLAGS.n_frames:]),axis=2)
+          if '3d' in self.FLAGS.network:
+            im = np.concatenate(self.nfc_images, axis=0)
+          elif 'nfc' in self.FLAGS.network:
+            im = np.asarray(self.nfc_images)
+          self.nfc_images = self.nfc_images[-self.FLAGS.n_frames+1:] 
       if camera_type=='straight':
         self.process_input(im)
       else:

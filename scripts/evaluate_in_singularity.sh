@@ -11,9 +11,9 @@ roscd simulation_supervised/python
 # COMMAND
 
 # test data creation
-name="test_collect_esatv3"
-script_args="--z_pos 1 -w esatv3 --random_seed 512  --owr -ds --number_of_runs 10 --no_training --evaluate_every -1 --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
-pytorch_args="--pause_simulator --online --alpha 1 --tensorboard --turn_speed 0.8 --speed 0.8 --stochastic"
+# name="test_collect_esatv3"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512  --owr -ds --number_of_runs 10 --no_training --evaluate_every -1 --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
+# pytorch_args="--pause_simulator --online --alpha 1 --tensorboard --turn_speed 0.8 --speed 0.8 --stochastic"
 # dag_args="--number_of_recorders 1 --destination esatv3_expert --val_len 1 --test_len 1 --min_rgb 1000 --max_rgb 3000"
 # condor_args="--wall_time_rec $((10*60*60)) --rammem 7"
 
@@ -25,7 +25,15 @@ pytorch_args="--pause_simulator --online --alpha 1 --tensorboard --turn_speed 0.
 
 
 # EVALUATE MODEL
-# pytorch_args="--pause_simulator --learning_rate 0.1 --buffer_size 100 --batch_size 50 --gradient_steps 1 --online --alpha 1 --tensorboard --discrete --max_episodes 10000 --loss CrossEntropy --il_weight 1"
+
+# model=log_neural_architectures/tiny_nfc_net_3/1/seed_0
+model=log_neural_architectures/tiny_3d_net_3/1/seed_0
+# model=log_neural_architectures/tiny_net/esatv3_expert_200K/1/seed_0
+
+name="test_evaluate_model"
+script_args="--z_pos 1 -w esatv3 --random_seed 512 --owr --number_of_runs 2 --graphics --evaluation --python_project pytorch_pilot_beta/pilot"
+pytorch_args=" --online --tensorboard --turn_speed 0.8 --speed 0.8 --checkpoint_path $model  --load_config --continue_training"
+
 
 # TRAIN MODEL
 # pytorch_args="--pause_simulator --learning_rate 0.1 --buffer_size 100 --batch_size 50 --gradient_steps 1 --online --alpha 1 --tensorboard --discrete --max_episodes 10000 --loss CrossEntropy --il_weight 1"
