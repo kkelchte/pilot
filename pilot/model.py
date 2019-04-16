@@ -88,7 +88,7 @@ class Model(object):
       self.sess=tf.Session(graph=self.graph, config=config)
       
 
-    if not self.FLAGS.pretrained or self.FLAGS.continue_training: 
+    if not self.FLAGS.pretrained or self.FLAGS.continue_training:
       self.initialize_network()
 
 

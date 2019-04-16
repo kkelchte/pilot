@@ -279,14 +279,22 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   gradients=[0. for p in model.net.parameters()]
   stime=time.time()
 
-  # if len(model.input_size)
-
-
-  for img in input_images: #loop over input images
+  for img_index in range(len(input_images)): #loop over input images
+    print img_index
     # ensure no gradients are still in the network
     model.net.zero_grad()
+    # adjust input for nfc, 3dcnn, LSTM
+    # if '3d' in model.FLAGS.network:
+    #   imgs=input_images[img_index:img_index+model.FLAGS.n_frames]
+    #   img=np.concatenate(imgs, axis=0)
+    # elif 'nfc' in model.FLAGS.network:
+    #   img=np.asarray(input_images[img_index:img_index+model.FLAGS.n_frames])
+    # else:
+    img=input_images[img_index]
+    
+    img=np.expand_dims(img,0)
     # forward pass of one image through the network
-    y_pred=model.net(torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.float32).to(model.device))
+    y_pred=model.net(torch.from_numpy(img).type(torch.float32).to(model.device))
     # backward pass from the 2-norm of the output
     torch.norm(y_pred, 2, dim=1).backward()    
     for pindex, p in enumerate(model.net.parameters()):

@@ -30,4 +30,3 @@ class Net(nn.Module):
     outputs = self.network(x)
     if verbose: print outputs.size()
     return outputs
-
