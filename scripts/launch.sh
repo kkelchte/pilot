@@ -35,9 +35,53 @@
 
 #------------------------------------------------------------
 #
-# Direct condor_online job
+# jobs
 #
 #------------------------------------------------------------
+
+#--------------------------- REDO TINYv3
+
+for DS in 200K 100K 50K 20K 10K 5K 1K; do 
+# for DS in 200K ; do 
+  for LR in 1 ; do
+    name="tinyv3_net/esatv3_expert_$DS/$LR"
+    pytorch_args="--network tiny_net --checkpoint_path tinyv3_net_scratch --dataset esatv3_expert_$DS --discrete --turn_speed 0.8 --speed 0.8\
+  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --loss CrossEntropy --shifted_input --optimizer SGD --continue_training"
+    dag_args="--number_of_models 1"
+    condor_args="--wall_time_train $((100*1*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+    python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+  done
+done
+
+#--------------------------- REDO TINYNFC
+
+# for LR in 1 01 001 ; do
+#   name="tiny_nfc_net_1/$LR"
+#   pytorch_args="--weight_decay 0 --network tiny_nfc_net --n_frames 1 --continue_training --checkpoint_path tiny_nfc_net_1_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
+# for LR in 1 01 001 ; do
+#   name="tiny_nfc_net_3/$LR"
+#   pytorch_args="--weight_decay 0 --network tiny_nfc_net --n_frames 3 --continue_training --checkpoint_path tiny_nfc_net_3_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
+
+# for LR in 1 01 001 ; do
+#   name="tiny_nfc_net/$LR"
+#   pytorch_args="--weight_decay 0 --network tiny_nfc_net --n_frames 5 --continue_training --checkpoint_path tiny_nfc_net_3_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --loss CrossEntropy\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.$LR --shifted_input --optimizer SGD"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
+
+#--------------------------- CONDOR ONLINE
 
 # name="condor_one --wall_time $((60*30))"
 # condor_args="--not_nice"
@@ -45,7 +89,7 @@
 # pytorch_args="--pause_simulator --online --alpha 0.5 --buffer_size 1000 --tensorboard --discrete --max_episodes 4000 --loss CrossEntropy --il_weight 0.91"
 # python condor_online.py -t $name $condor_args $script_args $pytorch_args
 
-#--------------------------- TRAIN OFFLINE
+#--------------------------- DAG TRAIN OFFLINE
 
 
 #   name="alex_net/esatv3_expert_200K/normalized_output/$LR"
@@ -57,7 +101,7 @@
 #   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 # done
 
-#--------------------------- COLLECT DATASET
+#--------------------------- DAG COLLECT DATASET ONLINE
 
 # Collect data:
 # name="collect_esatv3_stochastic"
