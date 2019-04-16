@@ -25,6 +25,7 @@ class TinyNet(nn.Module):
     # an affine operation: y = Wx + b
     # in_features, out_features, bias=True
     self.classifier=nn.Sequential(
+        nn.Dropout(),
         nn.Linear(20*7*7, 512),
         nn.ReLU(inplace=True),
         nn.Linear(512, output_size, bias=False)
