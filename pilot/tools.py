@@ -118,7 +118,7 @@ def load_rgb(im_file="",im_object=[],im_size=[3,128,128], im_mode='CHW', im_norm
     img = im_object
   else:
     raise IOError("tools: load_rgb: no im_file or im_object provided.")
-    
+
   # for pytorch: swap channels from last to first dimension
   if im_mode != 'HWC':
     img = np.swapaxes(img,1,2)
@@ -278,6 +278,9 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   # collect importance / gradients in list
   gradients=[0. for p in model.net.parameters()]
   stime=time.time()
+
+  # if len(model.input_size)
+
 
   for img in input_images: #loop over input images
     # ensure no gradients are still in the network
