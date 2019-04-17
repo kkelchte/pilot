@@ -9,14 +9,14 @@ https://github.com/ikostrikov/pytorch-a3c/blob/master/model.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import tiny_net 
+import tinyv3_net as tiny_net
 
 class Net(nn.Module):
 
   def __init__(self, output_size = 10, pretrained=False, dropout=0, **kwargs):
     super(Net, self).__init__()
     feature_network = tiny_net.Net(pretrained=pretrained)
-    self.H=64
+    self.H=512
     self.L=2
     self.default_image_size=feature_network.default_image_size
     self.cnn = feature_network.network.features
@@ -25,7 +25,7 @@ class Net(nn.Module):
                       num_layers=self.L,
                       batch_first=True,
                       dropout=dropout)
-    self.linear = nn.Linear(self.H, output_size)
+    self.linear = nn.Linear(self.H, output_size, bias=False)
 
   def get_init_state(self,B):
     """
