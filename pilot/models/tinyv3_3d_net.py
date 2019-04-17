@@ -10,14 +10,14 @@ import torch.nn.functional as F
 
 class TinyNet(nn.Module):
 
-  def __init__(self, output_size=10):
+  def __init__(self, output_size=10, n_frames=5):
     super(TinyNet, self).__init__()
     # first define convolutional and linear operators
     # 1 input image channel, 6 output channels, 5x5 square convolution
     # kernel
     # in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True
     self.features=nn.Sequential(
-        nn.Conv2d(3, 10, 10, stride=4),
+        nn.Conv2d(3*n_frames, 10, 10, stride=4),
         nn.ReLU(inplace=True),
         nn.Conv2d(10, 20, 5, stride=4),
         nn.ReLU(inplace=True)
@@ -40,12 +40,12 @@ class TinyNet(nn.Module):
 
 class Net(nn.Module):
 
-  def __init__(self, output_size = 10, pretrained=False, **kwargs):
+  def __init__(self, output_size = 10, pretrained=False, n_frames=5, **kwargs):
     super(Net, self).__init__()
     if pretrained: raise NotImplementedError
-    self.default_image_size=[3,128,128]
-    self.default_feature_size=7*7*20
-    self.network=TinyNet(output_size=output_size)
+    self.default_image_size=[n_frames*3,128,128]
+    self.default_feature_size=20*7*7
+    self.network=TinyNet(output_size=output_size, n_frames=n_frames)
 
     
   def forward(self, x, train=False, verbose=False):
