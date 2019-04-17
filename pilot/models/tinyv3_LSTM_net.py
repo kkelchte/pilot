@@ -25,7 +25,7 @@ class Net(nn.Module):
                       num_layers=self.L,
                       batch_first=True,
                       dropout=dropout)
-    self.linear = nn.Linear(self.H, output_size)
+    self.linear = nn.Linear(self.H, output_size, bias=False)
 
   def get_init_state(self,B):
     """

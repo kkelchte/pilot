@@ -243,6 +243,9 @@ for tag in sorted(FLAGS.tags):
       # plt.ylabel('Accuracy')
       plt.ylim((0.5,1))
       # plt.ylim((0.7,1))
+    
+    plt.ylim((0.,0.5))
+
     plt.legend(handles=legend)
     if FLAGS.mother_dir!='':
       fig_name=log_root+FLAGS.mother_dir+'/'+tag+'.jpg'  
