@@ -200,7 +200,8 @@ def get_hidden_state(input_images, model, device='cpu'):
   EXTENSION: add device option...
   """
   import torch
-  device = torch.device("cuda:0" if torch.cuda.is_available() and device=='gpu' else "cpu")
+  # device = torch.device("cuda:0" if torch.cuda.is_available() and device=='gpu' else "cpu")
+  device = torch.device("cuda:0")
   if not model.net.rnn: raise(ValueError("Network does not contain rnn part."))
   # move model to device:
   # stime=time.time()
@@ -212,10 +213,10 @@ def get_hidden_state(input_images, model, device='cpu'):
   #           (h_t.to(device), c_t.to(device)))
   #   outputs, (h_t, c_t)=model.net.forward(inputs)
   if len(input_images) != 0:
-    model.net.to(device)
+    # model.net.to(device)
     inputs=(torch.from_numpy(np.expand_dims(input_images,0)).type(torch.FloatTensor).to(device),(h_t.to(device), c_t.to(device)))
     outputs, (h_t,c_t) = model.net.forward(inputs)
-    model.net.to(model.device)
+    # model.net.to(model.device)
   
   return (h_t.detach().cpu(), c_t.detach().cpu())
 
