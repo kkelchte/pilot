@@ -16,7 +16,7 @@ class Net(nn.Module):
   def __init__(self, output_size=10, pretrained=False, n_frames=5, **kwargs):
     super(Net, self).__init__()
     feature_network = tinyv3_net.Net(pretrained=pretrained)
-    self.H=1024
+    self.H=512
     self.n_frames=n_frames
     self.default_feature_size=self.n_frames*feature_network.default_feature_size
     self.default_image_size=feature_network.default_image_size
