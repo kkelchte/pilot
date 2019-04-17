@@ -278,25 +278,41 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   # collect importance / gradients in list
   gradients=[0. for p in model.net.parameters()]
   stime=time.time()
-
-  for img_index in range(len(input_images)): #loop over input images
-    print img_index
+  hidden_states=()
+  model.net.zero_grad()
+  for img_index in range(len(input_images)-model.FLAGS.n_frames): #loop over input images
+    if img_index%100==0: print img_index
     # ensure no gradients are still in the network
-    model.net.zero_grad()
+    if not 'LSTM' in model.FLAGS.network:
+      model.net.zero_grad()
     # adjust input for nfc, 3dcnn, LSTM
-    # if '3d' in model.FLAGS.network:
-    #   imgs=input_images[img_index:img_index+model.FLAGS.n_frames]
-    #   img=np.concatenate(imgs, axis=0)
-    # elif 'nfc' in model.FLAGS.network:
-    #   img=np.asarray(input_images[img_index:img_index+model.FLAGS.n_frames])
-    # else:
-    img=input_images[img_index]
+    if '3d' in model.FLAGS.network:
+      imgs=input_images[img_index:img_index+model.FLAGS.n_frames]
+      img=np.concatenate(imgs, axis=0)
+    elif 'nfc' in model.FLAGS.network:
+      img=np.asarray(input_images[img_index:img_index+model.FLAGS.n_frames])
+    elif 'LSTM' in model.FLAGS.network:
+      img=np.asarray(input_images[img_index:img_index+1])
+    else:
+      img=input_images[img_index]
     
     img=np.expand_dims(img,0)
-    # forward pass of one image through the network
-    y_pred=model.net(torch.from_numpy(img).type(torch.float32).to(model.device))
-    # backward pass from the 2-norm of the output
-    torch.norm(y_pred, 2, dim=1).backward()    
+    inputs=torch.from_numpy(img).type(torch.float32).to(model.device)
+
+    if not 'LSTM' in model.FLAGS.network:
+      # forward pass of one image through the network
+      y_pred=model.net(inputs)
+      # backward pass from the 2-norm of the output
+      torch.norm(y_pred, 2, dim=1).backward()    
+    else:
+      if len(hidden_states) != 0:
+        h_t, c_t = (hidden_states[0],hidden_states[1])
+      else:
+        h_t, c_t = get_hidden_state([],model) 
+      inputs=(inputs,(h_t.to(model.device),c_t.to(model.device)))
+      y_pred, hidden_states=model.net(inputs)
+      torch.norm(y_pred, 2, dim=-1).backward(retain_graph=True)    
+    
     for pindex, p in enumerate(model.net.parameters()):
       try:
         g=p.grad.data.clone().detach().cpu().numpy()

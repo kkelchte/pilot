@@ -499,20 +499,18 @@ def get_all_inputs(data_type):
       inputs.extend(run['imgs'])
     else:
       for frame_ind in run['num_imgs']:
-        img_file = join(run['name'],'RGB', '{0:010d}.jpg'.format(frame_ind))
-        img = sio.imread(img_file)
-        img = np.swapaxes(img,1,2)
-        img = np.swapaxes(img,0,1)
-        scale_height = int(np.floor(img.shape[1]/im_size[1]))
-        scale_width = int(np.floor(img.shape[2]/im_size[2]))
-        img = img[::scale_height,::scale_width]
-        img = sm.resize(img,im_size,mode='constant').astype(np.float16) #.astype(np.float32)
         if FLAGS.shifted_input:
-          img -= 0.5
+          input_normalization='shifted'
         elif FLAGS.scaled_input:
-          for i in range(3): 
-            img[i,:,:]-=FLAGS.scale_means[i]
-            img[i,:,:]/=FLAGS.scale_stds[i]
+          input_normalization='scaled'
+        else:
+          input_normalization='none'
+        img = tools.load_rgb(im_file=join(run['name'],'RGB', '{0:010d}.jpg'.format(frame_ind)), 
+                        im_size=im_size, 
+                        im_mode='CHW',
+                        im_norm=input_normalization,
+                        im_means=FLAGS.scale_means,
+                        im_stds=FLAGS.scale_stds)
         inputs.append(img)
   return inputs
 
