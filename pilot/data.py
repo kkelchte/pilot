@@ -164,6 +164,8 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist):
             input_normalization='shifted'
           elif FLAGS.scaled_input:
             input_normalization='scaled'
+          elif FLAGS.skew_input:
+            input_normalization='skewinput'
           else:
             input_normalization='none'
           img = tools.load_rgb(im_file=join(run_dir,'RGB', '{0:010d}.jpg'.format(num)), 
@@ -358,6 +360,8 @@ def generate_batch(data_type):
                 input_normalization='shifted'
               elif FLAGS.scaled_input:
                 input_normalization='scaled'
+              elif FLAGS.skew_input:
+                input_normalization='skewinput'
               else:
                 input_normalization='none'
               img = tools.load_rgb(im_file=img_file, 

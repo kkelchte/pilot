@@ -57,7 +57,7 @@ def run_episode(mode, sumvar, model):
       else:
         inputs = np.array([_['img'] for _ in batch])
       targets = np.array([_['ctr'] for _ in batch])
-
+        
       if mode=='train':
         epoch, predictions, losses, hidden_states = model.train(inputs, targets)
         for k in losses.keys(): tools.save_append(results, k, losses[k])
