@@ -82,7 +82,7 @@ def main(_):
   parser.add_argument("--device", default='gpu', type=str, help= "Choose to run on gpu or cpu: /cpu:0 or /gpu:0")
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--owr", action='store_true', help="Overwrite existing logfolder when it is not testing.")
-  parser.add_argument("--action_bound", default=1.0, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
+  parser.add_argument("--action_bound", default=0.9, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
   parser.add_argument("--action_dim", default=1.0, type=float, help= "Define the dimension of the actions: 1dimensional as it only turns in yaw.")
   parser.add_argument("--real", action='store_true', help="Define settings in case of interacting with the real (bebop) drone.")
   parser.add_argument("--evaluate", action='store_true', help="Just evaluate the network without training.")
@@ -108,6 +108,7 @@ def main(_):
   parser.add_argument('--scale_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
   parser.add_argument("--time_length", default=10, type=int, help="In case of LSTM network, how long in time is network unrolled for training.")
   parser.add_argument("--sliding_tbptt", action='store_true', help="In case of LSTM network, slide over batches of data rather than sample randomly.")
+  parser.add_argument("--accum_grads", action='store_true', help="In case of sliding tbptt, accumulate gradients till a full run is passed to stabilize.")
   parser.add_argument("--sliding_step_size", default=1, type=int, help="In case of LSTM network and sliding_tbptt, define the time steps between two consecutive training batches.")
   
 
@@ -120,7 +121,7 @@ def main(_):
   parser.add_argument("--pretrained", action='store_true',help="Specify whether the network should be loaded with imagenet pretrained features.")
   parser.add_argument("--feature_extract", action='store_true',help="In case of feature extract, the model feature extraction part of the network won't be trained.")
   # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
-  parser.add_argument("--n_frames",default=5,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
+  parser.add_argument("--n_frames",default=2,type=int,help="Specify the amount of frames concatenated in case of n_fc  or 3D-CNN.")
   parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")

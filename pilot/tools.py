@@ -215,6 +215,8 @@ def get_hidden_state(input_images, model, device='cpu'):
   #   inputs=(torch.from_numpy(np.expand_dims(np.expand_dims(input_images[index],0),0)).type(torch.FloatTensor).to(device), 
   #           (h_t.to(device), c_t.to(device)))
   #   outputs, (h_t, c_t)=model.net.forward(inputs)
+  # print input_images.shape
+  # import pdb; pdb.set_trace()
   if len(input_images) != 0:
     # model.net.to(device)
     inputs=(torch.from_numpy(np.expand_dims(input_images,0)).type(torch.FloatTensor).to(device),(h_t.to(device), c_t.to(device)))

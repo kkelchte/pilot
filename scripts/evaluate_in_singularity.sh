@@ -1,10 +1,10 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-source .entrypoint_graph
+# source .entrypoint_graph
 # source .entrypoint_graph_debug
 # source .entrypoint_xpra
-# source .entrypoint_xpra_no_build
+source .entrypoint_xpra_no_build
 roscd simulation_supervised/python
 
 #############
@@ -27,11 +27,25 @@ roscd simulation_supervised/python
 # EVALUATE MODEL
 
 # model=log_neural_architectures/tiny_nfc_net_3/1/seed_0
-model=log_neural_architectures/tiny_3d_net_3/1/seed_0
+# model=log_neural_architectures/tiny_3d_net_3/1/seed_0
 # model=log_neural_architectures/tiny_net/esatv3_expert_200K/1/seed_0
+# model=log_neural_architectures/alex_net/esatv3_expert_200K/normalized_output/1/seed_0
 
-name="test_evaluate_model"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --owr --number_of_runs 2 --graphics --evaluation --python_project pytorch_pilot_beta/pilot"
+
+
+model="discrete_continuous/tinyv3_continuous/seed_0"
+name="test_evaluate_continuous_output"
+# model=discrete_continuous/tinyv3_MSE/seed_0
+# name="test_evaluate_discrete_output"
+
+# REDO 
+# model=log_neural_architectures/alex_net/esatv3_expert_200K/shifted_input/1/seed_0
+# name="evaluate_shifted_input"
+# model=log_neural_architectures/alex_net/esatv3_expert_200K/normalized_output/1/seed_0
+# name="evaluate_normalized_output"
+
+
+script_args="--z_pos 1 -w esatv3 --random_seed 512 --owr --number_of_runs 10 --graphics --evaluation --python_project pytorch_pilot_beta/pilot"
 pytorch_args=" --online --tensorboard --turn_speed 0.8 --speed 0.8 --checkpoint_path $model  --load_config --continue_training"
 
 

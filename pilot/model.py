@@ -268,7 +268,8 @@ class Model(object):
     # assert (len(targets.shape) == 2 and targets.shape[0] ==inputs.shape[0]), "targets shape: {0} instead of {1}".format(targets.shape, inputs.shape[0])
 
     # Ensure gradient buffers are zero
-    self.optimizer.zero_grad()
+    if not self.FLAGS.accum_grads: # in case of gradient accumulation over different batches, don't zero the gradients
+      self.optimizer.zero_grad()
 
     losses={'total':0}
     if not isinstance(inputs, tuple):
@@ -316,12 +317,13 @@ class Model(object):
     
     # stime=time.time()
     sum_loss=torch.sum(losses['total'])
-    sum_loss.backward() # fill gradient buffers with the gradient according to this loss
+    sum_loss.backward(retain_graph=True) # fill gradient buffers with the gradient according to this loss
     # print("backward time: ", time.time()-stime)
     torch.nn.utils.clip_grad_norm_(self.net.parameters(), self.FLAGS.clip)
 
-    self.optimizer.step() # apply what is in the gradient buffers to the parameters
-    self.epoch+=1
+    if not self.FLAGS.accum_grads:
+      self.optimizer.step() # apply what is in the gradient buffers to the parameters
+      self.epoch+=1
 
     predictions_list=predictions.cpu().detach().numpy()
     if self.FLAGS.discrete: predictions_list = self.bins_to_continuous(np.argmax(predictions_list, 1))

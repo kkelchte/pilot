@@ -30,6 +30,10 @@ def run_episode(mode, sumvar, model):
   
   hidden_states=()
 
+  # manual set zero grads in case of gradient accumulation with slidingtbptt
+  if FLAGS.accum_grads:
+    model.optimizer.zero_grad()
+
   for index, ok, batch in data.generate_batch(mode):
     data_loading_time+=(time.time()-start_data_time)
     start_calc_time=time.time()
@@ -57,7 +61,7 @@ def run_episode(mode, sumvar, model):
       else:
         inputs = np.array([_['img'] for _ in batch])
       targets = np.array([_['ctr'] for _ in batch])
-        
+      
       if mode=='train':
         epoch, predictions, losses, hidden_states = model.train(inputs, targets)
         for k in losses.keys(): tools.save_append(results, k, losses[k])
@@ -68,6 +72,11 @@ def run_episode(mode, sumvar, model):
       print('Failed to run {}.'.format(mode))
     calculation_time+=(time.time()-start_calc_time)
     start_data_time = time.time()
+
+  if FLAGS.accum_grads:
+    model.optimizer.step()
+    model.epoch+=1
+
 
   for k in results.keys():
     if len(results[k])!=0: sumvar[mode+'_'+k]=np.mean(results[k]) 
@@ -102,7 +111,7 @@ def run(_FLAGS, model):
     # import pdb; pdb.set_trace()
     
     # if FBPTT: don't validate after each training step:
-    if 'LSTM' in FLAGS.network and FLAGS.time_length==-1 and model.epoch%100 != 0:
+    if 'LSTM' in FLAGS.network and (FLAGS.time_length==-1 or FLAGS.accum_grads) and model.epoch%10 != 0:
       continue
 
     # ----------- validate episode
