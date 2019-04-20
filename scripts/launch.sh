@@ -43,7 +43,7 @@
 # LSTM
 # F-LSTM
 for LR in 1 01 ; do
-  name="tinyv3_3D_LSTM_net/fbptt/clip/$LR"
+  name="tinyv3_3D_LSTM_net/fbptt/$LR"
   pytorch_args="--network tiny_3d_LSTM_net --n_frames 2 --checkpoint_path tiny_3d_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
    --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --time_length -1 --subsample 10 --load_data_in_ram"
   dag_args="--number_of_models 1"
@@ -51,7 +51,7 @@ for LR in 1 01 ; do
   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 done
 for LR in 1 01 ; do
-  name="tinyv3_3D_LSTM_net/sbptt/clip/$LR"
+  name="tinyv3_3D_LSTM_net/sbptt/$LR"
   pytorch_args="--network tiny_3d_LSTM_net --n_frames 2 --checkpoint_path tiny_3d_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
    --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --time_length 20 --subsample 10 --load_data_in_ram --sliding_tbptt"
   dag_args="--number_of_models 1"
@@ -59,13 +59,33 @@ for LR in 1 01 ; do
   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 done
 for LR in 1 01 ; do
-  name="tinyv3_3D_LSTM_net/wbptt/clip/$LR"
+  name="tinyv3_3D_LSTM_net/wbptt/$LR"
   pytorch_args="--network tiny_3d_LSTM_net --n_frames 2 --checkpoint_path tiny_3d_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
    --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --time_length 20 --subsample 10 --load_data_in_ram"
   dag_args="--number_of_models 1"
   condor_args="--wall_time_train $((30*3600)) --rammem 7 --gpumem 1900"
   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 done
+
+# REFERENCE
+name="tinyv3_LSTM_net_reference/fbptt"
+pytorch_args="--network tinyv3_LSTM_net --checkpoint_path tinyv3_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+ --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.1 --loss CrossEntropy --shifted_input --optimizer SGD --time_length -1 --subsample 10 --load_data_in_ram"
+dag_args="--number_of_models 1"
+condor_args="--wall_time_train $((24*3600)) --rammem 7 --gpumem 1800"
+python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+name="tinyv3_LSTM_net_reference/sbptt"
+pytorch_args="--network tinyv3_LSTM_net --checkpoint_path tinyv3_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+ --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.1 --loss CrossEntropy --shifted_input --optimizer SGD --time_length 20 --subsample 10 --load_data_in_ram --sliding_tbptt"
+dag_args="--number_of_models 1"
+condor_args="--wall_time_train $((24*3600)) --rammem 7 --gpumem 1800"
+python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+name="tinyv3_LSTM_net_reference/wbptt"
+pytorch_args="--network tinyv3_LSTM_net --checkpoint_path tinyv3_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+ --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.1 --loss CrossEntropy --shifted_input --optimizer SGD --time_length 20 --subsample 10 --load_data_in_ram"
+dag_args="--number_of_models 1"
+condor_args="--wall_time_train $((24*3600)) --rammem 7 --gpumem 1800"
+python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 
 
 #--------------------------- REDO 

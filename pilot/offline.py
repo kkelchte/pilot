@@ -111,7 +111,7 @@ def run(_FLAGS, model):
     # import pdb; pdb.set_trace()
     
     # if FBPTT: don't validate after each training step:
-    if 'LSTM' in FLAGS.network and (FLAGS.time_length==-1 or FLAGS.accum_grads) and model.epoch%10 != 0:
+    if 'LSTM' in FLAGS.network and (FLAGS.time_length==-1 or FLAGS.accum_grads) and model.epoch%100 != 0:
       continue
 
     # ----------- validate episode
