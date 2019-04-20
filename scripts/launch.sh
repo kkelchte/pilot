@@ -40,8 +40,17 @@
 #------------------------------------------------------------
 
 
+
 # LSTM
 # F-LSTM
+for LR in 1 01 ; do
+  name="tinyv3_3D_LSTM_net/ref_3D/$LR"
+  pytorch_args="--network tinyv3_3d_net --n_frames 2 --checkpoint_path tinyv3_3d_net_2_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+   --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --subsample 10 --load_data_in_ram"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((30*3600)) --rammem 7 --gpumem 1900"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
 for LR in 1 01 ; do
   name="tinyv3_3D_LSTM_net/fbptt/$LR"
   pytorch_args="--network tiny_3d_LSTM_net --n_frames 2 --checkpoint_path tiny_3d_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
@@ -61,6 +70,14 @@ done
 for LR in 1 01 ; do
   name="tinyv3_3D_LSTM_net/wbptt/$LR"
   pytorch_args="--network tiny_3d_LSTM_net --n_frames 2 --checkpoint_path tiny_3d_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+   --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --time_length 20 --subsample 10 --load_data_in_ram"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((30*3600)) --rammem 7 --gpumem 1900"
+  python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+done
+for LR in 1 01 ; do
+  name="tinyv3_3D_LSTM_net/sbptt_gradaccum/$LR"
+  pytorch_args="--network tiny_3d_LSTM_net  --n_frames 2 --checkpoint_path tiny_3d_LSTM_net_scratch --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
    --tensorboard --max_episodes 30000 --batch_size 5 --learning_rate 0.$LR --loss MSE --shifted_input --optimizer SGD --time_length 20 --subsample 10 --load_data_in_ram"
   dag_args="--number_of_models 1"
   condor_args="--wall_time_train $((30*3600)) --rammem 7 --gpumem 1900"
