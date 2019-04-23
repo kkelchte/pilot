@@ -116,7 +116,6 @@ if len(FLAGS.log_folders)==0:
       log_folders.append(root)
   log_folders=sorted(log_folders)
   # log_folders=sorted([d[0] for d in os.walk(log_root+FLAGS.mother_dir) if not os.path.basename(d[0]).startswith('.') and ('tf_log' in os.listdir(d[0]) or ('nn_ready' in os.listdir(d[0]) and 'fsm_log' in os.listdir(d[0])))])
-
 elif sum([os.path.isfile(f+'/tf_log') for f in log_folders]) != len(log_folders):
   log_folders=[d[0] for folder in FLAGS.log_folders for d in os.walk(log_root+folder) if 'tf_log' in os.listdir(d[0]) or ('nn_ready' in os.listdir(d[0]) and 'fsm_log' in os.listdir(d[0]))]
 
@@ -212,6 +211,7 @@ for tag in sorted(FLAGS.tags):
   legend=[]
   all_fail=True
   for folder_index,l in enumerate(log_folders): #loop over log_folders
+    print l
     try:
       # color=(1.-(folder_index+0.)/len(log_folders), 0.1, (folder_index+0.)/len(log_folders))
       color=colors[folder_index%len(colors)]

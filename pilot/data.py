@@ -404,24 +404,19 @@ def generate_batch(data_type):
                 if not '3d' in FLAGS.network:
                   im, de = load_rgb_depth_image(run_ind, frame_ind+frame)
                 else:
-                  ims=[] #concatenate n_frames
-                  for nframe in range(FLAGS.n_frames):
-                    image, de = load_rgb_depth_image(run_ind, frame_ind+nframe)
-                    ims.append(image)
-                  im = np.concatenate(ims, axis=0)
+                  im = np.concatenate([load_rgb_depth_image(run_ind, frame_ind+nframe+frame)[0] for nframe in range(FLAGS.n_frames)], axis=0)
                 imgs.append(im)
               sample_dict['img']=np.asarray(imgs)
-              sample_dict['depth']=de
+              sample_dict['depth']=[]
               # load previous images for retrieving cell states
-              prev_imgs=[]
-              if not FLAGS.sliding_tbptt:
-                for frame in data_set[run_ind]['num_imgs']:
-                  if frame >=frame_ind: break
-                  im, de = load_rgb_depth_image(run_ind, frame)
-                  prev_imgs.append(im)
-              prev_imgs=np.asarray(prev_imgs)
-              # print(prev_imgs.shape)
-              sample_dict['prev_imgs']=prev_imgs
+              sample_dict['prev_imgs']=[]
+              if not FLAGS.sliding_tbptt and not FLAGS.only_init_state:
+                if '3d' in FLAGS.network:
+                  sample_dict['prev_imgs']=np.asarray([np.concatenate([load_rgb_depth_image(run_ind, nframe+frame)[0] for nframe in range(FLAGS.n_frames)], axis=0) for frame in range(0,frame_ind,FLAGS.init_state_subsample)])
+                else:
+                  sample_dict['prev_imgs']=np.asarray([load_rgb_depth_image(run_ind, frame)[0] for frame in range(0,frame_ind,FLAGS.init_state_subsample)])
+              # sample_dict['prev_imgs']=prev_imgs
+              
               # load control
               if not '3d' in FLAGS.network:
                 sample_dict['ctr']=np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length] if FLAGS.time_length != -1 else data_set[run_ind]['controls'][frame_ind:minimum_run_dir_length])
@@ -469,7 +464,7 @@ def generate_batch(data_type):
             else:
               batch_data['img'] = np.asarray(data_set[run_ind]['imgs'][frame_ind:frame_ind+FLAGS.time_length])
               batch_data['ctr'] = np.expand_dims(np.asarray(data_set[run_ind]['controls'][frame_ind:frame_ind+FLAGS.time_length]),axis=-1)
-            batch_data['prev_imgs'] = np.asarray(data_set[run_ind]['imgs'][:frame_ind]) if not FLAGS.sliding_tbptt and FLAGS.time_length != -1 else []
+            batch_data['prev_imgs'] = np.asarray(data_set[run_ind]['imgs'][0:frame_ind:FLAGS.init_state_subsample]) if not FLAGS.sliding_tbptt and FLAGS.time_length != -1 and not FLAGS.only_init_state else []
             # batch_data['depth'] = np.asarray(data_set[run_ind]['depths'][frame_ind:frame_ind+FLAGS.time_length])
             batch_data['depth']=[]
           else:
@@ -479,7 +474,7 @@ def generate_batch(data_type):
             # batch_data['img']=np.asarray(imgs)
             batch_data['img']=np.asarray([np.concatenate([data_set[run_ind]['imgs'][frame_ind+frame+nframe] for nframe in range(FLAGS.n_frames)], axis=0) for frame in range(FLAGS.time_length if FLAGS.time_length != -1 else minimum_run_dir_length)])
             batch_data['ctr']=np.expand_dims(np.asarray(data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1:frame_ind+FLAGS.n_frames-1+FLAGS.time_length] if FLAGS.time_length != -1 else data_set[run_ind]['controls'][frame_ind+FLAGS.n_frames-1:minimum_run_dir_length+FLAGS.n_frames-1]),axis=-1)
-            batch_data['prev_imgs'] = np.asarray([np.concatenate([data_set[run_ind]['imgs'][frame+nframe] for nframe in range(FLAGS.n_frames)],axis=0) for frame in range(frame_ind)]) if not FLAGS.sliding_tbptt and FLAGS.time_length != -1 else []
+            batch_data['prev_imgs'] = np.asarray([np.concatenate([data_set[run_ind]['imgs'][frame+nframe] for nframe in range(FLAGS.n_frames)], axis=0) for frame in range(0,frame_ind,FLAGS.init_state_subsample)]) if not FLAGS.sliding_tbptt and FLAGS.time_length != -1 and not FLAGS.only_init_state else []
             batch_data['depth']=[]
           # append rgb image, control and depth to batch. Use scan if it is loaded, else depth
           batch.append(batch_data)

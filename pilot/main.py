@@ -110,6 +110,8 @@ def main(_):
   parser.add_argument("--sliding_tbptt", action='store_true', help="In case of LSTM network, slide over batches of data rather than sample randomly.")
   parser.add_argument("--accum_grads", action='store_true', help="In case of sliding tbptt, accumulate gradients till a full run is passed to stabilize.")
   parser.add_argument("--sliding_step_size", default=1, type=int, help="In case of LSTM network and sliding_tbptt, define the time steps between two consecutive training batches.")
+  parser.add_argument("--init_state_subsample", default=1, type=int, help="Calculate init state on subsampled data sequence.")
+  parser.add_argument("--only_init_state", action='store_true', help="Don't calculate the cell state by each time window applying the init state.")
   
 
   # ===========================
