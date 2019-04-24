@@ -82,6 +82,9 @@ class PilotNode(object):
     self.img_index = 0
     self.fsm_index = 0
 
+    if 'LSTM' in self.FLAGS.network:
+      self.hidden_states=self.tools.get_hidden_state([], self.model)
+
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
       if 'compressed' in image_topic:
@@ -361,8 +364,7 @@ class PilotNode(object):
     # Pause Gazebo
     if self.FLAGS.pause_simulator and self.ready:
       # print("[rosinterface] {0} pause simulator".format(time.strftime('%H:%M')))
-      self.pause_physics_client(EmptyRequest())
-        
+      self.pause_physics_client(EmptyRequest())  
 
     # keep track of pausing duration
     pause_start = time.time()
@@ -379,7 +381,12 @@ class PilotNode(object):
     # Evaluate the input in your network
     trgt=np.array([[self.target_control[5]]]) if len(self.target_control) != 0 else []
     trgt_depth = np.array([copy.deepcopy(self.target_depth)]) if len(self.target_depth) !=0 and self.FLAGS.auxiliary_depth else []
-    control, _, _ = self.model.predict(np.array([im]))
+    
+    inputs=np.array([im])
+    if 'LSTM' in self.FLAGS.network:
+      h_t, c_t = (torch.from_numpy(self.hidden_states[0]),torch.from_numpy(self.hidden_states[1]))
+      inputs=(torch.from_numpy(inputs).type(torch.FloatTensor).to(model.device),(h_t.to(model.device),c_t.to(model.device)))
+    control, _, self.hidden_states = self.model.predict(inputs)
     
     ### SEND CONTROL
     control = control[0]
@@ -618,6 +625,10 @@ class PilotNode(object):
     self.driving_duration=-1
     self.img_index=0    
     self.fsm_index = 0
+
+    if 'LSTM' in self.FLAGS.network:
+      self.hidden_states=tools.get_hidden_state([], self.model)
+
 
     # if self.FLAGS.empty_buffer: self.replay_buffer.clear()    
 

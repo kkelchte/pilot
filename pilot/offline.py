@@ -41,6 +41,7 @@ def run_episode(mode, sumvar, model):
       if len(batch[0]['img'].shape) > 3 and 'LSTM' in FLAGS.network:
         if len(hidden_states) != 0 and FLAGS.sliding_tbptt:
           h_t, c_t = (torch.from_numpy(hidden_states[0]),torch.from_numpy(hidden_states[1]))
+          # print h_t, c_t
         else:
           stime=time.time()
           # for each sample in batch h_t is LxH --> has to become LxBxH
@@ -56,7 +57,6 @@ def run_episode(mode, sumvar, model):
         inputs = np.array([_['img'] for _ in batch])
         if inputs.shape[0] != h_t.size()[1]:
           print("offline.py: h_t {0} and inputs {1} dont fit: ".format(h_t.size(),inputs.shape))
-          # import pdb; pdb.set_trace()
         inputs=(torch.from_numpy(inputs).type(torch.FloatTensor).to(model.device),(h_t.to(model.device),c_t.to(model.device)))
       else:
         inputs = np.array([_['img'] for _ in batch])
@@ -99,8 +99,6 @@ def run(_FLAGS, model):
   epoch=model.epoch
 
   while epoch<FLAGS.max_episodes and not FLAGS.testing:
-    # ep+=1
-
     print('\n {0} : start episode: {1}'.format(FLAGS.log_tag, epoch))
 
     debug=False
@@ -108,7 +106,6 @@ def run(_FLAGS, model):
     # ----------- train episode: update importance weights on training data
     # sumvar = run_episode('train', {}, model, ep==FLAGS.max_episodes-1 and FLAGS.update_importance_weights)    
     if not debug: sumvar = run_episode('train', {}, model)    
-    # import pdb; pdb.set_trace()
     
     # if FBPTT: don't validate after each training step:
     if 'LSTM' in FLAGS.network and (FLAGS.time_length==-1 or FLAGS.accum_grads) and model.epoch%100 != 0:
@@ -150,7 +147,18 @@ def run(_FLAGS, model):
 
   if FLAGS.max_episodes != 0:
     # ------------ test
+    if 'LSTM' in FLAGS.network:
+      time_length=FLAGS.time_length
+      sliding_step_size=FLAGS.sliding_step_size
+      sliding_tbptt=FLAGS.sliding_tbptt
+      FLAGS.time_length=1
+      FLAGS.sliding_step_size=1
+      FLAGS.sliding_tbptt=True
     sumvar = run_episode('test', {}, model)  
+    if 'LSTM' in FLAGS.network:
+      FLAGS.time_length=time_length
+      FLAGS.sliding_step_size=sliding_step_size
+      FLAGS.sliding_tbptt=sliding_tbptt
     # ----------- write summary
     tags_not_to_print=[]
     msg="final test run : {0}".format(epoch)

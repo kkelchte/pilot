@@ -40,11 +40,12 @@ def clean_values(x,y, cutend=-1):
   Return clean x and y without doubles.
   """
   # cut end:
+  shortest_list=x if len(x) < len(y) else y
   if cutend != -1:
     new_x=[]
     new_y=[]
-    for i,v in enumerate(x):
-      if v<cutend:
+    for i in range(len(shortest_list)):
+      if x[i]<cutend:
         new_x.append(x[i])
         new_y.append(y[i])
   else:
@@ -54,14 +55,16 @@ def clean_values(x,y, cutend=-1):
   clean_x=[]
   x=list(reversed(new_x))
   y=list(reversed(new_y))
+  shortest_list=x if len(x) < len(y) else y
   previous_x=999999999
-  for i,v in enumerate(x):
-      if v<previous_x:
-          clean_x.append(v)
-          clean_y.append(y[i])
-          previous_x=v
-      # else:
-      #     print("ignore {}".format(v))
+  # for i,v in enumerate(x):
+  for i in range(len(shortest_list)):
+    if x[i]<previous_x:
+        clean_x.append(x[i])
+        clean_y.append(y[i])
+        previous_x=x[i]
+    # else:
+    #     print("ignore {}".format(v))
   return list(reversed(clean_x)), list(reversed(clean_y))
 
 
@@ -215,18 +218,17 @@ for tag in sorted(FLAGS.tags):
     try:
       # color=(1.-(folder_index+0.)/len(log_folders), 0.1, (folder_index+0.)/len(log_folders))
       color=colors[folder_index%len(colors)]
-      
-      if 'run' in results[l].keys():
-        x,y=clean_values(list(results[l]['run']),list(results[l][tag]), cutend=FLAGS.cutend)
-        plt.plot(x[::FLAGS.subsample],y[::FLAGS.subsample],color=color,linewidth=1)
-      else:
-        # plt.plot(range(len(results[l][key])),results[l][key],color=color)
-        plt.plot(range(len(results[l][tag][:FLAGS.cutend]))[::FLAGS.subsample],results[l][tag][:FLAGS.cutend][::FLAGS.subsample],color=color)
       if len(FLAGS.legend_names) == len(log_folders):
         label=FLAGS.legend_names[folder_index]
       else:
         label=os.path.basename(l)
       legend.append(mpatches.Patch(color=color, label=label.replace('_', ' ')))
+      if 'run' in results[l].keys():
+        x,y=clean_values(list(results[l]['run']),list(results[l][tag]), cutend=FLAGS.cutend)
+        plt.plot(x[::FLAGS.subsample],y[::FLAGS.subsample],color=color,linewidth=1, linestyle='--' if label=='ref' else '-')
+      else:
+        # plt.plot(range(len(results[l][key])),results[l][key],color=color)
+        plt.plot(range(len(results[l][tag][:FLAGS.cutend]))[::FLAGS.subsample],results[l][tag][:FLAGS.cutend][::FLAGS.subsample],color=color)
       if len(results[l][tag][:FLAGS.cutend]) > 2 and type(results[l][tag][0]) == float: 
         all_fail=False # in case all models have only 2 values or no float values don't show
     except Exception as e:

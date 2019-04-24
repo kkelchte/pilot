@@ -228,6 +228,11 @@ class Model(object):
     if not isinstance(inputs, tuple):
       inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
     
+    # if isinstance(inputs, tuple):
+    #   import pdb; pdb.set_trace()
+    #   print "max h: {0}, min h: {1}".format(np.amax(inputs[1][0]),np.ammin(inputs[1][1]))
+    #   print "max h: ",np.amax(inputs[1][0])
+
     predictions = self.net.forward(inputs, train=False)
     hidden_states=()
     if isinstance(predictions,tuple):
