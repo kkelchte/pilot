@@ -430,9 +430,6 @@ class PilotNode(object):
     else:
       raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
     
-    if self.FLAGS.stochastic:
-      msg.angular.z = np.random.normal(action, scale=0.5)
-
     if np.abs(msg.angular.z) > 0.3: 
       msg.linear.x =  self.FLAGS.turn_speed
       # if np.abs(msg.angular.z) > 0.3 and self.FLAGS.break_and_turn: 

@@ -257,10 +257,17 @@ class Model(object):
       if self.FLAGS.discrete: losses['accuracy'] =  self.accuracy(predictions,targets)
       
 
+    if self.FLAGS.discrete:
+      if self.FLAGS.stochastic:
+        predictions=torch.distributions.Categorical(self.softmax(predictions)).sample()
+      else:
+        predictions = torch.argmax(predictions, dim=1)
+
     predictions=predictions.cpu().detach().numpy()
     
-    if self.FLAGS.discrete: predictions = self.bins_to_continuous(np.argmax(predictions, 1))
-
+    if self.FLAGS.discrete:
+      predictions = self.bins_to_continuous(predictions)
+    
     return predictions, losses, hidden_states
 
   def train(self, inputs, targets, actions=[], collisions=[], lstm_info=()):

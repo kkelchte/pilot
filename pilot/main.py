@@ -126,6 +126,7 @@ def main(_):
   parser.add_argument("--n_frames",default=2,type=int,help="Specify the amount of frames concatenated in case of n_fc  or 3D-CNN.")
   parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
+  parser.add_argument("--stochastic", action='store_true', help="Sample action from predictions from a binomial distribution over classes rather than taking the argmax.")
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   
   # INITIALIZATION
@@ -180,8 +181,6 @@ def main(_):
   parser.add_argument("--alpha",default=0., type=float, help="Policy mixing: choose with a binomial probability of alpha for the experts policy instead of the DNN policy..")
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
-  
-  parser.add_argument("--stochastic", action='store_true', help="Used to make discrete actions more continuous by sampling gaussian around this value, with std 0.5.")
   
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
   parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")

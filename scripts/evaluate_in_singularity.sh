@@ -33,9 +33,9 @@ roscd simulation_supervised/python
 
 # model="discrete_continuous/tinyv3_continuous/seed_0"
 # name="test_evaluate_continuous_output"
-# model=discrete_continuous/tinyv3_MSE/seed_0
-# name="test_evaluate_discrete_output"
-
+model=discrete_continuous/tinyv3_MSE/seed_0
+name="testing"
+extra_args="--stochastic"
 # model=log_neural_architectures/alex_net/esatv3_expert_200K/shifted_input/1/seed_0
 # name="evaluate_shifted_input"
 # model=log_neural_architectures/alex_net/esatv3_expert_200K/normalized_output/1/seed_0
@@ -47,8 +47,9 @@ roscd simulation_supervised/python
 # model='tinyv3_3d_net_2/2/seed_0'
 # name='evaluate_3dcnn'
 
-model='tinyv3_3d_net_1/1/seed_0'
-name='evaluate_3d_1'
+# model='tinyv3_3d_net_1/1/seed_0'
+# name='evaluate_3d_1'
+
 
 script_args="--z_pos 1 -w esatv3 --random_seed 512 --owr --number_of_runs 10 --graphics --evaluation --python_project pytorch_pilot_beta/pilot"
 pytorch_args=" --online --tensorboard --turn_speed 0.8 --speed 0.8 --checkpoint_path $model  --load_config --continue_training"
@@ -61,4 +62,4 @@ pytorch_args=" --online --tensorboard --turn_speed 0.8 --speed 0.8 --checkpoint_
 # script_args="--z_pos 1 -w esatv3 --random_seed 512"
 # pytorch_args="--pause_simulator --online --alpha 0. --buffer_size 100000 --tensorboard --discrete --max_episodes 80000 --loss CrossEntropy --il_weight 0"
 
-python run_script.py -t $name $script_args $pytorch_args
+python run_script.py -t $name $script_args $pytorch_args $extra_args
