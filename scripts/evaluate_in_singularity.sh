@@ -50,8 +50,12 @@ roscd simulation_supervised/python
 # model='tinyv3_3d_net_1/1/seed_0'
 # name='evaluate_3d_1'
 
+name="test_AlexNet_Scratch_Reference"
+model='log_neural_architectures/alex_net_255input/seed_0'
+pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
 
-# script_args="--z_pos 1 -w esatv3 --random_seed 512 --owr --number_of_runs 10 --graphics --evaluation --python_project pytorch_pilot_beta/pilot"
+
+script_args="--z_pos 1 -w esatv3 --random_seed 512 --owr --number_of_runs 10 --graphics --evaluation --python_project pytorch_pilot_beta/pilot"
 # pytorch_args=" --online --tensorboard --turn_speed 0.8 --speed 0.8 --checkpoint_path $model  --load_config --continue_training"
 
 
@@ -62,6 +66,4 @@ roscd simulation_supervised/python
 # script_args="--z_pos 1 -w esatv3 --random_seed 512"
 # pytorch_args="--pause_simulator --online --alpha 0. --buffer_size 100000 --tensorboard --discrete --max_episodes 80000 --loss CrossEntropy --il_weight 0"
 
-# python run_script.py -t $name $script_args $pytorch_args $extra_args
-
-python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_dag_variance/0_eva  --random_seed 531 --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 2 --evaluation --online --tensorboard --load_config --continue_training
+python run_script.py -t $name $script_args $pytorch_args $extra_args

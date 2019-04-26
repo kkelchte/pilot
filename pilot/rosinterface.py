@@ -192,6 +192,8 @@ class PilotNode(object):
         input_normalization='shifted'
       elif self.FLAGS.scaled_input:
         input_normalization='scaled'
+      elif self.FLAGS.skew_input:
+        input_normalization='skewinput'
       else:
         input_normalization='none'
       img=tools.load_rgb(im_object=img, 
