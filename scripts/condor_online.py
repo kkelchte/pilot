@@ -45,7 +45,7 @@ parser.add_argument("-pe","--python_environment",default='sing', type=str, help=
 parser.add_argument("--gpumem",default=1900, type=int,help="define the number of gigs required in your GPU.")
 parser.add_argument("--cpus",default=11, type=int,help="define the number of cpu cores.")
 parser.add_argument("--rammem",default=15, type=int,help="define the number of gigs required in your RAM.")
-parser.add_argument("--diskmem",default=100, type=int,help="define the number of gigs required on your HD.")
+parser.add_argument("--diskmem",default=50, type=int,help="define the number of gigs required on your HD.")
 parser.add_argument("--wall_time",default=60*60*2, help="After training a new condor job can be submitted to evaluate the model after.")
 parser.add_argument("--not_nice",action='store_true', help="In case you want higher priority.")
 
@@ -105,7 +105,6 @@ condor_submit.write("RequestCpus      = {0} \n".format(FLAGS.cpus))
 condor_submit.write("Request_GPUs     = 1 \n")
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
-
 condor_submit.write("match_list_length = 6 \n")
 
 # condor_submit.write("Should_transfer_files = true\n")
@@ -163,6 +162,7 @@ command="python run_script.py -pe {0} -pp {1}".format(FLAGS.python_environment, 
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
 command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
+# command="{0} --log_tag {1} ".format(command, FLAGS.log_tag+'/pilot')
 for e in others: command="{0} {1}".format(command, e)
 
 executable.write("{0} \n".format(command))

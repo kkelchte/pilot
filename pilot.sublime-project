@@ -43,6 +43,9 @@
 		},
 		{
 			"path": "/esat/opal/kkelchte/docker_home/tensorflow/pytorch-cnn-visualizations"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/tensorflow/Deep-Dream"
 		}
 	]
 }

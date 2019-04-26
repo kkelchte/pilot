@@ -58,7 +58,6 @@ def clean_values(x,y):
       #     print("ignore {}".format(v))
   return list(reversed(clean_x)), list(reversed(clean_y))
 
-
 def save_append(dic, k, v):
   """Append a value to dictionary (dic)
   if it gives a key error, create a new list.
@@ -76,7 +75,7 @@ def add_figure(report, line_index, image_path, caption=""):
   if os.path.isfile(image_path):
     report.insert(line_index, "\\begin{figure}[ht] \n")
     line_index+=1
-    report.insert(line_index, "\\includegraphics[width=\\textwidth]{"+image_path+"}\n")
+    report.insert(line_index, "\\includegraphics[width=1.2\\textwidth]{"+image_path+"}\n")
     line_index+=1
     if len(caption)==0: caption=image_path.split('/')[-3].replace('_',' ')
     report.insert(line_index, "\\caption{"+caption.replace('_',' ')+"} \n")
@@ -263,7 +262,11 @@ for f in log_folders:
 all_keys=list(set(all_keys))
 
 # group interesting keys and leave out some keys to avoid an overdose of information
-black_keys=["run_delay_std_control", "run_delay_std_image", 'Distance_current_test_esatv3', 'Distance_furthest_test_esatv3']
+black_keys=["run_delay_std_control", 
+            "run_delay_std_image", 
+            'Distance_current_test_esatv3', 
+            'Distance_furthest_test_esatv3',
+            'run_number']
 for k in black_keys:
   if k in all_keys:
     all_keys.remove(k)
@@ -301,9 +304,9 @@ for key in sorted(all_keys):
     report, line_index = add_figure(report, line_index, fig_name, FLAGS.mother_dir)
 
 # add runs if they are available:
-report.insert(line_index,"\\section{RUNS}\n")
+# report.insert(line_index,"\\section{RUNS}\n")
 for folder in run_images.keys():
-  report.insert(line_index,"\\section{RUNS}\n")
+  # report.insert(line_index,"\\section{RUNS}\n")
   for im in run_images[folder]:
     report, line_index = add_figure(report, line_index, im, caption=os.path.basename(im).replace('_',' '))
 
@@ -319,7 +322,11 @@ for l in report:
 report[line_index] = ""
 
 # table mainly will contain those variables of which only one or few are available
-table_keys=['Distance_current_test_esatv3', 'Distance_furthest_test_esatv3','host','test_accuracy']
+table_keys=['Distance_current_test_esatv3', 
+            'Distance_furthest_test_esatv3',
+            'host',
+            'run_imitation_loss',
+            'test_accuracy']
 
 
 start_table="\\begin{tabular}{|l|"+len(log_folders)*'c'+'c'+"|}\n"
