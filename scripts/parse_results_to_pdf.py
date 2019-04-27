@@ -203,7 +203,7 @@ for folder_index, folder in enumerate(sorted(log_folders)):
 
   # add run images
   if os.path.isdir(folder+'/runs'):
-    run_images[folder].extend([folder+'/runs/'+f for f in sorted(os.listdir(folder+'/runs')) if f.endswith('png')])
+    run_images[folder].extend([folder+'/runs/'+f for f in sorted(os.listdir(folder+'/runs')) if f.endswith('jpg')])
 
   print("Overview parsed information: ")
   for k in sorted(results[folder].keys()):
@@ -299,7 +299,7 @@ for key in sorted(all_keys):
     plt.xlabel("Run" if key in run_keys else "Epoch")
     plt.ylabel(key)
     plt.legend(handles=legend)
-    fig_name=log_root+FLAGS.mother_dir+'/report/'+key+'.jpg'
+    fig_name=log_root+FLAGS.mother_dir+'/report/'+key+'.png'
     plt.savefig(fig_name,bbox_inches='tight')
     report, line_index = add_figure(report, line_index, fig_name, FLAGS.mother_dir)
 
@@ -351,7 +351,7 @@ for key in sorted(table_keys):
   for m in log_folders:
     try:
       if isinstance(results[m][key], collections.Iterable):
-        if type(results[m][key][-1]) == float: #multiple floats --> take mean
+        if type(results[m][key][-1]) in [float,int,bool]: #multiple floats --> take mean
           table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(results[m][key]), np.std(results[m][key]))
           total_vals.append(np.mean(results[m][key]))
         else: #multiple strings
@@ -400,9 +400,10 @@ latex_file=open("{0}/report/report.tex".format(log_root+FLAGS.mother_dir), 'w')
 for l in report: latex_file.write(l)
 latex_file.close()
 
+print("create pdf to {0}/report {0}/report/report.tex".format(log_root+FLAGS.mother_dir))
 exit=subprocess.call(shlex.split("pdflatex -output-directory {0}/report {0}/report/report.tex".format(log_root+FLAGS.mother_dir))) 
-# if not exit == 0: #in case pdf creation fails quit and start somewhere else
-#   sys.exit(exit)
+if not exit == 0: #in case pdf creation fails quit and start somewhere else
+  sys.exit(exit)
 
 if not FLAGS.dont_mail:
   # Step 5: send it with mailx
