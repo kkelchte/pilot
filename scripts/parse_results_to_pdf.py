@@ -324,9 +324,10 @@ report[line_index] = ""
 # table mainly will contain those variables of which only one or few are available
 table_keys=['Distance_current_test_esatv3', 
             'Distance_furthest_test_esatv3',
-            'host',
+            'test_success',
             'run_imitation_loss',
-            'test_accuracy']
+            'test_accuracy',
+            'host']
 
 
 start_table="\\begin{tabular}{|l|"+len(log_folders)*'c'+'c'+"|}\n"

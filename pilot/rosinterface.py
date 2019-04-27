@@ -668,7 +668,9 @@ class PilotNode(object):
     sumvar={}
     result_string="start_time: {0}, run_number: {1}, run_type: {2}".format(time.strftime('%H.%M.%S'), self.runs[run_type], run_type)
 
-    if len(result)!= 0: result_string='{0}, {2}_result:{1}'.format(result_string, result, run_type)
+    if len(result)!= 0: 
+      result_string='{0}, {2}_result: {1}'.format(result_string, result, run_type)
+      result_string='{0}, {2}_success: {1}'.format(result_string, result=='success', run_type)
 
     vals={'current':self.current_distance, 'furthest':self.furthest_point}
     for d in ['current', 'furthest']:

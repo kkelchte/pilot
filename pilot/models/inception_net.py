@@ -20,14 +20,14 @@ class Net(nn.Module):
 
     # Handle the auxilary net
     num_ftrs = self.network.AuxLogits.fc.in_features
-    # self.network.AuxLogits.fc = nn.Linear(num_ftrs, output_size)
     # Handle the primary net
     num_ftrs = self.network.fc.in_features
 
     if feature_extract:
       for param in self.network.parameters(): param.requires_grad = False
     self.network.fc = nn.Linear(num_ftrs,output_size)
-
+    self.network.AuxLogits.fc = nn.Linear(num_ftrs, output_size)
+    
 
   def forward(self, x, train=False, verbose=False):
     if verbose: print x.size()
