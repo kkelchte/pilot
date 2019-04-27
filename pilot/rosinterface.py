@@ -670,7 +670,7 @@ class PilotNode(object):
 
     if len(result)!= 0: 
       result_string='{0}, {2}_result: {1}'.format(result_string, result, run_type)
-      result_string='{0}, {2}_success: {1}'.format(result_string, result=='success', run_type)
+      result_string='{0}, {2}_success: {1}'.format(result_string, int(result=='success'), run_type)
 
     vals={'current':self.current_distance, 'furthest':self.furthest_point}
     for d in ['current', 'furthest']:
