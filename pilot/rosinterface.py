@@ -83,7 +83,7 @@ class PilotNode(object):
     self.fsm_index = 0
 
     if 'LSTM' in self.FLAGS.network:
-      self.hidden_states=self.tools.get_hidden_state([], self.model)
+      self.hidden_states=tools.get_hidden_state([], self.model)
 
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
