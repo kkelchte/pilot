@@ -17,6 +17,7 @@ from replay_buffer import ReplayBuffer
 from model import Model
 from ou_noise import OUNoise
 import tools
+import torch
 
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import CompressedImage

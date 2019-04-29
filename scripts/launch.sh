@@ -50,9 +50,9 @@
 # done
 #--------------------------- DAG EVALUATE ONLINE
 
-condor_args="--wall_time $((2*60*60)) --gpumem 1900 --rammem 7 --cpus 11"
+condor_args="--wall_time $((2*60*60)) --gpumem 1900 --rammem 7 --cpus 13"
 script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
-dag_args="--number_of_models 2"
+dag_args="--number_of_models 30"
   
 # ##AlexNet_Scratch_Reference
 # name="evaluate_NA_models/AlexNet_Scratch_Reference"
@@ -67,7 +67,7 @@ dag_args="--number_of_models 2"
 # python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
 ##AlexNet_Scratch_Output_Normalization
-name="evaluate_NA_models/AlexNet_Scratch_Output_Normalization_redo"
+name="machine_evaluation/run_0"
 model='log_neural_architectures/alex_net/esatv3_expert_200K/normalized_output/1/seed_0'
 pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
 python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args

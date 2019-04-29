@@ -203,7 +203,7 @@ for folder_index, folder in enumerate(sorted(log_folders)):
 
   # add run images
   if os.path.isdir(folder+'/runs'):
-    run_images[folder].extend([folder+'/runs/'+f for f in sorted(os.listdir(folder+'/runs')) if f.endswith('jpg')])
+    run_images[folder].extend([folder+'/runs/'+f for f in sorted(os.listdir(folder+'/runs')) if f.endswith('jpg') or f.endswith('png')])
 
   print("Overview parsed information: ")
   for k in sorted(results[folder].keys()):
@@ -305,11 +305,14 @@ for key in sorted(all_keys):
 
 # add runs if they are available:
 # report.insert(line_index,"\\section{RUNS}\n")
+image_count=0
 for folder in run_images.keys():
   # report.insert(line_index,"\\section{RUNS}\n")
   for im in run_images[folder]:
     report, line_index = add_figure(report, line_index, im, caption=os.path.basename(im).replace('_',' '))
-
+    image_count+=1
+    if image_count > 10: break
+  if image_count > 10: break
 #--------------------------------------------------------------------------------
 #
 # STEP 5: fill in tables
@@ -389,6 +392,38 @@ line_index+=1
 report.insert(line_index, "\\newpage \n")
 line_index+=1
 
+
+# Specific success/machine table:
+for l in report:
+  if 'INSERTTABLES' in l: 
+    line_index=report.index(l)
+report[line_index] = ""
+start_table="\\begin{tabular}{|l|c|c|}\n"
+report.insert(line_index, start_table)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1
+table_row="model & machine & success \\\\ \n"
+report.insert(line_index, table_row)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1
+for m in log_folders:
+  table_row="{0} & {1} & {2} \\\\ \n".format(os.path.basename(m).replace('_', ' '),
+                                            results[m]['host'],
+                                            np.mean(results[m]['test_success']))
+  report.insert(line_index, table_row)
+  line_index+=1
+report.insert(line_index, "\\hline \n")
+line_index+=1
+# insert 
+report.insert(line_index, "\\end{tabular} \n")
+line_index+=1
+report.insert(line_index, "\n")
+line_index+=1
+# Add for each model one trajectory
+report.insert(line_index, "\\newpage \n")
+line_index+=1
 
 #--------------------------------------------------------------------------------
 #
