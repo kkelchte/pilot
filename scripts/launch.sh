@@ -143,9 +143,9 @@
 # python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
 #_________________________________________________________________________________
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
-dag_args="--number_of_models 2"
-condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 11"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
+# dag_args="--number_of_models 2"
+# condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 11"
 
 # ##TinyNet_Siamese
 # name="evaluate_NA_models/TinyNet_Siamese"
@@ -159,23 +159,23 @@ condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 11"
 # pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
 # python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-##TinyNet_LSTM_FBPTT
-name="evaluate_NA_models/TinyNet_LSTM_FBPTT"
-model='log_neural_architectures/tinyv3_3D_LSTM_net/fbptt/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# ##TinyNet_LSTM_FBPTT
+# name="evaluate_NA_models/TinyNet_LSTM_FBPTT"
+# model='log_neural_architectures/tinyv3_3D_LSTM_net/fbptt/1/seed_0'
+# pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
+# python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-##TinyNet_LSTM_SBPTT
-name="evaluate_NA_models/TinyNet_LSTM_SBPTT"
-model='log_neural_architectures/tinyv3_3D_LSTM_net/sbptt/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# ##TinyNet_LSTM_SBPTT
+# name="evaluate_NA_models/TinyNet_LSTM_SBPTT"
+# model='log_neural_architectures/tinyv3_3D_LSTM_net/sbptt/1/seed_0'
+# pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
+# python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-##TinyNet_LSTM_WBPTT
-name="evaluate_NA_models/TinyNet_LSTM_WBPTT"
-model='log_neural_architectures/tinyv3_3D_LSTM_net/wbptt/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# ##TinyNet_LSTM_WBPTT
+# name="evaluate_NA_models/TinyNet_LSTM_WBPTT"
+# model='log_neural_architectures/tinyv3_3D_LSTM_net/wbptt/1/seed_0'
+# pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
+# python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
 
 
