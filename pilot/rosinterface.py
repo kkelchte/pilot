@@ -84,8 +84,8 @@ class PilotNode(object):
     self.fsm_index = 0
 
     if 'LSTM' in self.FLAGS.network:
-      self.hidden_states=tools.get_hidden_state([], self.model)
-
+      self.hidden_states=tools.get_hidden_state([], self.model, astype='numpy')
+      
     if rospy.has_param('rgb_image'): 
       image_topic=rospy.get_param('rgb_image')
       if 'compressed' in image_topic:
@@ -388,7 +388,7 @@ class PilotNode(object):
     inputs=np.array([im])
     if 'LSTM' in self.FLAGS.network:
       h_t, c_t = (torch.from_numpy(self.hidden_states[0]),torch.from_numpy(self.hidden_states[1]))
-      inputs=(torch.from_numpy(inputs).type(torch.FloatTensor).to(model.device),(h_t.to(model.device),c_t.to(model.device)))
+      inputs=(torch.from_numpy(np.expand_dims(inputs, axis=0)).type(torch.FloatTensor).to(self.model.device),(h_t.to(self.model.device),c_t.to(self.model.device)))
     control, _, self.hidden_states = self.model.predict(inputs)
     
     ### SEND CONTROL

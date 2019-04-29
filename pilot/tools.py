@@ -192,7 +192,7 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
 # ==============================
 #   Obtain Hidden State of LSTM 
 # ==============================
-def get_hidden_state(input_images, model, device='cpu'):
+def get_hidden_state(input_images, model, device='cpu', astype='tensor'):
   """
   A recurrent model is evaluated over the input images and the final hidden output and state is returned.
   args:
@@ -209,7 +209,7 @@ def get_hidden_state(input_images, model, device='cpu'):
   # move model to device:
   # stime=time.time()
   # print("move model: {0}".format(time.time()-stime))
-  h_t,c_t=model.net.get_init_state(1)
+  h_t,c_t = model.net.get_init_state(1)
   # print("[tools] Obtaining hidden state after image sequence with length {0}".format(len(input_images)))
   # for index in range(len(input_images)):
   #   inputs=(torch.from_numpy(np.expand_dims(np.expand_dims(input_images[index],0),0)).type(torch.FloatTensor).to(device), 
@@ -223,7 +223,7 @@ def get_hidden_state(input_images, model, device='cpu'):
     outputs, (h_t,c_t) = model.net.forward(inputs)
     # model.net.to(model.device)
   
-  return (h_t.detach().cpu(), c_t.detach().cpu())
+  return (h_t.detach().cpu(), c_t.detach().cpu()) if astype=='tensor' else (h_t.detach().cpu().numpy(), c_t.detach().cpu().numpy())
 
 # ===========================
 #   Visualization Techniques
