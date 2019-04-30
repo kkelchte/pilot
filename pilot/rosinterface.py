@@ -627,7 +627,8 @@ class PilotNode(object):
     self.fsm_index = 0
 
     if 'LSTM' in self.FLAGS.network:
-      self.hidden_states=tools.get_hidden_state([], self.model)
+      self.hidden_states=tools.get_hidden_state([], self.model, astype='numpy')
+
 
 
     # if self.FLAGS.empty_buffer: self.replay_buffer.clear()    
