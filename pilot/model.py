@@ -91,7 +91,6 @@ class Model(object):
     if not self.FLAGS.pretrained or self.FLAGS.continue_training:
       self.initialize_network()
 
-
   def initialize_network(self):
     """Initialize all parameters of the network conform the FLAGS configuration
     """

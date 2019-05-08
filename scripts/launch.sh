@@ -50,139 +50,98 @@
 # done
 #--------------------------- DAG EVALUATE ONLINE
 
-condor_args="--wall_time $((2*60*60)) --gpumem 1900 --rammem 7 --cpus 13"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
-dag_args="--number_of_models 2"
-  
-##AlexNet_Scratch_Reference
-name="online_NA_evaluation/AlexNet_Scratch_Reference"
-model='log_neural_architectures/alex_net_255input/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+###### DAGGER
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
+# dag_args="--number_of_models 2"
+# condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13"
 
-##AlexNet_Scratch_Shifted Input
-name="online_NA_evaluation/AlexNet_Scratch_Shifted Input"
-model='log_neural_architectures/alex_net/esatv3_expert_200K/shifted_input/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# for mod in 5K_concat 10K_concat dagger_model_1 dagger_model_2 dagger_model_3 ; do 
+#   name="DAGGER/evaluate_$mod"
+#   model="DAGGER/$mod"
+#   pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
+#   script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
+#   dag_args="--number_of_models 2"
+#   condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13"
+#   python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# done 
 
-#AlexNet_Scratch_Output_Normalization
-name="online_NA_evaluation/AlexNet_Scratch_Output_Normalization"
-model='log_neural_architectures/alex_net/esatv3_expert_200K/normalized_output/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+###### RECOVERY
 
-sleep 30
-#_________________________________________________________________________________
+# python dag_evaluate.py -t recovery/evaluate_5K_concat --number_of_models 2 --wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13\
+#   --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --online --tensorboard --checkpoint_path recovery/5K_concat --load_config --continue_training
+# python dag_evaluate.py -t recovery/evaluate_5K --number_of_models 2 --wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13\
+#   --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --online --tensorboard --checkpoint_path recovery/5K --load_config --continue_training
 
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
-dag_args="--number_of_models 2"
+###### EPSILON 
 
-##AlexNet_Pretrained
-name="online_NA_evaluation/AlexNet_Pretrained"
-model='log_neural_architectures/alex_net_pretrained/esatv3_expert_200K/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-condor_args="--wall_time $((2*60*60)) --gpumem 1900 --rammem 7 --cpus 13"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# python dag_evaluate.py -t epsilon/evaluate_5K_concat --number_of_models 2 --wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13\
+#   --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --online --tensorboard --checkpoint_path epsilon/5K_concat --load_config --continue_training
+# python dag_evaluate.py -t epsilon/evaluate_5K --number_of_models 2 --wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13\
+#   --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --online --tensorboard --checkpoint_path epsilon/5K --load_config --continue_training
 
-##VGG16_Pretrained
-name="online_NA_evaluation/VGG16_Pretrained"
-model='log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-condor_args="--wall_time $((2*60*60)) --gpumem 6000 --rammem 7 --cpus 13"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-##InceptionNet_Pretrained
-name="online_NA_evaluation/InceptionNet_Pretrained"
-model='log_neural_architectures/inception_net_pretrained/esatv3_expert_200K/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-condor_args="--wall_time $((2*60*60)) --gpumem 6000 --rammem 7 --cpus 13"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-##Res18_Pretrained
-name="online_NA_evaluation/Res18_Pretrained"
-model='log_neural_architectures/res18_net_pretrained/esatv3_expert_200K/01/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-condor_args="--wall_time $((2*60*60)) --gpumem 1900 --rammem 7 --cpus 13"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-##DenseNet_Pretrained
-name="online_NA_evaluation/DenseNet_Pretrained"
-model='log_neural_architectures/dense_net_pretrained/esatv3_expert_200K/01/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-condor_args="--wall_time $((2*60*60)) --gpumem 6000 --rammem 7 --cpus 13"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-##SqueezeNet_Pretrained
-name="online_NA_evaluation/SqueezeNet_Pretrained"
-model='log_neural_architectures/squeeze_net_pretrained/esatv3_expert_200K/1/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-condor_args="--wall_time $((2*60*60)) --gpumem 6000 --rammem 7 --cpus 13"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-sleep 30
-
-#_________________________________________________________________________________
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
-dag_args="--number_of_models 2"
-condor_args="--wall_time $((2*60*60)) --gpumem 800 --rammem 7 --cpus 13"
-
-##TinyNet_Discrete_CE
-name="online_NA_evaluation/TinyNet_Discrete_CE"
-model='log_neural_architectures/discrete_continuous/tinyv3_CE/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-##TinyNet_Discrete_MSE
-name="online_NA_evaluation/TinyNet_Discrete_MSE"
-model='log_neural_architectures/discrete_continuous/tinyv3_MSE/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-##TinyNet_Continuous
-name="online_NA_evaluation/TinyNet_Continuous"
-model='log_neural_architectures/discrete_continuous/tinyv3_continuous/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-sleep 30
-
-#_________________________________________________________________________________
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
-dag_args="--number_of_models 2"
-condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13"
-
-##TinyNet_Siamese
-name="online_NA_evaluation/TinyNet_Siamese"
-model='log_neural_architectures/tinyv3_nfc_net_3/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
+###### Redo evaluation of concat
 ##TinyNet_Concat_2
-name="online_NA_evaluation/TinyNet_Concat_2"
-model='tinyv3_3d_net_2/2/seed_0'
-pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
+# dag_args="--number_of_models 2"
+# condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13"
+# for model in 200K_continuous  5K_discrete ; do
+#   name="test_2concat/test_$model"
+#   pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
+#   python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# done
 
-# ##TinyNet_LSTM_FBPTT
-# name="online_NA_evaluation/TinyNet_LSTM_FBPTT"
-# model='log_neural_architectures/tinyv3_3D_LSTM_net/fbptt/1/seed_0'
+###### Test online training and retraining in beta
+
+name="test_train_online_condor"
+pytorch_args="--network tinyv3_3d_net --n_frames 2 --checkpoint_path tinyv3_3d_net_2_continuous_scratch --turn_speed 0.8 --speed 0.8\
+ --continue_training --tensorboard --max_episodes 1000 --batch_size 100 --loss MSE --learning_rate 0.1 --clip 1"
+script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 1000 --python_project pytorch_pilot_beta/pilot --evaluate_every -1 --final_evaluation_runs 0"
+dag_args="--number_of_models 3"
+condor_args="--wall_time_train $((15*60)) --gpumem 1900 --rammem 7 --not_nice"
+python dag_train_online.py -t $name $pytorch_args $script_args $dag_args $condor_args
+
+
+
+#_________________________________________________________________________________
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
+# dag_args="--number_of_models 2"
+# condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13"
+
+# ##TinyNet_Siamese
+# name="online_NA_evaluation_redo/TinyNet_Siamese"
+# model='log_neural_architectures/tinyv3_nfc_net_3/seed_0'
 # pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
 # python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-# ##TinyNet_LSTM_SBPTT
-# name="online_NA_evaluation/TinyNet_LSTM_SBPTT"
-# model='log_neural_architectures/tinyv3_3D_LSTM_net/sbptt/1/seed_0'
+# ##TinyNet_Concat_2
+# name="online_NA_evaluation_redo/TinyNet_Concat_2"
+# model='tinyv3_3d_net_2/2/seed_0'
 # pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
 # python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
-# ##TinyNet_LSTM_WBPTT
-# name="online_NA_evaluation/TinyNet_LSTM_WBPTT"
-# model='log_neural_architectures/tinyv3_3D_LSTM_net/wbptt/1/seed_0'
+##TinyNet_LSTM_FBPTT
+#name="online_NA_evaluation/TinyNet_LSTM_FBPTT_2"
+#model='log_neural_architectures/tinyv3_3D_LSTM_net/fbptt/1/seed_0'
+#pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
+#python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+
+##TinyNet_LSTM_SBPTT
+#name="online_NA_evaluation/TinyNet_LSTM_SBPTT_2"
+#model='log_neural_architectures/tinyv3_3D_LSTM_net/sbptt/1/seed_0'
+#pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
+#python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+
+##TinyNet_LSTM_WBPTT
+#name="online_NA_evaluation/TinyNet_LSTM_WBPTT_2"
+#model='log_neural_architectures/tinyv3_3D_LSTM_net/wbptt/1/seed_0'
+#pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
+#python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+
+## TinyNet_LSTM_WBPTT_init
+# name="online_NA_evaluation/TinyNet_LSTM_WBPTT_init"
+# model='log_neural_architectures/tinyv3_3D_LSTM_net/wbptt_init/1/seed_0'
 # pytorch_args="--online --tensorboard --checkpoint_path $model --load_config --continue_training"
 # python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
-
-
 
 #--------------------------- DAG TRAIN OFFLINE
 

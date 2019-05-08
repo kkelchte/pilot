@@ -47,7 +47,8 @@ class PilotNode(object):
     self.FLAGS=FLAGS
     # Initialize fields
     self.logfolder = logfolder    
-    self.model = model 
+    self.model = model
+    self.epoch = model.epoch 
     self.ready=False 
     self.finished=True
     self.training=False
@@ -99,9 +100,9 @@ class PilotNode(object):
       else:
         rospy.Subscriber(depth_topic, Image, self.depth_callback)
     
-    self.replay_buffer = ReplayBuffer(self.FLAGS.buffer_size, self.FLAGS.random_seed)
+    self.replay_buffer = ReplayBuffer(self.FLAGS.buffer_size, self.FLAGS.random_seed, checkpoint=self.logfolder+'/replaybuffer')
     if self.FLAGS.hard_replay_buffer:
-      self.hard_replay_buffer = ReplayBuffer(self.FLAGS.hard_batch_size, self.FLAGS.random_seed)
+      self.hard_replay_buffer = ReplayBuffer(self.FLAGS.hard_batch_size, self.FLAGS.random_seed, checkpoint=self.logfolder+'/hardbuffer')
       
     self.accumloss = 0
     if rospy.has_param('gt_info'):
@@ -398,7 +399,7 @@ class PilotNode(object):
     if len(self.target_control) != 0:
       loss=np.sqrt((self.target_control[5]-control)**2)
       self.imitation_loss.append(loss)
-      print("ctr: {0}, trgt: {1}, loss:{2}".format(control, self.target_control[5], loss))
+      # print("ctr: {0}, trgt: {1}, loss:{2}".format(control, self.target_control[5], loss))
 
     # POLICY MIXING
     if len(trgt) != 0 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
@@ -415,7 +416,8 @@ class PilotNode(object):
     if self.FLAGS.noise == 'ou':
       noise = self.exploration_noise.noise()
       # exploration noise
-      if epsilon > 10**-2 and not self.FLAGS.evaluate: 
+      # if epsilon > 10**-2 and not self.FLAGS.evaluate: 
+      if epsilon > 10**-2: 
         action = noise[3]*self.FLAGS.action_bound if np.random.binomial(1, epsilon) else action
       # general distortion
       msg.linear.y = (not self.FLAGS.evaluate)*noise[1]*self.FLAGS.sigma_y
@@ -462,7 +464,7 @@ class PilotNode(object):
                   'collision':0}
           del self.recovery_images[k]
           self.replay_buffer.add(experience)
-      # print("replaybuffer size: {0}".format(self.replay_buffer.size()))
+      # print("replay_buffer size: {0}".format(self.replay_buffer.size()))
 
     if self.replay_buffer.size() >= (self.FLAGS.batch_size + (self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)) and not self.FLAGS.evaluate and not self.finished and (not self.FLAGS.prefill or (self.replay_buffer.size() == self.FLAGS.buffer_size)):
       losses_train = self.train_model()
@@ -471,17 +473,17 @@ class PilotNode(object):
       extra_info = self.replay_buffer.get_details()
       extra_info['pause_duration']=pause_duration
       self.save_summary(losses_train, extra_info)
-      if self.epoch%self.FLAGS.save_every_num_epochs == 1:
+      if self.FLAGS.save_every_num_epochs != 0 and self.epoch%self.FLAGS.save_every_num_epochs == 1:
         self.model.save(self.logfolder)
 
       if self.epoch > self.FLAGS.max_episodes:
         self.overtake_pub.publish(Empty())
+        self.replay_buffer.save_checkpoint(self.logfolder+'/replaybuffer')
         self.model.save(self.logfolder)
         try:
-          with open(self.logfolder+'/fsm_log', 'a') as f: 
-            f.write('FINISHED\n')
+          with open(self.logfolder+'/fsm_log', 'a') as f: f.write('FINISHED\n')
         except:
-          print('[rosinterface]: FAILED TO WRITE LOGFILE: {}'.format(self.logfolder+'/fsm_log'))
+          print('[rosinterface]: failed to write logfile: {}'.format(self.logfolder+'/fsm_log'))
         # self.finished_callback("")        
     
     if self.FLAGS.pause_simulator and self.ready:
@@ -536,71 +538,6 @@ class PilotNode(object):
       print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
     return epoch, losses_train     
   
-  def train_model_old(self):
-    """Sample total recent and hard buffer and loop over it with several gradient steps.
-    """
-    # Train model from experience replay:
-    # Train the model with batchnormalization out of the image callback loop
-    losses_train = {}
-
-    # 1. get the data from the replay buffer shuffled
-    if self.replay_buffer.size() > self.FLAGS.batch_size * 2:
-      inputs, targets, actions, collisions = self.replay_buffer.get_all_data_shuffled(horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
-    else:
-      inputs, targets, actions, collisions = self.replay_buffer.get_all_data(horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
-    if len(inputs) == 0: return self.epoch, losses_train
-    
-    # 1.b if there is a hard replay buffer that is full, use it for your batch
-    if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
-      hard_inputs, hard_targets, hard_actions, hard_collisions = self.hard_replay_buffer.get_all_data()
-      # print("hardinputs: {}".format(hard_inputs.shape))
-      inputs = np.concatenate([inputs, hard_inputs], axis=0)
-      targets = np.concatenate([targets, hard_targets], axis=0)
-      actions = np.concatenate([actions, hard_actions], axis=0)
-      collisions = np.concatenate([collisions, hard_collisions], axis=0)
-
-    # 2. Loop over data grad_step times in batches
-    for grad_step in range(self.FLAGS.gradient_steps):
-      b=0
-      while b < len(inputs)-30: #don't train on a batch smaller than 30, it's not worth the delay.
-        if len(inputs) >= b+self.FLAGS.batch_size:
-          input_batch = inputs[b:b+self.FLAGS.batch_size]
-          target_batch = targets[b:b+self.FLAGS.batch_size]
-          action_batch = actions[b:b+self.FLAGS.batch_size]
-          collision_batch = collisions[b:b+self.FLAGS.batch_size]
-        else:  
-          input_batch = inputs[b:]
-          target_batch = targets[b:]
-          action_batch = actions[b:]
-          collision_batch = collisions[b:]
-        epoch, losses_train = self.backward_step_model(input_batch, target_batch, action_batch, collision_batch, losses_train)
-        b+=self.FLAGS.batch_size
-      
-    # 3. in case there is a hard replay buffer: fill it with the hardest examples over the inputs
-    if self.FLAGS.hard_replay_buffer and len(losses_train.keys()) != 0:
-      inputs=inputs[:len(losses_train['Loss_train_total'])]
-      targets=targets[:len(losses_train['Loss_train_total'])]
-      actions=actions[:len(losses_train['Loss_train_total'])]
-      collisions=collisions[:len(losses_train['Loss_train_total'])]
-      
-      assert len(losses_train['Loss_train_total'])==len(inputs), "[rosinterface] Failed to update hard buffer due to {0} losses while {1} inputs.".format(len(losses_train['Loss_train_total']),len(inputs))
-      sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train['Loss_train_total']), inputs.tolist())))]
-      sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), targets.tolist())))]
-      sorted_actions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), actions.tolist())))]
-      sorted_collisions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), collisions.tolist())))]
-      # as all data in hard buffer was in batch we can clear the hard buffer totally
-      self.hard_replay_buffer.clear()
-      # and gradually add it with the hardest experiences till it is full.
-      for e in range(min(self.FLAGS.hard_batch_size, len(sorted_inputs))):
-        experience={'state':sorted_inputs[e],
-                'action':sorted_actions[e],
-                'collision':sorted_collisions[e],
-                'trgt':sorted_targets[e],
-                'priority':losses_train['Loss_train_total'][e]} 
-        self.hard_replay_buffer.add(experience)
-  
-    return epoch, losses_train
-
   def reset_variables(self):
     """After each roll out some field variables should be reset.
     They are collected here.
@@ -699,6 +636,9 @@ class PilotNode(object):
 
       result_string='{0}, run_rate_control: {1:0.3f}, run_rate_image: {2:0.3f} , run_delay_std_control: {1:0.3f}, run_delay_std_image: {2:0.3f} '.format(result_string, avg_ctr_rate, avg_im_rate, std_ctr_delays, std_im_delays)
     
+    if self.FLAGS.save_every_num_epochs == 0:
+      self.model.save(self.logfolder)
+
     # write it to tensorboard, output and nn_ready file.
     try:
       self.model.summarize(sumvar)
@@ -711,3 +651,70 @@ class PilotNode(object):
         f.write(result_string+' \n')
     except Exception as e:
       print('failed to write txt {0}/nn_ready {1}'.format(self.logfolder, e))
+
+  def train_model_old(self):
+    """Sample total recent and hard buffer and loop over it with several gradient steps.
+    """
+    # Train model from experience replay:
+    # Train the model with batchnormalization out of the image callback loop
+    losses_train = {}
+
+    # 1. get the data from the replay buffer shuffled
+    if self.replay_buffer.size() > self.FLAGS.batch_size * 2:
+      inputs, targets, actions, collisions = self.replay_buffer.get_all_data_shuffled(horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
+    else:
+      inputs, targets, actions, collisions = self.replay_buffer.get_all_data(horizon=self.FLAGS.horizon if self.FLAGS.il_weight != 1 else 0)
+    if len(inputs) == 0: return self.epoch, losses_train
+    
+    # 1.b if there is a hard replay buffer that is full, use it for your batch
+    if self.FLAGS.hard_replay_buffer and self.hard_replay_buffer.size() != 0 and len(inputs) != 0:
+      hard_inputs, hard_targets, hard_actions, hard_collisions = self.hard_replay_buffer.get_all_data()
+      # print("hardinputs: {}".format(hard_inputs.shape))
+      inputs = np.concatenate([inputs, hard_inputs], axis=0)
+      targets = np.concatenate([targets, hard_targets], axis=0)
+      actions = np.concatenate([actions, hard_actions], axis=0)
+      collisions = np.concatenate([collisions, hard_collisions], axis=0)
+
+    # 2. Loop over data grad_step times in batches
+    for grad_step in range(self.FLAGS.gradient_steps):
+      b=0
+      while b < len(inputs)-30: #don't train on a batch smaller than 30, it's not worth the delay.
+        if len(inputs) >= b+self.FLAGS.batch_size:
+          input_batch = inputs[b:b+self.FLAGS.batch_size]
+          target_batch = targets[b:b+self.FLAGS.batch_size]
+          action_batch = actions[b:b+self.FLAGS.batch_size]
+          collision_batch = collisions[b:b+self.FLAGS.batch_size]
+        else:  
+          input_batch = inputs[b:]
+          target_batch = targets[b:]
+          action_batch = actions[b:]
+          collision_batch = collisions[b:]
+        epoch, losses_train = self.backward_step_model(input_batch, target_batch, action_batch, collision_batch, losses_train)
+        b+=self.FLAGS.batch_size
+      
+    # 3. in case there is a hard replay buffer: fill it with the hardest examples over the inputs
+    if self.FLAGS.hard_replay_buffer and len(losses_train.keys()) != 0:
+      inputs=inputs[:len(losses_train['Loss_train_total'])]
+      targets=targets[:len(losses_train['Loss_train_total'])]
+      actions=actions[:len(losses_train['Loss_train_total'])]
+      collisions=collisions[:len(losses_train['Loss_train_total'])]
+      
+      assert len(losses_train['Loss_train_total'])==len(inputs), "[rosinterface] Failed to update hard buffer due to {0} losses while {1} inputs.".format(len(losses_train['Loss_train_total']),len(inputs))
+      sorted_inputs=[np.array(x) for _,x in reversed(sorted(zip(list(losses_train['Loss_train_total']), inputs.tolist())))]
+      sorted_targets=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), targets.tolist())))]
+      sorted_actions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), actions.tolist())))]
+      sorted_collisions=[np.array(y) for _,y in reversed(sorted(zip(list(losses_train['Loss_train_total']), collisions.tolist())))]
+      # as all data in hard buffer was in batch we can clear the hard buffer totally
+      self.hard_replay_buffer.clear()
+      # and gradually add it with the hardest experiences till it is full.
+      for e in range(min(self.FLAGS.hard_batch_size, len(sorted_inputs))):
+        experience={'state':sorted_inputs[e],
+                'action':sorted_actions[e],
+                'collision':sorted_collisions[e],
+                'trgt':sorted_targets[e],
+                'priority':losses_train['Loss_train_total'][e]} 
+        self.hard_replay_buffer.add(experience)
+  
+    return epoch, losses_train
+
+  

@@ -119,9 +119,21 @@ blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
             && (machine != \"leo.esat.kuleuven.be\") \
             && (machine != \"cancer.esat.kuleuven.be\") \
             && (machine != \"libra.esat.kuleuven.be\") "
+greenlist=" && (machine != \"andromeda.esat.kuleuven.be\") \
+            && (machine != \"asahi.esat.kuleuven.be\") \
+            && (machine != \"bandai.esat.kuleuven.be\") \
+            && (machine != \"chokai.esat.kuleuven.be\") \
+            && (machine != \"daisen.esat.kuleuven.be\") \
+            && (machine != \"estragon.esat.kuleuven.be\") \
+            && (machine != \"fuji.esat.kuleuven.be\") \
+            && (machine != \"hoo.esat.kuleuven.be\") \
+            && (machine != \"vauxite.esat.kuleuven.be\") \
+            && (machine != \"vladimir.esat.kuleuven.be\") "
+
 # blacklist=""
-# greenlist=" && (machine == \"andromeda.esat.kuleuven.be\") "
-greenlist=""
+# greenlist=""
+
+
 condor_submit.write("Requirements = (HasSingularity) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
@@ -135,6 +147,8 @@ condor_submit.write("Log              = {0}/condor_{1}.log\n".format(condor_outp
 condor_submit.write("Output           = {0}/condor_{1}.out\n".format(condor_output_dir, description))
 condor_submit.write("Error            = {0}/condor_{1}.err\n".format(condor_output_dir, description))
 condor_submit.write("Notification = Error \n")
+condor_submit.write("stream_error = True \n")
+condor_submit.write("stream_output = True \n")
 condor_submit.write("Queue\n")
 
 condor_submit.close()

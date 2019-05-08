@@ -58,9 +58,7 @@ def main(_):
   parser.add_argument("--update_importance_weights",action='store_true',help="Update importance weights for all variables for this domain.")
   parser.add_argument("--lll_weight", default=1, type=float, help="Weight the lifelonglearning regularization term in the overall loss.")
   parser.add_argument("--calculate_importance_weights",action='store_true',help="Calculate the importance weights at the end of training and save them as pickled object.")
-
-
-  
+ 
   # ==========================
   #   Offline Parameters
   # ==========================
@@ -201,7 +199,7 @@ def main(_):
   parser.add_argument("--no_training", action='store_true', help="avoid saving to the replay buffer and taking gradient steps.")
 
   parser.add_argument("--horizon", default=0, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
-  parser.add_argument("--save_every_num_epochs", default=1000, type=int, help="Define after how many epochs a model should be saved while training online.")
+  parser.add_argument("--save_every_num_epochs", default=0, type=int, help="Define after how many epochs a model should be saved while training online.")
   
   print("[main.py] Found {0} cuda devices available.".format(torch.cuda.device_count()))
 
