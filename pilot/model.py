@@ -74,8 +74,9 @@ class Model(object):
     self.optimizer = eval("optim.{0}(self.net.parameters(), lr={1}, weight_decay={2})".format(self.FLAGS.optimizer, self.FLAGS.learning_rate, self.FLAGS.weight_decay))
 
     # DEFINE MAS REGULARIZER
-    # if self.FLAGS.continue_training and self.FLAGS.lifelonglearning:
-    #   self.define_star_variables(self.endpoints['train'])
+    if self.FLAGS.continual_learning:
+      self.star_variables=[]
+      self.omegas=[]
 
     # DEFINE SUMMARIES WITH TENSORBOARD
     if self.FLAGS.tensorboard:
@@ -87,7 +88,6 @@ class Model(object):
       config.gpu_options.allow_growth = True
       self.sess=tf.Session(graph=self.graph, config=config)
       
-
     if not self.FLAGS.pretrained or self.FLAGS.continue_training:
       self.initialize_network()
 
@@ -117,24 +117,28 @@ class Model(object):
       else:
         self.epoch = checkpoint['epoch']
         print("[model]: loaded model from {0} at epoch: {1}".format(self.FLAGS.checkpoint_path, self.epoch))
-      if  not 'scratch' in self.FLAGS.checkpoint_path and checkpoint['optimizer'] == self.FLAGS.optimizer:
+      
+      if not 'scratch' in self.FLAGS.checkpoint_path and checkpoint['optimizer'] == self.FLAGS.optimizer:
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         print("[model]: loaded optimizer parameters from {0}".format(self.FLAGS.checkpoint_path))
-        
+
+      if self.FLAGS.continual_learning and 'star_variables' in checkpoint.keys() and 'omegas' in checkpoint.keys():
+        self.star_variables=checkpoint['star_variables']
+        self.omegas=checkpoint['omegas']
+
   def save(self, logfolder, save_optimizer=True):
     '''save a checkpoint'''
+    information={'epoch': self.epoch,
+        'network': self.FLAGS.network,
+        'model_state_dict': self.net.state_dict()}
     if save_optimizer:
-      torch.save({
-        'epoch': self.epoch,
-        'network': self.FLAGS.network,
-        'optimizer': self.FLAGS.optimizer,
-        'optimizer_state_dict': self.optimizer.state_dict(),
-        'model_state_dict': self.net.state_dict()}, logfolder+'/my-model')
-    else:
-      torch.save({
-        'epoch': self.epoch,
-        'network': self.FLAGS.network,
-        'model_state_dict': self.net.state_dict()}, logfolder+'/my-model')
+      information['optimizer']= self.FLAGS.optimizer
+      information['optimizer_state_dict']=self.optimizer.state_dict()
+    if self.FLAGS.continual_learning:
+      information['omegas']=self.omegas
+      information['star_variables']=self.star_variables
+
+    torch.save(information, logfolder+'/my-model')
   
   def define_discrete_bins(self, action_bound, action_quantity):
     '''
@@ -213,7 +217,7 @@ class Model(object):
     targets: BxA or Bx1 -> accepts both bins and discrete values
     returns a float as accuracy [0:1]
     """
-    if targets.shape[-1] == self.FLAGS.action_quantity: # in case of one hot values
+    if targets.shape[-1] == self.FLAGS.action_quantity and len(targets.shape)>1: # in case of one hot values
       targets=np.argmax(targets,1)
     result=(torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
     return result
@@ -303,10 +307,12 @@ class Model(object):
       targets = torch.from_numpy(targets).type(torch.FloatTensor)
     
     losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
-    # print(losses['imitation_learning'])
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']
-    # print(losses['total'])
     
+    if self.FLAGS.continual_learning and len(self.omegas) != 0 and len(self.star_variables)!=0:
+      for pindex, p in enumerate(self.net.parameters()):
+        losses['total']+=self.FLAGS.continual_learning_lambda/2.*torch.sum(self.omegas[pindex]*(p-self.star_variables[pindex])**2)
+
     if len(actions) == len(collisions) == len(inputs) and self.FLAGS.il_weight != 1:
       # 1. from logits to probabilities with softmax for each output in batch
       probabilities=self.softmax(predictions)
@@ -380,7 +386,7 @@ class Model(object):
       pass
 
   # CONTINUAL LEARNING
-  def define_star_variables(self, endpoints):
+  # def define_star_variables(self, endpoints):
     '''Define star variables for previous domains used in combination with the importance weights for a lifelong regularization term in the loss.
     In case copy is True the last domain creates new variables and copy the current weights of the model in these variables to introduce a new set of start variables corresponding to the last domain.
     Star variables is a dictionary keeping a list of variables for each domain.
@@ -394,7 +400,7 @@ class Model(object):
     #                                                   dtype=tf.float32,
     #                                                   trainable=False)
 
-  def define_importance_weights(self, endpoints):
+  # def define_importance_weights(self, endpoints):
     '''Define an important weight ~ omegas for each trainable variable
     domain corresponds to the dataset
     '''
@@ -405,7 +411,7 @@ class Model(object):
     #                                                   dtype=tf.float32,
     #                                                   trainable=False)
     
-  def update_importance_weights(self, inputs):
+  # def update_importance_weights(self, inputs):
     '''Take one episode of data and keep track of gradients.
     Calculate a importance value between 0 and 1 for each weight.
     '''

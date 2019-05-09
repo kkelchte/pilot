@@ -239,23 +239,32 @@ sing.write("cp {0}/.entrypoint_xpra . \n".format(FLAGS.home))
 sing.write("echo 'make data and tensorflow dir' \n")
 sing.write("mkdir {0} \n".format(FLAGS.data_root))
 sing.write("mkdir -p {0} \n".format(FLAGS.summary_dir))
+
+# copy checkpoint if it's there
 sing.write("echo 'cp checkpoint' \n")
 if '--checkpoint_path' in others:
-	checkpoint_path=others[others.index('--checkpoint_path')+1]
-else:
-	checkpoint_path="tiny_net_scratch"
-sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
-sing.write("if [ -e {1}/{2}{0}/my-model ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("cp {1}/{2}{0}/my-model {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-# sing.write("else \n")
-# sing.write("echo 'failed to copy checkpoint' \n")
-# sing.write("cp {1}/{2}{0}/*/my-model {2}{0} || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("fi \n")
-sing.write("if [ -e {1}/{2}{0}/configuration.xml ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
-sing.write("cp {1}/{2}{0}/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+    checkpoint_path=others[others.index('--checkpoint_path')+1]
+    sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
+    sing.write("if [ -e {1}/{2}{0}/my-model ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+    sing.write("cp {1}/{2}{0}/my-model {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+    # sing.write("else \n")
+    # sing.write("echo 'failed to copy checkpoint' \n")
+    # sing.write("cp {1}/{2}{0}/*/my-model {2}{0} || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+    sing.write("fi \n")
+    sing.write("if [ -e {1}/{2}{0}/configuration.xml ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+    sing.write("cp {1}/{2}{0}/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+    # sing.write("else \n")
+    # sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0}  || echo 'failed to copy configuration' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
+    sing.write("fi \n")
+
+# copy current log_tag folder if it's there
+sing.write("if [ -d {1}/{2}{0} ] ; then \n".format(FLAGS.log_tag, FLAGS.home, FLAGS.summary_dir))
+sing.write("mkdir -p {2}{0} \n".format(FLAGS.log_tag, FLAGS.home, FLAGS.summary_dir))
+sing.write("cp -r {1}/{2}{0}/* {2}{0} \n".format(FLAGS.log_tag, FLAGS.home, FLAGS.summary_dir))
 # sing.write("else \n")
 # sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0}  || echo 'failed to copy configuration' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
 sing.write("fi \n")
+
 sing.write("echo 'cp tensorflow {0} project' \n".format(FLAGS.python_project))
 sing.write("cp -r {1}/tensorflow/{0} tensorflow/ \n".format(FLAGS.python_project.split('/')[0], FLAGS.home))
 # sing.write("cp -r {0}/tensorflow/tf_cnnvis tensorflow/ \n".format(FLAGS.home))

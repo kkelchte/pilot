@@ -51,12 +51,14 @@ def main(_):
   parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
   parser.add_argument("--create_scratch_checkpoint", action='store_true', help="Dont train, just save checkpoint before starting and quit.")
   
-  # ==========================
-  #   Lifelonglearning Parameters
-  # ==========================
-  parser.add_argument("--lifelonglearning",action='store_true',help="In case there is a previous domain upon which the model was trained, use the lifelonglearning regularization to overcome forgetting.")
-  parser.add_argument("--update_importance_weights",action='store_true',help="Update importance weights for all variables for this domain.")
-  parser.add_argument("--lll_weight", default=1, type=float, help="Weight the lifelonglearning regularization term in the overall loss.")
+  # ================================
+  #   Continual Learning Parameters
+  # ================================
+  parser.add_argument("--continual_learning_lambda", default=1, type=float, help="Weight the lifelonglearning regularization term in the overall loss.")
+  parser.add_argument("--loss_window_length", default=5, type=int, help="Number of loss values kept for detecting a loss plateau in the loss window.")
+  parser.add_argument("--continual_learning", action='store_true', help="Use MAS regularization term to add knowledge rather than loose knowledge.")
+  parser.add_argument("--loss_window_mean_threshold", default=0.1,type=float, help="detect plateau of mean and std of loss window is below threshold.")
+  parser.add_argument("--loss_window_std_threshold", default=0.1,type=float, help="detect plateau of mean and std of loss window is below threshold.")
   parser.add_argument("--calculate_importance_weights",action='store_true',help="Calculate the importance weights at the end of training and save them as pickled object.")
  
   # ==========================
@@ -166,7 +168,7 @@ def main(_):
   # ===========================
   #   Rosinterface Parameters
   # ===========================
-  parser.add_argument("--online", action='store_true', help="Training/evaluating online in simulation.")
+  parser.add_argument("--on_policy", action='store_true', help="Training/evaluating on_policy in simulation.")
   parser.add_argument("--buffer_size", default=1000, type=int, help="Define the number of experiences saved in the buffer.")
   parser.add_argument("--ou_theta", default=0.05, type=float, help= "Theta is the pull back force of the OU Noise.")
   parser.add_argument("--noise", default='ou', type=str, help="Define whether the noise is temporally correlated (ou) or uniformly distributed (uni).")
@@ -181,6 +183,7 @@ def main(_):
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
   
   parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+  parser.add_argument("--min_buffer_size", default=32, type=int, help="Define the minimum amount of samples gathered in a prefill stage before.")
   parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
   # parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
   parser.add_argument("--buffer_update_rule", default='nothing',type=str, help="nothing: FIFO buffer. empty: empty buffer after each training step. TODO: hard: drop certain partition of recent frames and keep only hardest.")
@@ -199,7 +202,9 @@ def main(_):
   parser.add_argument("--no_training", action='store_true', help="avoid saving to the replay buffer and taking gradient steps.")
 
   parser.add_argument("--horizon", default=0, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
-  parser.add_argument("--save_every_num_epochs", default=0, type=int, help="Define after how many epochs a model should be saved while training online.")
+  parser.add_argument("--save_every_num_epochs", default=0, type=int, help="Define after how many epochs a model should be saved while training on_policy.")
+
+  
   
   print("[main.py] Found {0} cuda devices available.".format(torch.cuda.device_count()))
 
@@ -225,7 +230,7 @@ def main(_):
 
   #Check log folders and if necessary remove:
   # REMOVE 
-  if (FLAGS.log_tag == 'testing' or FLAGS.owr) and not FLAGS.online:
+  if (FLAGS.log_tag == 'testing' or FLAGS.owr) and not FLAGS.on_policy:
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
       shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag, ignore_errors=False)
   # SEARCH FOR PREVIOUS RUN
@@ -250,7 +255,7 @@ def main(_):
   tools.save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
   # config=tf.ConfigProto(allow_soft_placement=True)
   # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
-  # Keep it at true, in online fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
+  # Keep it at true, in on_policy fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
   # config.gpu_options.allow_growth = True
   # config.gpu_options.per_process_gpu_memory_fraction = 0.1
 
@@ -274,7 +279,7 @@ def main(_):
   signal.signal(signal.SIGINT, signal_handler)
   print('[main]------------Press Ctrl+C to end the learning') 
   
-  if FLAGS.online: # online training/evaluating
+  if FLAGS.on_policy: # online training/evaluating
     print('[main] Online training.')
     import rosinterface
     rosnode = rosinterface.PilotNode(FLAGS, model, FLAGS.summary_dir+FLAGS.log_tag)

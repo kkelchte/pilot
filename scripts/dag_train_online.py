@@ -76,7 +76,7 @@ with open(dag_dir+"/"+FLAGS.log_tag.replace('/','_'),'w') as df:
   df.write("# File name: "+FLAGS.log_tag.replace('/','_')+" \n")
   for model in models:
     df.write("JOB m{0} {1}/{2}{3}/seed_{0}/condor/online.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-  df.write("JOB results {1}/{2}{3}/results/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
+  df.write("JOB results {1}/{2}{3}/report/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("\n")
   for model in models:
     df.write("PARENT m{0} CHILD results\n".format(model))

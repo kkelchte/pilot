@@ -527,17 +527,6 @@ class PilotNode(object):
 
     return losses_train
 
-  def backward_step_model(self, inputs, targets, actions, collisions, losses_train):
-    """Apply gradient step with a backward pass: useless....
-    """
-    # in case the batch size is -1 the full replay buffer is send back 
-    if len(inputs) != 0 and len(targets) != 0:
-      epoch, predictions, losses, hidden_states = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
-      for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
-    else:
-      print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
-    return epoch, losses_train     
-  
   def reset_variables(self):
     """After each roll out some field variables should be reset.
     They are collected here.
@@ -717,4 +706,14 @@ class PilotNode(object):
   
     return epoch, losses_train
 
+  def backward_step_model(self, inputs, targets, actions, collisions, losses_train):
+    """DEPRECATED Apply gradient step with a backward pass
+    """
+    # in case the batch size is -1 the full replay buffer is send back 
+    if len(inputs) != 0 and len(targets) != 0:
+      epoch, predictions, losses, hidden_states = self.model.train(inputs,targets.reshape([-1,1]), actions.reshape([-1,1]), collisions.reshape([-1,1]))
+      for k in losses.keys(): tools.save_append(losses_train, k, losses[k])
+    else:
+      print("[rosinterface]: failed to train due to {0} inputs and {1} targets".format(len(inputs), len(targets)))    
+    return epoch, losses_train     
   

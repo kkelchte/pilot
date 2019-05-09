@@ -323,7 +323,8 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
       try:
         g=p.grad.data.clone().detach().cpu().numpy()
         gradients[pindex]+=np.abs(g)/len(input_images)
-      except:
+      except Exception as e:
+        print(e.message)
         pass
 
   # # In one track for time considerations:
