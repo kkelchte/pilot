@@ -30,7 +30,7 @@ import torch.backends.cudnn as cudnn
 
 from model import Model
 import offline
-
+import online
 import tools
 # import models.mobile_net as mobile_net
 
@@ -50,6 +50,7 @@ def main(_):
   parser.add_argument("--max_episodes",default=0,type=int,help="The maximum number of episodes (~runs through all the training data.)")
   parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
   parser.add_argument("--create_scratch_checkpoint", action='store_true', help="Dont train, just save checkpoint before starting and quit.")
+  parser.add_argument("--online", action='store_true', help="Loop over data in an online fashion rather than sampling i.i.d in an offline fashion.")
   
   # ================================
   #   Continual Learning Parameters
@@ -60,6 +61,7 @@ def main(_):
   parser.add_argument("--loss_window_mean_threshold", default=0.1,type=float, help="detect plateau of mean and std of loss window is below threshold.")
   parser.add_argument("--loss_window_std_threshold", default=0.1,type=float, help="detect plateau of mean and std of loss window is below threshold.")
   parser.add_argument("--calculate_importance_weights",action='store_true',help="Calculate the importance weights at the end of training and save them as pickled object.")
+  parser.add_argument("--save_annotated_images",action='store_true',help="Export image with expert and student label on it in logfolder/RGB.")
  
   # ==========================
   #   Offline Parameters
@@ -292,6 +294,9 @@ def main(_):
           # sess.close()
           print('done')
           sys.exit(0)
+  elif FLAGS.online:
+    print("[main] Online training (off-policy).")
+    online.run(FLAGS,model)  
   else:
     print('[main] Offline training.')
     offline.run(FLAGS,model)

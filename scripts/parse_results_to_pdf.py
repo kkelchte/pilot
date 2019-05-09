@@ -394,36 +394,37 @@ line_index+=1
 
 
 # Specific success/machine table:
-for l in report:
-  if 'INSERTTABLES' in l: 
-    line_index=report.index(l)
-report[line_index] = ""
-start_table="\\begin{tabular}{|l|c|c|}\n"
-report.insert(line_index, start_table)
-line_index+=1
-report.insert(line_index, "\\hline\n")
-line_index+=1
-table_row="model & machine & success \\\\ \n"
-report.insert(line_index, table_row)
-line_index+=1
-report.insert(line_index, "\\hline\n")
-line_index+=1
-for m in log_folders:
-  table_row="{0} & {1} & {2} \\\\ \n".format(os.path.basename(m).replace('_', ' '),
-                                            results[m]['host'],
-                                            np.mean(results[m]['test_success']))
-  report.insert(line_index, table_row)
-  line_index+=1
-report.insert(line_index, "\\hline \n")
-line_index+=1
-# insert 
-report.insert(line_index, "\\end{tabular} \n")
-line_index+=1
-report.insert(line_index, "\n")
-line_index+=1
-# Add for each model one trajectory
-report.insert(line_index, "\\newpage \n")
-line_index+=1
+
+# for l in report:
+#   if 'INSERTTABLES' in l: 
+#     line_index=report.index(l)
+# report[line_index] = ""
+# start_table="\\begin{tabular}{|l|c|c|}\n"
+# report.insert(line_index, start_table)
+# line_index+=1
+# report.insert(line_index, "\\hline\n")
+# line_index+=1
+# table_row="model & machine & success \\\\ \n"
+# report.insert(line_index, table_row)
+# line_index+=1
+# report.insert(line_index, "\\hline\n")
+# line_index+=1
+# for m in log_folders:
+#   table_row="{0} & {1} & {2} \\\\ \n".format(os.path.basename(m).replace('_', ' '),
+#                                             results[m]['host'],
+#                                             np.mean(results[m]['test_success']))
+#   report.insert(line_index, table_row)
+#   line_index+=1
+# report.insert(line_index, "\\hline \n")
+# line_index+=1
+# # insert 
+# report.insert(line_index, "\\end{tabular} \n")
+# line_index+=1
+# report.insert(line_index, "\n")
+# line_index+=1
+# # Add for each model one trajectory
+# report.insert(line_index, "\\newpage \n")
+# line_index+=1
 
 #--------------------------------------------------------------------------------
 #

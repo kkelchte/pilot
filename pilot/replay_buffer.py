@@ -34,7 +34,7 @@ class ReplayBuffer(object):
       """
       if os.path.isfile(filename):
         print("[replaybuffer] loading checkpoint")
-        checkpoint=open(filename,'rb')
+        checkpoint=open(filename,'r')
         data=pickle.load(checkpoint)
         checkpoint.close()
         for e in data: self.add(e)
@@ -49,6 +49,7 @@ class ReplayBuffer(object):
         checkpoint=open(filename,'wb')
         pickle.dump(self.buffer, checkpoint)
         checkpoint.close()
+        time.sleep(0.1)
       except Exception as e:
         print("[replaybuffer] failed to save replaybuffer: {0}".format(e.message))
 
@@ -248,7 +249,7 @@ if __name__ == '__main__':
   # mybuffer.save_checkpoint('/esat/opal/kkelchte/docker_home/tensorflow/log/test_replaybuffer/replaybuffer')
 
 
-  mybuffer = ReplayBuffer(100, 512, checkpoint='/esat/opal/kkelchte/docker_home/tensorflow/log/test_replaybuffer/replaybuffer')
+  mybuffer = ReplayBuffer(100, 512, checkpoint='/esat/opal/kkelchte/docker_home/tensorflow/log/test_train_online_condor/seed_0/replaybuffer')
   print mybuffer.get_details()
 
 

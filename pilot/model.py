@@ -77,6 +77,7 @@ class Model(object):
     if self.FLAGS.continual_learning:
       self.star_variables=[]
       self.omegas=[]
+      self.count_updates=0
 
     # DEFINE SUMMARIES WITH TENSORBOARD
     if self.FLAGS.tensorboard:
@@ -125,20 +126,21 @@ class Model(object):
       if self.FLAGS.continual_learning and 'star_variables' in checkpoint.keys() and 'omegas' in checkpoint.keys():
         self.star_variables=checkpoint['star_variables']
         self.omegas=checkpoint['omegas']
+        self.count_updates=checkpoint['count_updates']
 
   def save(self, logfolder, save_optimizer=True):
     '''save a checkpoint'''
-    information={'epoch': self.epoch,
+    checkpoint={'epoch': self.epoch,
         'network': self.FLAGS.network,
         'model_state_dict': self.net.state_dict()}
     if save_optimizer:
-      information['optimizer']= self.FLAGS.optimizer
-      information['optimizer_state_dict']=self.optimizer.state_dict()
+      checkpoint['optimizer']= self.FLAGS.optimizer
+      checkpoint['optimizer_state_dict']=self.optimizer.state_dict()
     if self.FLAGS.continual_learning:
-      information['omegas']=self.omegas
-      information['star_variables']=self.star_variables
-
-    torch.save(information, logfolder+'/my-model')
+      checkpoint['omegas']=self.omegas
+      checkpoint['star_variables']=self.star_variables
+      checkpoint['count_updates']=self.count_updates
+    torch.save(checkpoint, logfolder+'/my-model')
   
   def define_discrete_bins(self, action_bound, action_quantity):
     '''
@@ -310,8 +312,10 @@ class Model(object):
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']
     
     if self.FLAGS.continual_learning and len(self.omegas) != 0 and len(self.star_variables)!=0:
+      losses['continual']=0
       for pindex, p in enumerate(self.net.parameters()):
-        losses['total']+=self.FLAGS.continual_learning_lambda/2.*torch.sum(self.omegas[pindex]*(p-self.star_variables[pindex])**2)
+        losses['continual']+=self.FLAGS.continual_learning_lambda/2.*torch.sum(self.omegas[pindex]*(p-self.star_variables[pindex])**2)
+      losses['total']+=losses['continual']
 
     if len(actions) == len(collisions) == len(inputs) and self.FLAGS.il_weight != 1:
       # 1. from logits to probabilities with softmax for each output in batch

@@ -102,12 +102,40 @@
 
 ###### REDO 5K_concat for different seeds out of mistrust
 # Question: how much does it all depend on the final local minimum???
-name="validate_different_seeds_online"
-pytorch_args="--network tinyv3_3d_net --n_frames 2 --dataset esatv3_expert_5K --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --load_data_in_ram\
- --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --shifted_input --optimizer SGD --loss MSE --weight_decay 0 --clip 1"
-dag_args="--number_of_models 3"
-condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 7 --gpumem 900"
-python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# name="validate_different_seeds_online"
+# pytorch_args="--network tinyv3_3d_net --n_frames 2 --dataset esatv3_expert_5K --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --load_data_in_ram\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --shifted_input --optimizer SGD --loss MSE --weight_decay 0 --clip 1"
+# dag_args="--number_of_models 3"
+# condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 7 --gpumem 900"
+# python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
+# dag_args="--number_of_models 2"
+# condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13"
+# for mod in 0 1 2 ; do
+#   model="validate_different_seeds_online/seed_$mod"
+#   name="$model"
+#   pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"
+#   python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# done
+
+
+#_________________________________________________________________________________
+# MAS on TinyNet 
+# 10000 frames in one hour ==> 5hours if 1.5fps 
+
+for LR in 1 01 001 0001 ; do
+  for lambda in 1 10 100 ; do
+    name="continual_learning/$LR/$lambda"
+    pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
+     --buffer_size 200 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 3 --clip 1.0\
+     --discrete --continual_learning --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --continual_learning_lambda $lambda"
+    dag_args="--number_of_models 1"
+    condor_args="--wall_time_train $((5*60*60+2*3600)) --rammem 7 --gpumem 3900"
+    python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+  done
+done
+
 
 #_________________________________________________________________________________
 # script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
