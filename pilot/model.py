@@ -127,6 +127,8 @@ class Model(object):
         self.star_variables=checkpoint['star_variables']
         self.omegas=checkpoint['omegas']
         self.count_updates=checkpoint['count_updates']
+        print("[model]: loaded omegas, star_variables and omega_update_counts from {0}.".format(self.FLAGS.checkpoint_path))
+
 
   def save(self, logfolder, save_optimizer=True):
     '''save a checkpoint'''

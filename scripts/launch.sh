@@ -122,7 +122,7 @@
 
 #_________________________________________________________________________________
 # MAS on TinyNet 
-# 10000 frames in one hour ==> 5hours if 1.5fps 
+# 10000 frames in one hour ==> 50000 in 5hours if 1.5fps 
 
 for LR in 1 01 001 0001 ; do
   for lambda in 1 10 100 ; do
@@ -131,8 +131,8 @@ for LR in 1 01 001 0001 ; do
      --buffer_size 200 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 3 --clip 1.0\
      --discrete --continual_learning --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --continual_learning_lambda $lambda"
     dag_args="--number_of_models 1"
-    condor_args="--wall_time_train $((5*60*60+2*3600)) --rammem 7 --gpumem 3900"
-    python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+    condor_args="--wall_time_train $((3*5*60*60+2*3600)) --rammem 7 --gpumem 3900"
+    python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
   done
 done
 

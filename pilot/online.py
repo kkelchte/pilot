@@ -30,6 +30,9 @@ last_loss_window_mean=0
 last_loss_window_std=0
 on_plateau=False
 
+# if load data in ram keep testset in ram
+testdata=[]
+
 labels={'sc':0, 'lc': -1, 'rc': 1}
 
 def method(model, image, label):
@@ -132,15 +135,18 @@ def evaluate(model, testset):
   """
   test_results={k:{} for k in testset[0].keys()}
   for cam in ['sc','rc','lc']:
-    for run in testset:
+    for run_index, run in enumerate(testset):
       for img_index in range(len(run[cam])):
         label=np.expand_dims(labels[cam], axis=-1)
-        image=tools.load_rgb(im_file=run[cam][img_index], 
-                              im_size=model.input_size, 
-                              im_mode='CHW',
-                              im_norm='shifted' if FLAGS.shifted_input else 'none',
-                              im_means=FLAGS.scale_means,
-                              im_stds=FLAGS.scale_stds)
+        if not FLAGS.load_data_in_ram and len(testset)!=len(testdata):
+          image=tools.load_rgb(im_file=run[cam][img_index], 
+                                im_size=model.input_size, 
+                                im_mode='CHW',
+                                im_norm='shifted' if FLAGS.shifted_input else 'none',
+                                im_means=FLAGS.scale_means,
+                                im_stds=FLAGS.scale_stds)
+        else:
+          image=testdata[run_index][cam][img_index]
         _, losses, _ = model.predict(np.expand_dims(np.asarray(image), axis=0), np.array([label]))
         for k in losses.keys():
           tools.save_append(test_results[cam], k, np.mean(losses[k]))
@@ -161,7 +167,7 @@ def evaluate(model, testset):
 
 
 def run(_FLAGS, model):
-  global FLAGS, epoch, labels
+  global FLAGS, epoch, labels, testdata
   FLAGS=_FLAGS
   start_time=time.time()
 
@@ -188,7 +194,7 @@ def run(_FLAGS, model):
         for cam in ['rc','sc','lc']:
           images[cam]=[]
           frames_dir=[run_dir+'/videos/'+cam+'/'+f for f in os.listdir(run_dir+'/videos/'+cam) if os.path.isdir(run_dir+'/videos/'+cam+'/'+f)][-1]
-          for img_index in range(0,len(os.listdir(frames_dir))+100,subsample):
+          for img_index in range(0,len(os.listdir(frames_dir))+10000,subsample):
             if os.path.isfile(frames_dir+'/frame'+str(img_index)+'.jpg'):
               images[cam].append(frames_dir+'/frame'+str(img_index)+'.jpg')
         # clip lengths of camera's according to shortest sequence
@@ -199,9 +205,26 @@ def run(_FLAGS, model):
         dataset.append(images)
       return dataset
 
-    trainset=load_trail_data(["{0:03d}".format(r) for r in range(4,9)])
+    trainset=load_trail_data(["{0:03d}".format(r) for r in range(4,11)])
     # testset=load_trail_data(["{0:03d}".format(r) for r in range(11,12)],subsample=100)  
-    testset=load_trail_data(["{0:03d}".format(r) for r in range(4,9)],subsample=100)  
+    # testset=load_trail_data(["{0:03d}".format(r) for r in range(4,9)],subsample=100)  
+    testset=load_trail_data(["{0:03d}_eva".format(r) for r in range(4,11)])  
+    
+    if FLAGS.load_data_in_ram: # load test data in ram so evaluation goes faster
+      testdata=[]
+      for run in testset:
+        rundata={}
+        for cam in ['rc', 'lc', 'sc']:
+          rundata[cam]=[]
+          for img in run[cam]:
+            image=tools.load_rgb(im_file=img, 
+                                im_size=model.input_size, 
+                                im_mode='CHW',
+                                im_norm='shifted' if FLAGS.shifted_input else 'none',
+                                im_means=FLAGS.scale_means,
+                                im_stds=FLAGS.scale_stds)
+            rundata[cam].append(image)
+        testdata.append(rundata)
     
     for run_index, images in enumerate(trainset):
       for img_index in range(len(images['lc'])):
