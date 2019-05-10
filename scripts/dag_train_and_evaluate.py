@@ -76,15 +76,22 @@ for model in models:
 
 ##########################################################################################################################
 # STEP 4 Call a python script that parses the results and prints some stats
-command="python condor_offline.py -t {0}/results --dont_submit --rammem 7 -pp pytorch_pilot/scripts -ps get_results.py --mother_dir {0} --endswith _eva --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
+command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpunum 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2} --endswith eva".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
 for e in others: command=" {0} {1}".format(command, e)
 save_call(command)
 
-##########################################################################################################################
-# STEP 5 Call a python script that creates a report
-command="python condor_offline.py -t {0}/report --dont_submit --rammem 7 -pp pytorch_pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 2*60*60, FLAGS.summary_dir)
-for e in others: command=" {0} {1}".format(command, e)
-save_call(command)
+
+# ##########################################################################################################################
+# # STEP 4 Call a python script that parses the results and prints some stats
+# command="python condor_offline.py -t {0}/results --dont_submit --rammem 7 -pp pytorch_pilot/scripts -ps get_results.py --mother_dir {0} --endswith _eva --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
+# for e in others: command=" {0} {1}".format(command, e)
+# save_call(command)
+
+# ##########################################################################################################################
+# # STEP 5 Call a python script that creates a report
+# command="python condor_offline.py -t {0}/report --dont_submit --rammem 7 -pp pytorch_pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 2*60*60, FLAGS.summary_dir)
+# for e in others: command=" {0} {1}".format(command, e)
+# save_call(command)
 
 
 ##########################################################################################################################
@@ -99,15 +106,14 @@ with open(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_'),'w') as df:
   for model in models:
     df.write("JOB m{0}_train {1}/{2}{3}/{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
     df.write("JOB m{0}_eva {1}/{2}{3}/{0}_eva/condor/online.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-  df.write("JOB results {1}/{2}{3}/results/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("JOB report {1}/{2}{3}/report/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("\n")
   for model in models:
     df.write("PARENT m{0}_train CHILD m{0}_eva\n".format(model))
   eva_jobs=""  
   for model in models: eva_jobs="{0} m{1}_eva".format(eva_jobs, model)
-  df.write("PARENT {0} CHILD results\n".format(eva_jobs))
-  df.write("PARENT results CHILD report\n")
+  df.write("PARENT {0} CHILD report\n".format(eva_jobs))
+  # df.write("PARENT results CHILD report\n")
   df.write("\n")
   if not FLAGS.dont_retry:
     for model in models: 

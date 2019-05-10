@@ -118,6 +118,15 @@
 #   pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"
 #   python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 # done
+#_________________________________________________________________________________
+# Test dag train and evaluate
+name="datadependency_online_concat"
+pytorch_args="--network tinyv3_3d_net --n_frames 2 --dataset esatv3_expert_10K --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --load_data_in_ram\
+ --checkpoint_path tinyv3_3d_net_2_continuous_scratch --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --shifted_input\
+ --optimizer SGD --loss MSE --weight_decay 0 --clip 1"
+script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 4 --python_project pytorch_pilot_beta/pilot --evaluate_every -1 --final_evaluation_runs 0"
+dag_args="--number_of_models 3"
+condor_args="--wall_time_train $((60*60)) --wall_time_eva $((60*60)) --gpumem 700 --rammem 7 --cpus 13"
 
 
 #_________________________________________________________________________________
@@ -125,24 +134,16 @@
 # 10000 frames in one hour ==> 50000 in 5hours if 1.5fps 
 # 3x slower with savefig
 
-# name="test_continual_learning_copydataset"
-# pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
-#  --buffer_size 200 --min_buffer_size 100 --learning_rate 0.001 --gradient_steps 3 --clip 1.0\
-#  --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --continual_learning_lambda 10"
-# dag_args="--number_of_models 1"
-# condor_args="--wall_time_train $((30*60)) --rammem 7 --gpumem 3900 --copy_dataset --not_nice"
-# python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
-
 # Train without MAS and see how it 'forgets' along the different runs
-for LR in 1 01 001 0001 00001 ; do
-  name="continual_learning/0/$LR"
-  pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
-   --buffer_size 200 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 3 --clip 1.0 --load_data_in_ram\
-   --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --continual_learning_lambda $lambda"
-  dag_args="--number_of_models 1"
-  condor_args="--wall_time_train $((3*5*60*60+2*3600)) --rammem 7 --gpumem 3900 --copy_dataset"
-  python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
-done
+# for LR in 1 01 001 0001 00001 ; do
+#   name="continual_learning/0/$LR"
+#   pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
+#    --buffer_size 200 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 3 --clip 1.0 --load_data_in_ram\
+#    --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --continual_learning_lambda $lambda"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((3*5*60*60+2*3600)) --rammem 7 --gpumem 3900 --copy_dataset"
+#   python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
+# done
 
 
 #_________________________________________________________________________________
