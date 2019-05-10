@@ -107,17 +107,20 @@ def method(model, image, label):
   # annotate frame with predicted control
   if FLAGS.save_annotated_images:
     ctr,_,_=model.predict(np.expand_dims(image,axis=0))
-    plt.imshow(image.transpose(1,2,0).astype(np.float32)+0.5)
-    plt.plot((image.shape[1]/2,image.shape[1]/2+ctr[0]*50), (image.shape[2]/2,image.shape[2]/2), linewidth=5, markersize=12,color='b')
-    plt.plot((image.shape[1]/2,image.shape[1]/2+label*50), (image.shape[2]/2+10,image.shape[2]/2+10), linewidth=5, markersize=12,color='g')
+    plt.cla()
+    image_postprocess= image.transpose(1,2,0).astype(np.float32)+0.5 if FLAGS.shifted_input else image.transpose(1,2,0).astype(np.float32)
+    plt.imshow(image_postprocess)
+    plt.plot((image.shape[1]/2,image.shape[1]/2-ctr[0]*50), (image.shape[2]/2,image.shape[2]/2), linewidth=5, markersize=12,color='b')
+    plt.plot((image.shape[1]/2,image.shape[1]/2-label*50), (image.shape[2]/2+10,image.shape[2]/2+10), linewidth=5, markersize=12,color='g')
     plt.axis('off')
     plt.text(x=5,y=image.shape[2]-10,s='Expert',color='g')
     plt.text(x=5,y=image.shape[2]-20,s='Student',color='b')
-    plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/RGB/{0:010d}.jpg'.format(len(imitation_loss)))
-  
+    plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/RGB/{0:010d}.jpg'.format(model.epoch))
+    # time.sleep(0.5)
+
   # get all metrics of this episode and add them to var
   tags_not_to_print=[]
-  msg="frame : {0}".format(model.epoch)
+  msg="epoch : {0}".format(model.epoch)
   for k in sumvar.keys(): msg="{0}, {1} : {2}".format(msg, k, sumvar[k]) if k not in tags_not_to_print else msg
   print("time: {0}, {1}".format(time.strftime('%H.%M.%S'),msg))
   f=open(FLAGS.summary_dir+FLAGS.log_tag+"/tf_log",'a')
@@ -180,7 +183,7 @@ def run(_FLAGS, model):
     if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
       FLAGS.data_root=os.environ['HOME']+'/'+FLAGS.data_root
     # Data preparations for forest trail dataset
-    original_dir=FLAGS.data_root+'forest_trail_dataset'
+    original_dir=os.path.join(FLAGS.data_root,'forest_trail_dataset')
     
     # corresponding steering directions according to camera
     labels={'sc':0, 'lc': -FLAGS.action_bound, 'rc': FLAGS.action_bound}

@@ -123,17 +123,25 @@
 #_________________________________________________________________________________
 # MAS on TinyNet 
 # 10000 frames in one hour ==> 50000 in 5hours if 1.5fps 
+# 3x slower with savefig
 
-for LR in 1 01 001 0001 ; do
-  for lambda in 1 10 100 ; do
-    name="continual_learning/$LR/$lambda"
-    pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
-     --buffer_size 200 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 3 --clip 1.0\
-     --discrete --continual_learning --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --continual_learning_lambda $lambda"
-    dag_args="--number_of_models 1"
-    condor_args="--wall_time_train $((3*5*60*60+2*3600)) --rammem 7 --gpumem 3900"
-    python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
-  done
+# name="test_continual_learning_copydataset"
+# pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
+#  --buffer_size 200 --min_buffer_size 100 --learning_rate 0.001 --gradient_steps 3 --clip 1.0\
+#  --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --continual_learning_lambda 10"
+# dag_args="--number_of_models 1"
+# condor_args="--wall_time_train $((30*60)) --rammem 7 --gpumem 3900 --copy_dataset --not_nice"
+# python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
+
+# Train without MAS and see how it 'forgets' along the different runs
+for LR in 1 01 001 0001 00001 ; do
+  name="continual_learning/0/$LR"
+  pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
+   --buffer_size 200 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 3 --clip 1.0 --load_data_in_ram\
+   --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --continual_learning_lambda $lambda"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time_train $((3*5*60*60+2*3600)) --rammem 7 --gpumem 3900 --copy_dataset"
+  python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
 done
 
 

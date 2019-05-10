@@ -154,7 +154,7 @@ executable.write("#!/bin/bash \n")
 executable.write("echo \"[condor_script] started executable for condor_offline: $(date +%F_%H:%M)\" \n")
 
 # in case of offline training work locally in /tmp and copy dataset
-if FLAGS.python_script == 'main.py' and '--dataset' in others and not '--load_data_in_ram' in others and FLAGS.copy_dataset:
+if FLAGS.python_script == 'main.py' and '--dataset' in others and FLAGS.copy_dataset:
   dataset=others[others.index('--dataset')+1]
   # find dataset in tar file on gluster or opal
   data_file=""
