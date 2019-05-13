@@ -11,20 +11,20 @@ import torch.backends.cudnn as cudnn
 # from model import Model
 import data
 import tools
+from replay_buffer import ReplayBuffer
 import matplotlib.pyplot as plt
 
 # import tensorflow as tf
 
-FLAGS = None
-model = None
+# FLAGS = None
+# model = None
 
 """
 This module scripts the procedure of running over episodes of training, validation and testing offline.
 The data is collected from the data module.
 """
 
-# Initialize buffers
-hard_buffer=[]
+# FIELDS
 loss_window=[]
 last_loss_window_mean=0
 last_loss_window_std=0
@@ -35,47 +35,39 @@ testdata=[]
 
 labels={'sc':0, 'lc': -1, 'rc': 1}
 
-def method(model, image, label):
-  """Learn on infinite stream of supervised data
-  input: 
-    image: (C,H,W) RGB image of model's size
-    label: (1,A) supervised command
-    returns nothing. 
+def save_annotated_images(image, label, model):
+  """Save annotated image in logfolder/RGB 
   """
-  global hard_buffer, loss_window, last_loss_window_mean, last_loss_window_std, on_plateau
-  sumvar={}
+  ctr,_,_=model.predict(np.expand_dims(image,axis=0))
+  plt.cla()
+  image_postprocess= image.transpose(1,2,0).astype(np.float32)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0).astype(np.float32)
+  plt.imshow(image_postprocess)
+  plt.plot((image.shape[1]/2,image.shape[1]/2-ctr[0]*50), (image.shape[2]/2,image.shape[2]/2), linewidth=5, markersize=12,color='b')
+  plt.plot((image.shape[1]/2,image.shape[1]/2-label*50), (image.shape[2]/2+10,image.shape[2]/2+10), linewidth=5, markersize=12,color='g')
+  plt.axis('off')
+  plt.text(x=5,y=image.shape[2]-10,s='Expert',color='g')
+  plt.text(x=5,y=image.shape[2]-20,s='Student',color='b')
+  plt.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/RGB/{0:010d}.jpg'.format(model.epoch))
 
-  # save experience in buffer
-  hard_buffer.append({'state':image,'trgt':label})
-  
-  if len(hard_buffer) < FLAGS.batch_size: return
-  
-  x=np.array([_['state'] for _ in hard_buffer])
-  y=np.array([_['trgt'] for _ in hard_buffer])
-  # take training steps
-  for gs in range(FLAGS.gradient_steps):
-    epoch, predictions, losses, hidden_states = model.train(x,y)
-    # add loss value to window
-    if gs==0: 
-      loss_window.append(np.mean(losses['imitation_learning']))
-      if len(loss_window)>FLAGS.loss_window_length: del loss_window[0]
-  
-  # calculate mean and standard deviation to detect plateau or peak        
-  loss_window_mean=np.mean(loss_window)
-  loss_window_std=np.std(loss_window)
-  
+def interpret_loss_window(loss_window_mean, loss_window_std, model):
+  """Adjust the global loss_window field, last mean and std of the plateau and whether current window is on of off a plateau.
+  """
+  global loss_window, last_loss_window_mean, last_loss_window_std, on_plateau
+
+  # If peak is detected and on a plateau, put on_plateau to false.
   if on_plateau and loss_window_mean > last_loss_window_mean+last_loss_window_std:
     on_plateau=False
-    # print("peak detected")
 
-  if FLAGS.continual_learning \
-    and loss_window_mean < FLAGS.loss_window_mean_threshold \
-    and loss_window_std < FLAGS.loss_window_std_threshold \
+  # if plateau is detected and continual learning, update importance weights
+  if model.FLAGS.continual_learning \
+    and loss_window_mean < model.FLAGS.loss_window_mean_threshold \
+    and loss_window_std < model.FLAGS.loss_window_std_threshold \
     and not on_plateau:
+
     last_loss_window_mean=loss_window_mean
     last_loss_window_std=loss_window_std
     on_plateau=True
-    print("calculate importance weights")
+
     omegas_old=model.omegas[:]
     model.star_variables=[]
     gradients=tools.calculate_importance_weights(model=model,input_images=list(x))
@@ -87,51 +79,73 @@ def method(model, image, label):
         model.omegas.append(gradients[pindex])
       model.star_variables.append(p.data.clone().detach().to(model.device))
     model.count_updates+=1
+
+def method(model, experience, replaybuffer, sumvar={}):
+  """Learn on infinite stream of supervised data
+  input: 
+    image: (C,H,W) RGB image of model's size
+    label: (1,A) supervised command
+    returns nothing. 
+  """
+  global loss_window, last_loss_window_mean, last_loss_window_std, on_plateau
+
+  image=experience['state']
+  label=experience['trgt']
+
+  # save experience in buffer
+  replaybuffer.add(experience)
+
+  # if len(replaybuffer) < FLAGS.buffer_size or (len(replaybuffer) < FLAGS.min_buffer_size and FLAGS.min_buffer_size != -1): return
+  if replaybuffer.size() < model.FLAGS.buffer_size or (replaybuffer.size() < model.FLAGS.min_buffer_size and model.FLAGS.min_buffer_size != -1): return
+
+  if model.FLAGS.batch_size == -1:
+    # perform a training step on data in replaybuffer 
+    data=replaybuffer.get_all_data(max_batch_size=500)
+
+  # take gradient steps
+  for gs in range(model.FLAGS.gradient_steps):
+    if model.FLAGS.batch_size != -1:
+      data=replaybuffer.sample_batch(model.FLAGS.batch_size)
+    epoch, predictions, losses, hidden_states = model.train(data['state'],data['trgt'])
+    # add loss value to window
+    if gs==0: 
+      loss_window.append(np.mean(losses['imitation_learning']))
+      if len(loss_window)>model.FLAGS.loss_window_length: del loss_window[0]
+  
+  # calculate mean and standard deviation to detect plateau or peak
+  interpret_loss_window(np.mean(loss_window), np.std(loss_window), model)
   
   # update hard buffer
-  hard_loss=losses['total']
-  try:
-    sorted_inputs=[np.asarray(lx) for _,lx in reversed(sorted(zip(hard_loss.tolist(),x),key= lambda f:f[0]))]
-    sorted_targets=[ly for _,ly in reversed(sorted(zip(hard_loss.tolist(),y),key= lambda f:f[0]))]
-  except:
-    print("Failed to update hard_buffer.")
-  hard_buffer=[{'state':sorted_inputs[i],'trgt':sorted_targets[i]} for i in range(min(FLAGS.buffer_size,len(sorted_inputs)))]
+  replaybuffer.update(model.FLAGS.buffer_update_rule, losses['total'], model.FLAGS.train_every_N_steps)
   
+  # annotate frame with predicted control
+  if model.FLAGS.save_annotated_images:
+    save_annotated_images(image, label, model)
+
   # save some values for logging
   for k in losses.keys():
     sumvar[k]=np.mean(losses[k])
-  sumvar['loss_window_means']=loss_window_mean
-  sumvar['loss_window_stds']=loss_window_std
+  sumvar['loss_window_means']=np.mean(loss_window)
+  sumvar['loss_window_stds']=np.std(loss_window)
   sumvar['plateau_tags']=on_plateau
 
-  # annotate frame with predicted control
-  if FLAGS.save_annotated_images:
-    ctr,_,_=model.predict(np.expand_dims(image,axis=0))
-    plt.cla()
-    image_postprocess= image.transpose(1,2,0).astype(np.float32)+0.5 if FLAGS.shifted_input else image.transpose(1,2,0).astype(np.float32)
-    plt.imshow(image_postprocess)
-    plt.plot((image.shape[1]/2,image.shape[1]/2-ctr[0]*50), (image.shape[2]/2,image.shape[2]/2), linewidth=5, markersize=12,color='b')
-    plt.plot((image.shape[1]/2,image.shape[1]/2-label*50), (image.shape[2]/2+10,image.shape[2]/2+10), linewidth=5, markersize=12,color='g')
-    plt.axis('off')
-    plt.text(x=5,y=image.shape[2]-10,s='Expert',color='g')
-    plt.text(x=5,y=image.shape[2]-20,s='Student',color='b')
-    plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/RGB/{0:010d}.jpg'.format(model.epoch))
-    # time.sleep(0.5)
-
-  # get all metrics of this episode and add them to var
+  # get all metrics of this episode and add them to summary variables
   tags_not_to_print=[]
   msg="epoch : {0}".format(model.epoch)
   for k in sumvar.keys(): msg="{0}, {1} : {2}".format(msg, k, sumvar[k]) if k not in tags_not_to_print else msg
   print("time: {0}, {1}".format(time.strftime('%H.%M.%S'),msg))
-  f=open(FLAGS.summary_dir+FLAGS.log_tag+"/tf_log",'a')
+  f=open(model.FLAGS.summary_dir+model.FLAGS.log_tag+"/tf_log",'a')
   f.write(msg+'\n')
   f.close()
   sys.stdout.flush()
-  if FLAGS.tensorboard:
+  if model.FLAGS.tensorboard:
     model.summarize(sumvar)
-  if model.epoch % 100 == 0:
-    model.save(FLAGS.summary_dir+FLAGS.log_tag)
 
+  # save model every now and then
+  if int(model.epoch/model.FLAGS.gradient_steps) % model.FLAGS.save_every_num_epochs == 1:
+    stime=time.time()
+    model.save(model.FLAGS.summary_dir+model.FLAGS.log_tag, replaybuffer=replaybuffer)
+    print("model saving duration with replaybuffer: {0:0.3f}".format(time.time()-stime))
 
 def evaluate(model, testset):
   """Evaluate loss on test data
@@ -141,13 +155,13 @@ def evaluate(model, testset):
     for run_index, run in enumerate(testset):
       for img_index in range(len(run[cam])):
         label=np.expand_dims(labels[cam], axis=-1)
-        if not FLAGS.load_data_in_ram and len(testset)!=len(testdata):
+        if not model.FLAGS.load_data_in_ram and len(testset)!=len(testdata):
           image=tools.load_rgb(im_file=run[cam][img_index], 
                                 im_size=model.input_size, 
                                 im_mode='CHW',
-                                im_norm='shifted' if FLAGS.shifted_input else 'none',
-                                im_means=FLAGS.scale_means,
-                                im_stds=FLAGS.scale_stds)
+                                im_norm='shifted' if model.FLAGS.shifted_input else 'none',
+                                im_means=model.FLAGS.scale_means,
+                                im_stds=model.FLAGS.scale_stds)
         else:
           image=testdata[run_index][cam][img_index]
         _, losses, _ = model.predict(np.expand_dims(np.asarray(image), axis=0), np.array([label]))
@@ -159,26 +173,28 @@ def evaluate(model, testset):
     for k in test_results[cam].keys():
       sumvar['test_'+cam+'_'+k]=np.mean(test_results[cam][k])
       
-  if FLAGS.tensorboard:
+  if model.FLAGS.tensorboard:
     model.summarize(sumvar)
   
   msg="frame : {0}".format(model.epoch)
   for k in sumvar.keys(): msg="{0}, {1} : {2}".format(msg, k, sumvar[k])
   print("time: {0}, {1}".format(time.strftime('%H.%M.%S'),msg))
   
-
-
-
 def run(_FLAGS, model):
-  global FLAGS, epoch, labels, testdata
+  global epoch, labels, testdata
   FLAGS=_FLAGS
   start_time=time.time()
+
+  # first see if a replaybuffer is within the my-model torch checkpoint.
+  replaybuffer=tools.load_replaybuffer_from_checkpoint(FLAGS)
+  if not replaybuffer: #other wise create a new.
+    replaybuffer=ReplayBuffer(buffer_size=FLAGS.buffer_size, random_seed=FLAGS.random_seed)
 
   if FLAGS.save_annotated_images:
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag+'/RGB'): shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag+'/RGB')
     os.makedirs(FLAGS.summary_dir+FLAGS.log_tag+'/RGB')
 
-  # Load data
+  # Load data of forest_trail_dataset
   if FLAGS.dataset == 'forest_trail_dataset':
     if FLAGS.data_root[0] != '/':  # 2. Pilot_data directory for saving data
       FLAGS.data_root=os.environ['HOME']+'/'+FLAGS.data_root
@@ -239,8 +255,9 @@ def run(_FLAGS, model):
                                 im_norm='shifted' if FLAGS.shifted_input else 'none',
                                 im_means=FLAGS.scale_means,
                                 im_stds=FLAGS.scale_stds)
-          method(model, image, label)
-          if model.epoch%100 == 50:
+          experience={'state':image,'trgt':label}
+          method(model, experience, replaybuffer)
+          if int(model.epoch/FLAGS.gradient_steps)%100 == 50:
             evaluate(model, testset)
   else:
     data.prepare_data(FLAGS, model.input_size)
@@ -256,7 +273,8 @@ def run(_FLAGS, model):
         else:
             image=run['imgs'][sample_index]
         label=np.expand_dims(run['controls'][sample_index],axis=-1)
-        method(model, image, label)
+        experience={'state':image,'trgt':label}
+        method(model, experience, replaybuffer)
   
 
 

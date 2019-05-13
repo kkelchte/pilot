@@ -97,7 +97,7 @@ def run(_FLAGS, model):
   data.prepare_data(FLAGS, model.input_size)
   print("data loading time: {0:0.0f}".format(time.time()-start_time))
   epoch=model.epoch
-
+ 
   while epoch<FLAGS.max_episodes and not FLAGS.testing:
     print('\n {0} : start episode: {1}'.format(FLAGS.log_tag, epoch))
 

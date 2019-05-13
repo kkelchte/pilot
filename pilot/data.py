@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 import os, sys
 import numpy as np
-import tensorflow as tf
+
 import threading
 from os import listdir
 from os.path import isfile, join, isdir
@@ -47,6 +47,7 @@ The script has following functions:
 """
 def prepare_data(_FLAGS, size, size_depth=(55,74)):
   global FLAGS, im_size, full_set, de_size, max_key, datasetdir
+  import tensorflow as tf
   '''Load lists of tuples refering to images from which random batches can be drawn'''
   FLAGS=_FLAGS
   # random.seed(FLAGS.random_seed)
@@ -252,10 +253,11 @@ def generate_batch(data_type):
       if '3d' in FLAGS.network: number_of_batches-=FLAGS.n_frames
     else:
       number_of_batches = min(int(number_of_frames/(FLAGS.batch_size*max(FLAGS.time_length,1))),max_num_of_batch[data_type])
-  elif 'nfc' in FLAGS.network:
+  elif 'nfc' in FLAGS.network or '3d' in FLAGS.network:
     number_of_batches = min(int(number_of_frames/(FLAGS.batch_size*FLAGS.n_frames)),max_num_of_batch[data_type])
   else:
     number_of_batches = min(int(number_of_frames/FLAGS.batch_size),max_num_of_batch[data_type])
+    
 
   print('[data.py] number of batches per episode: {0}'.format(number_of_batches))
 

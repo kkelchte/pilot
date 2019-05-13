@@ -45,7 +45,7 @@ def main(_):
   # ==========================
   parser.add_argument("--testing", action='store_true', help="In case we're only testing, the model is tested on the test.txt files and not trained.")
   parser.add_argument("--learning_rate", default=0.1, type=float, help="Start learning rate.")
-  parser.add_argument("--batch_size",default=64,type=int,help="Define the size of minibatches.")
+  parser.add_argument("--batch_size",default=-1,type=int,help="Define the size of minibatches.")
   parser.add_argument("--clip",default=1,type=float,help="Clip gradients to avoid 'nan' loss values.")
   parser.add_argument("--max_episodes",default=0,type=int,help="The maximum number of episodes (~runs through all the training data.)")
   parser.add_argument("--tensorboard", action='store_true', help="Save logging in tensorboard.")
@@ -164,9 +164,10 @@ def main(_):
 
   parser.add_argument("--replay_priority", default='no', type=str, help="Define which type of weights should be used when sampling from replay buffer: no, uniform_action, uniform_collision, td_error, state/action/target_variance, random_action")
   parser.add_argument("--prioritized_keeping", action='store_true', help="In case of True, the replay buffer only keeps replay data that is most likely to be sampled.")
-  parser.add_argument("--hard_replay_buffer", action='store_true', help="Add a replaybuffer with the hardest examples (according to the loss).")
-  parser.add_argument("--hard_batch_size", default=100, type=int, help="Define the amount of data in one batch coming from a hard replay buffer.")
-
+  # parser.add_argument("--hard_ratio", default=1, type=float, help="Define the amount of data in the replay buffer that is sorted according to hard samples.")
+  parser.add_argument("--buffer_update_rule", default='nothing',type=str, help="nothing: FIFO buffer. empty: empty buffer after each training step. hard: sort buffer accordint to the last loss.")
+  parser.add_argument("--train_every_N_steps", default=1,type=int, help="Empty few frames from buffer in online setting so next training step N amount of recent frames are collected.")
+  
   # ===========================
   #   Rosinterface Parameters
   # ===========================
@@ -184,12 +185,10 @@ def main(_):
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
   
-  parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
-  parser.add_argument("--min_buffer_size", default=32, type=int, help="Define the minimum amount of samples gathered in a prefill stage before.")
+  # parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+  parser.add_argument("--min_buffer_size", default=-1, type=int, help="Define the minimum amount of samples gathered in a prefill stage before training starts, if -1 buffer needs to be full before training starts.")
   parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
   # parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
-  parser.add_argument("--buffer_update_rule", default='nothing',type=str, help="nothing: FIFO buffer. empty: empty buffer after each training step. TODO: hard: drop certain partition of recent frames and keep only hardest.")
-  parser.add_argument("--buffer_hard_ratio", default=1,type=float, help="if buffer_update_rule == hard, arange this ratio of the buffer's samples according to how hard they are and drop the rest, to be filled with recent frames.")
   
   parser.add_argument("--max_batch_size", default=-1, type=int, help="Define the max size of the batch (only if batch_size is -1).")
   parser.add_argument("--recovery_compensation", default=1, type=float, help="Define amount the neural network should compensate for the to-be-recovered movement.")
@@ -204,7 +203,7 @@ def main(_):
   parser.add_argument("--no_training", action='store_true', help="avoid saving to the replay buffer and taking gradient steps.")
 
   parser.add_argument("--horizon", default=0, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
-  parser.add_argument("--save_every_num_epochs", default=0, type=int, help="Define after how many epochs a model should be saved while training on_policy.")
+  parser.add_argument("--save_every_num_epochs", default=100, type=int, help="Define after how many epochs a model should be saved while training on_policy.")
 
   
   
@@ -255,31 +254,16 @@ def main(_):
     FLAGS=tools.load_config(FLAGS, FLAGS.checkpoint_path)
     
   tools.save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
-  # config=tf.ConfigProto(allow_soft_placement=True)
-  # config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
-  # Keep it at true, in on_policy fashion with singularity (not condor) on qayd (not laptop) resolves this in a Cudnn Error
-  # config.gpu_options.allow_growth = True
-  # config.gpu_options.per_process_gpu_memory_fraction = 0.1
-
-  # config.gpu_options.allow_growth = False
-  # sess = tf.Session(config=config)
   model = Model(FLAGS)
 
-    
-  # writer = tf.summary.FileWriter(FLAGS.summary_dir+FLAGS.log_tag, sess.graph)
-  # model.writer = writer
-  
-  # model.save(FLAGS.summary_dir+FLAGS.log_tag)
-  # import pdb; pdb.set_trace()
+  # def signal_handler(signal, frame):
+  #   print('[main] You pressed Ctrl+C! Saving checkpoints')
+  #   model.save(FLAGS.summary_dir+FLAGS.log_tag)
+  #   # sess.close()
+  #   sys.exit(0)
 
-  def signal_handler(signal, frame):
-    print('[main] You pressed Ctrl+C! Saving checkpoints')
-    model.save(FLAGS.summary_dir+FLAGS.log_tag)
-    # sess.close()
-    sys.exit(0)
-
-  signal.signal(signal.SIGINT, signal_handler)
-  print('[main]------------Press Ctrl+C to end the learning') 
+  # signal.signal(signal.SIGINT, signal_handler)
+  # print('[main]------------Press Ctrl+C to end the learning') 
   
   if FLAGS.on_policy: # online training/evaluating
     print('[main] Online training.')

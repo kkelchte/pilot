@@ -68,8 +68,17 @@ for model in models:
 
 ##########################################################################################################################
 # STEP 3 Call a python script that parses the results and prints some stats
-command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpunum 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2} --endswith eva".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
-for e in others: command=" {0} {1}".format(command, e)
+command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpumem 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2} --endswith eva".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
+break_next=False
+for e in others: 
+  if break_next:
+    break_next=False
+  elif e in ['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith']:
+    break_next=True
+  else:
+    command=" {0} {1}".format(command, e)
+
+# for e in others: command=" {0} {1}".format(command, e)
 save_call(command)
 
 

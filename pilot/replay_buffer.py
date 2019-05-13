@@ -14,66 +14,28 @@ import skimage.io as sio
 
 class ReplayBuffer(object):
 
-    def __init__(self, buffer_size=-1, random_seed=123, checkpoint=None):
+    def __init__(self, buffer_size=-1, random_seed=123):
       """
       The right side of the deque contains the most recent experiences 
       """
       self.buffer_size = buffer_size if buffer_size != -1 else 1000000
-      self.count = 0
-      self.buffer = deque()
-      self.num_steps = 1 #num
-      self.probs = None
-      if checkpoint:
-        self.load_checkpoint(checkpoint)
-
-    def load_checkpoint(self, filename):
-      """
-      Open pickle file defined by checkpoint string, 
-      load experiences in buffer,
-      and close pickle file.
-      """
-      if os.path.isfile(filename):
-        print("[replaybuffer] loading checkpoint")
-        checkpoint=open(filename,'r')
-        data=pickle.load(checkpoint)
-        checkpoint.close()
-        for e in data: self.add(e)
-      else:
-        print("[replaybuffer] could not find replaybuffer checkpoint in filename {0}".format(filename))
-
-    def save_checkpoint(self, filename):
-      """
-      Export queue as pickle binary file to load next time.
-      """
-      try:
-        checkpoint=open(filename,'wb')
-        pickle.dump(self.buffer, checkpoint)
-        checkpoint.close()
-        time.sleep(0.1)
-      except Exception as e:
-        print("[replaybuffer] failed to save replaybuffer: {0}".format(e.message))
+      self.buffer = []
+      # self.buffer = deque()
 
     def add(self, experience):
       # add experience dictionary to buffer
-      if self.count < self.buffer_size: 
-        self.count += 1
-      else:
-        # Get rid of oldest buffer/run once it is smaller than number of steps
-        # if len(self.buffer[0])<=self.num_steps:
-        #   self.count-=len(self.buffer.pop(0))
-        #   self.count+=1
-        # else:
-        self.buffer.popleft()
-
-      # print("[replaybuffer] added experience: {0}".format([experience[k] for k in ['action','trgt']]))
       self.buffer.append(experience)
+      # if buffer is full get rid of last experience
+      if self.buffer_size != -1 and self.size() > self.buffer_size: 
+        self.buffer.pop(0)
+        # self.buffer.popleft()
 
     def remove(self):
-      self.buffer.popleft()
-      self.count-=1
+      # self.buffer.popleft()
+      self.buffer.pop(0)  
 
-    def size(self):      
-      return self.count
+    def size(self):
+      return len(self.buffer)
     
     def softmax(self, x):
       e_x = np.exp(x-np.max(x))
@@ -83,19 +45,18 @@ class ReplayBuffer(object):
       # fill in a batch of size batch_size
       # return an array of inputs, targets and auxiliary information
       if data_buffer == None: data_buffer=self.buffer
-      data_buffer=data_buffer[:-horizon] if horizon != 0 else data_buffer      
-      input_batch = np.array([_['state'] for _ in data_buffer])
-      target_batch = np.array([_['trgt'] for _ in data_buffer])
-      action_batch = np.array([_['action'] for _ in data_buffer])
-      collision_batch = np.array([_['collision'] for _ in data_buffer])
-      
-      if max_batch_size != -1 and input_batch.shape[0] > max_batch_size: 
-        input_batch=input_batch[:max_batch_size]
-        target_batch=target_batch[:max_batch_size]
-        action_batch=action_batch[:max_batch_size]
-        collision_batch=collision_batch[:max_batch_size]
-
-      return input_batch, target_batch, action_batch, collision_batch
+      # if horizon != 0:       data_buffer=data_buffer[:-horizon] if horizon != 0 else data_buffer      
+      result={}
+      for key in ['state', 'trgt', 'action', 'collision']:
+        try:
+          data=np.array([_[key] for i,_ in enumerate(data_buffer) if horizon == 0 or i < len(data_buffer)-horizon])
+        except:
+          pass
+        else:
+          if max_batch_size != -1 and data.shape[0] > max_batch_size:
+            data=data[:max_batch_size]
+          result[key]=data
+      return result
 
     def get_all_data_shuffled(self, max_batch_size=-1, horizon=0):
       """ fill in a batch of size batch_size
@@ -117,30 +78,36 @@ class ReplayBuffer(object):
     
       # sample from population unique instances, so doubles won't be there
       # if batch size can take the full buffer, it will
-      batch=random.sample(self.buffer if horizon == 0 else self.buffer[:-horizon], batch_size)
-      
-      input_batch = np.array([_['state'] for _ in batch])
-      target_batch = np.array([_['trgt'] for _ in batch])
-      action_batch = np.array([_['action'] for _ in batch])
-      collision_batch = np.array([_['collision'] for _ in batch])
-      
-      return input_batch, target_batch, action_batch, collision_batch
+      batch=random.sample(self.buffer if horizon == 0 else self.buffer[:-horizon], batch_size)      
+      result={}
+      for key in ['state', 'trgt', 'action', 'collision']:
+        try:
+          data=np.array([_[key] for _ in batch])
+        except:
+          pass
+        else:
+          result[key]=data
+      return result
 
-    def update(self, update_rule='nothing', losses=[], hard_ratio=0):
+    def update(self, update_rule='nothing', losses=[], train_every_N_steps=1):
       """Update after each training step the replay buffer according to an update rule
       nothing: 'dont do anything to update'
       empty: 'empty the buffer'
       hard: 'fill in ratio of buffer with hard samples and remove the rest'
       """
       if update_rule== 'nothing':
-        return
+        pass
       elif update_rule == 'empty':
         self.clear()
         return
       elif update_rule == 'hard':
-        raise NotImplementedError('[replay_buffer]: hard update rule has not been implemented yet.')
+        assert len(losses) == self.size(), "{0} != {1}".format(len(losses), self.size())
+        new_buffer=[e for _,e in reversed(sorted(zip(losses.tolist(), self.buffer), key=lambda f:f[0]))]
+        self.buffer=new_buffer
       else:
-        raise NotImplementedError('[replay_buffer]: update rule is unknown.')
+        raise NotImplementedError('[replay_buffer]: update rule {0} is unknown.'.format(update_rule))
+      if train_every_N_steps != 1:
+        self.buffer=self.buffer[train_every_N_steps-1:]
 
     def annotate_collision(self, horizon):
       """Annotate the experiences over the last horizon with a 1 for collision.
@@ -158,9 +125,9 @@ class ReplayBuffer(object):
       self.buffer.extend(reversed(last_experiences))
       
     def clear(self):
-      self.buffer.clear()
-      # self.buffer = []
-      self.count = 0
+      # self.buffer.clear()
+      self.buffer = []
+      # self.count = 0
 
     def export_buffer(self, data_folder):
       """export buffer to file system as dataset:
@@ -208,6 +175,8 @@ class ReplayBuffer(object):
       """
       if keys=='all':
         count_total, count_right, count_left, count_straight, count_collision, count_imitation_error = 0,0,0,0,0,0
+      if self.size()==0: return
+
       for e in self.buffer:
         count_total+=1
         if 'trgt' in e.keys():

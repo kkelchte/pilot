@@ -48,6 +48,10 @@ parser.add_argument("--rammem",default=15, type=int,help="define the number of g
 parser.add_argument("--diskmem",default=50, type=int,help="define the number of gigs required on your HD.")
 parser.add_argument("--wall_time",default=60*60*2, help="After training a new condor job can be submitted to evaluate the model after.")
 parser.add_argument("--not_nice",action='store_true', help="In case you want higher priority.")
+parser.add_argument("--use_blacklist",action='store_true', help="Avoid list of 'lesser' machines.")
+parser.add_argument('--blacklist', default=[],nargs='+', help="Define the good machines.")
+parser.add_argument("--use_greenlist",action='store_true', help="Enforce list of 'better' machines.")
+parser.add_argument('--greenlist', default=[],nargs='+', help="Define the good machines.")
 
 #===========================
 #   Evaluation Params ~ parsed like others and added to run_script.py ==> avoid copying arguments defined at 2 locations.
@@ -102,7 +106,8 @@ condor_submit = open(condor_file,'w')
 
 condor_submit.write("Universe         = vanilla\n")
 condor_submit.write("RequestCpus      = {0} \n".format(FLAGS.cpus))
-condor_submit.write("Request_GPUs     = 1 \n")
+if FLAGS.gpumem != 0:
+    condor_submit.write("Request_GPUs     = 1 \n")
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
 condor_submit.write("match_list_length = 6 \n")
@@ -114,27 +119,43 @@ condor_submit.write("match_list_length = 6 \n")
 # condor_submit.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
 condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCode == 0 ) || HoldReasonCode == 26\n")
 
+requirements="(HasSingularity)"
+if FLAGS.gpumem != 0:
+    requirements+=" && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5)".format(FLAGS.gpumem)
+if FLAGS.use_blacklist or len(FLAGS.blacklist) != 0:
+    if len(FLAGS.blacklist) == 0:
+        blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
+                    && (machine != \"leo.esat.kuleuven.be\") \
+                    && (machine != \"cancer.esat.kuleuven.be\") \
+                    && (machine != \"libra.esat.kuleuven.be\") "
+        requirements+=" {0}".format(blacklist)
+    else:
+        for m in blacklist:
+            requirements+=" && (machine != \"{0}.esat.kuleuven.be\")".format(m)
+if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
+    if len(FLAGS.greenlist)==0:
+        greenlist=" && ( (machine == \"andromeda.esat.kuleuven.be\") \
+                || (machine == \"asahi.esat.kuleuven.be\") \
+                || (machine == \"bandai.esat.kuleuven.be\") \
+                || (machine == \"ena.esat.kuleuven.be\") \
+                || (machine == \"goryu.esat.kuleuven.be\") \
+                || (machine == \"chokai.esat.kuleuven.be\") \
+                || (machine == \"daisen.esat.kuleuven.be\") \
+                || (machine == \"estragon.esat.kuleuven.be\") \
+                || (machine == \"fuji.esat.kuleuven.be\") \
+                || (machine == \"hoo.esat.kuleuven.be\") \
+                || (machine == \"vauxite.esat.kuleuven.be\") \
+                || (machine == \"vladimir.esat.kuleuven.be\") )"
+    else:
+        greenlist="&& ((machine == \"{0}.esat.kuleuven.be\")".format(FLAGS.greenlist[0])
+        for m in FLAGS.greenlist[1:]:
+            greenlist+=" || (machine == \"{0}.esat.kuleuven.be\")".format(m)
+        greenlist+=")"
+    requirements+=" {0}".format(greenlist)
 
-blacklist=" && (machine != \"virgo.esat.kuleuven.be\") \
-            && (machine != \"leo.esat.kuleuven.be\") \
-            && (machine != \"cancer.esat.kuleuven.be\") \
-            && (machine != \"libra.esat.kuleuven.be\") "
-greenlist=" && (machine != \"andromeda.esat.kuleuven.be\") \
-            && (machine != \"asahi.esat.kuleuven.be\") \
-            && (machine != \"bandai.esat.kuleuven.be\") \
-            && (machine != \"chokai.esat.kuleuven.be\") \
-            && (machine != \"daisen.esat.kuleuven.be\") \
-            && (machine != \"estragon.esat.kuleuven.be\") \
-            && (machine != \"fuji.esat.kuleuven.be\") \
-            && (machine != \"hoo.esat.kuleuven.be\") \
-            && (machine != \"vauxite.esat.kuleuven.be\") \
-            && (machine != \"vladimir.esat.kuleuven.be\") "
 
-# blacklist=""
-# greenlist=""
-
-
-condor_submit.write("Requirements = (HasSingularity) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
+condor_submit.write("Requirements = {0} \n".format(requirements))
+# condor_submit.write("Requirements = (HasSingularity) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 # condor_submit.write("Requirements = (CUDARuntimeVersion == 9.1) && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {1} {2}\n".format(FLAGS.gpumem, blacklist, greenlist))
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 

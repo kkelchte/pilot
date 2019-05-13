@@ -97,6 +97,25 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
 
   return FLAGS
 
+
+def load_replaybuffer_from_checkpoint(FLAGS):
+  """Go to checkpoint directory, look for my-model file, load it in with torch, return replaybuffer
+  """
+  import torch
+  replaybuffer=None
+  if os.path.isfile(FLAGS.checkpoint_path+'/my-model'):
+    try:
+      if not 'gpu' in FLAGS.device:
+        checkpoint=torch.load(FLAGS.checkpoint_path+'/my-model', map_location='cpu')
+      else:  
+        checkpoint=torch.load(FLAGS.checkpoint_path+'/my-model')
+      replaybuffer=checkpoint['replaybuffer']
+    except Exception as e:
+      print("[Tools]: failed to load replay buffer from {0} due to {1}".format(FLAGS.checkpoint_path, e.message))
+    else:
+      print("[Tools]: successfully loaded replaybuffer from {0}".format(FLAGS.checkpoint_path))
+  return replaybuffer
+
 # ===========================
 #   Load rgb image
 # ===========================

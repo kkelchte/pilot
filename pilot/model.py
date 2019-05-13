@@ -3,7 +3,7 @@ import os, sys
 from models import *
 # from torchvision.models import *
 
-import tensorflow as tf
+# import tensorflow as tf
 # import tensorflow.contrib.slim as slim
 # from tensorflow.contrib.slim import model_analyzer as ma
 # from tensorflow.python.ops import variables as tf_variables
@@ -80,7 +80,8 @@ class Model(object):
       self.count_updates=0
 
     # DEFINE SUMMARIES WITH TENSORBOARD
-    if self.FLAGS.tensorboard:
+    if self.FLAGS.tensorboard and 'gpu' in self.FLAGS.device:
+      import tensorflow as tf 
       self.graph = tf.Graph()
       self.summary_vars = {}
       self.summary_ops = {}
@@ -105,7 +106,11 @@ class Model(object):
       print("[model]: initialized model from scratch")
     else:
       # load model checkpoint in its whole
-      checkpoint=torch.load(self.FLAGS.checkpoint_path+'/my-model')
+      if not 'gpu' in self.FLAGS.device:
+        checkpoint=torch.load(self.FLAGS.checkpoint_path+'/my-model', map_location='cpu')
+      else:  
+        checkpoint=torch.load(self.FLAGS.checkpoint_path+'/my-model')
+
       try:
         self.net.load_state_dict(checkpoint['model_state_dict'], strict=self.FLAGS.continue_training)
       except Exception as e:
@@ -129,8 +134,7 @@ class Model(object):
         self.count_updates=checkpoint['count_updates']
         print("[model]: loaded omegas, star_variables and omega_update_counts from {0}.".format(self.FLAGS.checkpoint_path))
 
-
-  def save(self, logfolder, save_optimizer=True):
+  def save(self, logfolder, save_optimizer=True, replaybuffer=None):
     '''save a checkpoint'''
     checkpoint={'epoch': self.epoch,
         'network': self.FLAGS.network,
@@ -142,6 +146,9 @@ class Model(object):
       checkpoint['omegas']=self.omegas
       checkpoint['star_variables']=self.star_variables
       checkpoint['count_updates']=self.count_updates
+    if replaybuffer != None:
+      # checkpoint['replaybuffer']=list(replaybuffer.buffer[:])
+      checkpoint['replaybuffer']=replaybuffer
     torch.save(checkpoint, logfolder+'/my-model')
   
   def define_discrete_bins(self, action_bound, action_quantity):
@@ -352,7 +359,10 @@ class Model(object):
     if self.FLAGS.discrete: predictions_list = self.bins_to_continuous(np.argmax(predictions_list, 1))
 
     # ensure losses are of type numpy
-    for k in losses: losses[k]=losses[k].cpu().detach().numpy()
+    for k in losses: 
+      losses[k]=losses[k].cpu().detach().numpy()
+      if self.FLAGS.loss=='MSE':
+        losses[k]=np.mean(losses[k], axis=-1)
     
     # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
     if self.FLAGS.discrete: losses['accuracy'] = self.accuracy(predictions, targets)
