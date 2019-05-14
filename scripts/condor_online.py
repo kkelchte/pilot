@@ -168,8 +168,8 @@ condor_submit.write("Log              = {0}/condor_{1}.log\n".format(condor_outp
 condor_submit.write("Output           = {0}/condor_{1}.out\n".format(condor_output_dir, description))
 condor_submit.write("Error            = {0}/condor_{1}.err\n".format(condor_output_dir, description))
 condor_submit.write("Notification = Error \n")
-condor_submit.write("stream_error = True \n")
-condor_submit.write("stream_output = True \n")
+# condor_submit.write("stream_error = True \n")
+# condor_submit.write("stream_output = True \n")
 condor_submit.write("Queue\n")
 
 condor_submit.close()
@@ -261,9 +261,9 @@ sing.write("echo 'make data and tensorflow dir' \n")
 sing.write("mkdir {0} \n".format(FLAGS.data_root))
 sing.write("mkdir -p {0} \n".format(FLAGS.summary_dir))
 
-# copy checkpoint if it's there
-sing.write("echo 'cp checkpoint' \n")
 if '--checkpoint_path' in others:
+    # copy checkpoint if it's there
+    sing.write("echo 'cp checkpoint' \n")
     checkpoint_path=others[others.index('--checkpoint_path')+1]
     sing.write("mkdir -p /tmp/home/{0}{1} \n".format(FLAGS.summary_dir, checkpoint_path))
     sing.write("if [ -e {1}/{2}{0}/my-model ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))

@@ -196,6 +196,7 @@ for folder_index, folder in enumerate(sorted(log_folders)):
     host=[f.split('.')[4] for f in os.listdir(folder) if f.startswith('events')][0]
     save_append(results[folder], 'host', host)
   except:
+    save_append(results[folder], 'host', '')
     pass
     
   # todo: add visualization maps

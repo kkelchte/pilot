@@ -83,22 +83,12 @@
 ##TinyNet_Concat_2
 # script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation"
 # dag_args="--number_of_models 2"
-# condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13 --greenlist andromeda --greenlist vladimir"
+# condor_args="--wall_time $((2*60*60)) --gpumem 900 --rammem 7 --cpus 13 --greenlist andromeda vladimir"
 # for model in 200K_continuous  5K_discrete ; do
 #   name="test_2concat/test_$model"
 #   pytorch_args="--on_policy --tensorboard --checkpoint_path test_2concat/$model --load_config --continue_training"
 #   python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 # done
-
-###### Test online training and retraining in beta
-
-# name="test_train_online_condor"
-# pytorch_args="--network tinyv3_3d_net --n_frames 2 --checkpoint_path tinyv3_3d_net_2_continuous_scratch --turn_speed 0.8 --speed 0.8\
-#  --continue_training --tensorboard --max_episodes 1000 --batch_size 100 --loss MSE --learning_rate 0.1 --clip 1"
-# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 1000 --python_project pytorch_pilot_beta/pilot --evaluate_every -1 --final_evaluation_runs 0"
-# dag_args="--number_of_models 3"
-# condor_args="--wall_time_train $((15*60)) --gpumem 1900 --rammem 7 --not_nice"
-# python dag_train_online.py -t $name $pytorch_args $script_args $dag_args $condor_args
 
 ###### REDO 5K_concat for different seeds out of mistrust
 # Question: how much does it all depend on the final local minimum???
@@ -109,14 +99,13 @@
 # condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 7 --gpumem 900"
 # python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 
-# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation -pp pytorch_pilot_beta/pilot"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation -pp pytorch_pilot/pilot"
 # dag_args="--number_of_models 1"
 # condor_args="--wall_time $((1*60*60)) --gpumem 0 --rammem 7 --cpus 7"
-# for mod in 0 ; do
-# # for mod in 0 ; do
-#   name="evaluate_on_cpu/seed_amsterdam_$mod"
+# for mod in 0 1 2; do 
+#   name="redo_evaluate_different_seeds/$mod"
 #   model="validate_different_seeds_online/seed_$mod"
-#   pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --device cpu --greenlist amsterdam"
+#   pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --use_greenlist"
 #   python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 # done
 #_________________________________________________________________________________
@@ -126,27 +115,38 @@
 #   pytorch_args="--network tinyv3_3d_net --n_frames 2 --dataset esatv3_expert_${DS} --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
 #    --checkpoint_path tinyv3_3d_net_2_continuous_scratch --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --shifted_input\
 #    --optimizer SGD --loss MSE --weight_decay 0 --clip 1."
-#   script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 4 --python_project pytorch_pilot/pilot --evaluate_every -1 --final_evaluation_runs 0"
+#   script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 4 --evaluation --python_project pytorch_pilot/pilot"
 #   dag_args="--number_of_models 3"
 #   condor_args="--wall_time_train $((6*60*60)) --wall_time_eva $((60*60)) --gpumem 700 --rammem 7 --cpus 13 --use_greenlist"
 #   python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $dag_args $condor_args
 # done
 
+for DS in '5K' '10K' '20K' '50K' '100K' '200K' ; do
+  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation -pp pytorch_pilot/pilot"
+  dag_args="--number_of_models 1"
+  condor_args="--wall_time $((1*60*60)) --gpumem 0 --rammem 7 --cpus 7"
+  for mod in 0 1 2; do 
+    name="datadependency_online_concat_evaluate/$DS/$mod"
+    model="datadependency_online_concat/$DS/$mod"
+    pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --use_greenlist"
+    python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+  done
+done
 #_________________________________________________________________________________
 # MAS on TinyNet 
 # 10000 frames in one hour ==> 50000 in 5hours if 1.5fps 
 # 3x slower with savefig
 
 # Train without MAS and see how it 'forgets' along the different runs
-for LR in 01 001 0001 ; do
-  name="continual_learning/1/$LR"
-  pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
-   --buffer_size 100 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 10 --clip 1.0 --load_data_in_ram\
-   --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --weight_decay 0.00005"
-  dag_args="--number_of_models 1"
-  condor_args="--wall_time_train $((3*5*60*60+5*3600)) --rammem 7 --gpumem 3900 --copy_dataset"
-  python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
-done
+# for LR in 01 001 0001 ; do
+#   name="continual_learning/1/$LR"
+#   pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
+#    --buffer_size 100 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 10 --clip 1.0 --load_data_in_ram\
+#    --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --weight_decay 0.00005"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((3*5*60*60+5*3600)) --rammem 7 --gpumem 3900 --copy_dataset"
+#   python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
+# done
 
 
 #_________________________________________________________________________________

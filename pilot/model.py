@@ -370,6 +370,7 @@ class Model(object):
     return self.epoch, predictions_list, losses, hidden_states
      
   def add_summary_var(self, name):
+    import tensorflow as tf 
     '''given the name of the new variable
     add an actual variable to  summary_vars
     and add an operation to update the variable to summary_ops
@@ -381,6 +382,7 @@ class Model(object):
         self.summary_ops[name] = tf.summary.scalar(name, var_name)
   
   def summarize(self, sumvars):
+    import tensorflow as tf 
     '''write summary sumvars by defining variables to
     summary_vars and calling summary_ops in a merge'''
     try:

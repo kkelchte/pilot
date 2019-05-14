@@ -87,7 +87,6 @@ def main(_):
   parser.add_argument("--action_bound", default=0.9, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
   parser.add_argument("--action_dim", default=1.0, type=float, help= "Define the dimension of the actions: 1dimensional as it only turns in yaw.")
   parser.add_argument("--real", action='store_true', help="Define settings in case of interacting with the real (bebop) drone.")
-  parser.add_argument("--evaluate", action='store_true', help="Just evaluate the network without training.")
   parser.add_argument("--random_learning_rate", action='store_true', help="Use sampled learning rate from UL(10**-2, 1)")
   parser.add_argument("--plot_depth", action='store_true', help="Specify whether the depth predictions is saved as images.")
 
@@ -204,7 +203,7 @@ def main(_):
 
   parser.add_argument("--horizon", default=0, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
   parser.add_argument("--save_every_num_epochs", default=100, type=int, help="Define after how many epochs a model should be saved while training on_policy.")
-
+  parser.add_argument("--evaluate", action='store_true', help="Just evaluate the network without training in on-policy only.")
   
   
   print("[main.py] Found {0} cuda devices available.".format(torch.cuda.device_count()))
