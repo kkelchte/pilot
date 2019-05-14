@@ -15,8 +15,12 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+from numpy.linalg import inv
 
 import tablib
+
+import numpy as np
 
 """
 Parse results from group of log folders with min, max and variance over 5 runs
@@ -98,6 +102,60 @@ def add_table_val(row, key):
       return "{0:0.2f} ({1:0.2f})".format(np.mean(row[key]), np.std(row[key]))
   else:
     return ''
+
+def combine_runs_map(motherdirs,destination):
+  logroot='/esat/opal/kkelchte/docker_home/tensorflow/log'
+  if not motherdirs[0].startswith('/'):  motherdirs=[logroot+'/'+md for md in motherdirs]
+  origin_arrow_map = np.asarray([[0.,0.],[7.,0.],[7.,1.5],[9.,0.],[7.,-1.5],[7.,0.]])
+  transformed_arrow = origin_arrow_map[:]
+  rotation_gazebo_map = np.asarray([[-1,0],[0,1]])
+  img_type='esatv3'
+  plt.cla()
+  plt.clf()
+  fig,ax = plt.subplots(1,figsize=(30,30))
+  ax.set_title('Position Display')
+
+  current_image = np.zeros((1069,1322))
+  implot=ax.imshow(current_image)
+  
+  img_file=logroot+'/../../simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv3.png'
+  current_image=mpimg.imread(img_file)
+  implot=ax.imshow(current_image)
+  legend=[]
+  colors=['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7']
+  success=False
+  for mdindex, md in enumerate(motherdirs):
+    print md
+    posfiles=sorted([os.path.join(d[0],f) for d in os.walk(md) for f in os.listdir(d[0]) if f.startswith('gt') and f.endswith('txt')])
+    color=colors[mdindex%len(colors)]
+    for p in posfiles:
+      #     print p
+      # get positions of run
+      positions=[[float(t) for t in l.strip().split(',')] for l in open(p,'r').readlines()]
+      for posindex, pos in enumerate(positions):
+        if posindex > 270: break
+        assert len(pos) == 3
+        x,y=pos[0],pos[1]
+        # transform arrow
+        drone_gazebo_orientation = np.asarray([[np.cos(pos[2]), -np.sin(pos[2])],[np.sin(pos[2]), np.cos(pos[2])]])
+        # combine with rotation gazebo_map to get orientation from drone to map
+        # combine with translation
+        transformation_map_to_drone = np.zeros((3,3))
+        transformation_map_to_drone[2,2] = 1
+        transformation_map_to_drone[0:2,2] = x,y
+        transformation_map_to_drone[0:2,0:2] = inv(np.matmul(rotation_gazebo_map, drone_gazebo_orientation))
+        # transformation_map_to_drone[0:2,0:2] = np.identity(2)
+        # apply transformation to points in arrow
+        transformed_arrow=np.transpose(np.matmul(transformation_map_to_drone,np.concatenate([np.transpose(origin_arrow_map),np.ones((1,origin_arrow_map.shape[0]))],axis=0)))
+        transformed_arrow=transformed_arrow[:,:2]
+
+        # add patch
+        ax.add_patch(mpatches.Polygon(transformed_arrow,linewidth=1,edgecolor=color,facecolor='None'))
+        success=True
+    legend.append(mpatches.Patch(color=color, label=os.path.basename(md).replace('_', ' ')))
+  plt.legend(handles=legend)
+  plt.savefig(destination)
+  return success
 
 #--------------------------------------------------------------
 #
@@ -199,13 +257,10 @@ for folder_index, folder in enumerate(sorted(log_folders)):
     save_append(results[folder], 'host', '')
     pass
     
-  # todo: add visualization maps
-  # ...
-
   # add run images
   if os.path.isdir(folder+'/runs'):
     run_images[folder].extend([folder+'/runs/'+f for f in sorted(os.listdir(folder+'/runs')) if f.endswith('jpg') or f.endswith('png')])
-
+    
   print("Overview parsed information: ")
   for k in sorted(results[folder].keys()):
     print("{0}: {1} values".format(k, len(results[folder][k]) if len(results[folder][k]) != 1 else results[folder][k]))
@@ -215,7 +270,6 @@ if os.path.isfile(log_root+FLAGS.mother_dir+'/results.json'):
   os.rename(log_root+FLAGS.mother_dir+'/results.json', log_root+FLAGS.mother_dir+'/_old_results.json')
 with open(log_root+FLAGS.mother_dir+'/results.json','w') as out:
   json.dump(results,out,indent=2, sort_keys=True)
-
 
 #--------------------------------------------------------------------------------
 #
@@ -242,7 +296,6 @@ for l in report:
   if 'TEMPLATE REPORT' in l:
     report[report.index(l)]=l.replace('TEMPLATE REPORT',FLAGS.mother_dir.replace('_',' '))
 
-
 #--------------------------------------------------------------------------------
 #
 # STEP 4: fill in figures
@@ -255,6 +308,11 @@ for l in report:
   if 'INSERTFIGURES' in l: 
     line_index=report.index(l)
 report[line_index] = ""
+
+# Combine run images of different runs 
+fig_name=log_root+FLAGS.mother_dir+'/report/runs_combined.png'
+if combine_runs_map(log_folders, fig_name):
+  report, line_index = add_figure(report, line_index, fig_name, FLAGS.mother_dir)
 
 # merge all keys together
 all_keys=[]

@@ -22,12 +22,18 @@ roscd simulation_supervised/python
 
 
 # EVALUATE MODEL
-name="test_evaluation_amsterdam"
-model="DAGGER/5K_concat"
-# pytorch_args="--tensorboard --checkpoint_path $model --load_config --continue_training"
-pytorch_args="--checkpoint_path $model --load_config --continue_training --device CPU --pause_simulator"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation  --python_project pytorch_pilot_beta/pilot"
+# for i in 0 1 2 ; do 
+name="redo_different_seeds_opal/0_pause"
+script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation -pp pytorch_pilot/pilot --pause_simulator"
+model="validate_different_seeds_online/seed_0"
+pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"
 python run_script.py -t $name $script_args $pytorch_args $extra_args
+
+# model="DAGGER/5K_concat"
+# # pytorch_args="--tensorboard --checkpoint_path $model --load_config --continue_training"
+# pytorch_args="--checkpoint_path $model --load_config --continue_training --device CPU --pause_simulator"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation  --python_project pytorch_pilot_beta/pilot"
+# python run_script.py -t $name $script_args $pytorch_args $extra_args
 
 
 # TRAIN MODEL

@@ -138,7 +138,6 @@ if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
                 || (machine == \"asahi.esat.kuleuven.be\") \
                 || (machine == \"bandai.esat.kuleuven.be\") \
                 || (machine == \"ena.esat.kuleuven.be\") \
-                || (machine == \"goryu.esat.kuleuven.be\") \
                 || (machine == \"chokai.esat.kuleuven.be\") \
                 || (machine == \"daisen.esat.kuleuven.be\") \
                 || (machine == \"estragon.esat.kuleuven.be\") \
@@ -146,6 +145,8 @@ if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
                 || (machine == \"hoo.esat.kuleuven.be\") \
                 || (machine == \"vauxite.esat.kuleuven.be\") \
                 || (machine == \"vladimir.esat.kuleuven.be\") )"
+#               || (machine == \"goryu.esat.kuleuven.be\") \
+
     else:
         greenlist="&& ((machine == \"{0}.esat.kuleuven.be\")".format(FLAGS.greenlist[0])
         for m in FLAGS.greenlist[1:]:

@@ -57,19 +57,6 @@ for model in range(FLAGS.number_of_models):
   for e in others: command=" {0} {1}".format(command, e)
   save_call(command)
 
-# ##########################################################################################################################
-# # STEP 3 Add for each model an online condor job without submitting for evaluation/training online
-# for model in range(FLAGS.number_of_models):
-#   command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --checkpoint_path {0}/{1} --wall_time {4}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
-#   for e in others: command=" {0} {1}".format(command, e)
-#   save_call(command)
-
-# ##########################################################################################################################
-# # STEP 4 Call a python script that parses the results and prints some stats
-# command="python condor_offline.py -t {0}/results --dont_submit -pp pytorch_pilot/scripts -ps get_results.py --mother_dir {0} --endswith _eva --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 10*60)
-# for e in others: command=" {0} {1}".format(command, e)
-# save_call(command)
-
 ##########################################################################################################################
 # STEP 5 Call a python script that creates a report
 # command="python condor_offline.py -t {0}/report --dont_submit -pp pytorch_pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 10*60, FLAGS.summary_dir)

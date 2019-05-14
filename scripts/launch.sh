@@ -100,12 +100,12 @@
 # python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 
 # script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation -pp pytorch_pilot/pilot"
-# dag_args="--number_of_models 1"
-# condor_args="--wall_time $((1*60*60)) --gpumem 0 --rammem 7 --cpus 7"
+# dag_args="--number_of_models 1 --use_greenlist"
+# condor_args="--wall_time $((1*60*60)) --gpumem 700 --rammem 7 --cpus 13"
 # for mod in 0 1 2; do 
 #   name="redo_evaluate_different_seeds/$mod"
 #   model="validate_different_seeds_online/seed_$mod"
-#   pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --use_greenlist"
+#   pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"
 #   python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 # done
 #_________________________________________________________________________________
@@ -124,7 +124,7 @@
 for DS in '5K' '10K' '20K' '50K' '100K' '200K' ; do
   script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation -pp pytorch_pilot/pilot"
   dag_args="--number_of_models 1"
-  condor_args="--wall_time $((1*60*60)) --gpumem 0 --rammem 7 --cpus 7"
+  condor_args="--wall_time $((1*60*60)) --gpumem 1900 --rammem 7 --cpus 7"
   for mod in 0 1 2; do 
     name="datadependency_online_concat_evaluate/$DS/$mod"
     model="datadependency_online_concat/$DS/$mod"
@@ -139,10 +139,10 @@ done
 
 # Train without MAS and see how it 'forgets' along the different runs
 # for LR in 01 001 0001 ; do
-#   name="continual_learning/1/$LR"
+#   name="continual_learning/3/$LR"
 #   pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net \
-#    --buffer_size 100 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 10 --clip 1.0 --load_data_in_ram\
-#    --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --weight_decay 0.00005"
+#    --buffer_size 100 --min_buffer_size 100 --learning_rate 0.$LR --gradient_steps 10 --clip 5.0 --load_data_in_ram\
+#    --discrete --loss_window_mean_threshold 0.1 --loss_window_std_threshold 0.002 --weight_decay 0.0005"
 #   dag_args="--number_of_models 1"
 #   condor_args="--wall_time_train $((3*5*60*60+5*3600)) --rammem 7 --gpumem 3900 --copy_dataset"
 #   python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
