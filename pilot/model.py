@@ -362,8 +362,10 @@ class Model(object):
     for k in losses: 
       losses[k]=losses[k].cpu().detach().numpy()
       if self.FLAGS.loss=='MSE':
-        losses[k]=np.mean(losses[k], axis=-1)
-    
+        try:
+          losses[k]=np.mean(losses[k], axis=-1)
+        except: # in case loss is integer
+          pass  
     # get accuracy and append to loss: don't change this line to above, as accuracy is calculated on cpu() in numpy floats
     if self.FLAGS.discrete: losses['accuracy'] = self.accuracy(predictions, targets)
     
