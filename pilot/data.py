@@ -47,7 +47,7 @@ The script has following functions:
 """
 def prepare_data(_FLAGS, size, size_depth=(55,74)):
   global FLAGS, im_size, full_set, de_size, max_key, datasetdir
-  import tensorflow as tf
+  
   '''Load lists of tuples refering to images from which random batches can be drawn'''
   FLAGS=_FLAGS
   # random.seed(FLAGS.random_seed)
@@ -104,6 +104,7 @@ def load_set(data_type):
   set_list = [None]*len(run_list)
   checklist = [True]*len(run_list)
   try:
+    import tensorflow as tf
     coord=tf.train.Coordinator()
     threads = [threading.Thread(target=load_run_info, args=(coord, run_dict, index_list, set_list, checklist, FLAGS.subsample if data_type=='train' else 1)) for i in range(FLAGS.num_threads)]
     for t in threads: t.start()
@@ -442,6 +443,7 @@ def generate_batch(data_type):
             checklist.append(False)
             coord.request_stop()
       try:
+        import tensorflow as tf
         coord=tf.train.Coordinator()
         #print(FLAGS.num_threads)
         threads = [threading.Thread(target=load_image_and_target, args=(coord, batch_indices, batch, checklist)) for i in range(FLAGS.num_threads)]

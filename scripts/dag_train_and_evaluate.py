@@ -36,12 +36,15 @@ parser = argparse.ArgumentParser(description="""Dag_train_and_evaluate submits a
 # ==========================
 parser.add_argument("-t", "--log_tag", default='testing', type=str, help="log_tag: tag used to name logfolder.")
 parser.add_argument("--number_of_models", default=10, type=int, help="Define the number of models trained simultaneously over condor.")
+parser.add_argument("--model_names", default=[],nargs='+', help="Define the names of the models trained simultaneously over condor.")
+parser.add_argument("--random_numbers", default=[],nargs='+', help="Define the seeds for all models.")
 parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to source of code on Opal.")
 parser.add_argument("--wall_time_train", default=3*60*60, type=int, help="Maximum time job is allowed to train.")
 parser.add_argument("--wall_time_eva", default=3*60*60, type=int, help="Maximum time job is allowed to evaluate.")
 parser.add_argument("--dont_retry", action='store_true', help="Don't retry if job ends with exit code != 1 --> usefull for debugging as previous log-files are overwritten.")
-
+parser.add_argument("--gpumem_train", default=-1, type=int, help="GPU mem required for training.")
+parser.add_argument("--gpumem_eva", default=-1, type=int, help="GPU mem required for evaluation.")
 
 FLAGS, others = parser.parse_known_args()
 
@@ -50,20 +53,41 @@ print("\nDAG_TRAIN_AND_EVALUATE settings:")
 for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
-models=range(FLAGS.number_of_models)
+if len(FLAGS.model_names) == 0:
+  models=range(FLAGS.number_of_models)
+else:
+  models=FLAGS.model_names
 # models=[1,2]
 
 ##########################################################################################################################
 # STEP 2 For each model launch condor_offline without submitting
-for model in models:
-  command = "python condor_offline.py -t {0}/{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train)
-  for e in others: command=" {0} {1}".format(command, e)
+for modelindex, model in enumerate(models):
+  command = "python condor_offline.py -t {0}/{1} --dont_submit --summary_dir {2} --wall_time {3}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train)
+  skiplist=[]
+  if len(FLAGS.random_numbers) != 0:
+    command="{0} --random_seed {1}".format(command, FLAGS.random_numbers[modelindex%len(FLAGS.random_numbers)])
+    skiplist.append('--random_seed')
+  if FLAGS.gpumem_train != -1:
+    command="{0} --gpumem {1}".format(command, FLAGS.gpumem_train)
+    skiplist.append('--gpumem')
+  break_next=False
+  for e in others:
+    if break_next:
+      break_next=False
+    elif e in skiplist:
+      break_next=True
+    else:
+      command="{0} {1}".format(command, e)
   save_call(command)
 
 ##########################################################################################################################
 # STEP 3 Add for each model an online condor job without submitting for evaluation/training online
-for model in models:
+for modelindex, model in enumerate(models):
   command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --checkpoint_path {0}/{1} --wall_time {4}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
+  skiplist=[]
+  if FLAGS.gpumem_eva != -1:
+    command="{0} --gpumem {1}".format(command, FLAGS.gpumem_eva)
+    skiplist.append('--gpumem')
   break_next = False
   for e in others: 
     if break_next: # don't add another --checkpoint_path in case this was set
@@ -71,7 +95,7 @@ for model in models:
     elif e == '--checkpoint_path':
       break_next = True
     else:
-      command=" {0} {1}".format(command, e)
+      command="{0} {1}".format(command, e)
   save_call(command)
 
 ##########################################################################################################################

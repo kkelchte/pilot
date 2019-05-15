@@ -49,7 +49,7 @@ def save_annotated_images(image, label, model):
   plt.text(x=5,y=image.shape[2]-20,s='Student',color='b')
   plt.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/RGB/{0:010d}.jpg'.format(model.epoch))
 
-def interpret_loss_window(loss_window_mean, loss_window_std, model):
+def interpret_loss_window(loss_window_mean, loss_window_std, model, x):
   """Adjust the global loss_window field, last mean and std of the plateau and whether current window is on of off a plateau.
   """
   global loss_window, last_loss_window_mean, last_loss_window_std, on_plateau
@@ -113,7 +113,7 @@ def method(model, experience, replaybuffer, sumvar={}):
       if len(loss_window)>model.FLAGS.loss_window_length: del loss_window[0]
   
   # calculate mean and standard deviation to detect plateau or peak
-  interpret_loss_window(np.mean(loss_window), np.std(loss_window), model)
+  interpret_loss_window(np.mean(loss_window), np.std(loss_window), model, data['state'])
   
   # update hard buffer
   replaybuffer.update(model.FLAGS.buffer_update_rule, losses['total'], model.FLAGS.train_every_N_steps)
