@@ -213,7 +213,10 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
 def save_annotated_images(image, label, model):
   """Save annotated image in logfolder/control_annotated 
   """
+  import matplotlib
+  matplotlib.use('Agg')
   import matplotlib.pyplot as plt
+  
   if not os.path.isdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated'): 
     os.makedirs(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated')
   ctr,_,_=model.predict(np.expand_dims(image,axis=0))
@@ -234,10 +237,13 @@ def save_annotated_images(image, label, model):
 def save_CAM_images(image, model, label=None):
   """Save a CAM activation map of current image and save in logfolder/CAM
   """
+  import matplotlib as mpl
+  mpl.use('Agg')
+
+  import matplotlib.pyplot as plt
   import gradcam
   import torch
   from PIL import Image
-  import matplotlib.pyplot as plt
   # from misc_functions import get_example_params, save_class_activation_images, apply_colormap_on_image
   import matplotlib.cm as mpl_color_map
   import copy

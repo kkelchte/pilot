@@ -39,6 +39,19 @@
 #
 #------------------------------------------------------------
 
+#--------------------------- Create annotated cam maps of testdata
+
+condor_args="--wall_time $((30*60)) --gpumem 900"
+name="CAM_visualizations/0"
+pytorch_args="--checkpoint_path validate_different_seeds_online/seed_0 --load_config --online --dataset esatv3_test --save_CAM_images --no_training"
+python condor_offline.py -t $name $pytorch_args $condor_args 
+name="CAM_visualizations/1"
+pytorch_args="--checkpoint_path validate_different_seeds_online/seed_1 --load_config --online --dataset esatv3_test --save_CAM_images --no_training"
+python condor_offline.py -t $name $pytorch_args $condor_args 
+name="CAM_visualizations/2"
+pytorch_args="--checkpoint_path validate_different_seeds_online/seed_2 --load_config --online --dataset esatv3_test --save_CAM_images --no_training"
+python condor_offline.py -t $name $pytorch_args $condor_args 
+
 #--------------------------- DAG TRAIN AND EVALUATE MODELS NEURAL ARCHITECTURES
 
 

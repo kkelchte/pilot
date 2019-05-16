@@ -33,8 +33,9 @@ from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty as Emptyservice
 from std_srvs.srv import EmptyRequest # for pausing and unpausing physics engine
 
-import matplotlib.animation as animation
-import matplotlib.pyplot as plt
+
+# import matplotlib.animation as animation
+# import matplotlib.pyplot as plt
 
 
 #from PIL import Image

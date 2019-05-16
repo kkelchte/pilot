@@ -21,7 +21,7 @@ import skimage.transform as sm
 
 import argparse
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 # import h5py
 
