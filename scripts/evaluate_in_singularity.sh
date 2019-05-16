@@ -23,7 +23,7 @@ roscd simulation_supervised/python
 
 # EVALUATE MODEL
 # for i in 0 1 2 ; do 
-name="redo_different_seeds_opal/0_pause"
+name="testing"
 script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation -pp pytorch_pilot/pilot --pause_simulator"
 model="validate_different_seeds_online/seed_0"
 pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"

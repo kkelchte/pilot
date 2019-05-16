@@ -12,7 +12,7 @@ import torch.backends.cudnn as cudnn
 import data
 import tools
 from replay_buffer import ReplayBuffer
-import matplotlib.pyplot as plt
+
 
 # import tensorflow as tf
 
@@ -35,19 +35,7 @@ testdata=[]
 
 labels={'sc':0, 'lc': -1, 'rc': 1}
 
-def save_annotated_images(image, label, model):
-  """Save annotated image in logfolder/RGB 
-  """
-  ctr,_,_=model.predict(np.expand_dims(image,axis=0))
-  plt.cla()
-  image_postprocess= image.transpose(1,2,0).astype(np.float32)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0).astype(np.float32)
-  plt.imshow(image_postprocess)
-  plt.plot((image.shape[1]/2,image.shape[1]/2-ctr[0]*50), (image.shape[2]/2,image.shape[2]/2), linewidth=5, markersize=12,color='b')
-  plt.plot((image.shape[1]/2,image.shape[1]/2-label*50), (image.shape[2]/2+10,image.shape[2]/2+10), linewidth=5, markersize=12,color='g')
-  plt.axis('off')
-  plt.text(x=5,y=image.shape[2]-10,s='Expert',color='g')
-  plt.text(x=5,y=image.shape[2]-20,s='Student',color='b')
-  plt.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/RGB/{0:010d}.jpg'.format(model.epoch))
+
 
 def interpret_loss_window(loss_window_mean, loss_window_std, model, x):
   """Adjust the global loss_window field, last mean and std of the plateau and whether current window is on of off a plateau.
@@ -92,6 +80,16 @@ def method(model, experience, replaybuffer, sumvar={}):
   image=experience['state']
   label=experience['trgt']
 
+  # annotate frame with predicted control logfolder/control_annotated
+  if model.FLAGS.save_annotated_images:
+    tools.save_annotated_images(image, label, model)
+
+  # create CAM image and save in logfolder/CAM
+  if model.FLAGS.save_CAM_images:
+    tools.save_CAM_images(image, model, label=label)
+
+  if model.FLAGS.no_training:
+    return
   # save experience in buffer
   replaybuffer.add(experience)
 
@@ -103,25 +101,21 @@ def method(model, experience, replaybuffer, sumvar={}):
     data=replaybuffer.get_all_data(max_batch_size=500)
 
   # take gradient steps
-  for gs in range(model.FLAGS.gradient_steps):
-    if model.FLAGS.batch_size != -1:
-      data=replaybuffer.sample_batch(model.FLAGS.batch_size)
-    epoch, predictions, losses, hidden_states = model.train(data['state'],data['trgt'])
-    # add loss value to window
-    if gs==0: 
-      loss_window.append(np.mean(losses['imitation_learning']))
-      if len(loss_window)>model.FLAGS.loss_window_length: del loss_window[0]
-  
+    for gs in range(model.FLAGS.gradient_steps):
+      if model.FLAGS.batch_size != -1:
+        data=replaybuffer.sample_batch(model.FLAGS.batch_size)
+      epoch, predictions, losses, hidden_states = model.train(data['state'],data['trgt'])
+      # add loss value to window
+      if gs==0: 
+        loss_window.append(np.mean(losses['imitation_learning']))
+        if len(loss_window)>model.FLAGS.loss_window_length: del loss_window[0]
+
   # calculate mean and standard deviation to detect plateau or peak
   interpret_loss_window(np.mean(loss_window), np.std(loss_window), model, data['state'])
   
   # update hard buffer
   replaybuffer.update(model.FLAGS.buffer_update_rule, losses['total'], model.FLAGS.train_every_N_steps)
   
-  # annotate frame with predicted control
-  if model.FLAGS.save_annotated_images:
-    save_annotated_images(image, label, model)
-
   # save some values for logging
   for k in losses.keys():
     sumvar[k]=np.mean(losses[k])
@@ -244,7 +238,8 @@ def run(_FLAGS, model):
                                 im_stds=FLAGS.scale_stds)
             rundata[cam].append(image)
         testdata.append(rundata)
-    
+    # avoid evaluations for each replay buffer filling
+    last_evaluation_epoch=0
     for run_index, images in enumerate(trainset):
       for img_index in range(len(images['lc'])):
         for cam in images.keys():
@@ -257,11 +252,13 @@ def run(_FLAGS, model):
                                 im_stds=FLAGS.scale_stds)
           experience={'state':image,'trgt':label}
           method(model, experience, replaybuffer)
-          if int(model.epoch/FLAGS.gradient_steps)%100 == 50:
+          if int(model.epoch/FLAGS.gradient_steps)%100 == 50 and model.epoch != last_evaluation_epoch:
             evaluate(model, testset)
+            last_evaluation_epoch=model.epoch
   else:
     data.prepare_data(FLAGS, model.input_size)
     for run in data.full_set['train']:
+      concat_frames=[]
       for sample_index in range(len(run['num_imgs'])):
         if not FLAGS.load_data_in_ram:
           image=tools.load_rgb(im_file=os.path.join(run['name'],'RGB', '{0:010d}.jpg'.format(run['num_imgs'][sample_index])), 
@@ -272,6 +269,14 @@ def run(_FLAGS, model):
                                   im_stds=FLAGS.scale_stds)
         else:
             image=run['imgs'][sample_index]
+        if '3d' in FLAGS.network or 'nfc' in FLAGS.network: 
+          concat_frames.append(image)
+          if len(concat_frames) < FLAGS.n_frames: continue
+          if '3d' in FLAGS.network:
+            image=np.concatenate(concat_frames,axis=0)
+          else:
+            image=np.asarray(concat_frames)
+          concat_frames = concat_frames[-FLAGS.n_frames+1:] 
         label=np.expand_dims(run['controls'][sample_index],axis=-1)
         experience={'state':image,'trgt':label}
         method(model, experience, replaybuffer)

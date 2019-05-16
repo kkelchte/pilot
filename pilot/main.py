@@ -61,7 +61,8 @@ def main(_):
   parser.add_argument("--loss_window_mean_threshold", default=0.1,type=float, help="detect plateau of mean and std of loss window is below threshold.")
   parser.add_argument("--loss_window_std_threshold", default=0.1,type=float, help="detect plateau of mean and std of loss window is below threshold.")
   parser.add_argument("--calculate_importance_weights",action='store_true',help="Calculate the importance weights at the end of training and save them as pickled object.")
-  parser.add_argument("--save_annotated_images",action='store_true',help="Export image with expert and student label on it in logfolder/RGB.")
+  parser.add_argument("--save_annotated_images",action='store_true',help="Export image with expert and student label on it in logfolder/control_annotated.")
+  parser.add_argument("--save_CAM_images",action='store_true',help="Export image with Class Activation Map logfolder/CAM.")
  
   # ==========================
   #   Offline Parameters
@@ -199,7 +200,7 @@ def main(_):
 
   parser.add_argument("--pause_simulator", action='store_true', help="Pause simulator during frame processing, making discrete steps.")
   parser.add_argument("--export_buffer", action='store_true', help="Save the replaybuffer as dataset after each run.")
-  parser.add_argument("--no_training", action='store_true', help="avoid saving to the replay buffer and taking gradient steps.")
+  parser.add_argument("--no_training", action='store_true', help="avoid saving to the replay buffer and taking gradient steps in on-policy setting or avoid taking backward pass in online setting.")
 
   parser.add_argument("--horizon", default=0, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
   parser.add_argument("--save_every_num_epochs", default=100, type=int, help="Define after how many epochs a model should be saved while training on_policy.")

@@ -8,7 +8,7 @@
 			"path": "/esat/opal/kkelchte/docker_home/simsup_ws/src/teleop_twist_keyboard"
 		},
 		{
-			"path": "."
+			"path": "." 
 		},
 		{
 			"file_include_patterns":
@@ -46,6 +46,9 @@
 		},
 		{
 			"path": "/esat/opal/kkelchte/docker_home/tensorflow/Deep-Dream"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/tier"
 		}
 	]
 }

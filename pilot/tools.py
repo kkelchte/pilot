@@ -207,6 +207,89 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
     img -= 0.5
   return img
 
+# ==============================
+#   Save annotated image
+# ==============================
+def save_annotated_images(image, label, model):
+  """Save annotated image in logfolder/control_annotated 
+  """
+  import matplotlib.pyplot as plt
+  if not os.path.isdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated'): 
+    os.makedirs(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated')
+  ctr,_,_=model.predict(np.expand_dims(image,axis=0))
+  plt.cla()
+  image_postprocess = image.transpose(1,2,0).astype(np.float32)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0).astype(np.float32)
+  if '3d' in model.FLAGS.network: image_postprocess = image_postprocess[:,:,-3:]
+  plt.imshow(image_postprocess)
+  plt.plot((image.shape[1]/2,image.shape[1]/2-ctr[0]*50), (image.shape[2]/2,image.shape[2]/2), linewidth=5, markersize=12,color='b')
+  plt.plot((image.shape[1]/2,image.shape[1]/2-label*50), (image.shape[2]/2+10,image.shape[2]/2+10), linewidth=5, markersize=12,color='g')
+  plt.axis('off')
+  plt.text(x=5,y=image.shape[2]-10,s='Expert',color='g')
+  plt.text(x=5,y=image.shape[2]-20,s='Student',color='b')
+  
+  image_index=len(os.listdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated'))
+  plt.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated/{0:010d}.jpg'.format(image_index))
+
+
+def save_CAM_images(image, model, label=None):
+  """Save a CAM activation map of current image and save in logfolder/CAM
+  """
+  import gradcam
+  import torch
+  from PIL import Image
+  import matplotlib.pyplot as plt
+  # from misc_functions import get_example_params, save_class_activation_images, apply_colormap_on_image
+  import matplotlib.cm as mpl_color_map
+  import copy
+
+  if not os.path.isdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM'): 
+    os.makedirs(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM')
+  
+  grad_cam = gradcam.GradCam(model.net.network.to(torch.device('cpu')), target_layer=len(model.net.network.features)-1)
+
+  target_classes = [0]
+  if model.FLAGS.discrete:
+    # in discrete case take label output if provided otherwise loop over all options.
+    target_classes=list(range(model.FLAGS.action_quantity)) if not label else [model.FLAGS.continuous_to_bins(label)-1] 
+  
+  # Generate cam mask
+  for target_class in target_classes:
+    prep_img=torch.from_numpy(np.expand_dims(image,0)).type(torch.float32)
+    # get CAM activation
+    cam = grad_cam.generate_cam(prep_img, target_class)
+    # specify hsv color map from matplotlib
+    color_map = mpl_color_map.get_cmap('hsv')
+    no_trans_heatmap = color_map(cam)
+        
+    # Change alpha channel in colormap to make sure original image is displayed
+    heatmap = copy.copy(no_trans_heatmap)
+    heatmap[:, :, 3] = 0.4
+    heatmap = Image.fromarray((heatmap*255).astype(np.uint8))
+    # Apply heatmap on iamge
+    image_postprocess = image.transpose(1,2,0)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0)
+    if '3d' in model.FLAGS.network: image_postprocess = image_postprocess[:,:,-3:]
+    original_image = Image.fromarray(((image_postprocess)*255).astype(np.uint8))
+    heatmap_on_image = Image.new("RGBA", original_image.size)
+    heatmap_on_image = Image.alpha_composite(heatmap_on_image, original_image.convert('RGBA'))
+    heatmap_on_image = Image.alpha_composite(heatmap_on_image, heatmap)
+    
+    image_index=len(os.listdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM'))
+    model.net.network.to(model.device)
+    if label==None:
+      heatmap_on_image.save(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}_{1}.png'.format(image_index, target_class), 'PNG')
+    else:
+      # annotate control and save with pyplot
+      ctr,_,_ = model.predict(np.expand_dims(image,0))
+      plt.cla()
+      plt.imshow(heatmap_on_image)
+      plt.plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-ctr[0]*50), (heatmap_on_image.size[1]/2,heatmap_on_image.size[1]/2), linewidth=5, markersize=12,color='b')
+      plt.plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-label*50), (heatmap_on_image.size[1]/2+10,heatmap_on_image.size[1]/2+10), linewidth=5, markersize=12,color='g')
+      plt.axis('off')
+      plt.text(x=5,y=heatmap_on_image.size[1]-10,s='Expert',color='g')
+      plt.text(x=5,y=heatmap_on_image.size[1]-20,s='Student',color='b')
+      plt.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}.png'.format(image_index))
+
+  
 
 # ==============================
 #   Obtain Hidden State of LSTM 

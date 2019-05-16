@@ -43,85 +43,131 @@
 
 
 
-### ALEXNET SCRATCH 5K
-name="variance_neural_architecture_results/alex_net_reference_5K"
-pytorch_args="--network alex_net --dataset esatv3_expert_5K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --load_data_in_ram \
- --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
-condor_args="--wall_time_train $((3600*5)) --wall_time_eva $((60*60)) --rammem 7 --cpus 13 --use_greenlist"
-dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
-python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+# ### ALEXNET SCRATCH 5K
+# name="variance_neural_architecture_results/alex_net_reference_5K"
+# pytorch_args="--network alex_net --dataset esatv3_expert_5K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --load_data_in_ram \
+#  --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((3600*5)) --wall_time_eva $((60*60)) --rammem 7 --cpus 13 --use_greenlist"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 3 9) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
 
-name="variance_neural_architecture_results/alex_net_normalized_output_5K"
-pytorch_args="--network alex_net --dataset esatv3_expert_5K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --load_data_in_ram \
- --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input --normalized_output"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
-condor_args="--wall_time_train $((3600*5)) --wall_time_eva $((60*60)) --rammem 7 --cpus 13 --use_greenlist"
-dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
-python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+# name="variance_neural_architecture_results/alex_net_normalized_output_5K"
+# pytorch_args="--network alex_net --dataset esatv3_expert_5K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --load_data_in_ram \
+#  --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input --normalized_output"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((3600*5)) --wall_time_eva $((60*60)) --rammem 7 --cpus 13 --use_greenlist"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
 
-### ALEXNET SCRATCH 200K
-name="variance_neural_architecture_results/alex_net_reference"
-pytorch_args="--network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 \
- --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
-condor_args="--wall_time_train $((5*200*60+3600*2)) --wall_time_eva $((60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
-dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
-python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+# ### ALEXNET SCRATCH 200K
+# name="variance_neural_architecture_results/alex_net_reference"
+# pytorch_args="--network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 \
+#  --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((5*200*60+3600*2)) --wall_time_eva $((60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
 
-name="variance_neural_architecture_results/alex_net_normalized_output"
-pytorch_args="--network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 \
- --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input --normalized_output"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
-condor_args="--wall_time_train $((5*200*60+3600*2)) --wall_time_eva $((60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
-dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
-python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+# name="variance_neural_architecture_results/alex_net_normalized_output"
+# pytorch_args="--network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 \
+#  --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input --normalized_output"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((5*200*60+3600*2)) --wall_time_eva $((60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
 
-### POPULAR ARCHS PRETRAINED
+# ### POPULAR ARCHS PRETRAINED
 
-# 6000 GPU and 1
-# inception, squeeze, vgg16
-for AR in inception_net vgg16_net squeeze_net ; do
-  name="variance_neural_architecture_results/${AR}_pretrained"
-  pytorch_args="--network ${AR} --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --pretrained \
-   --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
-  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
-  condor_args="--wall_time_train $((5*200*60+3600*2)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
-  dag_args="--gpumem_train 6000 --gpumem_eva 6000 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
-  python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
-done
+# # 6000 GPU and 1
+# # inception, squeeze, vgg16
+# for AR in inception_net vgg16_net squeeze_net ; do
+#   name="variance_neural_architecture_results/${AR}_pretrained"
+#   pytorch_args="--network ${AR} --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --pretrained \
+#    --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+#   script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+#   condor_args="--wall_time_train $((5*200*60+3600*2)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+#   dag_args="--gpumem_train 6000 --gpumem_eva 6000 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
+#   python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+# done
 
-# 6000 GPU and 01
-# dense
-name="variance_neural_architecture_results/dense_net_pretrained"
-pytorch_args="--network dense_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --pretrained \
- --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.01 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
-condor_args="--wall_time_train $((5*200*60+3600*2)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
-dag_args="--gpumem_train 6000 --gpumem_eva 6000 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
-python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
-
-
-# 2000 GPU and 1
-# alex
-name="variance_neural_architecture_results/alex_net_pretrained"
-pytorch_args="--network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --pretrained \
- --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.01 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
-condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
-dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
-python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+# # 6000 GPU and 01
+# # dense
+# name="variance_neural_architecture_results/dense_net_pretrained"
+# pytorch_args="--network dense_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --pretrained \
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.01 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((5*200*60+3600*2)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 6000 --gpumem_eva 6000 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
 
 
-# 2000 GPU and 01
-# res18
-name="variance_neural_architecture_results/res18_net_pretrained"
-pytorch_args="--network res18_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --pretrained \
- --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.01 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
-condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
-dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
-python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+# # 2000 GPU and 1
+# # alex
+# name="variance_neural_architecture_results/alex_net_pretrained"
+# pytorch_args="--network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --pretrained \
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.01 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+
+
+# # 2000 GPU and 01
+# # res18
+# name="variance_neural_architecture_results/res18_net_pretrained"
+# pytorch_args="--network res18_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --pretrained \
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.01 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 2) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+
+
+# # ### TINY CONTINUOUS & DISCRETE
+# name="variance_neural_architecture_results/tiny_discrete_CE"
+# pytorch_args="--network tinyv3_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#  --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 9) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+
+# name="variance_neural_architecture_results/tiny_discrete_MSE"
+# pytorch_args="--network tinyv3_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#  --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 9) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+
+# name="variance_neural_architecture_results/tiny_continuous"
+# pytorch_args="--network tinyv3_net --dataset esatv3_expert_200K --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#  --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 9) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+
+
+# # ### TINY 2 CONCAT & 2 SIAMESE
+# name="variance_neural_architecture_results/tiny_2concat"
+# pytorch_args="--network tinyv3_3d_net --n_frames 2 --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 9) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args 
+
+# name="variance_neural_architecture_results/tiny_2nfc"
+# pytorch_args="--network tinyv3_nfc_net --n_frames 2 --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --shifted_input"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 10 --evaluation --python_project pytorch_pilot/pilot"
+# condor_args="--wall_time_train $((100*4*60+2*3600)) --wall_time_eva $((2*60*60)) --rammem 7 --cpus 13 --use_greenlist --copy_dataset"
+# dag_args="--gpumem_train 1900 --gpumem_eva 1900 --model_names $(seq 0 9) --random_numbers $(seq 111 5 161)"
+# python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args
+
+
 
 
 #--------------------------- CONDOR ONLINE
@@ -224,14 +270,22 @@ python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_arg
 
 # Train without MAS and see how it 'forgets' along the different runs
 
-# for mean in 015 01 005 ; do
-#   for std in 001 0005 ; do 
-#     name="continual_learning/4/$mean/$std"
-#     pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net --continual_learning\
-#      --buffer_size 100 --min_buffer_size 100 --learning_rate 0.001 --gradient_steps 10 --clip 5.0 --load_data_in_ram\
-#      --discrete --loss_window_mean_threshold $mean --loss_window_std_threshold $std --weight_decay 0.0005 --continual_learning_lambda 1"
+# name="continual_learning/5/baseline"
+# pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net --checkpoint_path tinyv3_net_scratch\
+#  --buffer_size 100 --min_buffer_size 100 --learning_rate 0.001 --gradient_steps 10 --clip 5.0 --load_data_in_ram\
+#  --discrete --weight_decay 0.0005 --buffer_update_rule hard --train_every_N_steps 10"
+# dag_args="--number_of_models 1"
+# condor_args="--wall_time $((5*3600)) --rammem 7 --gpumem 900 --copy_dataset"
+# python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
+
+# for mean in 001 ; do
+#   for std in 002 001 ; do 
+#     name="continual_learning/5/$mean/$std"
+#     pytorch_args="--online --dataset forest_trail_dataset --tensorboard --network tinyv3_net --checkpoint_path tinyv3_net_scratch\
+#      --buffer_size 100 --min_buffer_size 100 --learning_rate 0.001 --gradient_steps 10 --clip 5.0 --load_data_in_ram  --buffer_update_rule hard --train_every_N_steps 10\
+#      --discrete --loss_window_mean_threshold 0.$mean --loss_window_std_threshold 0.$std --weight_decay 0.0005 --continual_learning_lambda 1 --continual_learning"
 #     dag_args="--number_of_models 1"
-#     condor_args="--wall_time_train $((3*5*60*60+5*3600)) --rammem 7 --gpumem 3900 --copy_dataset"
+#     condor_args="--wall_time $((5*3600)) --rammem 7 --gpumem 900 --copy_dataset"
 #     python condor_offline.py -t $name $pytorch_args $dag_args $condor_args
 #   done
 # done
