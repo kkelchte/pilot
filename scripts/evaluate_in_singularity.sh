@@ -1,10 +1,10 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-# source .entrypoint_graph
+source .entrypoint_graph
 # source .entrypoint_graph_debug
 # source .entrypoint_xpra
-source .entrypoint_xpra_no_build
+# source .entrypoint_xpra_no_build
 roscd simulation_supervised/python
 
 #############
@@ -24,9 +24,9 @@ roscd simulation_supervised/python
 # EVALUATE MODEL
 # for i in 0 1 2 ; do 
 name="testing"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation -pp pytorch_pilot/pilot --pause_simulator"
+script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation -pp pytorch_pilot_beta/pilot --pause_simulator"
 model="validate_different_seeds_online/seed_0"
-pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"
+pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --save_CAM_images"
 python run_script.py -t $name $script_args $pytorch_args $extra_args
 
 # model="DAGGER/5K_concat"

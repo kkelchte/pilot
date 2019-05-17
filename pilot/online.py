@@ -78,7 +78,8 @@ def method(model, experience, replaybuffer, sumvar={}):
   global loss_window, last_loss_window_mean, last_loss_window_std, on_plateau
 
   image=experience['state']
-  label=experience['trgt']
+  if 'trgt' in experience.keys():
+    label=experience['trgt']
 
   # annotate frame with predicted control logfolder/control_annotated
   if model.FLAGS.save_annotated_images:
@@ -88,7 +89,7 @@ def method(model, experience, replaybuffer, sumvar={}):
   if model.FLAGS.save_CAM_images:
     tools.save_CAM_images(image, model, label=label)
 
-  if model.FLAGS.no_training:
+  if model.FLAGS.evaluate:
     return
   # save experience in buffer
   replaybuffer.add(experience)

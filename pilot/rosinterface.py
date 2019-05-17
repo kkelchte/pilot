@@ -447,36 +447,37 @@ class PilotNode(object):
     self.time_ctr_send.append(time.time())
     
     # call ONLINE METHOD to collect data in buffer and train model
-    if not self.FLAGS.evaluate and not self.finished and len(trgt) != 0 and not self.FLAGS.no_training:
+    # if not self.FLAGS.evaluate and not self.finished and len(trgt) != 0 and not self.FLAGS.no_training:
+    if not self.finished:
       experience={'state':im,
                   'action':float(action),
-                  'trgt':np.squeeze(trgt),
                   'speed':msg.linear.x,
                   'collision':0}
+      if len(trgt) != 0: experience['trgt']=np.squeeze(trgt) 
       if self.FLAGS.auxiliary_depth: 
         experience['target_depth']=trgt_depth
       online.method(self.model, experience, self.replay_buffer, self.replay_buffer.get_details())
       
-
       # Train on experiences from recovery cameras
       for k in self.recovery_images.keys():
         if len(self.recovery_images[k])!=0:
           experience={'state':self.recovery_images[k][:],
                   'action':float(action),
-                  'trgt':np.squeeze(trgt)+self.FLAGS.recovery_compensation if k == 'right' else np.squeeze(trgt)-self.FLAGS.recovery_compensation,
                   'speed':msg.linear.x,
                   'collision':0}
+          if len(trgt) != 0: experience['trgt']=np.squeeze(trgt)+self.FLAGS.recovery_compensation if k == 'right' else np.squeeze(trgt)-self.FLAGS.recovery_compensation
           del self.recovery_images[k]
           online.method(self.model, experience, self.replay_buffer)
           # self.replay_buffer.add(experience)
-      
-      if self.epoch > self.FLAGS.max_episodes:
-        self.overtake_pub.publish(Empty())
-        self.model.save(self.logfolder, replaybuffer=self.replay_buffer)
-        try:
-          with open(self.logfolder+'/fsm_log', 'a') as f: f.write('FINISHED\n')
-        except:
-          print('[rosinterface]: failed to write logfile: {}'.format(self.logfolder+'/fsm_log'))
+
+      if not self.FLAGS.evaluate:        
+        if self.epoch > self.FLAGS.max_episodes:
+          self.overtake_pub.publish(Empty())
+          self.model.save(self.logfolder, replaybuffer=self.replay_buffer)
+          try:
+            with open(self.logfolder+'/fsm_log', 'a') as f: f.write('FINISHED\n')
+          except:
+            print('[rosinterface]: failed to write logfile: {}'.format(self.logfolder+'/fsm_log'))
 
     # Unpause the simulator
     if self.FLAGS.pause_simulator and self.ready: self.unpause_physics_client(EmptyRequest()) 
@@ -508,9 +509,6 @@ class PilotNode(object):
 
     if 'LSTM' in self.FLAGS.network:
       self.hidden_states=tools.get_hidden_state([], self.model, astype='numpy')
-
-
-
     # if self.FLAGS.empty_buffer: self.replay_buffer.clear()    
 
   
@@ -521,6 +519,9 @@ class PilotNode(object):
     self.average_distances[run_type]= self.average_distances[run_type]-self.average_distances[run_type]/(self.runs[run_type]+1)
     self.average_distances[run_type] = self.average_distances[run_type]+self.current_distance/(self.runs[run_type]+1)
     self.runs[run_type]+=1
+
+    if self.FLAGS.save_CAM_images: self.FLAGS.save_CAM_images = False
+    if self.FLAGS.save_annotated_images: self.FLAGS.save_annotated_images = False
 
     sumvar={}
     result_string="start_time: {0}, run_number: {1}, run_type: {2}".format(time.strftime('%H.%M.%S'), self.runs[run_type], run_type)

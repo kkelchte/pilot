@@ -5,8 +5,15 @@ import xml.etree.cElementTree as ET
 
 import numpy as np
 # import tensorflow as tf
+import torch
 
 import os,sys,time
+
+import matplotlib
+matplotlib.use('Agg')
+
+import matplotlib.pyplot as plt
+
 
 import skimage.transform as sm
 import skimage.io as sio
@@ -101,7 +108,6 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
 def load_replaybuffer_from_checkpoint(FLAGS):
   """Go to checkpoint directory, look for my-model file, load it in with torch, return replaybuffer
   """
-  import torch
   replaybuffer=None
   if os.path.isfile(FLAGS.checkpoint_path+'/my-model'):
     try:
@@ -213,9 +219,6 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
 def save_annotated_images(image, label, model):
   """Save annotated image in logfolder/control_annotated 
   """
-  import matplotlib
-  matplotlib.use('Agg')
-  import matplotlib.pyplot as plt
   
   if not os.path.isdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated'): 
     os.makedirs(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated')
@@ -237,12 +240,7 @@ def save_annotated_images(image, label, model):
 def save_CAM_images(image, model, label=None):
   """Save a CAM activation map of current image and save in logfolder/CAM
   """
-  import matplotlib as mpl
-  mpl.use('Agg')
-
-  import matplotlib.pyplot as plt
-  import gradcam
-  import torch
+  # import gradcam
   from PIL import Image
   # from misc_functions import get_example_params, save_class_activation_images, apply_colormap_on_image
   import matplotlib.cm as mpl_color_map
@@ -251,15 +249,20 @@ def save_CAM_images(image, model, label=None):
   if not os.path.isdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM'): 
     os.makedirs(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM')
   
-  grad_cam = gradcam.GradCam(model.net.network.to(torch.device('cpu')), target_layer=len(model.net.network.features)-1)
+  ctr,_,_ = model.predict(np.expand_dims(image,0))
+  grad_cam = GradCam(model.net.network.to(torch.device('cpu')), target_layer=len(model.net.network.features)-1)
 
   target_classes = [0]
   if model.FLAGS.discrete:
     # in discrete case take label output if provided otherwise loop over all options.
     target_classes=list(range(model.FLAGS.action_quantity)) if not label else [model.FLAGS.continuous_to_bins(label)-1] 
   
+
+
+  fig, ax=plt.subplots(len(target_classes), 2, squeeze=False)
   # Generate cam mask
-  for target_class in target_classes:
+  for class_index, target_class in enumerate(target_classes):
+    
     prep_img=torch.from_numpy(np.expand_dims(image,0)).type(torch.float32)
     # get CAM activation
     cam = grad_cam.generate_cam(prep_img, target_class)
@@ -271,31 +274,47 @@ def save_CAM_images(image, model, label=None):
     heatmap = copy.copy(no_trans_heatmap)
     heatmap[:, :, 3] = 0.4
     heatmap = Image.fromarray((heatmap*255).astype(np.uint8))
-    # Apply heatmap on iamge
+    
+    # post process input image
     image_postprocess = image.transpose(1,2,0)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0)
     if '3d' in model.FLAGS.network: image_postprocess = image_postprocess[:,:,-3:]
+    ax[class_index,0].imshow(image_postprocess.astype(np.float32))
+    # add controls
+    ax[class_index,0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2), (image_postprocess.shape[1]/2-5,image_postprocess.shape[1]/2+15), linewidth=3, markersize=12,color='w')
+    ax[class_index,0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-ctr[0]*50), (image_postprocess.shape[1]/2,image_postprocess.shape[1]/2), linewidth=5, markersize=12,color='b')
+    ax[class_index,0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-label*50), (image_postprocess.shape[1]/2+10,image_postprocess.shape[1]/2+10), linewidth=5, markersize=12,color='g')
+    ax[class_index,0].text(x=5,y=image_postprocess.shape[1]-10,s='Expert',color='g')
+    ax[class_index,0].text(x=5,y=image_postprocess.shape[1]-20,s='Student',color='b')
+    ax[class_index,0].axis('off')  
+
+    # Apply heatmap on image
     original_image = Image.fromarray(((image_postprocess)*255).astype(np.uint8))
     heatmap_on_image = Image.new("RGBA", original_image.size)
     heatmap_on_image = Image.alpha_composite(heatmap_on_image, original_image.convert('RGBA'))
     heatmap_on_image = Image.alpha_composite(heatmap_on_image, heatmap)
     
     image_index=len(os.listdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM'))
-    model.net.network.to(model.device)
-    if label==None:
-      heatmap_on_image.save(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}_{1}.png'.format(image_index, target_class), 'PNG')
-    else:
-      # annotate control and save with pyplot
-      ctr,_,_ = model.predict(np.expand_dims(image,0))
-      plt.cla()
-      plt.imshow(heatmap_on_image)
-      plt.plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-ctr[0]*50), (heatmap_on_image.size[1]/2,heatmap_on_image.size[1]/2), linewidth=5, markersize=12,color='b')
-      plt.plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-label*50), (heatmap_on_image.size[1]/2+10,heatmap_on_image.size[1]/2+10), linewidth=5, markersize=12,color='g')
-      plt.axis('off')
-      plt.text(x=5,y=heatmap_on_image.size[1]-10,s='Expert',color='g')
-      plt.text(x=5,y=heatmap_on_image.size[1]-20,s='Student',color='b')
-      plt.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}.png'.format(image_index))
+    
+    ax[class_index,1].imshow(heatmap_on_image)
 
-  
+    # if label==None:
+    #   heatmap_on_image.save(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}_{1}.png'.format(image_index, target_class), 'PNG')
+    # else:
+    #   # annotate control and save with pyplot
+    #   plt.cla()
+    #   plt.imshow(heatmap_on_image)
+    ax[class_index,1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2), (heatmap_on_image.size[1]/2-5,heatmap_on_image.size[1]/2+15), linewidth=3, markersize=12,color='w')
+    ax[class_index,1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-ctr[0]*50), (heatmap_on_image.size[1]/2,heatmap_on_image.size[1]/2), linewidth=5, markersize=12,color='b')
+    ax[class_index,1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-label*50), (heatmap_on_image.size[1]/2+10,heatmap_on_image.size[1]/2+10), linewidth=5, markersize=12,color='g')
+    ax[class_index,1].axis('off')
+    ax[class_index,1].text(x=5,y=heatmap_on_image.size[1]-10,s='Expert',color='g')
+    ax[class_index,1].text(x=5,y=heatmap_on_image.size[1]-20,s='Student',color='b')
+
+  model.net.network.to(model.device)
+  fig.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}.png'.format(image_index), bbox_inches='tight')
+  plt.close()
+  plt.cla()
+  plt.clf()
 
 # ==============================
 #   Obtain Hidden State of LSTM 
@@ -310,7 +329,6 @@ def get_hidden_state(input_images, model, device='cpu', astype='tensor'):
   returns tuple of torch tensors for cell and hidden state
   EXTENSION: add device option...
   """
-  import torch
   # device = torch.device("cuda:0" if torch.cuda.is_available() and device=='gpu' else "cpu")
   device = torch.device("cuda:0")
   if not model.net.rnn: raise(ValueError("Network does not contain rnn part."))
@@ -387,7 +405,6 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   - filter: 1D array with length HiddenUnits
   - layer: 1 integer for each layer
   """
-  import torch
   print("[tools] calculate_importance_weights")
   # collect importance / gradients in list
   gradients=[0. for p in model.net.parameters()]
@@ -513,6 +530,96 @@ def visualize_importance_weights(importance_weights, log_folder):
     plt.tight_layout()
     plt.savefig(log_folder+'/histogram_importance_weights.png')
 
+
+
+
+
+class GradCam():
+  """
+      @author: Utku Ozbulak - github.com/utkuozbulak
+      Produces class activation map
+  """
+  def __init__(self, model, target_layer):
+    self.model = model
+    self.model.eval()
+    self.target_layer=target_layer
+
+  def save_gradient(self, grad):
+    self.gradients = grad
+
+  def forward_pass_on_convolutions(self, x):
+    """
+        Does a forward pass on convolutions, hooks the function at given layer
+    """
+    conv_output = None
+    for module_pos, module in self.model.features._modules.items():
+      x = module(x)  # Forward
+      if int(module_pos) == self.target_layer:
+        x.register_hook(self.save_gradient)
+        conv_output = x  # Save the convolution output on that layer
+    return conv_output, x
+
+  def forward_pass(self, x):
+    """
+        Does a full forward pass on the model
+    """
+    # Forward pass on the convolutions
+    conv_output, x = self.forward_pass_on_convolutions(x)
+    x = x.view(x.size(0), -1)  # Flatten
+    # Forward pass on the classifier
+    x = self.model.classifier(x)
+    return conv_output, x
+
+
+  def generate_cam(self, input_image, target_class=None):
+    from PIL import Image
+    # Full forward pass
+    # conv_output is the output of convolutions at specified layer
+    # model_output is the final output of the model (1, 1000)
+    conv_output, model_output = self.forward_pass(input_image)
+    if target_class is None:
+      target_class = np.argmax(model_output.data.numpy())
+    # Target for backprop
+    one_hot_output = torch.FloatTensor(1, model_output.size()[-1]).zero_()
+    one_hot_output[0][target_class] = 1
+    # Zero grads
+    self.model.features.zero_grad()
+    self.model.classifier.zero_grad()
+    # Backward pass with specified target
+    model_output.backward(gradient=one_hot_output, retain_graph=True)
+    # Get hooked gradients
+    guided_gradients = self.gradients.data.numpy()[0]
+    # Get convolution outputs
+    target = conv_output.data.numpy()[0]
+    # Get weights from gradients
+    weights = np.mean(guided_gradients, axis=(1, 2))  # Take averages for each gradient
+
+    # print('weights: ',np.amin(weights), np.amax(weights))
+    # Create empty numpy array for cam
+    cam = np.zeros(target.shape[1:], dtype=np.float32)
+
+    # use only the top 10% most important feature maps to create visualization
+    threshold=np.percentile(np.abs(weights), 10)
+    # threshold=np.max(weights)
+    # Multiply each weight with its conv output and then, sum
+    for i, w in enumerate(weights):
+       if np.abs(w) >= threshold: cam += w * target[i, :, :]
+      # print('adding feature map ',i, np.amin(cam), np.amax(cam))
+    # print( np.amin(cam), np.amax(cam))
+    # cam = np.maximum(cam, 0)
+    cam = np.tanh(cam)
+    # print( np.amin(cam), np.amax(cam))
+    
+    cam = (cam - np.min(cam)) / (np.max(cam) - np.min(cam))  # Normalize between 0-1
+    cam = np.uint8(cam * 255)  # Scale between 0-255 to visualize
+    cam = np.uint8(Image.fromarray(cam).resize((input_image.shape[2],
+                   input_image.shape[3]), Image.ANTIALIAS))
+    # ^ I am extremely unhappy with this line. Originally resizing was done in cv2 which
+    # supports resizing numpy matrices, however, when I moved the repository to PIL, this
+    # option is out of the window. So, in order to use resizing with ANTIALIAS feature of PIL,
+    # I briefly convert matrix to PIL image and then back.
+    # If there is a more beautiful way, send a PR.
+    return cam
 
 
 
