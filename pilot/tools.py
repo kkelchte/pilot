@@ -536,7 +536,7 @@ def visualize_importance_weights(importance_weights, log_folder):
 
 class GradCam():
   """
-      @author: Utku Ozbulak - github.com/utkuozbulak
+      Based on: Utku Ozbulak - github.com/utkuozbulak
       Produces class activation map
   """
   def __init__(self, model, target_layer):
@@ -592,20 +592,29 @@ class GradCam():
     # Get convolution outputs
     target = conv_output.data.numpy()[0]
     # Get weights from gradients
-    weights = np.mean(guided_gradients, axis=(1, 2))  # Take averages for each gradient
-
+    
+    # ADJUSTMENT 1
+    # weights = np.mean(guided_gradients, axis=(1, 2))  # Take averages for each gradient
+    weights = np.sum(np.abs(guided_gradients),axis=(1,2))/(guided_gradients.shape[1]*guided_gradients.shape[2])
+    
     # print('weights: ',np.amin(weights), np.amax(weights))
     # Create empty numpy array for cam
     cam = np.zeros(target.shape[1:], dtype=np.float32)
+    # cam = np.ones(target.shape[1:], dtype=np.float32)
 
     # use only the top 10% most important feature maps to create visualization
     threshold=np.percentile(np.abs(weights), 10)
-    # threshold=np.max(weights)
+    
     # Multiply each weight with its conv output and then, sum
     for i, w in enumerate(weights):
-       if np.abs(w) >= threshold: cam += w * target[i, :, :]
+      # ADJUSTMENT 2
+      # if w >= threshold: cam += w*(10*guided_gradients[i] + target[i, :, :])
+      if w >= threshold: cam += w*np.sign(guided_gradients[i])*target[i, :, :]
+      # if w >= threshold: cam += w * target[i, :, :]
+      # cam += w * target[i, :, :]
       # print('adding feature map ',i, np.amin(cam), np.amax(cam))
-    # print( np.amin(cam), np.amax(cam))
+    # import pdb; pdb.set_trace()
+    # ADJUSTMENT 3
     # cam = np.maximum(cam, 0)
     cam = np.tanh(cam)
     # print( np.amin(cam), np.amax(cam))

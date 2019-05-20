@@ -55,7 +55,7 @@ models=range(FLAGS.number_of_models)
 ##########################################################################################################################
 # STEP 2 Add for each model an online condor job without submitting for evaluation/training online
 for model in models:
-  command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --wall_time {4} --random_seed {5}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time, 1361*model+531)
+  command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --wall_time {4}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time)
   break_next = False
   for e in others: 
     command=" {0} {1}".format(command, e)

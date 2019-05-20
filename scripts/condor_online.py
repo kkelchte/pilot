@@ -134,23 +134,20 @@ if FLAGS.use_blacklist or len(FLAGS.blacklist) != 0:
             requirements+=" && (machine != \"{0}.esat.kuleuven.be\")".format(m)
 if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
     if len(FLAGS.greenlist)==0:
-        greenlist=" && ( (machine == \"andromeda.esat.kuleuven.be\") \
-                || (machine == \"asahi.esat.kuleuven.be\") \
+        greenlist=" && ( (machine == \"asahi.esat.kuleuven.be\") \
                 || (machine == \"bandai.esat.kuleuven.be\") \
                 || (machine == \"ena.esat.kuleuven.be\") \
                 || (machine == \"chokai.esat.kuleuven.be\") \
                 || (machine == \"daisen.esat.kuleuven.be\") \
-                || (machine == \"estragon.esat.kuleuven.be\") \
                 || (machine == \"fuji.esat.kuleuven.be\") \
                 || (machine == \"hoo.esat.kuleuven.be\") \
                 || (machine == \"vauxite.esat.kuleuven.be\") \
-                || (machine == \"vladimir.esat.kuleuven.be\") )"
-#               || (machine == \"goryu.esat.kuleuven.be\") \
-
+                || (machine == \"goryu.esat.kuleuven.be\") )"
     else:
         greenlist="&& ((machine == \"{0}.esat.kuleuven.be\")".format(FLAGS.greenlist[0])
-        for m in FLAGS.greenlist[1:]:
-            greenlist+=" || (machine == \"{0}.esat.kuleuven.be\")".format(m)
+        if len(FLAGS.greenlist) > 1:
+            for m in FLAGS.greenlist[1:]:
+                greenlist+=" || (machine == \"{0}.esat.kuleuven.be\")".format(m)
         greenlist+=")"
     requirements+=" {0}".format(greenlist)
 
@@ -226,7 +223,7 @@ sing = open(sing_file,'w')
 sing.write("#!/bin/bash\n")
 
 # Check if there is already a singularity running
-sing.write("sleep 2 \n")
+sing.write("sleep 30 \n")
 sing.write("echo check if Im already running on this machine \n")
 
 sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")

@@ -121,6 +121,7 @@ def combine_runs_map(motherdirs,destination):
   img_file=logroot+'/../../simsup_ws/src/simulation_supervised/simulation_supervised_demo/worlds/esatv3.png'
   current_image=mpimg.imread(img_file)
   implot=ax.imshow(current_image)
+  ax.axis('off')
   legend=[]
   colors=['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7']
   success=False
@@ -452,38 +453,49 @@ report.insert(line_index, "\\newpage \n")
 line_index+=1
 
 
-# Specific success/machine table:
+# Specific total/machine table:
 
-# for l in report:
-#   if 'INSERTTABLES' in l: 
-#     line_index=report.index(l)
-# report[line_index] = ""
-# start_table="\\begin{tabular}{|l|c|c|}\n"
-# report.insert(line_index, start_table)
-# line_index+=1
-# report.insert(line_index, "\\hline\n")
-# line_index+=1
-# table_row="model & machine & success \\\\ \n"
-# report.insert(line_index, table_row)
-# line_index+=1
-# report.insert(line_index, "\\hline\n")
-# line_index+=1
-# for m in log_folders:
-#   table_row="{0} & {1} & {2} \\\\ \n".format(os.path.basename(m).replace('_', ' '),
-#                                             results[m]['host'],
-#                                             np.mean(results[m]['test_success']))
-#   report.insert(line_index, table_row)
-#   line_index+=1
-# report.insert(line_index, "\\hline \n")
-# line_index+=1
-# # insert 
-# report.insert(line_index, "\\end{tabular} \n")
-# line_index+=1
-# report.insert(line_index, "\n")
-# line_index+=1
-# # Add for each model one trajectory
-# report.insert(line_index, "\\newpage \n")
-# line_index+=1
+for l in report:
+  if 'INSERTTABLES' in l: 
+    line_index=report.index(l)
+report[line_index] = ""
+start_table="\\begin{tabular}{|l|c|c|c|}\n"
+report.insert(line_index, start_table)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1
+table_row="model & machine & success & run\_imitation\_loss \\\\ \n"
+report.insert(line_index, table_row)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1
+for m in log_folders:
+  table_row="{0} & {1} & {2} & {3}\\\\ \n".format(os.path.basename(m).replace('_', ' '),
+                                            results[m]['host'],
+                                            np.mean(results[m]['test_success']),
+                                            np.mean(results[m]['run_imitation_loss']))
+  report.insert(line_index, table_row)
+  line_index+=1
+report.insert(line_index, "\\hline \n")
+line_index+=1
+# insert total vals
+table_row="{0} & {1} & {2:0.3f} ({3:0.3f}) & {4:0.3f} ({5:0.3f})\\\\ \n".format('total',
+                                            '-',
+                                            np.mean([np.mean(results[m]['test_success']) for m in log_folders]),
+                                            np.std([np.mean(results[m]['test_success']) for m in log_folders]),
+                                            np.mean([np.mean(results[m]['run_imitation_loss']) for m in log_folders]),
+                                            np.std([np.mean(results[m]['run_imitation_loss']) for m in log_folders]))
+report.insert(line_index, table_row)
+line_index+=1
+report.insert(line_index, "\\hline \n")
+line_index+=1
+report.insert(line_index, "\\end{tabular} \n")
+line_index+=1
+report.insert(line_index, "\n")
+line_index+=1
+# Add for each model one trajectory
+report.insert(line_index, "\\newpage \n")
+line_index+=1
 
 #--------------------------------------------------------------------------------
 #
