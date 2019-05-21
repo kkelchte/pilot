@@ -398,7 +398,7 @@ class PilotNode(object):
     
     ### IMITATION LOSS
     if len(self.target_control) != 0:
-      loss=np.sqrt((self.target_control[5]-control)**2)
+      loss=(self.target_control[5]-control)**2
       self.imitation_loss.append(loss)
       # print("ctr: {0}, trgt: {1}, loss:{2}".format(control, self.target_control[5], loss))
 

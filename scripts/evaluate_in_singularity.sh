@@ -20,8 +20,8 @@ roscd simulation_supervised/python
 run_simulation(){
   name="$1"
   model="$2"
-  pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --pause_simulator"
-  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0"
+  pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --pause_simulator"
+  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
   python run_script.py -t $name $script_args $pytorch_args
 }
 
@@ -42,48 +42,53 @@ run_simulation(){
 # run_simulation online_NA_evaluation_extra/VGG_Pre_Adam log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/Adam/00001/seed_0
 # # - VGG pretrained Adadelta
 # run_simulation online_NA_evaluation_extra/VGG_Pre_Adadelta log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/Adadelta/1/seed_0
+# run_simulation opal_long_hours/start variance_neural_architecture_results/alex_net_normalized_output/0
+
+# Alex Finetuned 
+# run_simulation online_NA_evaluation_extra/Alexnet_Finetuned log_neural_architectures/alex_net_finetune/01/seed_0
+# VGG16 Finetuned
+# run_simulation online_NA_evaluation_extra/VGG16_Finetuned log_neural_architectures/vgg16_net_finetune/1/seed_0
+# Inception Finetuned
+# run_simulation online_NA_evaluation_extra/Inception_Finetuned log_neural_architectures/inception_net_finetune/1/seed_0
+# Res18 Finetuned
+# run_simulation online_NA_evaluation_extra/Res18_Finetuned log_neural_architectures/res18_net_finetune/1/seed_0
+# # Dense Finetuned
+# run_simulation online_NA_evaluation_extra/Dense_Finetuned log_neural_architectures/dense_net_finetune/01/seed_0
+# # Squeeze Finetuned
+# run_simulation online_NA_evaluation_extra/Squeeze_Finetuned log_neural_architectures/squeeze_net_finetune/1/seed_0
 
 
 
 # TODO later
 # # - Alex Shifted Seed 1
+run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed0 log_neural_architectures/alex_net_255input/seed_0
+# # - Alex Shifted Seed 1
 # run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed1 log_neural_architectures/alex_net/esatv3_expert_200K/reference_seeds/seed_0
-# # - Alex Shifted Seed 2
+# # # - Alex Shifted Seed 2
 # run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_seeds/seed_0
 # # - Alex learning rate 0.01
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/01/seed_0
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_lr01 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/01/seed_0
 # # - Alex learning rate 0.001
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/001/seed_0
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_lr001 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/001/seed_0
 # # - Alex learning rate 0.0001
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/0001/seed_0
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_lr0001 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/0001/seed_0
 
-run_simulation opal_long_hours/start variance_neural_architecture_results/alex_net_normalized_output/0
-# Alex Finetuned 
-run_simulation online_NA_evaluation_extra/Alexnet_Finetuned log_neural_architectures/alex_net_finetune/01/seed_0
-# VGG16 Finetuned
-run_simulation online_NA_evaluation_extra/VGG16_Finetuned log_neural_architectures/vgg16_net_finetune/1/seed_0
-# Inception Finetuned
-run_simulation online_NA_evaluation_extra/Inception_Finetuned log_neural_architectures/inception_net_finetune/1/seed_0
-# Res18 Finetuned
-run_simulation online_NA_evaluation_extra/Res18_Finetuned log_neural_architectures/res18_net_finetune/1/seed_0
-# Dense Finetuned
-run_simulation online_NA_evaluation_extra/Dense_Finetuned log_neural_architectures/dense_net_finetune/01/seed_0
-# Squeeze Finetuned
-run_simulation online_NA_evaluation_extra/Squeeze_Finetuned log_neural_architectures/squeeze_net_finetune/1/seed_0
 
-# Alex Pretrained
-# VGG16 Pretrained
-run_simulation online_NA_evaluation_extra/VGG16_pretrained log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/01/seed_0
-# Inception Pretrained
-run_simulation online_NA_evaluation_extra/Inception_pretrained log_neural_architectures/inception_net_pretrained/esatv3_expert_200K/01/seed_0
-# Res18 Pretrained
-run_simulation online_NA_evaluation_extra/Res18_pretrained log_neural_architectures/res18_net_pretrained/esatv3_expert_200K/01/seed_0
-# Dense Pretrained
-run_simulation online_NA_evaluation_extra/Dense_pretrained log_neural_architectures/dense_net_pretrained/esatv3_expert_200K/01/seed_0
-# Squeeze Pretrained
-run_simulation online_NA_evaluation_extra/Dense_pretrained log_neural_architectures/squeeze_net_pretrained/esatv3_expert_200K/1/seed_0
 
-run_simulation opal_long_hours/end variance_neural_architecture_results/alex_net_normalized_output/0
+
+# # Alex Pretrained
+# # VGG16 Pretrained
+# run_simulation online_NA_evaluation_extra/VGG16_pretrained log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/01/seed_0
+# # Inception Pretrained
+# run_simulation online_NA_evaluation_extra/Inception_pretrained log_neural_architectures/inception_net_pretrained/esatv3_expert_200K/01/seed_0
+# # Res18 Pretrained
+# run_simulation online_NA_evaluation_extra/Res18_pretrained log_neural_architectures/res18_net_pretrained/esatv3_expert_200K/01/seed_0
+# # Dense Pretrained
+# run_simulation online_NA_evaluation_extra/Dense_pretrained log_neural_architectures/dense_net_pretrained/esatv3_expert_200K/01/seed_0
+# # Squeeze Pretrained
+# run_simulation online_NA_evaluation_extra/Dense_pretrained log_neural_architectures/squeeze_net_pretrained/esatv3_expert_200K/1/seed_0
+
+# run_simulation opal_long_hours/end variance_neural_architecture_results/alex_net_normalized_output/0
 
 
 

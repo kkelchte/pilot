@@ -259,9 +259,22 @@ def save_CAM_images(image, model, label=None):
   
 
 
-  fig, ax=plt.subplots(len(target_classes), 2, squeeze=False)
+  fig, ax=plt.subplots(1, 1+len(target_classes), figsize=(5*(1+len(target_classes)),5))
+  
+  # post process input image
+  image_postprocess = image.transpose(1,2,0)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0)
+  if '3d' in model.FLAGS.network: image_postprocess = image_postprocess[:,:,-3:]
+  ax[0].imshow(image_postprocess.astype(np.float32))
+  # add controls
+  ax[0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2), (image_postprocess.shape[1]/2-5,image_postprocess.shape[1]/2+15), linewidth=3, markersize=12,color='w')
+  ax[0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-ctr[0]*50), (image_postprocess.shape[1]/2,image_postprocess.shape[1]/2), linewidth=5, markersize=12,color='b')
+  ax[0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-label*50), (image_postprocess.shape[1]/2+10,image_postprocess.shape[1]/2+10), linewidth=5, markersize=12,color='g')
+  ax[0].text(x=5,y=image_postprocess.shape[1]-10,s='Expert',color='g')
+  ax[0].text(x=5,y=image_postprocess.shape[1]-20,s='Student',color='b')
+  ax[0].axis('off')    
+  
   # Generate cam mask
-  for class_index, target_class in enumerate(target_classes):
+  for class_index, target_class in enumerate(reversed(target_classes)):
     
     prep_img=torch.from_numpy(np.expand_dims(image,0)).type(torch.float32)
     # get CAM activation
@@ -275,18 +288,6 @@ def save_CAM_images(image, model, label=None):
     heatmap[:, :, 3] = 0.4
     heatmap = Image.fromarray((heatmap*255).astype(np.uint8))
     
-    # post process input image
-    image_postprocess = image.transpose(1,2,0)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0)
-    if '3d' in model.FLAGS.network: image_postprocess = image_postprocess[:,:,-3:]
-    ax[class_index,0].imshow(image_postprocess.astype(np.float32))
-    # add controls
-    ax[class_index,0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2), (image_postprocess.shape[1]/2-5,image_postprocess.shape[1]/2+15), linewidth=3, markersize=12,color='w')
-    ax[class_index,0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-ctr[0]*50), (image_postprocess.shape[1]/2,image_postprocess.shape[1]/2), linewidth=5, markersize=12,color='b')
-    ax[class_index,0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-label*50), (image_postprocess.shape[1]/2+10,image_postprocess.shape[1]/2+10), linewidth=5, markersize=12,color='g')
-    ax[class_index,0].text(x=5,y=image_postprocess.shape[1]-10,s='Expert',color='g')
-    ax[class_index,0].text(x=5,y=image_postprocess.shape[1]-20,s='Student',color='b')
-    ax[class_index,0].axis('off')  
-
     # Apply heatmap on image
     original_image = Image.fromarray(((image_postprocess)*255).astype(np.uint8))
     heatmap_on_image = Image.new("RGBA", original_image.size)
@@ -295,20 +296,13 @@ def save_CAM_images(image, model, label=None):
     
     image_index=len(os.listdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM'))
     
-    ax[class_index,1].imshow(heatmap_on_image)
-
-    # if label==None:
-    #   heatmap_on_image.save(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}_{1}.png'.format(image_index, target_class), 'PNG')
-    # else:
-    #   # annotate control and save with pyplot
-    #   plt.cla()
-    #   plt.imshow(heatmap_on_image)
-    ax[class_index,1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2), (heatmap_on_image.size[1]/2-5,heatmap_on_image.size[1]/2+15), linewidth=3, markersize=12,color='w')
-    ax[class_index,1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-ctr[0]*50), (heatmap_on_image.size[1]/2,heatmap_on_image.size[1]/2), linewidth=5, markersize=12,color='b')
-    ax[class_index,1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-label*50), (heatmap_on_image.size[1]/2+10,heatmap_on_image.size[1]/2+10), linewidth=5, markersize=12,color='g')
-    ax[class_index,1].axis('off')
-    ax[class_index,1].text(x=5,y=heatmap_on_image.size[1]-10,s='Expert',color='g')
-    ax[class_index,1].text(x=5,y=heatmap_on_image.size[1]-20,s='Student',color='b')
+    ax[class_index+1].imshow(heatmap_on_image)
+    ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2), (heatmap_on_image.size[1]/2-5,heatmap_on_image.size[1]/2+15), linewidth=3, markersize=12,color='w')
+    ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-ctr[0]*50), (heatmap_on_image.size[1]/2,heatmap_on_image.size[1]/2), linewidth=5, markersize=12,color='b')
+    ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-label*50), (heatmap_on_image.size[1]/2+10,heatmap_on_image.size[1]/2+10), linewidth=5, markersize=12,color='g')
+    ax[class_index+1].axis('off')
+    ax[class_index+1].text(x=5,y=heatmap_on_image.size[1]-10,s='Expert',color='g')
+    ax[class_index+1].text(x=5,y=heatmap_on_image.size[1]-20,s='Student',color='b')
 
   model.net.network.to(model.device)
   fig.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}.png'.format(image_index), bbox_inches='tight')
