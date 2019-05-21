@@ -225,6 +225,8 @@ sing.write("#!/bin/bash\n")
 # Check if there is already a singularity running
 sing.write("sleep 30 \n")
 sing.write("echo check if Im already running on this machine \n")
+sing.write("echo who is on this machine \n")
+sing.write("condor_who \n")
 
 sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")
 sing.write("ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")

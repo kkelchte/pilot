@@ -52,17 +52,57 @@
 # pytorch_args="--checkpoint_path validate_different_seeds_online/seed_2 --load_config --online --dataset esatv3_test --save_CAM_images --no_training"
 # python condor_offline.py -t $name $pytorch_args $condor_args 
 
+
+
 #--------------------------- DAG TRAIN AND EVALUATE MODELS NEURAL ARCHITECTURES
+
+# for AR in tinyv3_net tinyv3_3d_net tinyv3_nfc_net ; do
+#   name="input_space/${AR}"
+#   pytorch_args="--network $AR --n_frames 3 --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#    --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --shifted_input --optimizer SGD --loss MSE --weight_decay 0 --clip 1"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
+
+# for NF in 1 2 3 5 8 16 ; do
+#   name="number_of_frames/$NF"
+#   pytorch_args="--network tinyv3_3d_net --n_frames $NF --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#    --tensorboard --max_episodes 10000 --batch_size 32 --learning_rate 0.1 --shifted_input --optimizer SGD --loss MSE --weight_decay 0 --clip 1"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((100*2*60+2*3600)) --rammem 6 --gpumem 900 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
+
+
+# name="log_neural_architectures/alex_net/esatv3_expert_200K/reference_seeds"
+# pytorch_args="--skew_input --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#  --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.1 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0"
+# dag_args="--number_of_models 2 --seeds 456 789"
+# condor_args="--wall_time_train $((67200)) --rammem 7 --gpumem 1800 --copy_dataset"
+# python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+
+
+
+# for lr in 01 001 0001 ; do 
+#   name="log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/$lr"
+#   pytorch_args="--skew_input --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#    --checkpoint_path log_neural_architectures/alex_net_scratch --tensorboard --max_episodes 10000 --batch_size 100 --learning_rate 0.$lr --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0"
+#   dag_args="--number_of_models 1"
+#   condor_args="--wall_time_train $((67200)) --rammem 7 --gpumem 1800 --copy_dataset"
+#   python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# done
+
 
 
 # Further fighting variance on condor, check out 1 machine at a time and see if multiple jobs run on the same machine...
-name="fight_condor_variance"
-model="variance_neural_architecture_results/res18_net_pretrained/0"
-pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --pause_simulator"
-script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 1 --evaluation"
-dag_args="--number_of_models 20"
-condor_args="--wall_time $((10*60)) --gpumem 900 --rammem 15 --cpus 16 --not_nice"
-python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
+# name="fight_condor_variance"
+# model="variance_neural_architecture_results/res18_net_pretrained/0"
+# pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --pause_simulator"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 1 --evaluation"
+# dag_args="--number_of_models 5"
+# condor_args="--wall_time $((15*60)) --gpumem 900 --rammem 15 --cpus 16 --not_nice --use_greenlist"
+# python dag_evaluate.py -t $name $dag_args $condor_args $script_args $pytorch_args
 
 
 # ### ALEXNET SCRATCH 5K

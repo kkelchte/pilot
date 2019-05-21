@@ -440,7 +440,7 @@ for key in sorted(table_keys):
     table_row="{0} \\\\ \n".format(table_row)
     report.insert(line_index, table_row)
     line_index+=1
-  
+
 report.insert(line_index, "\\hline \n")
 line_index+=1
 # insert 
@@ -455,47 +455,48 @@ line_index+=1
 
 # Specific total/machine table:
 
-for l in report:
-  if 'INSERTTABLES' in l: 
-    line_index=report.index(l)
-report[line_index] = ""
-start_table="\\begin{tabular}{|l|c|c|c|}\n"
-report.insert(line_index, start_table)
-line_index+=1
-report.insert(line_index, "\\hline\n")
-line_index+=1
-table_row="model & machine & success & run\_imitation\_loss \\\\ \n"
-report.insert(line_index, table_row)
-line_index+=1
-report.insert(line_index, "\\hline\n")
-line_index+=1
-for m in log_folders:
-  table_row="{0} & {1} & {2} & {3}\\\\ \n".format(os.path.basename(m).replace('_', ' '),
-                                            results[m]['host'],
-                                            np.mean(results[m]['test_success']),
-                                            np.mean(results[m]['run_imitation_loss']))
+if 'test_success' in results[log_folders[0]].keys() and 'run_imitation_loss' in results[log_folders[0]].keys():
+  for l in report:
+    if 'INSERTTABLES' in l: 
+      line_index=report.index(l)
+  report[line_index] = ""
+  start_table="\\begin{tabular}{|l|c|c|c|}\n"
+  report.insert(line_index, start_table)
+  line_index+=1
+  report.insert(line_index, "\\hline\n")
+  line_index+=1
+  table_row="model & machine & success & run\_imitation\_loss \\\\ \n"
   report.insert(line_index, table_row)
   line_index+=1
-report.insert(line_index, "\\hline \n")
-line_index+=1
-# insert total vals
-table_row="{0} & {1} & {2:0.3f} ({3:0.3f}) & {4:0.3f} ({5:0.3f})\\\\ \n".format('total',
-                                            '-',
-                                            np.mean([np.mean(results[m]['test_success']) for m in log_folders]),
-                                            np.std([np.mean(results[m]['test_success']) for m in log_folders]),
-                                            np.mean([np.mean(results[m]['run_imitation_loss']) for m in log_folders]),
-                                            np.std([np.mean(results[m]['run_imitation_loss']) for m in log_folders]))
-report.insert(line_index, table_row)
-line_index+=1
-report.insert(line_index, "\\hline \n")
-line_index+=1
-report.insert(line_index, "\\end{tabular} \n")
-line_index+=1
-report.insert(line_index, "\n")
-line_index+=1
-# Add for each model one trajectory
-report.insert(line_index, "\\newpage \n")
-line_index+=1
+  report.insert(line_index, "\\hline\n")
+  line_index+=1
+  for m in log_folders:
+    table_row="{0} & {1} & {2} & {3}\\\\ \n".format(os.path.basename(m).replace('_', ' '),
+                                              results[m]['host'],
+                                              np.mean(results[m]['test_success']),
+                                              np.mean(results[m]['run_imitation_loss']))
+    report.insert(line_index, table_row)
+    line_index+=1
+  report.insert(line_index, "\\hline \n")
+  line_index+=1
+  # insert total vals
+  table_row="{0} & {1} & {2:0.3f} ({3:0.3f}) & {4:0.3f} ({5:0.3f})\\\\ \n".format('total',
+                                              '-',
+                                              np.mean([np.mean(results[m]['test_success']) for m in log_folders]),
+                                              np.std([np.mean(results[m]['test_success']) for m in log_folders]),
+                                              np.mean([np.mean(results[m]['run_imitation_loss']) for m in log_folders]),
+                                              np.std([np.mean(results[m]['run_imitation_loss']) for m in log_folders]))
+  report.insert(line_index, table_row)
+  line_index+=1
+  report.insert(line_index, "\\hline \n")
+  line_index+=1
+  report.insert(line_index, "\\end{tabular} \n")
+  line_index+=1
+  report.insert(line_index, "\n")
+  line_index+=1
+  # Add for each model one trajectory
+  report.insert(line_index, "\\newpage \n")
+  line_index+=1
 
 #--------------------------------------------------------------------------------
 #

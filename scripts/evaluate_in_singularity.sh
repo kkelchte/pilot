@@ -1,24 +1,98 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-# source .entrypoint_graph
+source .entrypoint_graph
 # source .entrypoint_graph_debug
-source .entrypoint_xpra
+# source .entrypoint_xpra
 # source .entrypoint_xpra_no_build
 roscd simulation_supervised/python
 
 #############
 # COMMAND
 
-# BIG LAUNCH OF EVALUATION OF ALL SEEDS OF MODELS
-for d in alex_net_normalized_output/0 alex_net_normalized_output/1 alex_net_normalized_output/2 alex_net_normalized_output_5K/0 alex_net_normalized_output_5K/1 alex_net_normalized_output_5K/2 alex_net_pretrained/0 alex_net_pretrained/1 alex_net_pretrained/2 alex_net_pretrained_old/0 alex_net_pretrained_old/1 alex_net_pretrained_old/2 alex_net_reference/0 alex_net_reference/1 alex_net_reference/2 alex_net_reference_5K/0 alex_net_reference_5K/1 alex_net_reference_5K/2 dense_net_pretrained/0 dense_net_pretrained/1 dense_net_pretrained/2 inception_net_pretrained/0 inception_net_pretrained/1 inception_net_pretrained/2 res18_net_pretrained/0 res18_net_pretrained/1 res18_net_pretrained/2 squeeze_net_pretrained/0 squeeze_net_pretrained/1 squeeze_net_pretrained/2 tiny_2concat/0 tiny_2concat/1 tiny_2concat/2 tiny_2concat/3 tiny_2concat/4 tiny_2concat/5 tiny_2concat/6 tiny_2concat/7 tiny_2concat/8 tiny_2concat/9 tiny_2nfc/0 tiny_2nfc/1 tiny_2nfc/2 tiny_2nfc/3 tiny_2nfc/4 tiny_2nfc/5 tiny_2nfc/6 tiny_2nfc/7 tiny_2nfc/8 tiny_2nfc/9 tiny_continuous/0 tiny_continuous/1 tiny_continuous/2 tiny_continuous/3 tiny_continuous/4 tiny_continuous/5 tiny_continuous/6 tiny_continuous/7 tiny_continuous/8 tiny_continuous/9 tiny_discrete_CE/0 tiny_discrete_CE/1 tiny_discrete_CE/2 tiny_discrete_CE/3 tiny_discrete_CE/4 tiny_discrete_CE/5 tiny_discrete_CE/6 tiny_discrete_CE/7 tiny_discrete_CE/8 tiny_discrete_CE/9 tiny_discrete_MSE/0 tiny_discrete_MSE/1 tiny_discrete_MSE/2 tiny_discrete_MSE/3 tiny_discrete_MSE/4 tiny_discrete_MSE/5 tiny_discrete_MSE/6 tiny_discrete_MSE/7 tiny_discrete_MSE/8 tiny_discrete_MSE/9 vgg16_net_pretrained/0 vgg16_net_pretrained/1 vgg16_net_pretrained/2 ; do 
-  model="variance_neural_architecture_results/$d"
-  name="evaluate_variance/evaluate_$(echo $d | cut -d / -f 1)/$(basename $d)"
-  pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --pause_simulator"
-  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation"
-  python run_script.py -t $name $script_args $pytorch_args
-done
+# See how well this net does in the beginning 
+# model="variance_neural_architecture_results/alex_net_normalized_output/0"
+# name="opal_long_hours/start"
+# pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --pause_simulator"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 1 --evaluation --final_evaluation_runs 0"
+# python run_script.py -t $name $script_args $pytorch_args
 
+run_simulation(){
+  name="$1"
+  model="$2"
+  pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --pause_simulator"
+  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0"
+  python run_script.py -t $name $script_args $pytorch_args
+}
+
+# DONE
+# # - Alex (Scaled)
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Scaled log_neural_architectures/alex_net/esatv3_expert_200K/scaled_input/1/seed_0
+# # - VGG SGD
+# run_simulation online_NA_evaluation_extra/VGG_SGD_Scratch log_neural_architectures/vgg16_net/esatv3_expert_200K/SGD/1/seed_0
+# # - VGG Adam
+# run_simulation online_NA_evaluation_extra/VGG_Adam_Scratch log_neural_architectures/vgg16_net/esatv3_expert_200K/Adam/00001/seed_0
+# # - VGG Adadelta
+# run_simulation online_NA_evaluation_extra/VGG_Adadelta_Scratch log_neural_architectures/vgg16_net/esatv3_expert_200K/Adadelta/1/seed_0
+# # - Alex pretrained (Shifted)
+# run_simulation online_NA_evaluation_extra/Alex_Pre log_neural_architectures/alex_net_pretrained/esatv3_expert_200K/1/seed_0
+# # - VGG pretrained SGD
+# run_simulation online_NA_evaluation_extra/VGG_Pre_SGD log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/SGD/1/seed_0
+# # - VGG pretrained Adam
+# run_simulation online_NA_evaluation_extra/VGG_Pre_Adam log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/Adam/00001/seed_0
+# # - VGG pretrained Adadelta
+# run_simulation online_NA_evaluation_extra/VGG_Pre_Adadelta log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/Adadelta/1/seed_0
+
+
+
+# TODO later
+# # - Alex Shifted Seed 1
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed1 log_neural_architectures/alex_net/esatv3_expert_200K/reference_seeds/seed_0
+# # - Alex Shifted Seed 2
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_seeds/seed_0
+# # - Alex learning rate 0.01
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/01/seed_0
+# # - Alex learning rate 0.001
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/001/seed_0
+# # - Alex learning rate 0.0001
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/0001/seed_0
+
+run_simulation opal_long_hours/start variance_neural_architecture_results/alex_net_normalized_output/0
+# Alex Finetuned 
+run_simulation online_NA_evaluation_extra/Alexnet_Finetuned log_neural_architectures/alex_net_finetune/01/seed_0
+# VGG16 Finetuned
+run_simulation online_NA_evaluation_extra/VGG16_Finetuned log_neural_architectures/vgg16_net_finetune/1/seed_0
+# Inception Finetuned
+run_simulation online_NA_evaluation_extra/Inception_Finetuned log_neural_architectures/inception_net_finetune/1/seed_0
+# Res18 Finetuned
+run_simulation online_NA_evaluation_extra/Res18_Finetuned log_neural_architectures/res18_net_finetune/1/seed_0
+# Dense Finetuned
+run_simulation online_NA_evaluation_extra/Dense_Finetuned log_neural_architectures/dense_net_finetune/01/seed_0
+# Squeeze Finetuned
+run_simulation online_NA_evaluation_extra/Squeeze_Finetuned log_neural_architectures/squeeze_net_finetune/1/seed_0
+
+# Alex Pretrained
+# VGG16 Pretrained
+run_simulation online_NA_evaluation_extra/VGG16_pretrained log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/01/seed_0
+# Inception Pretrained
+run_simulation online_NA_evaluation_extra/Inception_pretrained log_neural_architectures/inception_net_pretrained/esatv3_expert_200K/01/seed_0
+# Res18 Pretrained
+run_simulation online_NA_evaluation_extra/Res18_pretrained log_neural_architectures/res18_net_pretrained/esatv3_expert_200K/01/seed_0
+# Dense Pretrained
+run_simulation online_NA_evaluation_extra/Dense_pretrained log_neural_architectures/dense_net_pretrained/esatv3_expert_200K/01/seed_0
+# Squeeze Pretrained
+run_simulation online_NA_evaluation_extra/Dense_pretrained log_neural_architectures/squeeze_net_pretrained/esatv3_expert_200K/1/seed_0
+
+run_simulation opal_long_hours/end variance_neural_architecture_results/alex_net_normalized_output/0
+
+
+
+# See how well this net does in the end  
+# model="variance_neural_architecture_results/alex_net_normalized_output/0"
+# name="opal_long_hours/end"
+# pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --pause_simulator"
+# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 1 --evaluation --final_evaluation_runs 0"
+# python run_script.py -t $name $script_args $pytorch_args
 
 # RECOVERY
 # name="esatv3_recovery"
