@@ -390,6 +390,8 @@ table_keys=['Distance_current_test_esatv3',
             'test_success',
             'run_imitation_loss',
             'test_accuracy',
+            'validation_accuracy',
+            'validation_imitation_learning',
             'host']
 
 
@@ -455,48 +457,91 @@ line_index+=1
 
 # Specific total/machine table:
 
-if 'test_success' in results[log_folders[0]].keys() and 'run_imitation_loss' in results[log_folders[0]].keys():
-  for l in report:
-    if 'INSERTTABLES' in l: 
-      line_index=report.index(l)
-  report[line_index] = ""
-  start_table="\\begin{tabular}{|l|c|c|c|}\n"
-  report.insert(line_index, start_table)
-  line_index+=1
-  report.insert(line_index, "\\hline\n")
-  line_index+=1
-  table_row="model & machine & success & run\_imitation\_loss \\\\ \n"
+table_keys=['Distance_current_test_esatv3', 
+            'Distance_furthest_test_esatv3',
+            'test_success',
+            'run_imitation_loss',
+            'test_accuracy',
+            'validation_accuracy',
+            'validation_imitation_learning',
+            'host']
+
+# if 'test_success' in results[log_folders[0]].keys() and 'run_imitation_loss' in results[log_folders[0]].keys():
+good_keys=[k for k in table_keys if k in results[log_folders[0]].keys()]
+for l in report:
+  if 'INSERTTABLES' in l: 
+    line_index=report.index(l)
+report[line_index] = ""
+start_table="\\begin{tabular}{|l|"
+for i in range(len(good_keys)): start_table+="c|"
+start_table+="}\n"
+report.insert(line_index, start_table)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1
+table_row="model"
+for k in good_keys: table_row+=" & "+k.replace("_"," ")
+table_row+=" \\\\ \n"
+report.insert(line_index, table_row)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1
+total_vals={}
+for m in log_folders:
+  table_row="{0}".format(os.path.basename(m).replace('_', ' '))
+  for k in good_keys:
+    try:
+      if k == 'validation_accuracy': # take last value
+        table_row+=" & {0}".format(results[m][k][-1])
+      elif isinstance(results[m][k], collections.Iterable):
+          if type(results[m][k][-1]) in [float,int,bool]: #multiple floats --> take mean
+            table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(results[m][k]), np.std(results[m][k]))
+            if k in total_vals.keys():
+              total_vals[k].append(np.mean(results[m][k]))
+            else:
+              total_vals[k]=[np.mean(results[m][k])]
+          else: #multiple strings
+            for v in results[m][k]:  
+              table_row="{0} & {1} ".format(table_row, v)
+      else: #one value
+        table_row="{0} & {1} ".format(table_row, results[m][k])
+        if not isinstance(results[m][k], str):
+          if k in total_vals.keys:
+            total_vals.append(results[m][k])
+          else:
+            total_vals[k]=[results[m][k]]
+    except:
+      pass
+  table_row+="\\\\ \n"
   report.insert(line_index, table_row)
   line_index+=1
-  report.insert(line_index, "\\hline\n")
-  line_index+=1
-  for m in log_folders:
-    table_row="{0} & {1} & {2} & {3}\\\\ \n".format(os.path.basename(m).replace('_', ' '),
-                                              results[m]['host'],
-                                              np.mean(results[m]['test_success']),
-                                              np.mean(results[m]['run_imitation_loss']))
-    report.insert(line_index, table_row)
-    line_index+=1
   report.insert(line_index, "\\hline \n")
   line_index+=1
-  # insert total vals
-  table_row="{0} & {1} & {2:0.3f} ({3:0.3f}) & {4:0.3f} ({5:0.3f})\\\\ \n".format('total',
-                                              '-',
-                                              np.mean([np.mean(results[m]['test_success']) for m in log_folders]),
-                                              np.std([np.mean(results[m]['test_success']) for m in log_folders]),
-                                              np.mean([np.mean(results[m]['run_imitation_loss']) for m in log_folders]),
-                                              np.std([np.mean(results[m]['run_imitation_loss']) for m in log_folders]))
-  report.insert(line_index, table_row)
-  line_index+=1
-  report.insert(line_index, "\\hline \n")
-  line_index+=1
-  report.insert(line_index, "\\end{tabular} \n")
-  line_index+=1
-  report.insert(line_index, "\n")
-  line_index+=1
-  # Add for each model one trajectory
-  report.insert(line_index, "\\newpage \n")
-  line_index+=1
+# insert total vals
+table_row="total"
+for k in good_keys:
+  try:
+    table_row+=" & {0}".format(np.mean(total_vals[k]))
+  except:
+    table_row+="&"
+table_row+="\\\\ \n"
+# table_row="{0} & {1} & {2:0.3f} ({3:0.3f}) & {4:0.3f} ({5:0.3f})\\\\ \n".format('total',
+#                                             '-',
+#                                             np.mean([np.mean(results[m]['test_success']) for m in log_folders]),
+#                                             np.std([np.mean(results[m]['test_success']) for m in log_folders]),
+#                                             np.mean([np.mean(results[m]['run_imitation_loss']) for m in log_folders]),
+#                                             np.std([np.mean(results[m]['run_imitation_loss']) for m in log_folders]))
+report.insert(line_index, table_row)
+line_index+=1
+report.insert(line_index, "\\hline \n")
+line_index+=1
+report.insert(line_index, "\\end{tabular} \n")
+line_index+=1
+report.insert(line_index, "\n")
+line_index+=1
+# Add for each model one trajectory
+report.insert(line_index, "\\newpage \n")
+line_index+=1
 
 #--------------------------------------------------------------------------------
 #

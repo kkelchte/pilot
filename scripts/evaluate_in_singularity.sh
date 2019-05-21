@@ -61,7 +61,7 @@ run_simulation(){
 
 # TODO later
 # # - Alex Shifted Seed 1
-run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed0 log_neural_architectures/alex_net_255input/seed_0
+# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed0 log_neural_architectures/alex_net_255input/seed_0
 # # - Alex Shifted Seed 1
 # run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed1 log_neural_architectures/alex_net/esatv3_expert_200K/reference_seeds/seed_0
 # # # - Alex Shifted Seed 2

@@ -20,7 +20,7 @@ class Net(nn.Module):
     
     # Handle the auxilary net
     num_ftrs = self.network.AuxLogits.fc.in_features
-    self.network.AuxLogits.fc = nn.Linear(num_ftrs, 1000)
+    self.network.AuxLogits.fc = nn.Linear(num_ftrs, output_size)
     
     # Handle the primary net
     num_ftrs = self.network.fc.in_features

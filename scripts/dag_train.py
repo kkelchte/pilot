@@ -29,19 +29,19 @@ def save_call(command):
 ##########################################################################################################################
 # STEP 1 Load Parameters
 
-parser = argparse.ArgumentParser(description="""Dag_train_and_evaluate submits a Directed Acyclic Graph (DAG) of condor jobs for creating training a number of policies offline and evaluating them online, printing the results with a final script when everything is finished.""")
+parser = argparse.ArgumentParser(description="""Train models over different learning rates and send result as pdf.""")
 
 # ==========================
 #   General Settings
 # ==========================
 parser.add_argument("-t", "--log_tag", default='testing', type=str, help="log_tag: tag used to name logfolder.")
-parser.add_argument("--number_of_models", default=10, type=int, help="Define the number of models trained simultaneously over condor.")
+# parser.add_argument("--number_of_models", default=10, type=int, help="Define the number of models trained simultaneously over condor.")
 parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to source of code on Opal.")
-parser.add_argument("--wall_time_train", default=3*60*60, type=int, help="Maximum time job is allowed to train.")
+parser.add_argument("--wall_time", default=3*60*60, type=int, help="Maximum time job is allowed to train.")
 # parser.add_argument("--wall_time_eva", default=3*60*60, type=int, help="Maximum time job is allowed to evaluate.")
 parser.add_argument("--dont_retry", action='store_true', help="Don't retry if job ends with exit code != 1 --> usefull for debugging as previous log-files are overwritten.")
-parser.add_argument('--seeds', default=[123,456,789],nargs='+', help="Seeds to use over different models.")
+parser.add_argument('--learning_rates', default=[0.1,0.01,0.001,0.0001,0.00001],nargs='+', help="Seeds to use over different models.")
 
 FLAGS, others = parser.parse_known_args()
 
@@ -50,17 +50,25 @@ print("\nDAG_TRAIN settings:")
 for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
+models=[str(lr).replace('.','') for lr in learning_rates]
 ##########################################################################################################################
 # STEP 2 For each model launch condor_offline without submitting
-for model in range(FLAGS.number_of_models):
-  command = "python condor_offline.py -t {0}/seed_{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train, FLAGS.seeds[model%len(FLAGS.seeds)])
-  for e in others: command=" {0} {1}".format(command, e)
+for model in models:
+  command = "python condor_offline.py -t {0}/lr_{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time, 123)
+  break_next=False
+  for e in others: 
+    if break_next:
+      break_next=False
+    elif e in ['--learning_rate']:
+      break_next=True
+    else:
+      command=" {0} {1}".format(command, e)
   save_call(command)
 
 ##########################################################################################################################
-# STEP 5 Call a python script that creates a report
+# STEP 3 Call a python script that creates a report
 # command="python condor_offline.py -t {0}/report --dont_submit -pp pytorch_pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 10*60, FLAGS.summary_dir)
-command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpumem 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
+command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpumem 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 5*60)
 break_next=False
 for e in others: 
   if break_next:
@@ -83,21 +91,18 @@ except OSError:
   print("Found existing log folder: {0}/{1}{2}".format(FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
 with open(dag_dir+"/dag_file_"+FLAGS.log_tag.replace('/','_'),'w') as df:
   df.write("# File name: dag_file_"+FLAGS.log_tag+" \n")
-  for model in range(FLAGS.number_of_models):
-    df.write("JOB m{0}_train {1}/{2}{3}/seed_{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-    # df.write("JOB m{0}_eva {1}/{2}{3}/{0}_eva/condor/online.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
-  # df.write("JOB results {1}/{2}{3}/results/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
+  for model in models:
+    df.write("JOB m{0}_train {1}/{2}{3}/lr_{0}/condor/offline.condor \n".format(model, FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("JOB report {1}/{2}{3}/report/condor/offline.condor \n".format('', FLAGS.home, FLAGS.summary_dir, FLAGS.log_tag))
   df.write("\n")
   train_jobs=""
-  for model in range(FLAGS.number_of_models): train_jobs="{0} m{1}_train".format(train_jobs, model)
+  for model in models: train_jobs="{0} m{1}_train".format(train_jobs, model)
   df.write("PARENT {0} CHILD report\n".format(train_jobs))
   # df.write("PARENT results CHILD report\n")
   df.write("\n")
   if not FLAGS.dont_retry:
-    for model in range(FLAGS.number_of_models): 
+    for model in models: 
       df.write("Retry m{0}_train 2 \n".format(model))
-    # df.write("Retry results 2 \n")
     df.write("Retry report 3 \n")
 
 ##########################################################################################################################
