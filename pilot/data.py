@@ -162,10 +162,10 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist, subsample):
       imgs=[]
       if FLAGS.load_data_in_ram:
         for num in num_imgs:
-          if FLAGS.shifted_input:
-            input_normalization='shifted'
-          elif FLAGS.scaled_input:
+          if FLAGS.scaled_input:
             input_normalization='scaled'
+          elif FLAGS.normalized_input:
+            input_normalization='normalized'
           elif FLAGS.skew_input:
             input_normalization='skewinput'
           else:
@@ -174,8 +174,8 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist, subsample):
                               im_size=im_size, 
                               im_mode='CHW',
                               im_norm=input_normalization,
-                              im_means=FLAGS.scale_means,
-                              im_stds=FLAGS.scale_stds)
+                              im_means=FLAGS.normalize_means,
+                              im_stds=FLAGS.normalize_stds)
           assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
           imgs.append(img)
       # Add depth links if files exist
@@ -361,10 +361,10 @@ def generate_batch(data_type):
             def load_rgb_depth_image(run_ind, frame_ind):
               # load image
               img_file = join(data_set[run_ind]['name'],'RGB', '{0:010d}.jpg'.format(data_set[run_ind]['num_imgs'][frame_ind]))
-              if FLAGS.shifted_input:
-                input_normalization='shifted'
-              elif FLAGS.scaled_input:
+              if FLAGS.scaled_input:
                 input_normalization='scaled'
+              elif FLAGS.normalized_input:
+                input_normalization='normalized'
               elif FLAGS.skew_input:
                 input_normalization='skewinput'
               else:
@@ -373,8 +373,8 @@ def generate_batch(data_type):
                               im_size=im_size, 
                               im_mode='CHW',
                               im_norm=input_normalization,
-                              im_means=FLAGS.scale_means,
-                              im_stds=FLAGS.scale_stds)
+                              im_means=FLAGS.normalize_means,
+                              im_stds=FLAGS.normalize_stds)
               assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
               de=[]
               # if False:
@@ -517,18 +517,18 @@ def get_all_inputs(data_type):
       inputs.extend(run['imgs'])
     else:
       for frame_ind in run['num_imgs']:
-        if FLAGS.shifted_input:
-          input_normalization='shifted'
-        elif FLAGS.scaled_input:
+        if FLAGS.scaled_input:
           input_normalization='scaled'
+        elif FLAGS.normalized_input:
+          input_normalization='normalized'
         else:
           input_normalization='none'
         img = tools.load_rgb(im_file=join(run['name'],'RGB', '{0:010d}.jpg'.format(frame_ind)), 
                         im_size=im_size, 
                         im_mode='CHW',
                         im_norm=input_normalization,
-                        im_means=FLAGS.scale_means,
-                        im_stds=FLAGS.scale_stds)
+                        im_means=FLAGS.normalize_means,
+                        im_stds=FLAGS.normalize_stds)
         inputs.append(img)
   return inputs
 
@@ -554,10 +554,10 @@ if __name__ == '__main__':
   
   parser.add_argument("--subsample", default=1, type=int, help="Subsample data over time: e.g. subsample 2 to get from 20fps to 10fps.")
   parser.add_argument("--normalized_output", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
-  parser.add_argument("--shifted_input", action='store_true', help="Shift data from range 0,1 to -0.5,0.5")
-  parser.add_argument("--scaled_input", action='store_true', help="Scale the input to 0 mean and 1 std.")
-  parser.add_argument('--scale_means', default=[0.42, 0.46, 0.5],nargs='+', help="Means used for scaling the input around 0")
-  parser.add_argument('--scale_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
+  parser.add_argument("--scaled_input", action='store_true', help="Shift data from range 0,1 to -0.5,0.5")
+  parser.add_argument("--normalized_input", action='store_true', help="Scale the input to 0 mean and 1 std.")
+  parser.add_argument('--normalize_means', default=[0.42, 0.46, 0.5],nargs='+', help="Means used for scaling the input around 0")
+  parser.add_argument('--normalize_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
   parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
 
   parser.add_argument("--network",default='tiny_nfc_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")

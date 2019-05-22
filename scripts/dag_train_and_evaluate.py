@@ -83,7 +83,7 @@ for modelindex, model in enumerate(models):
 ##########################################################################################################################
 # STEP 3 Add for each model an online condor job without submitting for evaluation/training online
 for modelindex, model in enumerate(models):
-  command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --checkpoint_path {0}/{1} --wall_time {4}".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
+  command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --load_config --on_policy --save_CAM_images --checkpoint_path {0}/{1} --wall_time {4} --cpus 16 --use_greenlist".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
   skiplist=[]
   if FLAGS.gpumem_eva != -1:
     command="{0} --gpumem {1}".format(command, FLAGS.gpumem_eva)
@@ -106,7 +106,7 @@ for e in others:
   if break_next:
     break_next=False
   # don't overwrite these variables with 'others'
-  elif e in ['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith']:
+  elif e in ['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith','--copy_dataset']:
     break_next=True
   else:
     command=" {0} {1}".format(command, e)

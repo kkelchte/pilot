@@ -74,7 +74,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   """
   print("[tools] Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['auxiliary_depth', 'discrete','shifted_input','scaled_input','skew_input']
+  boollist=['auxiliary_depth', 'discrete','normalized_input','scaled_input','skew_input']
   intlist=['n_frames', 'num_outputs']
   floatlist=['depth_multiplier','speed','action_bound','turn_speed']
   stringlist=['network', 'data_format']
@@ -131,7 +131,7 @@ def load_rgb(im_file="",im_object=[],im_size=[3,128,128], im_mode='CHW', im_norm
   im_file: absolute path to file
   im_size: list output image size, obviously in de corresponding image mode
   im_mode: CHW for channel-first and HWC for channel-last image
-  im_norm: 'none', 'shifted' ~ move from 0:1 to -0.5:0.5, 'scale' for each channel (x-mean)/std
+  im_norm: 'none', 'scaled' ~ move from 0:1 to -0.5:0.5, 'scale' for each channel (x-mean)/std
   return:
   numpy array
   """
@@ -151,7 +151,7 @@ def load_rgb(im_file="",im_object=[],im_size=[3,128,128], im_mode='CHW', im_norm
     scale_width = int(np.floor(img.shape[2]/im_size[2]))
     img = img[:,::scale_height,::scale_width]
     img=sm.resize(img,(3,im_size[1],im_size[2]),mode='constant').astype(np.float16)
-    if im_norm=='scaled':
+    if im_norm=='normalized':
       for i in range(3): 
         img[i,:,:]-=im_means[i]
         img[i,:,:]/=im_stds[i]
@@ -160,12 +160,12 @@ def load_rgb(im_file="",im_object=[],im_size=[3,128,128], im_mode='CHW', im_norm
     scale_width = int(np.floor(img.shape[1]/im_size[1]))
     img = img[::scale_height,::scale_width,:]
     img=sm.resize(img,im_size,mode='constant').astype(np.float16)
-    if im_norm=='scaled':
+    if im_norm=='normalized':
       for i in range(3): 
         img[:,:,i]-=im_means[i]
         img[:,:,i]/=im_stds[i]
 
-  if im_norm=='shifted':
+  if im_norm=='scaled':
     img -= 0.5
 
   if im_norm=='skewinput':
@@ -182,7 +182,7 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
   args:
   im_file: absolute path to file
   im_size: list output image size, obviously in de corresponding image mode
-  im_norm: 'none', 'shifted' ~ move from 0:1 to -0.5:0.5, 'scale' for each channel (x-mean)/std
+  im_norm: 'none', 'scaled' ~ move from 0:1 to -0.5:0.5, 'scale' for each channel (x-mean)/std
   im_mean: float for depth mean
   im_std: float for depth std
   min_depth: float in m for minimum trustable depth (d<minimum -> minimum)
@@ -205,11 +205,11 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
   img=np.minimum(np.maximum(img, min_depth),max_depth)
   # scale to range 0:1
   img/=5.
-  if im_norm=='scaled':
+  if im_norm=='normalized':
     for i in range(3): 
       img[:,:,i]-=im_means[i]
       img[:,:,i]/=im_stds[i]
-  if im_norm=='shifted':
+  if im_norm=='scaled':
     img -= 0.5
   return img
 

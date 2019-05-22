@@ -197,8 +197,8 @@ class PilotNode(object):
     except CvBridgeError as e:
       print(e)
     else:
-      if self.FLAGS.shifted_input:
-        input_normalization='shifted'
+      if self.FLAGS.normalized_input:
+        input_normalization='normalized'
       elif self.FLAGS.scaled_input:
         input_normalization='scaled'
       elif self.FLAGS.skew_input:
@@ -209,8 +209,8 @@ class PilotNode(object):
                         im_size=self.model.input_size,
                         im_mode='CHW',
                         im_norm=input_normalization,
-                        im_means=self.FLAGS.scale_means,
-                        im_stds=self.FLAGS.scale_stds)
+                        im_means=self.FLAGS.normalize_means,
+                        im_stds=self.FLAGS.normalize_stds)
       return img
 
   def process_rgb_compressed(self, msg):

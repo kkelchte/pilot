@@ -52,6 +52,9 @@ parser.add_argument("--evaluate_after",action='store_true', help="After training
 parser.add_argument("--wall_time",default=60*60*3, help="After training a new condor job can be submitted to evaluate the model after.")
 parser.add_argument("--not_nice",action='store_true', help="In case you want higher priority.")
 
+
+
+
 #===========================
 #   Evaluation Params --> hard coded bellow: -n 20 -w canyon --reuse_default --fsm nn_turtle_fsm -p eva_params.yaml
 #===========================
@@ -108,7 +111,6 @@ condor_submit.write("RequestCpus      = 4 \n")
 condor_submit.write("Request_GPUs     = {0} \n".format(FLAGS.gpunum))
 condor_submit.write("RequestMemory    = {0}G \n".format(FLAGS.rammem))
 condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
-
 condor_submit.write("match_list_length = 4 \n")
 condor_submit.write("Rank = Mips \n")
 

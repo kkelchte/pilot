@@ -104,6 +104,7 @@ class Model(object):
         except:
           nn.init.normal_(p, 0, 0.1)
       print("[model]: initialized model from scratch")
+      self.save(self.FLAGS.summary_dir+self.FLAGS.log_tag, save_optimizer=False, filename='my-model-scratch')
     else:
       # load model checkpoint in its whole
       if not 'gpu' in self.FLAGS.device:
@@ -134,7 +135,7 @@ class Model(object):
         self.count_updates=checkpoint['count_updates']
         print("[model]: loaded omegas, star_variables and omega_update_counts from {0}.".format(self.FLAGS.checkpoint_path))
 
-  def save(self, logfolder, save_optimizer=True, replaybuffer=None):
+  def save(self, logfolder, save_optimizer=True, replaybuffer=None, filename='my-model'):
     '''save a checkpoint'''
     checkpoint={'epoch': self.epoch,
         'network': self.FLAGS.network,
@@ -149,7 +150,7 @@ class Model(object):
     if replaybuffer != None:
       # checkpoint['replaybuffer']=list(replaybuffer.buffer[:])
       checkpoint['replaybuffer']=replaybuffer
-    torch.save(checkpoint, logfolder+'/my-model')
+    torch.save(checkpoint, logfolder+'/'+filename)
   
   def define_discrete_bins(self, action_bound, action_quantity):
     '''

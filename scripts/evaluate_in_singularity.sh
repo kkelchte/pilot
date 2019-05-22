@@ -21,13 +21,15 @@ run_simulation(){
   name="$1"
   model="$2"
   pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --pause_simulator"
-  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
+  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
   python run_script.py -t $name $script_args $pytorch_args
 }
 
+python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/ --data_root pilot_data/ --log_tag clean/alex_scratch_reference_train_and_evaluate/0_eva  --load_config --on_policy --save_CAM_images --checkpoint_path clean/alex_scratch_reference_train_and_evaluate/0 --skew_input --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 1000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --learning_rate 0.1 --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation -gpumem_eva 900 --copy_dataset
+
 # DONE
 # # - Alex (Scaled)
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Scaled log_neural_architectures/alex_net/esatv3_expert_200K/scaled_input/1/seed_0
+# run_simulation testing log_neural_architectures/alex_net/esatv3_expert_200K/scaled_input/1/seed_0
 # # - VGG SGD
 # run_simulation online_NA_evaluation_extra/VGG_SGD_Scratch log_neural_architectures/vgg16_net/esatv3_expert_200K/SGD/1/seed_0
 # # - VGG Adam

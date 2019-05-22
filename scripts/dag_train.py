@@ -50,11 +50,11 @@ print("\nDAG_TRAIN settings:")
 for f in FLAGS.__dict__: print("{0}: {1}".format( f, FLAGS.__dict__[f]))
 print("Others: {0}".format(others))
 
-models=[str(lr).replace('.','') for lr in learning_rates]
+models=[str(lr).replace('.','') for lr in FLAGS.learning_rates]
 ##########################################################################################################################
 # STEP 2 For each model launch condor_offline without submitting
-for model in models:
-  command = "python condor_offline.py -t {0}/lr_{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time, 123)
+for modelindex, model in enumerate(models):
+  command = "python condor_offline.py -t {0}/lr_{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4} --learning_rate {5}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time, 123, FLAGS.learning_rates[modelindex])
   break_next=False
   for e in others: 
     if break_next:

@@ -40,13 +40,20 @@
 #------------------------------------------------------------
 
 #--------------------------- Redo Neural Architectures Experiments
-name="clean/alex_scratch_reference"
-pytorch_args="--skew_input --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
- --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0"
-condor_args="--wall_time $((67200)) --rammem 7 --gpumem 1800 --copy_dataset"
-dag_args=""
-python dag_train.py -t $name $pytorch_args $dag_args $condor_args
+# name="clean/alex_scratch_reference_lr"
+# pytorch_args="--skew_input --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+#  --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0"
+# condor_args="--wall_time $((67200)) --rammem 7 --gpumem 1800 --copy_dataset"
+# dag_args=""
+# python dag_train.py -t $name $pytorch_args $dag_args $condor_args
 
+name="clean/alex_scratch_reference_train_and_evaluate"
+pytorch_args="--skew_input --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
+ --tensorboard --max_episodes 1000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --learning_rate 0.1"
+script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation"
+condor_args="--wall_time_train $((67200)) --wall_time_eva $((5*5*60+60*10)) --rammem 7 --gpumem_train 1800 --gpumem_eva 900 --copy_dataset --use_greenlist --cpus 16"
+dag_args="--model_names 0 1 2 --random_numbers 123 456 789"
+python dag_train_and_evaluate.py -t $name $pytorch_args $script_args $condor_args $dag_args
 
 
 #--------------------------- Create annotated cam maps of testdata

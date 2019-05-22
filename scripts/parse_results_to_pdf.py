@@ -365,14 +365,14 @@ for key in sorted(all_keys):
 
 # add runs if they are available:
 # report.insert(line_index,"\\section{RUNS}\n")
-image_count=0
-for folder in run_images.keys():
-  # report.insert(line_index,"\\section{RUNS}\n")
-  for im in run_images[folder]:
-    report, line_index = add_figure(report, line_index, im, caption=os.path.basename(im).replace('_',' '))
-    image_count+=1
-    if image_count > 10: break
-  if image_count > 10: break
+# image_count=0
+# for folder in run_images.keys():
+#   # report.insert(line_index,"\\section{RUNS}\n")
+#   for im in run_images[folder]:
+#     report, line_index = add_figure(report, line_index, im, caption=os.path.basename(im).replace('_',' '))
+#     image_count+=1
+#     if image_count > 10: break
+#   if image_count > 10: break
 #--------------------------------------------------------------------------------
 #
 # STEP 5: fill in tables

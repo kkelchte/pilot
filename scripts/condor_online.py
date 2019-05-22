@@ -166,8 +166,8 @@ condor_submit.write("Log              = {0}/condor_{1}.log\n".format(condor_outp
 condor_submit.write("Output           = {0}/condor_{1}.out\n".format(condor_output_dir, description))
 condor_submit.write("Error            = {0}/condor_{1}.err\n".format(condor_output_dir, description))
 condor_submit.write("Notification = Error \n")
-# condor_submit.write("stream_error = True \n")
-# condor_submit.write("stream_output = True \n")
+condor_submit.write("stream_error = True \n")
+condor_submit.write("stream_output = True \n")
 condor_submit.write("Queue\n")
 
 condor_submit.close()
@@ -195,6 +195,16 @@ command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
 command="{0} --log_tag {1} ".format(command, FLAGS.log_tag)
 # command="{0} --log_tag {1} ".format(command, FLAGS.log_tag+'/pilot')
+
+# break_next=False
+# for e in others: 
+#   if break_next:
+#     break_next=False
+#   # don't overwrite these variables with 'others'
+#   elif e in ['--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith','--copy_dataset']:
+#     break_next=True
+#   else:
+#     command=" {0} {1}".format(command, e)
 for e in others: command="{0} {1}".format(command, e)
 
 executable.write("{0} \n".format(command))
@@ -223,32 +233,32 @@ sing = open(sing_file,'w')
 sing.write("#!/bin/bash\n")
 
 # Check if there is already a singularity running
-sing.write("sleep 30 \n")
-sing.write("echo check if Im already running on this machine \n")
-sing.write("echo who is on this machine \n")
-sing.write("condor_who \n")
+# sing.write("sleep 30 \n")
+# sing.write("echo check if Im already running on this machine \n")
+# sing.write("echo who is on this machine \n")
+# sing.write("condor_who \n")
 
-sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")
-sing.write("ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
-sing.write("JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
-sing.write("RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d '=' -f 2 | cut -d '@' -f 2 | cut -d '.' -f 1) \n")
-sing.write("Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d '/' -f 8) \n")
+# sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")
+# sing.write("ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+# sing.write("JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+# sing.write("RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d '=' -f 2 | cut -d '@' -f 2 | cut -d '.' -f 1) \n")
+# sing.write("Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d '/' -f 8) \n")
 
-sing.write("while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n")
-sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] two jobs are running on $RemoteHost, I better leave...\" \n")
-sing.write("  ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
-sing.write("  while [ $JobStatus = 2 ] ; do \n")
-sing.write("    ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
-sing.write("    JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
-sing.write("    echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n")
-sing.write("    sleep $(( RANDOM % 30 )) \n")
-sing.write("  done \n")
-sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n")
-sing.write("done \n")
+# sing.write("while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n")
+# sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] two jobs are running on $RemoteHost, I better leave...\" \n")
+# sing.write("  ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
+# sing.write("  while [ $JobStatus = 2 ] ; do \n")
+# sing.write("    ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
+# sing.write("    JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+# sing.write("    echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n")
+# sing.write("    sleep $(( RANDOM % 30 )) \n")
+# sing.write("  done \n")
+# sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n")
+# sing.write("done \n")
 
-sing.write("echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running on $RemoteHost so continue...\" \n")
-sing.write("echo \"HOST: $RemoteHost\" \n")
-sing.write("\n")
+# sing.write("echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running on $RemoteHost so continue...\" \n")
+# sing.write("echo \"HOST: $RemoteHost\" \n")
+# sing.write("\n")
 
 ###### Copy docker_home to local tmp
 # copy docker_home
@@ -272,12 +282,14 @@ if '--checkpoint_path' in others:
     # sing.write("echo 'failed to copy checkpoint' \n")
     # sing.write("cp {1}/{2}{0}/*/my-model {2}{0} || echo 'failed to copy checkpoint' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
     sing.write("fi \n")
+    sing.write("echo 'cp config' \n")
     sing.write("if [ -e {1}/{2}{0}/configuration.xml ] ; then \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
     sing.write("cp {1}/{2}{0}/configuration.xml {2}{0} \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
     # sing.write("else \n")
     # sing.write("cp {1}/{2}{0}/*/configuration.xml {2}{0}  || echo 'failed to copy configuration' \n".format(checkpoint_path, FLAGS.home, FLAGS.summary_dir))
     sing.write("fi \n")
 
+sing.write("echo 'cp log_tag' \n")
 # copy current log_tag folder if it's there
 sing.write("if [ -d {1}/{2}{0} ] ; then \n".format(FLAGS.log_tag, FLAGS.home, FLAGS.summary_dir))
 sing.write("mkdir -p {2}{0} \n".format(FLAGS.log_tag, FLAGS.home, FLAGS.summary_dir))
@@ -294,12 +306,12 @@ sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 ######
 
 sing.write("sing_image=\"ros_gazebo_tensorflow_writable.img\"\n")
-# sing.write("echo check if gluster is accessible: \n")
-# sing.write("if [ -f /gluster/visics/singularity/$sing_image ] ; then \n")
-# sing.write("  sing_loc=\"/gluster/visics/singularity\" \n")
-# sing.write("else \n")
+sing.write("echo check if gluster is accessible: \n")
+sing.write("if [ -f /gluster/visics/kkelchte/$sing_image ] ; then \n")
+sing.write("  sing_loc=\"/gluster/visics/kkelchte\" \n")
+sing.write("else \n")
 sing.write("sing_loc=\"/esat/opal/kkelchte/singularity_images\" \n")
-# sing.write("fi\n")
+sing.write("fi\n")
 sing.write("echo \"exec $1 in singularity image $sing_loc/$sing_image\"\n")
 
 # sing.write("echo \"exec $1 in singularity image /gluster/visics/singularity/ros_gazebo_tensorflow_drone_ws.img\" \n")
@@ -318,7 +330,9 @@ sing.write("echo \"exec $1 in singularity image $sing_loc/$sing_image\"\n")
 sing.write("echo cp $sing_loc/$sing_image /tmp\n")
 sing.write("cp $sing_loc/$sing_image /tmp\n")
 
-sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 \n")
+
+sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 >> {1}/{2}{0}/output \n".format(FLAGS.log_tag, FLAGS.home, FLAGS.summary_dir))
+# sing.write("/usr/bin/singularity exec --nv /tmp/$sing_image $1 >> {0}\n")
 sing.write("retVal=$? \n")
 sing.write("echo \"got exit code $retVal\" \n")
 
