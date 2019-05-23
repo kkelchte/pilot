@@ -216,7 +216,7 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
 # ==============================
 #   Save annotated image
 # ==============================
-def save_annotated_images(image, label, model):
+def save_annotated_images(image, label=None, model=None):
   """Save annotated image in logfolder/control_annotated 
   """
   
@@ -224,14 +224,20 @@ def save_annotated_images(image, label, model):
     os.makedirs(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated')
   ctr,_,_=model.predict(np.expand_dims(image,axis=0))
   plt.cla()
-  image_postprocess = image.transpose(1,2,0).astype(np.float32)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0).astype(np.float32)
+
+  image_postprocess = image.transpose(1,2,0).astype(np.float32)
+  if model.FLAGS.scaled_input:
+    image_postprocess+=0.5
+  elif model.FLAGS.skew_input:
+    image_postprocess = image_postprocess.astype(np.uint8)
   if '3d' in model.FLAGS.network: image_postprocess = image_postprocess[:,:,-3:]
   plt.imshow(image_postprocess)
   plt.plot((image.shape[1]/2,image.shape[1]/2-ctr[0]*50), (image.shape[2]/2,image.shape[2]/2), linewidth=5, markersize=12,color='b')
-  plt.plot((image.shape[1]/2,image.shape[1]/2-label*50), (image.shape[2]/2+10,image.shape[2]/2+10), linewidth=5, markersize=12,color='g')
-  plt.axis('off')
-  plt.text(x=5,y=image.shape[2]-10,s='Expert',color='g')
   plt.text(x=5,y=image.shape[2]-20,s='Student',color='b')
+  if label != None:
+    plt.plot((image.shape[1]/2,image.shape[1]/2-label*50), (image.shape[2]/2+10,image.shape[2]/2+10), linewidth=5, markersize=12,color='g')
+    plt.text(x=5,y=image.shape[2]-10,s='Expert',color='g')
+  plt.axis('off')
   
   image_index=len(os.listdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated'))
   plt.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated/{0:010d}.jpg'.format(image_index))
@@ -249,34 +255,39 @@ def save_CAM_images(image, model, label=None):
   if not os.path.isdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM'): 
     os.makedirs(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM')
   
+  # grad_cam = GradCam(model.net.network.to(torch.device('cpu')), target_layer=len(model.net.network.features)-1)
+  grad_cam = GradCam(model.net.network, target_layer=len(model.net.network.features)-1, device=model.device)
   ctr,_,_ = model.predict(np.expand_dims(image,0))
-  grad_cam = GradCam(model.net.network.to(torch.device('cpu')), target_layer=len(model.net.network.features)-1)
 
   target_classes = [0]
   if model.FLAGS.discrete:
     # in discrete case take label output if provided otherwise loop over all options.
-    target_classes=list(range(model.FLAGS.action_quantity)) if not label else [model.FLAGS.continuous_to_bins(label)-1] 
+    # target_classes=list(range(model.FLAGS.action_quantity)) if not label else [model.continuous_to_bins(label)-1] 
+    target_classes=list(range(model.FLAGS.action_quantity)) 
   
-
-
   fig, ax=plt.subplots(1, 1+len(target_classes), figsize=(5*(1+len(target_classes)),5))
   
   # post process input image
-  image_postprocess = image.transpose(1,2,0)+0.5 if model.FLAGS.shifted_input else image.transpose(1,2,0)
+  image_postprocess = image.transpose(1,2,0).astype(np.float32)
+  if model.FLAGS.scaled_input:
+    image_postprocess += 0.5
+  if model.FLAGS.skew_input:
+    image_postprocess = image_postprocess.astype(np.uint8)
   if '3d' in model.FLAGS.network: image_postprocess = image_postprocess[:,:,-3:]
-  ax[0].imshow(image_postprocess.astype(np.float32))
+  ax[0].imshow(image_postprocess)
   # add controls
   ax[0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2), (image_postprocess.shape[1]/2-5,image_postprocess.shape[1]/2+15), linewidth=3, markersize=12,color='w')
   ax[0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-ctr[0]*50), (image_postprocess.shape[1]/2,image_postprocess.shape[1]/2), linewidth=5, markersize=12,color='b')
-  ax[0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-label*50), (image_postprocess.shape[1]/2+10,image_postprocess.shape[1]/2+10), linewidth=5, markersize=12,color='g')
-  ax[0].text(x=5,y=image_postprocess.shape[1]-10,s='Expert',color='g')
   ax[0].text(x=5,y=image_postprocess.shape[1]-20,s='Student',color='b')
+  if label != None:
+    ax[0].plot((image_postprocess.shape[0]/2,image_postprocess.shape[0]/2-label*50), (image_postprocess.shape[1]/2+10,image_postprocess.shape[1]/2+10), linewidth=5, markersize=12,color='g')
+    ax[0].text(x=5,y=image_postprocess.shape[1]-10,s='Expert',color='g')
   ax[0].axis('off')    
   
   # Generate cam mask
   for class_index, target_class in enumerate(reversed(target_classes)):
     
-    prep_img=torch.from_numpy(np.expand_dims(image,0)).type(torch.float32)
+    prep_img=torch.from_numpy(np.expand_dims(image,0)).type(torch.float32).to(model.device)
     # get CAM activation
     cam = grad_cam.generate_cam(prep_img, target_class)
     # specify hsv color map from matplotlib
@@ -289,7 +300,10 @@ def save_CAM_images(image, model, label=None):
     heatmap = Image.fromarray((heatmap*255).astype(np.uint8))
     
     # Apply heatmap on image
-    original_image = Image.fromarray(((image_postprocess)*255).astype(np.uint8))
+    if model.FLAGS.skew_input:
+      original_image = Image.fromarray((image_postprocess).astype(np.uint8))
+    else:
+      original_image = Image.fromarray((image_postprocess*255).astype(np.uint8))
     heatmap_on_image = Image.new("RGBA", original_image.size)
     heatmap_on_image = Image.alpha_composite(heatmap_on_image, original_image.convert('RGBA'))
     heatmap_on_image = Image.alpha_composite(heatmap_on_image, heatmap)
@@ -299,12 +313,12 @@ def save_CAM_images(image, model, label=None):
     ax[class_index+1].imshow(heatmap_on_image)
     ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2), (heatmap_on_image.size[1]/2-5,heatmap_on_image.size[1]/2+15), linewidth=3, markersize=12,color='w')
     ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-ctr[0]*50), (heatmap_on_image.size[1]/2,heatmap_on_image.size[1]/2), linewidth=5, markersize=12,color='b')
-    ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-label*50), (heatmap_on_image.size[1]/2+10,heatmap_on_image.size[1]/2+10), linewidth=5, markersize=12,color='g')
-    ax[class_index+1].axis('off')
-    ax[class_index+1].text(x=5,y=heatmap_on_image.size[1]-10,s='Expert',color='g')
+    if label != None:
+      ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-label*50), (heatmap_on_image.size[1]/2+10,heatmap_on_image.size[1]/2+10), linewidth=5, markersize=12,color='g')
+      ax[class_index+1].text(x=5,y=heatmap_on_image.size[1]-10,s='Expert',color='g')
     ax[class_index+1].text(x=5,y=heatmap_on_image.size[1]-20,s='Student',color='b')
-
-  model.net.network.to(model.device)
+    ax[class_index+1].axis('off')
+  # model.net.network.to(model.device)
   fig.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM/{0:010d}.png'.format(image_index), bbox_inches='tight')
   plt.close()
   plt.cla()
@@ -533,10 +547,11 @@ class GradCam():
       Based on: Utku Ozbulak - github.com/utkuozbulak
       Produces class activation map
   """
-  def __init__(self, model, target_layer):
+  def __init__(self, model, target_layer, device):
     self.model = model
     self.model.eval()
     self.target_layer=target_layer
+    self.device=device
 
   def save_gradient(self, grad):
     self.gradients = grad
@@ -574,7 +589,7 @@ class GradCam():
     if target_class is None:
       target_class = np.argmax(model_output.data.numpy())
     # Target for backprop
-    one_hot_output = torch.FloatTensor(1, model_output.size()[-1]).zero_()
+    one_hot_output = torch.FloatTensor(1, model_output.size()[-1]).zero_().to(self.device)
     one_hot_output[0][target_class] = 1
     # Zero grads
     self.model.features.zero_grad()
@@ -582,9 +597,9 @@ class GradCam():
     # Backward pass with specified target
     model_output.backward(gradient=one_hot_output, retain_graph=True)
     # Get hooked gradients
-    guided_gradients = self.gradients.data.numpy()[0]
+    guided_gradients = self.gradients.data.cpu().detach().numpy()[0]
     # Get convolution outputs
-    target = conv_output.data.numpy()[0]
+    target = conv_output.data.cpu().detach().numpy()[0]
     # Get weights from gradients
     
     # ADJUSTMENT 1

@@ -126,7 +126,7 @@ def combine_runs_map(motherdirs,destination):
   colors=['C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7']
   success=False
   for mdindex, md in enumerate(motherdirs):
-    print md
+    # print md
     posfiles=sorted([os.path.join(d[0],f) for d in os.walk(md) for f in os.listdir(d[0]) if f.startswith('gt') and f.endswith('txt')])
     color=colors[mdindex%len(colors)]
     for p in posfiles:
@@ -207,11 +207,13 @@ run_keys=[]
 results = {}
 
 run_images={}
+CAM_images={}
 
 for folder_index, folder in enumerate(sorted(log_folders)):
   print("\n {0}/{1}: {2} \n".format(folder_index+1, len(log_folders),folder))
   results[folder] = {}
   run_images[folder]=[]
+  CAM_images[folder]=[]
   raw_log=tablib.Databook()
   # Parse online log_files: nn_ready and nn_log
   for file in ['nn_ready','nn_log','tf_log']:
@@ -259,8 +261,13 @@ for folder_index, folder in enumerate(sorted(log_folders)):
     pass
     
   # add run images
-  if os.path.isdir(folder+'/runs'):
-    run_images[folder].extend([folder+'/runs/'+f for f in sorted(os.listdir(folder+'/runs')) if f.endswith('jpg') or f.endswith('png')])
+  # if os.path.isdir(folder+'/runs'):
+  #   run_images[folder].extend([folder+'/runs/'+f for f in sorted(os.listdir(folder+'/runs')) if f.endswith('jpg') or f.endswith('png')])
+
+  if os.path.isdir(folder+'/CAM'):
+    number_CAM_images=3
+    CAM_images[folder].extend(np.random.choice([folder+'/CAM/'+f for f in sorted(os.listdir(folder+'/CAM')) if f.endswith('jpg') or f.endswith('png')]), number_CAM_images, replace=False)
+
     
   print("Overview parsed information: ")
   for k in sorted(results[folder].keys()):
@@ -353,7 +360,7 @@ for key in sorted(all_keys):
       if len(results[l][key]) > 2 and type(results[l][key][0]) == float: 
         all_fail=False # in case all models have only 2 values or no float values don't show
     except Exception as e:
-      print e
+      # print e
       pass
   if not all_fail:
     plt.xlabel("Run" if key in run_keys else "Epoch")
@@ -362,6 +369,17 @@ for key in sorted(all_keys):
     fig_name=log_root+FLAGS.mother_dir+'/report/'+key+'.png'
     plt.savefig(fig_name,bbox_inches='tight')
     report, line_index = add_figure(report, line_index, fig_name, FLAGS.mother_dir)
+
+# add CAM images
+report.insert(line_index,"\\section\{CAM\}\n")
+# image_count=0
+for folder in CAM_images.keys():
+  # report.insert(line_index,"\\section{RUNS}\n")
+  for im in CAM_images[folder]:
+    report, line_index = add_figure(report, line_index, im, caption=os.path.basename(im).replace('_',' '))
+  #   image_count+=1
+  #   if image_count > 10: break
+  # if image_count > 10: break
 
 # add runs if they are available:
 # report.insert(line_index,"\\section{RUNS}\n")
@@ -434,7 +452,7 @@ for key in sorted(table_keys):
     if len(total_vals)!=0:
       try:
         table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(total_vals), np.std(total_vals))
-      except:
+      except KeyError:
         table_row="{0} & ".format(table_row)
     else:
       table_row="{0} & ".format(table_row)
@@ -455,19 +473,17 @@ report.insert(line_index, "\\newpage \n")
 line_index+=1
 
 
-# Specific total/machine table:
+# Specific offline training table:
 
-table_keys=['Distance_current_test_esatv3', 
-            'Distance_furthest_test_esatv3',
-            'test_success',
-            'run_imitation_loss',
-            'test_accuracy',
+table_keys=['test_accuracy',
             'validation_accuracy',
             'validation_imitation_learning',
             'host']
 
+eva_folders=[f for f in log_folders if f.endswith('eva')]
+train_folders=[f for f in log_folders if not f.endswith('eva')]
 # if 'test_success' in results[log_folders[0]].keys() and 'run_imitation_loss' in results[log_folders[0]].keys():
-good_keys=[k for k in table_keys if k in results[log_folders[0]].keys()]
+good_keys=[k for k in table_keys if k in results[train_folders[0]].keys()]
 for l in report:
   if 'INSERTTABLES' in l: 
     line_index=report.index(l)
@@ -487,31 +503,34 @@ line_index+=1
 report.insert(line_index, "\\hline\n")
 line_index+=1
 total_vals={}
-for m in log_folders:
+for m in train_folders:
   table_row="{0}".format(os.path.basename(m).replace('_', ' '))
   for k in good_keys:
     try:
       if k == 'validation_accuracy': # take last value
         table_row+=" & {0}".format(results[m][k][-1])
+        value=results[m][k][-1]
       elif isinstance(results[m][k], collections.Iterable):
-          if type(results[m][k][-1]) in [float,int,bool]: #multiple floats --> take mean
-            table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(results[m][k]), np.std(results[m][k]))
-            if k in total_vals.keys():
-              total_vals[k].append(np.mean(results[m][k]))
-            else:
-              total_vals[k]=[np.mean(results[m][k])]
-          else: #multiple strings
-            for v in results[m][k]:  
-              table_row="{0} & {1} ".format(table_row, v)
+        if type(results[m][k][-1]) in [float,int,bool]: #multiple floats --> take mean
+          table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(results[m][k]), np.std(results[m][k]))
+          value=np.mean(results[m][k])
+        else: #multiple strings
+          value=results[m][k][0]
+          table_row="{0} & {1} ".format(table_row, value)
+          # for v in results[m][k]:  
+          #   table_row="{0} & {1} ".format(table_row, v)
       else: #one value
         table_row="{0} & {1} ".format(table_row, results[m][k])
-        if not isinstance(results[m][k], str):
-          if k in total_vals.keys:
-            total_vals.append(results[m][k])
-          else:
-            total_vals[k]=[results[m][k]]
-    except:
+        value=results[m][k]
+    except KeyError:
+      table_row+=" & "
       pass
+    else:
+      if not isinstance(value, str):
+        if k in total_vals.keys():
+          total_vals[k].append(value)
+        else:
+          total_vals[k]=[value]
   table_row+="\\\\ \n"
   report.insert(line_index, table_row)
   line_index+=1
@@ -521,16 +540,10 @@ for m in log_folders:
 table_row="total"
 for k in good_keys:
   try:
-    table_row+=" & {0}".format(np.mean(total_vals[k]))
-  except:
+    table_row+=" & {0:0.3f} ({1:0.3f})".format(np.mean(total_vals[k]),np.std(total_vals[k]))
+  except KeyError:
     table_row+="&"
 table_row+="\\\\ \n"
-# table_row="{0} & {1} & {2:0.3f} ({3:0.3f}) & {4:0.3f} ({5:0.3f})\\\\ \n".format('total',
-#                                             '-',
-#                                             np.mean([np.mean(results[m]['test_success']) for m in log_folders]),
-#                                             np.std([np.mean(results[m]['test_success']) for m in log_folders]),
-#                                             np.mean([np.mean(results[m]['run_imitation_loss']) for m in log_folders]),
-#                                             np.std([np.mean(results[m]['run_imitation_loss']) for m in log_folders]))
 report.insert(line_index, table_row)
 line_index+=1
 report.insert(line_index, "\\hline \n")
@@ -539,7 +552,86 @@ report.insert(line_index, "\\end{tabular} \n")
 line_index+=1
 report.insert(line_index, "\n")
 line_index+=1
-# Add for each model one trajectory
+
+# specific on-policy performance table
+
+
+table_keys=['Distance_current_test_esatv3',
+            'test_success',
+            'run_imitation_loss',
+            'host']
+
+good_keys=[k for k in table_keys if k in results[eva_folders[0]].keys()]
+for l in report:
+  if 'INSERTTABLES' in l: 
+    line_index=report.index(l)
+report[line_index] = ""
+start_table="\\begin{tabular}{|l|"
+for i in range(len(good_keys)): start_table+="c|"
+start_table+="}\n"
+report.insert(line_index, start_table)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1
+table_row="model"
+for k in good_keys: table_row+=" & "+k.replace("_"," ")
+table_row+=" \\\\ \n"
+report.insert(line_index, table_row)
+line_index+=1
+report.insert(line_index, "\\hline\n")
+line_index+=1
+total_vals={}
+for m in eva_folders:
+  table_row="{0}".format(os.path.basename(m).replace('_', ' '))
+  for k in good_keys:
+    try:
+      if k == 'validation_accuracy': # take last value
+        table_row+=" & {0}".format(results[m][k][-1])
+        value=results[m][k][-1]
+      elif isinstance(results[m][k], collections.Iterable):
+        if type(results[m][k][-1]) in [float,int,bool]: #multiple floats --> take mean
+          table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(results[m][k]), np.std(results[m][k]))
+          value=np.mean(results[m][k])
+        else: #multiple strings
+          value=results[m][k][0]
+          table_row="{0} & {1} ".format(table_row, value)
+          # for v in results[m][k]:  
+          #   table_row="{0} & {1} ".format(table_row, v)
+      else: #one value
+        table_row="{0} & {1} ".format(table_row, results[m][k])
+        value=results[m][k]
+    except KeyError:
+      table_row+=" & "
+      pass
+    else:
+      if not isinstance(value, str):
+        if k in total_vals.keys():
+          total_vals[k].append(value)
+        else:
+          total_vals[k]=[value]
+  table_row+="\\\\ \n"
+  report.insert(line_index, table_row)
+  line_index+=1
+  report.insert(line_index, "\\hline \n")
+  line_index+=1
+# insert total vals
+table_row="total"
+for k in good_keys:
+  try:
+    table_row+=" & {0:0.3f} ({1:0.3f})".format(np.mean(total_vals[k]),np.std(total_vals[k]))
+  except KeyError:
+    table_row+="&"
+table_row+="\\\\ \n"
+report.insert(line_index, table_row)
+line_index+=1
+report.insert(line_index, "\\hline \n")
+line_index+=1
+report.insert(line_index, "\\end{tabular} \n")
+line_index+=1
+report.insert(line_index, "\n")
+line_index+=1
+
+
 report.insert(line_index, "\\newpage \n")
 line_index+=1
 

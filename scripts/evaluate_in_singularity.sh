@@ -25,7 +25,10 @@ run_simulation(){
   python run_script.py -t $name $script_args $pytorch_args
 }
 
-python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/ --data_root pilot_data/ --log_tag clean/alex_scratch_reference_train_and_evaluate/0_eva  --load_config --on_policy --save_CAM_images --checkpoint_path clean/alex_scratch_reference_train_and_evaluate/0 --skew_input --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 1000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --learning_rate 0.1 --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation -gpumem_eva 900 --copy_dataset
+# python run_script.py -pe sing -pp pytorch_pilot_beta/pilot --summary_dir tensorflow/log/ --owr --data_root pilot_data/ --log_tag testing  --load_config --on_policy --save_CAM_images --checkpoint_path chapter_neural_architectures/data_normalization/alex_scaled_input/learning_rates/lr_01 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation --learning_rate 0.1 --pause_simulator
+
+
+python run_script.py -pe sing -pp pytorch_pilot_beta/pilot --skew_input --summary_dir tensorflow/log/ --owr --data_root pilot_data/ --log_tag testing  --load_config --on_policy --save_CAM_images --checkpoint_path test_train_and_evaluate/0 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation --learning_rate 0.1 --pause_simulator
 
 # DONE
 # # - Alex (Scaled)

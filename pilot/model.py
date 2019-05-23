@@ -80,7 +80,7 @@ class Model(object):
       self.count_updates=0
 
     # DEFINE SUMMARIES WITH TENSORBOARD
-    if self.FLAGS.tensorboard and 'gpu' in self.FLAGS.device:
+    if self.FLAGS.tensorboard:
       import tensorflow as tf 
       self.graph = tf.Graph()
       self.summary_vars = {}

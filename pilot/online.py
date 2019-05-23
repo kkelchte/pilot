@@ -78,8 +78,9 @@ def method(model, experience, replaybuffer, sumvar={}):
   global loss_window, last_loss_window_mean, last_loss_window_std, on_plateau
 
   image=experience['state']
-  if 'trgt' in experience.keys():
-    label=experience['trgt']
+
+  label=experience['trgt'] if 'trgt' in experience.keys() else None
+  
 
   # annotate frame with predicted control logfolder/control_annotated
   if model.FLAGS.save_annotated_images:
@@ -154,7 +155,7 @@ def evaluate(model, testset):
           image=tools.load_rgb(im_file=run[cam][img_index], 
                                 im_size=model.input_size, 
                                 im_mode='CHW',
-                                im_norm='shifted' if model.FLAGS.shifted_input else 'none',
+                                im_norm='scaled' if model.FLAGS.scaled_input else 'none',
                                 im_means=model.FLAGS.scale_means,
                                 im_stds=model.FLAGS.scale_stds)
         else:
@@ -234,9 +235,9 @@ def run(_FLAGS, model):
             image=tools.load_rgb(im_file=img, 
                                 im_size=model.input_size, 
                                 im_mode='CHW',
-                                im_norm='shifted' if FLAGS.shifted_input else 'none',
-                                im_means=FLAGS.scale_means,
-                                im_stds=FLAGS.scale_stds)
+                                im_norm='scaled' if FLAGS.scaled_input else 'none',
+                                im_means=FLAGS.normalize_means,
+                                im_stds=FLAGS.normalize_stds)
             rundata[cam].append(image)
         testdata.append(rundata)
     # avoid evaluations for each replay buffer filling
@@ -248,9 +249,9 @@ def run(_FLAGS, model):
           image=tools.load_rgb(im_file=images[cam][img_index], 
                                 im_size=model.input_size, 
                                 im_mode='CHW',
-                                im_norm='shifted' if FLAGS.shifted_input else 'none',
-                                im_means=FLAGS.scale_means,
-                                im_stds=FLAGS.scale_stds)
+                                im_norm='scaled' if FLAGS.scaled_input else 'none',
+                                im_means=FLAGS.normalize_means,
+                                im_stds=FLAGS.normalize_stds)
           experience={'state':image,'trgt':label}
           method(model, experience, replaybuffer)
           if int(model.epoch/FLAGS.gradient_steps)%100 == 50 and model.epoch != last_evaluation_epoch:
@@ -265,9 +266,9 @@ def run(_FLAGS, model):
           image=tools.load_rgb(im_file=os.path.join(run['name'],'RGB', '{0:010d}.jpg'.format(run['num_imgs'][sample_index])), 
                                   im_size=model.input_size, 
                                   im_mode='CHW',
-                                  im_norm='shifted' if FLAGS.shifted_input else 'none',
-                                  im_means=FLAGS.scale_means,
-                                  im_stds=FLAGS.scale_stds)
+                                  im_norm='scaled' if FLAGS.scaled_input else 'none',
+                                  im_means=FLAGS.normalize_means,
+                                  im_stds=FLAGS.normalize_stds)
         else:
             image=run['imgs'][sample_index]
         if '3d' in FLAGS.network or 'nfc' in FLAGS.network: 

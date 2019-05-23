@@ -26,6 +26,23 @@ def save_call(command):
   ex_code=subprocess.call(shlex.split(command))
   if ex_code != 0: sys.exit(ex_code)
 
+def add_other_arguments(command, skiplist, skipnextlist, others):
+  """Append arguments from 'others' to command if they are not in skiplist.
+  Skip also next argument if the argument is in skipnextlist.
+  return augmented command.
+  """
+  break_next = False
+  for e in others: 
+    if break_next: # don't add another --checkpoint_path in case this was set
+      break_next = False 
+    elif e in skipnextlist:
+      break_next = True
+    elif e in skiplist:
+      pass
+    else:
+      command="{0} {1}".format(command, e)
+  return command
+
 ##########################################################################################################################
 # STEP 1 Load Parameters
 
@@ -63,53 +80,42 @@ else:
 # STEP 2 For each model launch condor_offline without submitting
 for modelindex, model in enumerate(models):
   command = "python condor_offline.py -t {0}/{1} --dont_submit --summary_dir {2} --wall_time {3}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time_train)
-  skiplist=[]
+  skiplist = ['--dont_submit']
+  skipnextlist=['-t', '--summary_dir','--wall_time']
   if len(FLAGS.random_numbers) != 0:
     command="{0} --random_seed {1}".format(command, FLAGS.random_numbers[modelindex%len(FLAGS.random_numbers)])
-    skiplist.append('--random_seed')
+    skipnextlist.append('--random_seed')
   if FLAGS.gpumem_train != -1:
     command="{0} --gpumem {1}".format(command, FLAGS.gpumem_train)
-    skiplist.append('--gpumem')
-  break_next=False
-  for e in others:
-    if break_next:
-      break_next=False
-    elif e in skiplist:
-      break_next=True
-    else:
-      command="{0} {1}".format(command, e)
+    skipnextlist.append('--gpumem')
+  command=add_other_arguments(command, 
+                              ['--save_CAM_images'], 
+                              skipnextlist, 
+                              others)
   save_call(command)
 
 ##########################################################################################################################
 # STEP 3 Add for each model an online condor job without submitting for evaluation/training online
 for modelindex, model in enumerate(models):
-  command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --load_config --on_policy --save_CAM_images --checkpoint_path {0}/{1} --wall_time {4} --cpus 16 --use_greenlist".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
-  skiplist=[]
+  command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --load_config --on_policy --pause_simulator --evaluation --checkpoint_path {0}/{1} --wall_time {4} --cpus 16 --use_greenlist".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
+  skiplist=['--load_config', '--on_policy', '--pause_simulator', '--evaluation', '--dont_submit', '--use_greenlist']
+  skipnextlist=['-t','--home','--summary_dir', '--checkpoint_path','--wall_time', '--cpus']
   if FLAGS.gpumem_eva != -1:
     command="{0} --gpumem {1}".format(command, FLAGS.gpumem_eva)
-    skiplist.append('--gpumem')
-  break_next = False
-  for e in others: 
-    if break_next: # don't add another --checkpoint_path in case this was set
-      break_next = False 
-    elif e == '--checkpoint_path':
-      break_next = True
-    else:
-      command="{0} {1}".format(command, e)
+    skipnextlist.append('--gpumem')
+  command=add_other_arguments(command, 
+                              skiplist, 
+                              skipnextlist, 
+                              others)
   save_call(command)
 
 ##########################################################################################################################
 # STEP 4 Call a python script that parses the results and prints some stats
 command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpumem 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2} --endswith eva".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
-break_next=False
-for e in others: 
-  if break_next:
-    break_next=False
-  # don't overwrite these variables with 'others'
-  elif e in ['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith','--copy_dataset']:
-    break_next=True
-  else:
-    command=" {0} {1}".format(command, e)
+command=add_other_arguments(command, 
+                            skiplist=[],
+                            skipnextlist=['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith','--copy_dataset'],
+                            others=others)
 save_call(command)
 
 

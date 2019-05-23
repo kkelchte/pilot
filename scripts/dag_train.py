@@ -26,6 +26,23 @@ def save_call(command):
   ex_code=subprocess.call(shlex.split(command))
   if ex_code != 0: sys.exit(ex_code)
 
+def add_other_arguments(command, skiplist, skipnextlist, others):
+  """Append arguments from 'others' to command if they are not in skiplist.
+  Skip also next argument if the argument is in skipnextlist.
+  return augmented command.
+  """
+  break_next = False
+  for e in others: 
+    if break_next: # don't add another --checkpoint_path in case this was set
+      break_next = False 
+    elif e in skipnextlist:
+      break_next = True
+    elif e in skiplist:
+      pass
+    else:
+      command="{0} {1}".format(command, e)
+  return command
+
 ##########################################################################################################################
 # STEP 1 Load Parameters
 
@@ -55,30 +72,17 @@ models=[str(lr).replace('.','') for lr in FLAGS.learning_rates]
 # STEP 2 For each model launch condor_offline without submitting
 for modelindex, model in enumerate(models):
   command = "python condor_offline.py -t {0}/lr_{1} --dont_submit --summary_dir {2} --wall_time {3} --random_seed {4} --learning_rate {5}".format(FLAGS.log_tag, model, FLAGS.summary_dir, FLAGS.wall_time, 123, FLAGS.learning_rates[modelindex])
-  break_next=False
-  for e in others: 
-    if break_next:
-      break_next=False
-    elif e in ['--learning_rate']:
-      break_next=True
-    else:
-      command=" {0} {1}".format(command, e)
+  command = add_other_arguments(command, [], ['--learning_rate'], others)
   save_call(command)
 
 ##########################################################################################################################
 # STEP 3 Call a python script that creates a report
 # command="python condor_offline.py -t {0}/report --dont_submit -pp pytorch_pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 10*60, FLAGS.summary_dir)
 command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpumem 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 5*60)
-break_next=False
-for e in others: 
-  if break_next:
-    break_next=False
-  elif e in ['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith']:
-    break_next=True
-  else:
-    command=" {0} {1}".format(command, e)
-
-# for e in others: command=" {0} {1}".format(command, e)
+command=add_other_arguments(command, 
+                            skiplist=[],
+                            skipnextlist=['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith','--copy_dataset'],
+                            others)
 save_call(command)
 
 
