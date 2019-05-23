@@ -561,7 +561,10 @@ table_keys=['Distance_current_test_esatv3',
             'run_imitation_loss',
             'host']
 
-good_keys=[k for k in table_keys if k in results[eva_folders[0]].keys()]
+try:
+  good_keys=[k for k in table_keys if k in results[eva_folders[0]].keys()]
+except:
+  good_keys=[]
 for l in report:
   if 'INSERTTABLES' in l: 
     line_index=report.index(l)

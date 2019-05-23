@@ -82,7 +82,7 @@ command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpume
 command=add_other_arguments(command, 
                             skiplist=[],
                             skipnextlist=['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith','--copy_dataset'],
-                            others)
+                            others=others)
 save_call(command)
 
 
