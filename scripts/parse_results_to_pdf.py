@@ -153,7 +153,8 @@ def combine_runs_map(motherdirs,destination):
         # add patch
         ax.add_patch(mpatches.Polygon(transformed_arrow,linewidth=1,edgecolor=color,facecolor='None'))
         success=True
-    legend.append(mpatches.Patch(color=color, label=os.path.basename(md).replace('_', ' ')))
+    if success:
+      legend.append(mpatches.Patch(color=color, label=os.path.basename(md).replace('_', ' ')))
   plt.legend(handles=legend)
   plt.savefig(destination)
   return success
@@ -266,7 +267,7 @@ for folder_index, folder in enumerate(sorted(log_folders)):
 
   if os.path.isdir(folder+'/CAM'):
     number_CAM_images=3
-    CAM_images[folder].extend(np.random.choice([folder+'/CAM/'+f for f in sorted(os.listdir(folder+'/CAM')) if f.endswith('jpg') or f.endswith('png')]), number_CAM_images, replace=False)
+    CAM_images[folder].extend(list(np.random.choice([folder+'/CAM/'+f for f in sorted(os.listdir(folder+'/CAM')) if f.endswith('jpg') or f.endswith('png')], number_CAM_images, replace=False)))
 
     
   print("Overview parsed information: ")
@@ -371,7 +372,7 @@ for key in sorted(all_keys):
     report, line_index = add_figure(report, line_index, fig_name, FLAGS.mother_dir)
 
 # add CAM images
-report.insert(line_index,"\\section\{CAM\}\n")
+report.insert(line_index,"\\section{CAM}\n")
 # image_count=0
 for folder in CAM_images.keys():
   # report.insert(line_index,"\\section{RUNS}\n")

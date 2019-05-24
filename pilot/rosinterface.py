@@ -67,7 +67,7 @@ class PilotNode(object):
     self.target_control = [] # field to keep the latest supervised control
     self.target_depth = [] # field to keep the latest supervised depth
     self.nfc_images =[] #used by n_fc networks for building up concatenated frames
-    self.exploration_noise = OUNoise(4, 0, self.FLAGS.ou_theta,1)
+    self.exploration_noise = OUNoise(1, 0, self.FLAGS.ou_theta,self.FLAGS.sigma_yaw)
     # if not self.FLAGS.dont_show_depth: self.depth_pub = rospy.Publisher('/depth_prediction', numpy_msg(Floats), queue_size=1)
     
     self.overtake_pub=rospy.Publisher('/overtake', Empty, queue_size=1)
@@ -403,7 +403,7 @@ class PilotNode(object):
       # print("ctr: {0}, trgt: {1}, loss:{2}".format(control, self.target_control[5], loss))
 
     # POLICY MIXING
-    if len(trgt) != 0 and not self.FLAGS.evaluate: # policy mixing with self.FLAGS.alpha
+    if len(trgt) != 0: # policy mixing with self.FLAGS.alpha
       action = trgt if np.random.binomial(1, self.FLAGS.alpha) else control
       # action = trgt if np.random.binomial(1, self.FLAGS.alpha**(self.runs['train']+1)) else control
     else:
@@ -411,30 +411,41 @@ class PilotNode(object):
     
     msg = Twist()
 
-    # Epsilon-Exploration with exponential decay
-    epsilon=self.FLAGS.epsilon*np.exp(-self.runs['train']*self.FLAGS.epsilon_decay)
-    
+    # add noise over yaw
     if self.FLAGS.noise == 'ou':
-      noise = self.exploration_noise.noise()
-      # exploration noise
-      # if epsilon > 10**-2 and not self.FLAGS.evaluate: 
-      if epsilon > 10**-2: 
-        action = noise[3]*self.FLAGS.action_bound if np.random.binomial(1, epsilon) else action
-      # general distortion
-      msg.linear.y = (not self.FLAGS.evaluate)*noise[1]*self.FLAGS.sigma_y
-      msg.linear.z = (not self.FLAGS.evaluate)*noise[2]*self.FLAGS.sigma_z
-      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))    
+      noise = self.exploration_noise.noise()[0]
     elif self.FLAGS.noise == 'uni':
-      # exploration noise
-      if epsilon > 10**-2 and not self.FLAGS.evaluate: 
-        action = np.random.uniform(-self.FLAGS.action_bound, self.FLAGS.action_bound) if np.random.binomial(1, epsilon) else action
-      # general distortion
-      # msg.linear.x = self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
-      msg.linear.y = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_y, self.FLAGS.sigma_y)
-      msg.linear.z = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_z, self.FLAGS.sigma_z)
-      msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
+      noise = np.random.uniform(-self.FLAGS.sigma_yaw,self.FLAGS.sigma_yaw)
+    elif self.FLAGS.noise == 'gau':
+      noise = np.random.normal(0,self.FLAGS.sigma_yaw)
     else:
-      raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
+      noise = 0
+    msg.angular.z = max(-1,min(1,action+noise))    
+    
+    # # Epsilon-Exploration with exponential decay
+    # epsilon=self.FLAGS.epsilon*np.exp(-self.runs['train']*self.FLAGS.epsilon_decay)
+    
+    # if self.FLAGS.noise == 'ou':
+    #   noise = self.exploration_noise.noise()
+    #   # exploration noise
+    #   # if epsilon > 10**-2 and not self.FLAGS.evaluate: 
+    #   if epsilon > 10**-2: 
+    #     action = noise[3]*self.FLAGS.action_bound if np.random.binomial(1, epsilon) else action
+    #   # general distortion
+    #   msg.linear.y = (not self.FLAGS.evaluate)*noise[1]*self.FLAGS.sigma_y
+    #   msg.linear.z = (not self.FLAGS.evaluate)*noise[2]*self.FLAGS.sigma_z
+    #   msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*self.FLAGS.sigma_yaw*noise[3]))    
+    # elif self.FLAGS.noise == 'uni':
+    #   # exploration noise
+    #   if epsilon > 10**-2 and not self.FLAGS.evaluate: 
+    #     action = np.random.uniform(-self.FLAGS.action_bound, self.FLAGS.action_bound) if np.random.binomial(1, epsilon) else action
+    #   # general distortion
+    #   # msg.linear.x = self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
+    #   msg.linear.y = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_y, self.FLAGS.sigma_y)
+    #   msg.linear.z = (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_z, self.FLAGS.sigma_z)
+    #   msg.angular.z = max(-1,min(1,action+(not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_yaw, self.FLAGS.sigma_yaw)))
+    # else:
+    #   raise IOError( 'Type of noise is unknown: {}'.format(self.FLAGS.noise))
     
     if np.abs(msg.angular.z) > 0.3: 
       msg.linear.x =  self.FLAGS.turn_speed

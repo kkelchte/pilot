@@ -141,8 +141,8 @@ if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
                 || (machine == \"daisen.esat.kuleuven.be\") \
                 || (machine == \"fuji.esat.kuleuven.be\") \
                 || (machine == \"hoo.esat.kuleuven.be\") \
-                || (machine == \"vauxite.esat.kuleuven.be\") \
-                || (machine == \"goryu.esat.kuleuven.be\") )"
+                || (machine == \"vauxite.esat.kuleuven.be\"))"
+                # || (machine == \"goryu.esat.kuleuven.be\") )"
     else:
         greenlist="&& ((machine == \"{0}.esat.kuleuven.be\")".format(FLAGS.greenlist[0])
         if len(FLAGS.greenlist) > 1:
@@ -233,32 +233,32 @@ sing = open(sing_file,'w')
 sing.write("#!/bin/bash\n")
 
 # Check if there is already a singularity running
-# sing.write("sleep 30 \n")
-# sing.write("echo check if Im already running on this machine \n")
-# sing.write("echo who is on this machine \n")
-# sing.write("condor_who \n")
+sing.write("sleep 30 \n")
+sing.write("echo check if Im already running on this machine \n")
+sing.write("echo who is on this machine \n")
+sing.write("condor_who \n")
 
-# sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")
-# sing.write("ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
-# sing.write("JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
-# sing.write("RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d '=' -f 2 | cut -d '@' -f 2 | cut -d '.' -f 1) \n")
-# sing.write("Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d '/' -f 8) \n")
+sing.write("ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d '=' -f 2 | tail -1 | tr -d [:space:]) \n")
+sing.write("ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+sing.write("JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+sing.write("RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d '=' -f 2 | cut -d '@' -f 2 | cut -d '.' -f 1) \n")
+sing.write("Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d '/' -f 8) \n")
 
-# sing.write("while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n")
-# sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] two jobs are running on $RemoteHost, I better leave...\" \n")
-# sing.write("  ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
-# sing.write("  while [ $JobStatus = 2 ] ; do \n")
-# sing.write("    ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
-# sing.write("    JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
-# sing.write("    echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n")
-# sing.write("    sleep $(( RANDOM % 30 )) \n")
-# sing.write("  done \n")
-# sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n")
-# sing.write("done \n")
+sing.write("while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n")
+sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] two jobs are running on $RemoteHost, I better leave...\" \n")
+sing.write("  ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
+sing.write("  while [ $JobStatus = 2 ] ; do \n")
+sing.write("    ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n")
+sing.write("    JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d '=' -f 2 | tr -d [:space:]) \n")
+sing.write("    echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n")
+sing.write("    sleep $(( RANDOM % 30 )) \n")
+sing.write("  done \n")
+sing.write("  echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n")
+sing.write("done \n")
 
-# sing.write("echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running on $RemoteHost so continue...\" \n")
-# sing.write("echo \"HOST: $RemoteHost\" \n")
-# sing.write("\n")
+sing.write("echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running on $RemoteHost so continue...\" \n")
+sing.write("echo \"HOST: $RemoteHost\" \n")
+sing.write("\n")
 
 ###### Copy docker_home to local tmp
 # copy docker_home
@@ -306,7 +306,7 @@ sing.write("cp -r {0}/simsup_ws . \n".format(FLAGS.home))
 ######
 
 sing.write("sing_image=\"ros_gazebo_tensorflow_writable.img\"\n")
-sing.write("echo check if gluster is accessible: \n")
+sing.write("echo \"check if gluster is accessible:\" \n")
 sing.write("if [ -f /gluster/visics/kkelchte/$sing_image ] ; then \n")
 sing.write("  sing_loc=\"/gluster/visics/kkelchte\" \n")
 sing.write("else \n")

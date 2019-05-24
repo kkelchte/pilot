@@ -108,7 +108,7 @@ def load_set(data_type):
     coord=tf.train.Coordinator()
     threads = [threading.Thread(target=load_run_info, args=(coord, run_dict, index_list, set_list, checklist, FLAGS.subsample if data_type=='train' else 1)) for i in range(FLAGS.num_threads)]
     for t in threads: t.start()
-    coord.join(threads, stop_grace_period_secs=90)
+    coord.join(threads, stop_grace_period_secs=300)
   except RuntimeError as e:
     print("threads are not stopping...",e)
   else:

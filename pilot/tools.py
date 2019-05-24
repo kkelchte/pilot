@@ -265,7 +265,7 @@ def save_CAM_images(image, model, label=None):
     # target_classes=list(range(model.FLAGS.action_quantity)) if not label else [model.continuous_to_bins(label)-1] 
     target_classes=list(range(model.FLAGS.action_quantity)) 
   
-  fig, ax=plt.subplots(1, 1+len(target_classes), figsize=(5*(1+len(target_classes)),5))
+  fig, ax=plt.subplots(1, 1+len(target_classes), figsize=(7*(1+len(target_classes)),7))
   
   # post process input image
   image_postprocess = image.transpose(1,2,0).astype(np.float32)
