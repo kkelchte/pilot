@@ -11,7 +11,7 @@ roscd simulation_supervised/python
 # COMMAND
 
 # Collect random dataset
-pytorch_args="--noise gau --alpha 1 --sigma_yaw 0.1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9"
+pytorch_args="--noise ou --alpha 1 --sigma_yaw 0.1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9"
 script_args=" -ds --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 2 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
 python run_script.py -t test_stochastic_expert $pytorch_args $script_args
 

@@ -14,22 +14,40 @@ import skimage.io as sio
 
 class ReplayBuffer(object):
 
-    def __init__(self, buffer_size=-1, random_seed=123):
+    def __init__(self, buffer_size=-1, random_seed=123, action_normalization=False):
       """
       The right side of the deque contains the most recent experiences 
       """
       self.buffer_size = buffer_size if buffer_size != -1 else 1000000
       self.buffer = []
+      self.action_normalization=action_normalization
+      if self.action_normalization:
+        self.action_count={}
       # self.buffer = deque()
 
     def add(self, experience):
       # add experience dictionary to buffer
       self.buffer.append(experience)
-      # if buffer is full get rid of last experience
-      if self.buffer_size != -1 and self.size() > self.buffer_size: 
-        self.buffer.pop(0)
-        # self.buffer.popleft()
+      if self.action_normalization and 'trgt' in experience.keys():
+        if str(experience['trgt']) in self.action_count.keys():
+          self.action_count[str(experience['trgt'])]+=1
+        else:
+          self.action_count[str(experience['trgt'])]=1
+        print [str(k)+': '+str(self.action_count[k]) for k in self.action_count.keys()]
 
+      # if buffer is full get rid of last experience
+      if self.buffer_size != -1 and self.size() > self.buffer_size:
+        if self.action_normalization and 'trgt' in experience.keys():
+          # [KK] action normalization for discrete case:
+          #   - discard not 0 but lowest sample with action equal to majority action.
+          for i,e in enumerate(self.buffer):
+            if str(e['trgt']) == max(self.action_count):
+              self.buffer.pop(i)
+              self.action_count[max(self.action_count)]-=1
+              break
+        else:
+          self.buffer.pop(0)
+        
     def remove(self):
       # self.buffer.popleft()
       self.buffer.pop(0)  

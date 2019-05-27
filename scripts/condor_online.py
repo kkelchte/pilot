@@ -119,7 +119,7 @@ condor_submit.write("match_list_length = 6 \n")
 # condor_submit.write("when_to_transfer_output = ON_EXIT_OR_EVICT\n")
 condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCode == 0 ) || HoldReasonCode == 26\n")
 
-requirements="(HasSingularity)"
+requirements="(HasSingularity) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5)"
 if FLAGS.gpumem != 0:
     requirements+=" && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5)".format(FLAGS.gpumem)
 if FLAGS.use_blacklist or len(FLAGS.blacklist) != 0:
@@ -141,8 +141,13 @@ if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
                 || (machine == \"daisen.esat.kuleuven.be\") \
                 || (machine == \"fuji.esat.kuleuven.be\") \
                 || (machine == \"hoo.esat.kuleuven.be\") \
-                || (machine == \"vauxite.esat.kuleuven.be\"))"
-                # || (machine == \"goryu.esat.kuleuven.be\") )"
+                || (machine == \"vauxite.esat.kuleuven.be\") \
+                || (machine == \"iwaki.esat.kuleuven.be\") \
+                || (machine == \"cancer.esat.kuleuven.be\") \
+                || (machine == \"leo.esat.kuleuven.be\") \
+                || (machine == \"libra.esat.kuleuven.be\") \
+                || (machine == \"virgo.esat.kuleuven.be\") \
+                || (machine == \"goryu.esat.kuleuven.be\") )"
     else:
         greenlist="&& ((machine == \"{0}.esat.kuleuven.be\")".format(FLAGS.greenlist[0])
         if len(FLAGS.greenlist) > 1:

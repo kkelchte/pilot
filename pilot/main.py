@@ -168,7 +168,7 @@ def main(_):
   # parser.add_argument("--hard_ratio", default=1, type=float, help="Define the amount of data in the replay buffer that is sorted according to hard samples.")
   parser.add_argument("--buffer_update_rule", default='nothing',type=str, help="nothing: FIFO buffer. empty: empty buffer after each training step. hard: sort buffer accordint to the last loss.")
   parser.add_argument("--train_every_N_steps", default=1,type=int, help="Empty few frames from buffer in online setting so next training step N amount of recent frames are collected.")
-  
+    
   # ===========================
   #   Rosinterface Parameters
   # ===========================

@@ -184,7 +184,7 @@ def run(_FLAGS, model):
   # first see if a replaybuffer is within the my-model torch checkpoint.
   replaybuffer=tools.load_replaybuffer_from_checkpoint(FLAGS)
   if not replaybuffer: #other wise create a new.
-    replaybuffer=ReplayBuffer(buffer_size=FLAGS.buffer_size, random_seed=FLAGS.random_seed)
+    replaybuffer=ReplayBuffer(buffer_size=FLAGS.buffer_size, random_seed=FLAGS.random_seed, action_normalization=FLAGS.normalized_output and FLAGS.discrete)
 
   if FLAGS.save_annotated_images:
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag+'/RGB'): shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag+'/RGB')
