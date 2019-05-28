@@ -153,7 +153,7 @@ def combine_runs_map(motherdirs,destination):
         # add patch
         ax.add_patch(mpatches.Polygon(transformed_arrow,linewidth=1,edgecolor=color,facecolor='None'))
         success=True
-    if success:
+    if len(posfiles) != 0:  
       legend.append(mpatches.Patch(color=color, label=os.path.basename(md).replace('_', ' ')))
   plt.legend(handles=legend)
   plt.savefig(destination)
@@ -377,7 +377,7 @@ report.insert(line_index,"\\section{CAM}\n")
 for folder in CAM_images.keys():
   # report.insert(line_index,"\\section{RUNS}\n")
   for im in CAM_images[folder]:
-    report, line_index = add_figure(report, line_index, im, caption=os.path.basename(im).replace('_',' '))
+    report, line_index = add_figure(report, line_index, im, caption=''.join([e+' ' for e in im.split('/')[6:]]))
   #   image_count+=1
   #   if image_count > 10: break
   # if image_count > 10: break

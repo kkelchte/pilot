@@ -143,7 +143,7 @@ def method(model, experience, replaybuffer, sumvar={}):
     model.save(model.FLAGS.summary_dir+model.FLAGS.log_tag, replaybuffer=replaybuffer)
     print("model saving duration with replaybuffer: {0:0.3f}".format(time.time()-stime))
 
-def evaluate(model, testset):
+def evaluate_forest_trails(model, testset):
   """Evaluate loss on test data
   """
   test_results={k:{} for k in testset[0].keys()}
@@ -176,6 +176,33 @@ def evaluate(model, testset):
   for k in sumvar.keys(): msg="{0}, {1} : {2}".format(msg, k, sumvar[k])
   print("time: {0}, {1}".format(time.strftime('%H.%M.%S'),msg))
   
+def evaluate(model, testset, FLAGS):
+  """Evaluate loss on test data
+  """
+  test_results={}
+  for run in testset:
+    for sample_index in range(0,len(run['num_imgs']),10):
+      if not FLAGS.load_data_in_ram:
+        image=tools.load_rgb(im_file=os.path.join(run['name'],'RGB', '{0:010d}.jpg'.format(run['num_imgs'][sample_index])), 
+                                im_size=model.input_size, 
+                                im_mode='CHW',
+                                im_norm='scaled' if FLAGS.scaled_input else 'none',
+                                im_means=FLAGS.normalize_means,
+                                im_stds=FLAGS.normalize_stds)
+      else:
+        image=run['imgs'][sample_index]
+      label=np.expand_dims(run['controls'][sample_index],axis=-1)
+      _, losses, _ = model.predict(np.expand_dims(np.asarray(image), axis=0), np.array([label]))
+      for k in losses.keys():
+        tools.save_append(test_results, k, np.mean(losses[k]))     
+  sumvar={}
+  for k in test_results:
+    sumvar['test_'+k]=np.mean(test_results[k])
+
+  msg="frame : {0}".format(model.epoch)
+  for k in sumvar.keys(): msg="{0}, {1} : {2}".format(msg, k, sumvar[k])
+  print("time: {0}, {1}".format(time.strftime('%H.%M.%S'),msg))
+        
 def run(_FLAGS, model):
   global epoch, labels, testdata
   FLAGS=_FLAGS
@@ -255,9 +282,10 @@ def run(_FLAGS, model):
           experience={'state':image,'trgt':label}
           method(model, experience, replaybuffer)
           if int(model.epoch/FLAGS.gradient_steps)%100 == 50 and model.epoch != last_evaluation_epoch:
-            evaluate(model, testset)
+            evaluate_forest_trails(model, testset)
             last_evaluation_epoch=model.epoch
   else:
+    last_evaluation_epoch=0
     data.prepare_data(FLAGS, model.input_size)
     for run in data.full_set['train']:
       concat_frames=[]
@@ -282,6 +310,10 @@ def run(_FLAGS, model):
         label=np.expand_dims(run['controls'][sample_index],axis=-1)
         experience={'state':image,'trgt':label}
         method(model, experience, replaybuffer)
+
+        if int(model.epoch/FLAGS.gradient_steps)%100 == 50 and model.epoch != last_evaluation_epoch:
+          evaluate(model, data.full_set['validation'], FLAGS)
+          last_evaluation_epoch=model.epoch
   
 
 

@@ -33,7 +33,7 @@ class ReplayBuffer(object):
           self.action_count[str(experience['trgt'])]+=1
         else:
           self.action_count[str(experience['trgt'])]=1
-        print [str(k)+': '+str(self.action_count[k]) for k in self.action_count.keys()]
+        # print [str(k)+': '+str(self.action_count[k]) for k in self.action_count.keys()]
 
       # if buffer is full get rid of last experience
       if self.buffer_size != -1 and self.size() > self.buffer_size:

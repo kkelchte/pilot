@@ -98,6 +98,7 @@ parser.add_argument('--legend_names', default=[],nargs='+', help="Define the fol
 parser.add_argument('--tags', default=[],nargs='+', help="Select certain tag within log file that needs to be combined.")
 parser.add_argument('--subsample', default=1, type=int, help='To avoid cluttered images, subsample data making graph more smooth.')
 parser.add_argument('--cutend', default=-1, type=int, help='Cut list of data earlier to cut the convergence tail.')
+parser.add_argument('--title', default='', type=str, help='Define title of graph.')
 
 FLAGS, others = parser.parse_known_args()
 
@@ -237,6 +238,7 @@ for tag in sorted(FLAGS.tags):
   if not all_fail:
     plt.xlabel("Step")
     # plt.xlabel("Run" if tag in FLAGS.tags else "Epoch")
+    if FLAGS.title: plt.title(FLAGS.title.replace('_',' '))
     ylabel=tag
     if 'imitation_learning' in tag:
       ylabel=tag.replace('imitation_learning', 'MSE')
