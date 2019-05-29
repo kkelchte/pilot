@@ -7,6 +7,8 @@ import skimage.transform as sm
 import sys, time, re, copy, cv2, os
 from os import path
 
+import collections
+
 from tf import transformations
 
 from cv_bridge import CvBridge, CvBridgeError
@@ -394,7 +396,8 @@ class PilotNode(object):
     control, _, self.hidden_states = self.model.predict(inputs)
     
     ### SEND CONTROL
-    control = control[0]
+    if isinstance(control, collections.Iterable):
+      control = control[0]
     
     ### IMITATION LOSS
     if len(self.target_control) != 0:

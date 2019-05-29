@@ -31,8 +31,8 @@ class Model(object):
     self.prefix = prefix
     self.device = torch.device("cuda:0" if torch.cuda.is_available() and 'gpu' in FLAGS.device else "cpu")
     self.epoch=0
-    self.output_size=int(self.action_dim if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity)
-    
+    self.output_size=int(self.action_dim * (1 if not self.FLAGS.stochastic else 2) if not self.FLAGS.discrete else self.action_dim * self.FLAGS.action_quantity)
+
     if self.FLAGS.discrete:
       self.define_discrete_bins(FLAGS.action_bound, FLAGS.action_quantity)
       # target: continuous value (-0.3) --> bin (2) --> label (0 0 1 0 0 0 0 0 0 0)
@@ -274,15 +274,21 @@ class Model(object):
 
     if self.FLAGS.discrete:
       if self.FLAGS.stochastic:
-        predictions=torch.distributions.Categorical(self.softmax(predictions)).sample()
+        # import pdb; pdb.set_trace()
+        predictions = self.softmax(predictions)
+        losses['confidence'] = torch.sum(predictions*torch.log(predictions)).cpu().detach().numpy()
+        predictions = torch.distributions.Categorical(predictions).sample()
       else:
         predictions = torch.argmax(predictions, dim=1)
+    elif self.FLAGS.stochastic:
+      predictions =  torch.distributions.normal.Normal(predictions[:,0:self.FLAGS.action_dim], predictions[:,self.FLAGS.action_dim:]**2).sample()
+      
 
     predictions=predictions.cpu().detach().numpy()
     
     if self.FLAGS.discrete:
       predictions = self.bins_to_continuous(predictions)
-    
+
     return predictions, losses, hidden_states
 
   def train(self, inputs, targets, actions=[], collisions=[], lstm_info=()):
@@ -318,7 +324,11 @@ class Model(object):
     else:
       targets = torch.from_numpy(targets).type(torch.FloatTensor)
     
-    losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
+    if self.FLAGS.stochastic and not self.FLAGS.discrete:
+      losses['imitation_learning']=self.criterion(predictions[:,0:self.FLAGS.action_dim], targets.to(self.device))/(10**-5+predictions[:,self.FLAGS.action_dim:]**2) + torch.log(10**-5+predictions[:,self.FLAGS.action_dim:]**2)
+    else:
+      assert predictions.shape == targets.shape
+      losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']
     
     if self.FLAGS.continual_learning and len(self.omegas) != 0 and len(self.star_variables)!=0:

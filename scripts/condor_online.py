@@ -144,10 +144,10 @@ if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
                 || (machine == \"vauxite.esat.kuleuven.be\") \
                 || (machine == \"iwaki.esat.kuleuven.be\") \
                 || (machine == \"cancer.esat.kuleuven.be\") \
-                || (machine == \"leo.esat.kuleuven.be\") \
-                || (machine == \"libra.esat.kuleuven.be\") \
                 || (machine == \"virgo.esat.kuleuven.be\") \
                 || (machine == \"goryu.esat.kuleuven.be\") )"
+                # || (machine == \"leo.esat.kuleuven.be\") \
+                # || (machine == \"libra.esat.kuleuven.be\") \                            
     else:
         greenlist="&& ((machine == \"{0}.esat.kuleuven.be\")".format(FLAGS.greenlist[0])
         if len(FLAGS.greenlist) > 1:

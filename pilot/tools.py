@@ -74,7 +74,7 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
   """
   print("[tools] Load configuration from: ", modelfolder)
   tree = ET.parse(os.path.join(modelfolder,file_name+".xml"))
-  boollist=['auxiliary_depth', 'discrete','normalized_input','scaled_input','skew_input']
+  boollist=['auxiliary_depth', 'discrete','normalized_input','scaled_input','skew_input','stochastic']
   intlist=['n_frames', 'num_outputs']
   floatlist=['depth_multiplier','speed','action_bound','turn_speed']
   stringlist=['network', 'data_format']

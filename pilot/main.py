@@ -87,7 +87,7 @@ def main(_):
   parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
   parser.add_argument("--owr", action='store_true', help="Overwrite existing logfolder when it is not testing.")
   parser.add_argument("--action_bound", default=0.9, type=float, help= "Define between what bounds the actions can go. Default: [-1:1].")
-  parser.add_argument("--action_dim", default=1.0, type=float, help= "Define the dimension of the actions: 1dimensional as it only turns in yaw.")
+  parser.add_argument("--action_dim", default=1, type=int, help= "Define the dimension of the actions: 1dimensional as it only turns in yaw.")
   parser.add_argument("--real", action='store_true', help="Define settings in case of interacting with the real (bebop) drone.")
   parser.add_argument("--random_learning_rate", action='store_true', help="Use sampled learning rate from UL(10**-2, 1)")
   parser.add_argument("--plot_depth", action='store_true', help="Specify whether the depth predictions is saved as images.")
@@ -129,7 +129,8 @@ def main(_):
   parser.add_argument("--n_frames",default=2,type=int,help="Specify the amount of frames concatenated in case of n_fc  or 3D-CNN.")
   parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
-  parser.add_argument("--stochastic", action='store_true', help="Sample action from predictions from a binomial distribution over classes rather than taking the argmax.")
+  parser.add_argument("--stochastic", action='store_true', help="Sample action from predictions from a gaussian (continuous control) or binomial (discrete control) distribution rather than taking the argmax.")
+  # parser.add_argument("--beta_distribution", action='store_true', help="For contiuous stochastic control, sample from beta instead of gaussian distribution.")
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
   
   # INITIALIZATION
@@ -267,7 +268,7 @@ def main(_):
   # print('[main]------------Press Ctrl+C to end the learning') 
   
   if FLAGS.on_policy: # online training/evaluating
-    print('[main] Online training.')
+    print('[main] On-policy training.')
     import rosinterface
     rosnode = rosinterface.PilotNode(FLAGS, model, FLAGS.summary_dir+FLAGS.log_tag)
     while True:
