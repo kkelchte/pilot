@@ -274,7 +274,6 @@ class Model(object):
 
     if self.FLAGS.discrete:
       if self.FLAGS.stochastic:
-        # import pdb; pdb.set_trace()
         predictions = self.softmax(predictions)
         losses['confidence'] = torch.sum(predictions*torch.log(predictions)).cpu().detach().numpy()
         predictions = torch.distributions.Categorical(predictions).sample()
@@ -327,7 +326,6 @@ class Model(object):
     if self.FLAGS.stochastic and not self.FLAGS.discrete:
       losses['imitation_learning']=self.criterion(predictions[:,0:self.FLAGS.action_dim], targets.to(self.device))/(10**-5+predictions[:,self.FLAGS.action_dim:]**2) + torch.log(10**-5+predictions[:,self.FLAGS.action_dim:]**2)
     else:
-      assert predictions.shape == targets.shape
       losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']
     
