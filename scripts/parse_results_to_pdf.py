@@ -481,8 +481,8 @@ table_keys=['test_accuracy',
             'validation_imitation_learning',
             'host']
 
-eva_folders=[f for f in log_folders if f.endswith('eva')]
-train_folders=[f for f in log_folders if not f.endswith('eva')]
+eva_folders=[f for f in log_folders if 'eva' in f]
+train_folders=[f for f in log_folders if not 'eva' in f]
 # if 'test_success' in results[log_folders[0]].keys() and 'run_imitation_loss' in results[log_folders[0]].keys():
 good_keys=[k for k in table_keys if k in results[train_folders[0]].keys()]
 for l in report:

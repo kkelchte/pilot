@@ -143,11 +143,11 @@ if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
                 || (machine == \"hoo.esat.kuleuven.be\") \
                 || (machine == \"vauxite.esat.kuleuven.be\") \
                 || (machine == \"iwaki.esat.kuleuven.be\") \
-                || (machine == \"cancer.esat.kuleuven.be\") \
-                || (machine == \"virgo.esat.kuleuven.be\") \
                 || (machine == \"goryu.esat.kuleuven.be\") )"
-                # || (machine == \"leo.esat.kuleuven.be\") \
-                # || (machine == \"libra.esat.kuleuven.be\") \                            
+                # || (machine == \"leo.esat.kuleuven.be\") \ --> quadcore instead of intel core cpu
+                # || (machine == \"libra.esat.kuleuven.be\") \ --> quadcore instead of intel core cpu
+                # || (machine == \"cancer.esat.kuleuven.be\") \ --> quadcore instead of intel core cpu
+                # || (machine == \"virgo.esat.kuleuven.be\") \ --> quadcore instead of intel core cpu                           
     else:
         greenlist="&& ((machine == \"{0}.esat.kuleuven.be\")".format(FLAGS.greenlist[0])
         if len(FLAGS.greenlist) > 1:
