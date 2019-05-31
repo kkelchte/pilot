@@ -112,8 +112,8 @@ def combine_runs_map(motherdirs,destination):
   img_type='esatv3'
   plt.cla()
   plt.clf()
-  fig,ax = plt.subplots(1,figsize=(30,30))
-  ax.set_title('Position Display')
+  fig,ax = plt.subplots(1,figsize=(40,40))
+  # ax.set_title('Position Display')
 
   current_image = np.zeros((1069,1322))
   implot=ax.imshow(current_image)
@@ -155,7 +155,7 @@ def combine_runs_map(motherdirs,destination):
         success=True
     if len(posfiles) != 0:  
       legend.append(mpatches.Patch(color=color, label=os.path.basename(md).replace('_', ' ')))
-  plt.legend(handles=legend)
+  # plt.legend(handles=legend)
   plt.savefig(destination)
   return success
 

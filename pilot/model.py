@@ -118,7 +118,7 @@ class Model(object):
         print("[model]: FAILED to load model {1} from {0} into {2}, {3}.".format(self.FLAGS.checkpoint_path, 
                                                                           checkpoint['network'],
                                                                           self.FLAGS.network,
-                                                                          e.message))
+                                                                          e.args))
         if self.FLAGS.continue_training: print("\t put continue_training FALSE to avoid strict matching.")
         sys.exit(2)
       else:
@@ -411,7 +411,7 @@ class Model(object):
         self.writer.add_summary(summary_str, self.epoch)
         self.writer.flush()
     except Exception as e:
-      if self.FLAGS.tensorboard: print("[model] failed to summarize: {}".format(e.message))
+      if self.FLAGS.tensorboard: print("[model] failed to summarize: {}".format(e.args))
       pass
 
   # CONTINUAL LEARNING

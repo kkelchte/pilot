@@ -161,10 +161,10 @@ class PilotNode(object):
       self.FLAGS.speed=self.FLAGS.speed + (not self.FLAGS.evaluate)*np.random.uniform(-self.FLAGS.sigma_x, self.FLAGS.sigma_x)
       if rospy.has_param('/evaluate'):
         self.FLAGS.evaluate = rospy.get_param('/evaluate')
-        print '--> set evaluate to: {0} with speed {1}'.format(self.FLAGS.evaluate, self.FLAGS.speed)
+        print('--> set evaluate to: {0} with speed {1}'.format(self.FLAGS.evaluate, self.FLAGS.speed))
       if rospy.has_param('skip_frames'):
         self.skip_frames = rospy.get_param('skip_frames')
-        print '--> set skip_frames to: {0}'.format(self.skip_frames)
+        print('--> set skip_frames to: {0}'.format(self.skip_frames))
       if rospy.has_param('world_name') :
         self.world_name = rospy.get_param('world_name')
       time.sleep(1) # wait one second, otherwise create_dataset can't follow...

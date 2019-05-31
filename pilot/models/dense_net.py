@@ -23,13 +23,13 @@ class Net(nn.Module):
 
 
   def forward(self, x, train=False, verbose=False):
-    if verbose: print x.size()
+    if verbose: print( x.size())
 
     if train:
       self.network.train()
     else:
       self.network.eval()
     outputs = self.network(x)
-    if verbose: print outputs.size()
+    if verbose: print( outputs.size())
     return outputs
 

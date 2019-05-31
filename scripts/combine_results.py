@@ -174,8 +174,6 @@ for folder_index, folder in enumerate(sorted(log_folders)):
 # STEP 3: fill in xls
 #
 #--------------------------------------------------------------------------------
-print FLAGS.tags
-
 # loop again over data and fill it in table
 for t in FLAGS.tags:
   print("saving {0}".format(t))
@@ -215,7 +213,6 @@ for tag in sorted(FLAGS.tags):
   legend=[]
   all_fail=True
   for folder_index,l in enumerate(log_folders): #loop over log_folders
-    print l
     try:
       # color=(1.-(folder_index+0.)/len(log_folders), 0.1, (folder_index+0.)/len(log_folders))
       color=colors[folder_index%len(colors)]
@@ -233,7 +230,7 @@ for tag in sorted(FLAGS.tags):
       if len(results[l][tag][:FLAGS.cutend]) > 2 and type(results[l][tag][0]) == float: 
         all_fail=False # in case all models have only 2 values or no float values don't show
     except Exception as e:
-      print e
+      print(e)
       pass
   if not all_fail:
     plt.xlabel("Step")

@@ -35,7 +35,7 @@ log_root = FLAGS.home+'/'+FLAGS.summary_dir
 log_folders = sorted([ log_root+FLAGS.mother_dir+'/'+d if len(FLAGS.mother_dir) != 0 else log_root+d for d in os.listdir(log_root+FLAGS.mother_dir) if d.startswith(FLAGS.startswith) and d.endswith(FLAGS.endswith) and os.path.isdir(log_root+FLAGS.mother_dir+'/'+d)])
 
 if len(log_folders)==0:
-	print "Woops, could not find anything "+log_root+FLAGS.mother_dir+" that startswith "+FLAGS.startswith+" and endswith "+FLAGS.endswith
+	print("Woops, could not find anything "+log_root+FLAGS.mother_dir+" that startswith "+FLAGS.startswith+" and endswith "+FLAGS.endswith)
 	sys.exit(1)
 
 # STEP 2: define information to parse: tf_log, log_named and runs
@@ -46,7 +46,7 @@ tf_params=['Distance_current', 'Distance_furthest', 'control_rate', 'image_rate'
 # results['total']{tf_params[0]:[], ... , run_index:[], run_img: ['/path/to/img',..],successes: [True,False,None]}
 results = {}
 for folder in log_folders:
-	print folder
+	print(folder)
 	# get tensorflow log folders within evaluation log folder
 	tf_folders = [folder+'/'+f for f in os.listdir(folder) if f.startswith('201') and os.path.isdir(folder+'/'+f)]
 	if len(tf_folders) == 0:

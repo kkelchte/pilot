@@ -2,7 +2,7 @@
 chapter=chapter_neural_architectures
 section=output
 pytorch_args="--dataset esatv3_expert_200K --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --normalized_output\
- --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --clip 1 --scaled_input --optimizer SGD"
+ --tensorboard --max_episodes 10000 --batch_size 32 --clip 1 --scaled_input --optimizer SGD"
 
 echo "####### chapter: $chapter #######"
 echo "####### section: $section #######"
@@ -26,26 +26,17 @@ train(){
 # Pretrain for different learning rates
 #######################################
 
-pretrain $chapter/$section/res18_discrete/learning_rates --pretrained --network res18_net --discrete --weight_decay 0
-pretrain $chapter/$section/res18_discrete_stochastic/learning_rates --pretrained --network res18_net --discrete --stochastic  --weight_decay 0
-pretrain $chapter/$section/res18_continuous/learning_rates --pretrained --network res18_net  --weight_decay 0
-pretrain $chapter/$section/res18_continuous_stochastic/learning_rates --pretrained --network res18_net --stochastic  --weight_decay 0
-pretrain $chapter/$section/res18_continuous_stochastic_wd0001/learning_rates --pretrained --network res18_net --stochastic --weight_decay 0.0001
-pretrain $chapter/$section/res18_continuous_stochastic_wd001/learning_rates --pretrained --network res18_net --stochastic --weight_decay 0.001
-pretrain $chapter/$section/res18_continuous_stochastic_wd01/learning_rates --pretrained --network res18_net --stochastic --weight_decay 0.01
+# pretrain $chapter/$section/res18_discrete/learning_rates --network res18_net --discrete --weight_decay 0 --loss CrossEntropy
+# pretrain $chapter/$section/res18_discrete_stochastic/learning_rates --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy
+pretrain $chapter/$section/res18_continuous/learning_rates --network res18_net  --weight_decay 0 --loss MSE
+pretrain $chapter/$section/res18_continuous_stochastic/learning_rates --network res18_net --stochastic  --weight_decay 0 --loss MSE
+pretrain $chapter/$section/res18_continuous_stochastic_wd00001/learning_rates --network res18_net --stochastic --weight_decay 0.00001 --loss MSE
+pretrain $chapter/$section/res18_continuous_stochastic_wd0001/learning_rates --network res18_net --stochastic --weight_decay 0.0001 --loss MSE
+pretrain $chapter/$section/res18_continuous_stochastic_wd001/learning_rates --network res18_net --stochastic --weight_decay 0.001 --loss MSE
 
 #######################################
 # Set winning learning rate
 #######################################
-
-# train $chapter/$section/alex_SGD_scratch/final --optimizer SGD --network alex_net --learning_rate 0.1
-# train $chapter/$section/vgg16_SGD_scratch/final --optimizer SGD --network vgg16_net --learning_rate  0.1
-# train $chapter/$section/vgg16_Adam_scratch/final --optimizer Adam --network vgg16_net --learning_rate 0.0001
-# train $chapter/$section/vgg16_Adadelta_scratch/final --optimizer Adadelta --network vgg16_net --learning_rate 0.1
-# train $chapter/$section/alex_SGD_pretrained/final --pretraining --optimizer SGD --network alex_net --learning_rate 0.1
-# train $chapter/$section/vgg16_SGD_pretrained/final --pretraining --optimizer SGD --network vgg16_net --learning_rate 0.1
-# train $chapter/$section/vgg16_Adam_pretrained/final --pretraining --optimizer Adam --network vgg16_net --learning_rate 0.00001
-# train $chapter/$section/vgg16_Adadelta_pretrained/final --pretraining --optimizer Adadelta --network vgg16_net --learning_rate 0.1
 
 sleep 3
 condor_q

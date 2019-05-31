@@ -56,7 +56,7 @@ class Net(nn.Module):
     else:
       self.network.eval()
     outputs = self.network(x)
-    if verbose: print outputs.size()
+    if verbose: print( outputs.size())
     return outputs
 
     

@@ -81,7 +81,7 @@ print("Others: {0}".format(others))
 
 description="{0}_{1}".format(FLAGS.log_tag.replace('/','_'),time.strftime("%Y-%m-%d_%I-%M-%S"))
 
-print description
+# print description
 condor_output_dir=FLAGS.home+'/'+FLAGS.summary_dir+FLAGS.log_tag+"/condor"
 if os.path.isfile("{0}/offline_{1}.log".format(condor_output_dir,description)):
     os.remove("{0}/offline_{1}.log".format(condor_output_dir,description))

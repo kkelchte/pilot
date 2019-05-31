@@ -58,7 +58,6 @@ def save_config(FLAGS, logfolder, file_name = "configuration"):
   
   flags_dict=FLAGS.__dict__
   for f in sorted(flags_dict.keys()):
-    # print f, flags_dict[f]
     e = ET.SubElement(flg, f, name=f) 
     e.text = str(flags_dict[f])
     e.tail = "\n  "
@@ -82,24 +81,24 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
     try :
       if child.attrib['name'] in boollist:
         FLAGS.__setattr__(child.attrib['name'], child.text=='True')
-        print 'set:', child.attrib['name'], child.text=='True'
+        print('set:', child.attrib['name'], child.text=='True')
       elif child.attrib['name'] in intlist:
         FLAGS.__setattr__(child.attrib['name'], int(child.text))
-        print 'set:', child.attrib['name'], int(child.text)
+        print('set:', child.attrib['name'], int(child.text))
       elif child.attrib['name'] in floatlist:
         FLAGS.__setattr__(child.attrib['name'], float(child.text))
-        print 'set:', child.attrib['name'], float(child.text)
+        print('set:', child.attrib['name'], float(child.text))
       elif child.attrib['name'] in stringlist:
         # Temporary hack to load models from doshico
         # if not FLAGS.network != 'mobile_nfc': 
         FLAGS.__setattr__(child.attrib['name'], str(child.text))
-        print 'set:', child.attrib['name'], str(child.text)
+        print('set:', child.attrib['name'], str(child.text))
       # Temporary hack to load models from doshico
       # elif child.attrib['name'] == 'n_fc':
       #   FLAGS.network='mobile_nfc'
       #   print 'set: network to mobile_nfc'
     except : 
-      print 'couldnt set:', child.attrib['name'], child.text
+      print('couldnt set:', child.attrib['name'], child.text)
       pass
 
   return FLAGS
@@ -117,7 +116,7 @@ def load_replaybuffer_from_checkpoint(FLAGS):
         checkpoint=torch.load(FLAGS.checkpoint_path+'/my-model')
       replaybuffer=checkpoint['replaybuffer']
     except Exception as e:
-      print("[Tools]: failed to load replay buffer from {0} due to {1}".format(FLAGS.checkpoint_path, e.message))
+      print("[Tools]: failed to load replay buffer from {0} due to {1}".format(FLAGS.checkpoint_path, e.args))
     else:
       print("[Tools]: successfully loaded replaybuffer from {0}".format(FLAGS.checkpoint_path))
   return replaybuffer
@@ -420,7 +419,7 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   hidden_states=()
   model.net.zero_grad()
   for img_index in range(len(input_images)-model.FLAGS.n_frames): #loop over input images
-    if img_index%100==0: print img_index
+    if img_index%100==0: print( img_index)
     # ensure no gradients are still in the network
     if not 'LSTM' in model.FLAGS.network:
       model.net.zero_grad()
@@ -457,7 +456,7 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
         g=p.grad.data.clone().detach().cpu().numpy()
         gradients[pindex]+=np.abs(g)/len(input_images)
       except Exception as e:
-        print(e.message)
+        print(e.args)
         pass
 
   # # In one track for time considerations:

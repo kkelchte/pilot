@@ -98,7 +98,7 @@ def load_set(data_type):
   f = open(join(datasetdir, data_file), 'r')
   run_list = [ l.strip() for l in f.readlines() if len(l) > 2]
   run_dict = {i:l for i,l in enumerate(run_list)}
-  index_list = run_dict.keys()
+  index_list = list(run_dict.keys())
   
   f.close() 
   set_list = [None]*len(run_list)
@@ -220,7 +220,7 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist, subsample):
     except IndexError as e:
       coord.request_stop()
     except Exception as e:
-      print('Problem in loading data: {0} @ {1}'.format(e.message, run_dir))
+      print('Problem in loading data: {0} @ {1}'.format(e.args, run_dir))
       checklist[run_index]=False
       # checklist.append(False)
       coord.request_stop()
@@ -592,8 +592,8 @@ if __name__ == '__main__':
     target_depth = np.array([_['depth'] for _ in batch]).reshape((-1,55,74)) if FLAGS.auxiliary_depth else []
     # prev_imgs = np.array([_['prev_img'] for _ in batch])
     
-    print inputs.shape
-    print actions.shape
+    # print inputs.shape
+    # print actions.shape
 
     
     # for i in range(10):

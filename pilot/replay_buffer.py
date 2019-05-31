@@ -237,6 +237,6 @@ if __name__ == '__main__':
 
 
   mybuffer = ReplayBuffer(100, 512, checkpoint='/esat/opal/kkelchte/docker_home/tensorflow/log/test_train_online_condor/seed_0/replaybuffer')
-  print mybuffer.get_details()
+  print( mybuffer.get_details())
 
 

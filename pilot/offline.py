@@ -177,8 +177,6 @@ def run(_FLAGS, model):
       inputs = np.array([_['img'] for _ in batch])
       targets = np.array([_['ctr'] for _ in batch])
       predictions, losses = model.predict(inputs, targets)
-      print losses.keys()
-      import pdb; pdb.set_trace()
       # --> loss is already mean ==> have to keep raw losses.
       hard_input=[np.array(x) for _,x in reversed(sorted(zip(list(losses['imitation_learning']), inputs.tolist())))][0]
       tools.visualize_saliency_of_output(FLAGS, model, hard_input)

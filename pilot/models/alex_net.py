@@ -22,11 +22,11 @@ class Net(nn.Module):
     self.network.classifier[6]=nn.Linear(self.default_feature_size, output_size)
 
   def forward(self, x, train=False, verbose=False):
-    if verbose: print x.size()
+    if verbose: print( x.size())
     if train:
       self.network.train()
     else:
       self.network.eval()
     outputs = self.network(x)
-    if verbose: print outputs.size()
+    if verbose: print( outputs.size())
     return outputs

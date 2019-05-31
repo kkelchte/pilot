@@ -231,7 +231,7 @@ def run(_FLAGS, model):
       for run in runs:
         # prepare run by loading image locations in a dict and clipping at shortest length
         run_dir= original_dir+'/'+run
-        print run_dir
+        print(run_dir)
         images={}
         for cam in ['rc','sc','lc']:
           images[cam]=[]

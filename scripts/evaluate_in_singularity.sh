@@ -1,10 +1,10 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-source .entrypoint_graph
+# source .entrypoint_graph
 # source .entrypoint_graph_debug
 # source .entrypoint_xpra
-# source .entrypoint_xpra_no_build
+source .entrypoint_xpra_no_build
 roscd simulation_supervised/python
 pwd
 
@@ -15,24 +15,26 @@ pwd
 # for world in black blue bricks green osb purple red tiled woodfloor woodpallet ; do 
 # for world in black ; do 
 #   name='test_corridor_generator'
-#   pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9"
+#   pytorch_args="--alpha 1 --pause_simulator --speed 0.1 --turn_speed 0.1 --action_bound 0.9"
 #   script_args="-ds --z_pos 1 -w corridor --random_seed 512 --number_of_runs 1 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
 #   world_args="--extension_config corridor_${world} --corridor_length 50 --corridor_bends 25 --texture Gazebo/Black"
 #   python run_script.py -t $name $pytorch_args $script_args $world_args
 # done
 
 
+
 ###################
 # TEST EVALUATION #
 ###################
-# python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag testing  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/data_normalization/alex_scaled_input_normalized_output/final/1 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --save_CAM_images --scaled_input --learning_rate 0.1
+python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_vgg16_adam  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/vgg16_Adam_scratch/final/2 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --save_CAM_images --scaled_input --learning_rate 0.1
+python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_vgg16_adadelta  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/vgg16_Adadelta_scratch/final/2 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --save_CAM_images --scaled_input --learning_rate 0.1
 # python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag testing  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_policy_learning/how_to_recover/res18_reference/final/1 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --save_CAM_images --scaled_input --learning_rate 0.1
 
 
 # python run_script.py -pe sing -pp pytorch_pilot_beta/pilot --log_tag test_stochastic_policy --stochastic --network tinyv3_net --on_policy --pause_simulator --evaluation --checkpoint_path testing --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
 
 
-python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_res18_reference_pretrained/final/1_eva_opal  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_policy_learning/how_to_recover/res18_reference_pretrained/final/1 --network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --dataset esatv3_expert/2500 --load_data_in_ram --pretrained --learning_rate 0.01 
+# python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_res18_reference_pretrained/final/1_eva_opal  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_policy_learning/how_to_recover/res18_reference_pretrained/final/1 --network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --dataset esatv3_expert/2500 --load_data_in_ram --pretrained --learning_rate 0.01 
 # sleep 10
 # python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag chapter_policy_learning/how_to_recover/res18_reference_pretrained/final/2_eva_opal  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_policy_learning/how_to_recover/res18_reference_pretrained/final/2 --network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --dataset esatv3_expert/2500 --load_data_in_ram --pretrained --learning_rate 0.01 
 # sleep 10
@@ -60,70 +62,6 @@ run_simulation(){
 # DONE
 # # - Alex (Scaled)
 # run_simulation testing log_neural_architectures/alex_net/esatv3_expert_200K/scaled_input/1/seed_0
-# # - VGG SGD
-# run_simulation online_NA_evaluation_extra/VGG_SGD_Scratch log_neural_architectures/vgg16_net/esatv3_expert_200K/SGD/1/seed_0
-# # - VGG Adam
-# run_simulation online_NA_evaluation_extra/VGG_Adam_Scratch log_neural_architectures/vgg16_net/esatv3_expert_200K/Adam/00001/seed_0
-# # - VGG Adadelta
-# run_simulation online_NA_evaluation_extra/VGG_Adadelta_Scratch log_neural_architectures/vgg16_net/esatv3_expert_200K/Adadelta/1/seed_0
-# # - Alex pretrained (Shifted)
-# run_simulation online_NA_evaluation_extra/Alex_Pre log_neural_architectures/alex_net_pretrained/esatv3_expert_200K/1/seed_0
-# # - VGG pretrained SGD
-# run_simulation online_NA_evaluation_extra/VGG_Pre_SGD log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/SGD/1/seed_0
-# # - VGG pretrained Adam
-# run_simulation online_NA_evaluation_extra/VGG_Pre_Adam log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/Adam/00001/seed_0
-# # - VGG pretrained Adadelta
-# run_simulation online_NA_evaluation_extra/VGG_Pre_Adadelta log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/Adadelta/1/seed_0
-# run_simulation opal_long_hours/start variance_neural_architecture_results/alex_net_normalized_output/0
-
-# Alex Finetuned 
-# run_simulation online_NA_evaluation_extra/Alexnet_Finetuned log_neural_architectures/alex_net_finetune/01/seed_0
-# VGG16 Finetuned
-# run_simulation online_NA_evaluation_extra/VGG16_Finetuned log_neural_architectures/vgg16_net_finetune/1/seed_0
-# Inception Finetuned
-# run_simulation online_NA_evaluation_extra/Inception_Finetuned log_neural_architectures/inception_net_finetune/1/seed_0
-# Res18 Finetuned
-# run_simulation online_NA_evaluation_extra/Res18_Finetuned log_neural_architectures/res18_net_finetune/1/seed_0
-# # Dense Finetuned
-# run_simulation online_NA_evaluation_extra/Dense_Finetuned log_neural_architectures/dense_net_finetune/01/seed_0
-# # Squeeze Finetuned
-# run_simulation online_NA_evaluation_extra/Squeeze_Finetuned log_neural_architectures/squeeze_net_finetune/1/seed_0
-
-
-
-# TODO later
-# # - Alex Shifted Seed 1
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed0 log_neural_architectures/alex_net_255input/seed_0
-# # - Alex Shifted Seed 1
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed1 log_neural_architectures/alex_net/esatv3_expert_200K/reference_seeds/seed_0
-# # # - Alex Shifted Seed 2
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_Seed2 log_neural_architectures/alex_net/esatv3_expert_200K/reference_seeds/seed_0
-# # - Alex learning rate 0.01
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_lr01 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/01/seed_0
-# # - Alex learning rate 0.001
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_lr001 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/001/seed_0
-# # - Alex learning rate 0.0001
-# run_simulation online_NA_evaluation_extra/Alexnet_Scratch_lr0001 log_neural_architectures/alex_net/esatv3_expert_200K/reference_learningrate/0001/seed_0
-
-
-
-
-# # Alex Pretrained
-# # VGG16 Pretrained
-# run_simulation online_NA_evaluation_extra/VGG16_pretrained log_neural_architectures/vgg16_net_pretrained/esatv3_expert_200K/01/seed_0
-# # Inception Pretrained
-# run_simulation online_NA_evaluation_extra/Inception_pretrained log_neural_architectures/inception_net_pretrained/esatv3_expert_200K/01/seed_0
-# # Res18 Pretrained
-# run_simulation online_NA_evaluation_extra/Res18_pretrained log_neural_architectures/res18_net_pretrained/esatv3_expert_200K/01/seed_0
-# # Dense Pretrained
-# run_simulation online_NA_evaluation_extra/Dense_pretrained log_neural_architectures/dense_net_pretrained/esatv3_expert_200K/01/seed_0
-# # Squeeze Pretrained
-# run_simulation online_NA_evaluation_extra/Dense_pretrained log_neural_architectures/squeeze_net_pretrained/esatv3_expert_200K/1/seed_0
-
-# run_simulation opal_long_hours/end variance_neural_architecture_results/alex_net_normalized_output/0
-
-
-
 # See how well this net does in the end  
 # model="variance_neural_architecture_results/alex_net_normalized_output/0"
 # name="opal_long_hours/end"
@@ -143,28 +81,6 @@ run_simulation(){
 
 
 # EVALUATE MODEL
-# for i in 0 1 2 ; do 
-
-# name="evaluate_res18_new"
-# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation -pp pytorch_pilot_beta/pilot --pause_simulator"
-# model="variance_neural_architecture_results/res18_net_pretrained/0"
-# pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"
-# python run_script.py -t $name $script_args $pytorch_args $extra_args
-
-
-# name="evaluate_res18_old"
-# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation -pp pytorch_pilot_beta/pilot --pause_simulator"
-# # model="validate_different_seeds_online/seed_0"
-# model="log_neural_architectures/res18_net_pretrained/esatv3_expert_200K/01/seed_0"
-# pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"
-# python run_script.py -t $name $script_args $pytorch_args $extra_args
-
-# name="evaluate_res18_old_1"
-# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation -pp pytorch_pilot_beta/pilot --pause_simulator"
-# # model="validate_different_seeds_online/seed_0"
-# model="log_neural_architectures/res18_net_pretrained/esatv3_expert_200K/1/seed_0"
-# pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training"
-# python run_script.py -t $name $script_args $pytorch_args $extra_args
 
 # name="testing"
 # model="variance_neural_architecture_results/res18_net_pretrained/0"
