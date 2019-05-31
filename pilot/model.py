@@ -278,6 +278,8 @@ class Model(object):
         losses['confidence'] = torch.sum(predictions*torch.log(predictions)).cpu().detach().numpy()
         predictions = torch.distributions.Categorical(predictions).sample()
       else:
+        predictions = self.softmax(predictions)
+        losses['confidence'] = torch.sum(predictions*torch.log(predictions)).cpu().detach().numpy()
         predictions = torch.argmax(predictions, dim=1)
     elif self.FLAGS.stochastic:
       predictions =  torch.distributions.normal.Normal(predictions[:,0:self.FLAGS.action_dim], predictions[:,self.FLAGS.action_dim:]**2).sample()

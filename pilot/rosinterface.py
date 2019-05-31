@@ -81,6 +81,7 @@ class PilotNode(object):
     
     self.start_time = 0
     self.imitation_loss=[]
+    self.confidences=[]
     self.depth_prediction=[]
     self.depth_loss=[]
     self.driving_duration=-1
@@ -393,8 +394,12 @@ class PilotNode(object):
     if 'LSTM' in self.FLAGS.network:
       h_t, c_t = (torch.from_numpy(self.hidden_states[0]),torch.from_numpy(self.hidden_states[1]))
       inputs=(torch.from_numpy(np.expand_dims(inputs, axis=0)).type(torch.FloatTensor).to(self.model.device),(h_t.to(self.model.device),c_t.to(self.model.device)))
-    control, _, self.hidden_states = self.model.predict(inputs)
+    control, losses, self.hidden_states = self.model.predict(inputs)
     
+    if 'confidence' in losses.keys():
+      self.confidences.append(losses['confidence'])
+      print(losses['confidence'])
+
     ### SEND CONTROL
     if isinstance(control, collections.Iterable):
       control = control[0]
@@ -516,6 +521,7 @@ class PilotNode(object):
     
     self.start_time=0
     self.imitation_loss=[]
+    self.confidences=[]
     self.depth_loss=[]
     self.driving_duration=-1
     self.img_index=0    
@@ -559,6 +565,11 @@ class PilotNode(object):
     if len(self.imitation_loss)!=0:
       result_string='{0}, run_imitation_loss: {1:0.3f}'.format(result_string, np.mean(self.imitation_loss))
       sumvar['run_imitation_loss']=np.mean(self.imitation_loss)
+    # add confidence
+    if len(self.confidences)!=0:
+      result_string='{0}, confidence: {1:0.3f}, confidence_std: {2:0.3f}'.format(result_string, np.mean(self.confidences), np.mean(self.confidences))
+      sumvar['confidence']=np.mean(self.confidences)
+
     
     if len(self.time_ctr_send) > 10 and len(self.time_im_received) > 10:
       # calculate control-rates and rgb-rates from differences

@@ -230,8 +230,8 @@ else:
   executable.write("export HOME={0}\n".format(FLAGS.home))
 
 executable.write("export LD_LIBRARY_PATH=/esat/opal/kkelchte/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.1/lib64 \n")
-executable.write("source /users/visics/kkelchte/tensorflow_1.8/bin/activate \n")
-executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/pytorch-cnn-visualizations/src\n".format(FLAGS.home, FLAGS.python_project+'/..'))
+executable.write("source /users/visics/kkelchte/env3/bin/activate \n")
+executable.write("export PYTHONPATH=/users/visics/kkelchte/env3/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/{1}/models:{0}/tensorflow/pytorch-cnn-visualizations/src\n".format(FLAGS.home, FLAGS.python_project+'/..'))
 # executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/tf_cnnvis \n".format(FLAGS.home, FLAGS.python_project+'/..'))
 command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,FLAGS.python_script)
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
