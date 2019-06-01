@@ -383,6 +383,7 @@ class Model(object):
     return self.epoch, predictions_list, losses, hidden_states
      
   def add_summary_var(self, name):
+    if not self.FLAGS.tensorboard: return
     import tensorflow as tf 
     '''given the name of the new variable
     add an actual variable to  summary_vars
@@ -395,6 +396,7 @@ class Model(object):
         self.summary_ops[name] = tf.summary.scalar(name, var_name)
   
   def summarize(self, sumvars):
+    if not self.FLAGS.tensorboard: return
     import tensorflow as tf 
     '''write summary sumvars by defining variables to
     summary_vars and calling summary_ops in a merge'''

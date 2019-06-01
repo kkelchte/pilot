@@ -111,7 +111,7 @@ for modelindex, model in enumerate(models):
 
 ##########################################################################################################################
 # STEP 4 Call a python script that parses the results and prints some stats
-command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpumem 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2} --endswith eva".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
+command="python condor_offline.py -t {0}/report --python3 --dont_submit --rammem 3 --gpumem 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2} --endswith eva".format(FLAGS.log_tag, FLAGS.home, 2*60*60)
 command=add_other_arguments(command, 
                             skiplist=[],
                             skipnextlist=['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith','--copy_dataset'],

@@ -2,7 +2,7 @@
 chapter=chapter_neural_architectures
 section=data_normalization
 pytorch_args="--network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9\
- --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0"
+ --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0"
 
 
 echo "####### chapter: $chapter #######"

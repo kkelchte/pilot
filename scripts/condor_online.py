@@ -120,6 +120,7 @@ condor_submit.write("match_list_length = 6 \n")
 condor_submit.write("periodic_release = ( HoldReasonCode == 1 && HoldReasonSubCode == 0 ) || HoldReasonCode == 26\n")
 
 requirements="(HasSingularity) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) && (target.name =!= LastMatchName3)  && (target.name =!= LastMatchName4) && (target.name =!= LastMatchName5)"
+
 if FLAGS.gpumem != 0:
     requirements+=" && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5)".format(FLAGS.gpumem)
 if FLAGS.use_blacklist or len(FLAGS.blacklist) != 0:

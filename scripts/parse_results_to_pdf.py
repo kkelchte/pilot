@@ -267,8 +267,11 @@ for folder_index, folder in enumerate(sorted(log_folders)):
 
   if os.path.isdir(folder+'/CAM'):
     number_CAM_images=3
-    CAM_images[folder].extend(list(np.random.choice([folder+'/CAM/'+f for f in sorted(os.listdir(folder+'/CAM')) if f.endswith('jpg') or f.endswith('png')], number_CAM_images, replace=False)))
-
+    try:
+      CAM_images[folder].extend(list(np.random.choice([folder+'/CAM/'+f for f in sorted(os.listdir(folder+'/CAM')) if f.endswith('jpg') or f.endswith('png')], number_CAM_images, replace=False)))
+    except:
+      print("[parse_results] Failed to load CAM images from {}".format(folder))
+      pass
     
   print("Overview parsed information: ")
   for k in sorted(results[folder].keys()):

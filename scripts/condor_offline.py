@@ -40,6 +40,7 @@ parser.add_argument("--dont_summarize_locally",action='store_true', help="Keep t
 # ==========================
 parser.add_argument("-pp","--python_project",default='pytorch_pilot/pilot', type=str, help="Define in which python project the executable should be started with ~/tenorflow/PROJECT_NAME/main.py: q-learning/pilot, pilot/pilot, ddpg, ....")
 parser.add_argument("-ps","--python_script",default='main.py', type=str, help="Define which python module should be started within the project: e.g. main.py or data.py.")
+# parser.add_argument("--python3",action='store_true', help="Use env3 instead of tensorflow_1.8 virtualenv.")
 
 #===========================
 #   Condor Machine Settings
@@ -130,7 +131,9 @@ blacklist=" "
 #             (machine != \"ymir.esat.kuleuven.be\") "
 #&& (CUDARuntimeVersion == 9.2)
 gpu_requirements=" && (CUDAGlobalMemoryMb >= {0}) && (CUDACapability >= 3.5) ".format(FLAGS.gpumem) if FLAGS.gpunum > 0 else ""
+
 condor_submit.write("Requirements = ( machineowner == \"Visics\" ) && (machine =!= LastRemoteHost) && (target.name =!= LastMatchName0) && (target.name =!= LastMatchName1) && (target.name =!= LastMatchName2) {0} {1}\n".format(blacklist, gpu_requirements))
+
 condor_submit.write("+RequestWalltime = {0} \n".format(FLAGS.wall_time))
 
 if not FLAGS.not_nice: condor_submit.write("Niceuser = true \n")
@@ -230,12 +233,19 @@ else:
   executable.write("export HOME={0}\n".format(FLAGS.home))
 
 executable.write("export LD_LIBRARY_PATH=/esat/opal/kkelchte/local/cuda-9.1/lib64:/users/visics/kkelchte/local/lib/cudnn-7.1/lib64 \n")
+
+# if FLAGS.python3:
 executable.write("source /users/visics/kkelchte/env3/bin/activate \n")
-executable.write("export PYTHONPATH=/users/visics/kkelchte/env3/lib/python3.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/{1}/models:{0}/tensorflow/pytorch-cnn-visualizations/src\n".format(FLAGS.home, FLAGS.python_project+'/..'))
-# executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/{1}:{0}/tensorflow/tf_cnnvis \n".format(FLAGS.home, FLAGS.python_project+'/..'))
+executable.write("export PYTHONPATH=/users/visics/kkelchte/env3/lib/python3.7/site-packages:{0}/tensorflow/pytorch-cnn-visualizations/src:{0}/tensorflow/{1}:{0}/tensorflow/{1}/models\n".format(FLAGS.home, FLAGS.python_project))
+# else:
+#   executable.write("source /users/visics/kkelchte/tensorflow_1.8/bin/activate \n")
+#   executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/pytorch-cnn-visualizations/src:{0}/tensorflow/{1}:{0}/tensorflow/{1}/models\n".format(FLAGS.home, FLAGS.python_project))
+
 command="python {0}/tensorflow/{1}/{2}".format(FLAGS.home,FLAGS.python_project,FLAGS.python_script)
 command="{0} --summary_dir {1} ".format(command, FLAGS.summary_dir)
 command="{0} --data_root {1} ".format(command, FLAGS.data_root)
+
+
 
 # ----- CHANGED 04/01
 command="{0} --log_tag {1} ".format(command, FLAGS.log_tag) 

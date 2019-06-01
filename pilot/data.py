@@ -104,11 +104,12 @@ def load_set(data_type):
   set_list = [None]*len(run_list)
   checklist = [True]*len(run_list)
   try:
-    import tensorflow as tf
-    coord=tf.train.Coordinator()
-    threads = [threading.Thread(target=load_run_info, args=(coord, run_dict, index_list, set_list, checklist, FLAGS.subsample if data_type=='train' else 1)) for i in range(FLAGS.num_threads)]
+    threads = [threading.Thread(target=load_run_info, args=(run_dict, index_list, set_list, checklist, FLAGS.subsample if data_type=='train' else 1)) for i in range(FLAGS.num_threads)]
     for t in threads: t.start()
-    coord.join(threads, stop_grace_period_secs=300)
+    while len(index_list) != 0:
+      time.sleep(1)
+    for t in threads:
+      t.join()
   except RuntimeError as e:
     print("threads are not stopping...",e)
   else:
@@ -117,9 +118,9 @@ def load_set(data_type):
       print('[data]: Failed to read {0}_set.txt from {1} in {2}.'.format(data_type, FLAGS.dataset, FLAGS.data_root))
   return set_list
 
-def load_run_info(coord, run_dict, index_list, set_list, checklist, subsample):
+def load_run_info(run_dict, index_list, set_list, checklist, subsample):
   """Load information from run with multiple threads"""
-  while not coord.should_stop():
+  while len(index_list) != 0:
     try:
       run_index = index_list.pop()
       run_dir = run_dict[run_index]
@@ -218,12 +219,7 @@ def load_run_info(coord, run_dict, index_list, set_list, checklist, subsample):
       set_list[run_index]={'name':run_dir, 'controls':control_list, 'num_imgs':num_imgs, 'imgs':imgs, 'num_depths':depth_list, 'depths':depths}
       
     except IndexError as e:
-      coord.request_stop()
-    except Exception as e:
-      print('Problem in loading data: {0} @ {1}'.format(e.args, run_dir))
-      checklist[run_index]=False
-      # checklist.append(False)
-      coord.request_stop()
+      print("thread finished.")
 
 def generate_batch(data_type):
   """ 
@@ -354,8 +350,8 @@ def generate_batch(data_type):
     # print count_controls
     if not FLAGS.load_data_in_ram:
       # load data multithreaded style into RAM
-      def load_image_and_target(coord, batch_indices, batch, checklist):
-        while not coord.should_stop():
+      def load_image_and_target(batch_indices, batch, checklist):
+        while len(batch_indices) != 0:
           try:
             loc_ind, run_ind, frame_ind = batch_indices.pop()
             def load_rgb_depth_image(run_ind, frame_ind):
@@ -435,20 +431,15 @@ def generate_batch(data_type):
               batch.append({'img':im, 'ctr':ctr, 'depth':de})
             checklist.append(True)
           except IndexError as e:
-            # print(e)
-            #print('batch_loaded, wait to stop', e)
-            coord.request_stop()
-          except Exception as e:
-            print('Problem in loading data: ',e)
-            checklist.append(False)
-            coord.request_stop()
+            print('batch_loaded')
       try:
-        import tensorflow as tf
-        coord=tf.train.Coordinator()
-        #print(FLAGS.num_threads)
-        threads = [threading.Thread(target=load_image_and_target, args=(coord, batch_indices, batch, checklist)) for i in range(FLAGS.num_threads)]
+        threads = [threading.Thread(target=load_image_and_target, args=(batch_indices, batch, checklist)) for i in range(FLAGS.num_threads)]
         for t in threads: t.start()
-        coord.join(threads, stop_grace_period_secs=15)
+        while len(batch_indices) != 0:
+          time.sleep(1)
+        for t in threads:
+          t.join()
+        # coord.join(threads, stop_grace_period_secs=15)
       except RuntimeError as e:
         print("threads are not stopping...",e)
         # wait an extra 10 seconds...
