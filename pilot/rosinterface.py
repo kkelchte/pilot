@@ -398,7 +398,6 @@ class PilotNode(object):
     
     if 'confidence' in losses.keys():
       self.confidences.append(losses['confidence'])
-      print(losses['confidence'])
 
     ### SEND CONTROL
     if isinstance(control, collections.Iterable):

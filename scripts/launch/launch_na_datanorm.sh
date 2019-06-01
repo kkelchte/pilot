@@ -42,7 +42,7 @@ train(){
 # train $chapter/$section/alex_normalized_input/final --normalized_input --learning_rate 0.1
 # train $chapter/$section/alex_normalized_output/final --normalized_output --learning_rate 0.1
 # train $chapter/$section/alex_scaled_input_normalized_output/final  --normalized_output --scaled_input --learning_rate 0.1
-train $chapter/$section/alex_skew_input_normalized_output/final  --normalized_output --skew_input --learning_rate 0.1
+# train $chapter/$section/alex_skew_input_normalized_output/final  --normalized_output --skew_input --learning_rate 0.1
 
 
 sleep 3
