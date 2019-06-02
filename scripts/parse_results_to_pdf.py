@@ -564,9 +564,7 @@ table_keys=['Distance_current_test_esatv3',
             'test_success',
             'run_imitation_loss',
             'confidence',
-            'run_rate_control',
-            'confidence_std',
-            'host']
+            'run_rate_control']
 
 try:
   good_keys=[k for k in table_keys if k in results[eva_folders[0]].keys()]

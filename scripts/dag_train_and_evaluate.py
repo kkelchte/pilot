@@ -98,7 +98,7 @@ for modelindex, model in enumerate(models):
 # STEP 3 Add for each model an online condor job without submitting for evaluation/training online
 for modelindex, model in enumerate(models):
   command="python condor_online.py -t {0}/{1}_eva --dont_submit --home {2} --summary_dir {3} --load_config --on_policy --pause_simulator --evaluation --checkpoint_path {0}/{1} --wall_time {4} --cpus 16 --use_greenlist --not_nice".format(FLAGS.log_tag, model, FLAGS.home, FLAGS.summary_dir, FLAGS.wall_time_eva)
-  skiplist=['--load_config', '--on_policy', '--pause_simulator', '--evaluation', '--dont_submit', '--use_greenlist']
+  skiplist=['--load_config', '--on_policy', '--pause_simulator', '--evaluation', '--dont_submit', '--use_greenlist','--pretrained']
   skipnextlist=['-t','--home','--summary_dir', '--checkpoint_path','--wall_time', '--cpus']
   if FLAGS.gpumem_eva != -1:
     command="{0} --gpumem {1}".format(command, FLAGS.gpumem_eva)

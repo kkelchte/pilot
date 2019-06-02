@@ -141,10 +141,12 @@ if FLAGS.use_greenlist or len(FLAGS.greenlist) != 0:
                 || (machine == \"chokai.esat.kuleuven.be\") \
                 || (machine == \"daisen.esat.kuleuven.be\") \
                 || (machine == \"fuji.esat.kuleuven.be\") \
-                || (machine == \"hoo.esat.kuleuven.be\") \
                 || (machine == \"vauxite.esat.kuleuven.be\") \
+                || (machine == \"hoo.esat.kuleuven.be\") \
                 || (machine == \"iwaki.esat.kuleuven.be\") \
                 || (machine == \"goryu.esat.kuleuven.be\") )"
+
+
                 # || (machine == \"leo.esat.kuleuven.be\") \ --> quadcore instead of intel core cpu
                 # || (machine == \"libra.esat.kuleuven.be\") \ --> quadcore instead of intel core cpu
                 # || (machine == \"cancer.esat.kuleuven.be\") \ --> quadcore instead of intel core cpu

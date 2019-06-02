@@ -40,7 +40,7 @@ class Model(object):
     # DEFINE NETWORK
     # define a network for training and for evaluation
     network_arguments={'output_size':self.output_size,
-                       'pretrained':self.FLAGS.pretrained,
+                       'pretrained':self.FLAGS.pretrained and self.FLAGS.checkpoint_path=='',
                        'dropout':self.FLAGS.dropout,
                        'feature_extract': self.FLAGS.feature_extract,
                        'n_frames':self.FLAGS.n_frames}
@@ -52,8 +52,6 @@ class Model(object):
       print(e)
       print("[model] Failed to load model {0}.".format(self.FLAGS.network))
       sys.exit(2)
-    if self.FLAGS.pretrained:
-      print("[model] loaded imagenet pretrained weights.")
     self.input_size=self.net.default_image_size
     # load on GPU
     # self.device = torch.device( "cpu")
@@ -90,7 +88,8 @@ class Model(object):
       config.gpu_options.allow_growth = True
       self.sess=tf.Session(graph=self.graph, config=config)
       
-    if not self.FLAGS.pretrained or self.FLAGS.continue_training:
+    # checkpoint path overruled pretrained
+    if not self.FLAGS.pretrained or self.FLAGS.continue_training or self.FLAGS.checkpoint_path != '':
       self.initialize_network()
 
   def initialize_network(self):
