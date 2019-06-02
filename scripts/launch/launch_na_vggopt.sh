@@ -32,11 +32,11 @@ train(){
 # pretrain $chapter/$section/vgg16_Adadelta_scratch/learning_rates --optimizer Adadelta --network vgg16_net  --scaled_input  --gpumem 6000
 
 # pretrain $chapter/$section/alex_SGD_pretrained/learning_rates --pretrained --optimizer SGD --network alex_net  --scaled_input  --gpumem 1900
+pretrain $chapter/$section/vgg16_SGD_pretrained/learning_rates --pretrained --optimizer SGD --network vgg16_net  --scaled_input  --gpumem 6000 --python_project pytorch_pilot_beta/pilot
 
 #TODO
-pretrain $chapter/$section/vgg16_SGD_pretrained/learning_rates --pretrained --optimizer SGD --network vgg16_net  --scaled_input  --gpumem 6000 --python_project pytorch_pilot_beta/pilot
-# pretrain $chapter/$section/alex_SGD_pretrained_normalized/learning_rates --pretrained --optimizer SGD --network alex_net  --normalized_input  --gpumem 1900
-# pretrain $chapter/$section/vgg16_SGD_pretrained_normalized/learning_rates --pretrained --optimizer SGD --network vgg16_net  --normalized_input  --gpumem 6000
+pretrain $chapter/$section/alex_SGD_pretrained_normalized/learning_rates --pretrained --optimizer SGD --network alex_net  --normalized_input  --gpumem 1900
+pretrain $chapter/$section/vgg16_SGD_pretrained_normalized/learning_rates --pretrained --optimizer SGD --network vgg16_net  --normalized_input  --gpumem 6000
 
 #TODO
 # pretrain $chapter/$section/vgg16_Adam_pretrained/learning_rates --pretrained --optimizer Adam --network vgg16_net  --scaled_input  --gpumem 6000
@@ -51,11 +51,12 @@ pretrain $chapter/$section/vgg16_SGD_pretrained/learning_rates --pretrained --op
 # train $chapter/$section/vgg16_Adam_scratch/final --optimizer Adam --network vgg16_net --learning_rate 0.0001  --scaled_input
 # train $chapter/$section/vgg16_Adadelta_scratch/final --optimizer Adadelta --network vgg16_net --learning_rate 0.1  --scaled_input
 
-#TODO
-# train $chapter/$section/alex_SGD_pretrained/final --pretrained --optimizer SGD --network alex_net  --scaled_input  --gpumem_train 1900 --learning_rate 0.1
-# train $chapter/$section/vgg16_SGD_pretrained/final --pretrained --optimizer SGD --network vgg16_net  --scaled_input  --gpumem_train 6000 --learning_rate ...
-# train $chapter/$section/alex_SGD_pretrained_normalized/final --pretrained --optimizer SGD --network alex_net --normalized_input  --gpumem_train 1900 --learning_rate ...
-# train $chapter/$section/vgg16_SGD_pretrained_normalized/final --pretrained --optimizer SGD --network vgg16_net --normalized_input  --gpumem_train 6000 --learning_rate ...
+#PREDO
+train $chapter/$section/alex_SGD_pretrained/final --pretrained --optimizer SGD --network alex_net  --scaled_input  --gpumem_train 1900 --learning_rate 0.1
+train $chapter/$section/vgg16_SGD_pretrained/final --pretrained --optimizer SGD --network vgg16_net  --scaled_input  --gpumem_train 6000 --learning_rate 0.1
+train $chapter/$section/alex_SGD_pretrained_normalized/final --pretrained --optimizer SGD --network alex_net --normalized_input  --gpumem_train 1900 --learning_rate 0.1
+train $chapter/$section/vgg16_SGD_pretrained_normalized/final --pretrained --optimizer SGD --network vgg16_net --normalized_input  --gpumem_train 6000 --learning_rate 0.1
+
 # # train $chapter/$section/vgg16_Adam_pretrained/final --pretrained --optimizer Adam --network vgg16_net  --scaled_input  --gpumem_train 6000 --learning_rate ...
 # # train $chapter/$section/vgg16_Adadelta_pretrained/final --pretrained --optimizer Adadelta --network vgg16_net  --scaled_input  --gpumem_train 6000 --learning_rate ...
 

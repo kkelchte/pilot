@@ -43,10 +43,10 @@ train(){
 # train $chapter/$section/res18_reference/final --dataset esatv3_expert/2500 --load_data_in_ram --rammem 5 --learning_rate 0.1
 
 # train $chapter/$section/res18_recovery/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --learning_rate 0.001
-train $chapter/$section/res18_noise/gau/final --dataset esatv3_expert_stochastic/gau --load_data_in_ram --rammem 7 --learning_rate 0.1 --python_project pytorch_pilot_beta/pilot
+# train $chapter/$section/res18_noise/gau/final --dataset esatv3_expert_stochastic/gau --load_data_in_ram --rammem 7 --learning_rate 0.1 --python_project pytorch_pilot_beta/pilot
 # TODO
-# train $chapter/$section/res18_noise/ou/final --dataset esatv3_expert_stochastic/ou --load_data_in_ram --rammem 7 --learning_rate 0.1
-# train $chapter/$section/res18_noise/uni/final --dataset esatv3_expert_stochastic/uni --load_data_in_ram --rammem 7 --learning_rate 0.1
+train $chapter/$section/res18_noise/ou/final --dataset esatv3_expert_stochastic/ou --load_data_in_ram --rammem 7 --learning_rate 0.1
+train $chapter/$section/res18_noise/uni/final --dataset esatv3_expert_stochastic/uni --load_data_in_ram --rammem 7 --learning_rate 0.1
 
 ##############################
 # Create stochastic datasets

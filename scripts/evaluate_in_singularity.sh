@@ -1,10 +1,10 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-#source .entrypoint_graph
+source .entrypoint_graph
 # source .entrypoint_graph_debug
 # source .entrypoint_xpra
-source .entrypoint_xpra_no_build
+# source .entrypoint_xpra_no_build
 roscd simulation_supervised/python
 pwd
 
@@ -33,7 +33,7 @@ pwd
 # python run_script.py -g -pe sing -pp pytorch_pilot_beta/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_vgg16_SGD  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/vgg16_SGD_scratch/final/0 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
 # python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag testing  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_policy_learning/how_to_recover/res18_reference/final/1 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --save_CAM_images --scaled_input --learning_rate 0.1
 
-python run_script.py -g -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_res18 --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_policy_learning/how_to_recover/res18_reference/final/1 --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
+python run_script.py -g -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_alex --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/alex_SGD_pretrained/final/0 --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
 
 
 # python run_script.py -pe sing -pp pytorch_pilot_beta/pilot --log_tag test_stochastic_policy --stochastic --network tinyv3_net --on_policy --pause_simulator --evaluation --checkpoint_path testing --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1

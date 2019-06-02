@@ -564,7 +564,8 @@ table_keys=['Distance_current_test_esatv3',
             'test_success',
             'run_imitation_loss',
             'confidence',
-            'confidence_std'
+            'run_rate_control',
+            'confidence_std',
             'host']
 
 try:
