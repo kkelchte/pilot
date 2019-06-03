@@ -8,16 +8,6 @@ import warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
-
-# import tensorflow as tf
-# import tensorflow.contrib.losses as losses
-# import tensorflow.contrib.slim as slim
-# from tensorflow.contrib.slim.python.slim import model_analyzer as ma
-# from tensorflow.python.ops import variables as tf_variables
-# from tensorflow.python.ops import random_ops
-
-
-
 import numpy as np
 import sys, os, os.path
 import subprocess
@@ -46,8 +36,7 @@ def main(_):
     FLAGS, others = parser.parse_known_args()
   except:
     sys.exit(2)
-  # if FLAGS.random_seed == 123: FLAGS.random_seed = (int(time.time()*100)%4000)
-
+  
   np.random.seed(FLAGS.random_seed)
   random.seed(FLAGS.random_seed)
   print("[main.py] Found {0} cuda devices available.".format(torch.cuda.device_count()))
@@ -63,12 +52,10 @@ def main(_):
   if FLAGS.summary_dir[0] != '/': FLAGS.summary_dir = os.path.join(os.getenv('HOME'),FLAGS.summary_dir)
 
   #Check log folders and if necessary remove:
-  # REMOVE 
   if (FLAGS.log_tag == 'testing' or FLAGS.owr) and not FLAGS.on_policy:
     if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag):
       shutil.rmtree(FLAGS.summary_dir+FLAGS.log_tag, ignore_errors=False)
-  # SEARCH FOR PREVIOUS RUN
-  # elif not FLAGS.continue_training : # in case we are training from scratch/checkpoint and not evaluating
+  
   if os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag) and os.path.isfile(FLAGS.summary_dir+FLAGS.log_tag+'/my-model') and os.path.isfile(FLAGS.summary_dir+FLAGS.log_tag+'/configuration.xml'):
     print("[main.py]: found previous checkpoint from which training is continued: {0}".format(FLAGS.log_tag))
     FLAGS.load_config = True
@@ -89,15 +76,6 @@ def main(_):
   tools.save_config(FLAGS, FLAGS.summary_dir+FLAGS.log_tag)
   model = Model(FLAGS)
 
-  # def signal_handler(signal, frame):
-  #   print('[main] You pressed Ctrl+C! Saving checkpoints')
-  #   model.save(FLAGS.summary_dir+FLAGS.log_tag)
-  #   # sess.close()
-  #   sys.exit(0)
-
-  # signal.signal(signal.SIGINT, signal_handler)
-  # print('[main]------------Press Ctrl+C to end the learning') 
-  
   if FLAGS.on_policy: # online training/evaluating
     print('[main] On-policy training.')
     import rosinterface
