@@ -12,13 +12,16 @@ pwd
 # COMMAND
 
 # Collect long corridor dataset USE SIMSUP_BETA FROM ENTROPOINT_GRAPH_DEBUG
-# for settings in Black-black Blue-blue Bricks-bricks Green-green WoodPallet-woodpallet WoodFloor-woodfloor Tiled-tiled Red-red Purple-purple OSB-osb; do
+# for settings in Black-black-default Blue-blue-default Bricks-bricks-default Green-green-default WoodPallet-woodpallet-default WoodFloor-woodfloor-default Tiled-tiled-default Red-red-default Purple-purple-default OSB-osb-default; do
+# for settings in Black-black-default Blue-blue-default Bricks-bricks-default Green-green-default WoodPallet-woodpallet-diffuse WoodFloor-woodfloor-diffuse Tiled-tiled-spot Red-red-default Purple-purple-default OSB-osb-diffuse; do
+# for settings in Bricks-bricks-default Green-green-default WoodPallet-woodpallet-diffuse Tiled-tiled-diffuse Red-red-default Purple-purple-default ; do
 #   texture="$(echo $settings | cut -d '-' -f 1)"
 #   world="$(echo $settings | cut -d '-' -f 2)"
+#   light="$(echo $settings | cut -d '-' -f 3)"
 #   echo "world $world texture $texture"
-#   pytorch_args="--owr --alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9 --yaw_or 1.57"
-#   script_args=" -ds --z_pos 1 -w corridor --random_seed 512 --number_of_runs 5 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
-#   world_args="--corridor_length 50 --corridor_bends 25 --extension_config corridor_${world} --texture Gazebo/${texture}"
+#   pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9 --yaw_or 1.57"
+#   script_args=" -ds --z_pos 1 -w corridor --random_seed 512 --number_of_runs 5 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
+#   world_args="--corridor_length 50 --corridor_bends 25 --extension_config corridor_${world} --texture Gazebo/${texture} --lights ${light}_light"
 #   python run_script.py -t "varying_corridor/corridor_${world}" $pytorch_args $script_args $world_args
 # done
 
@@ -27,7 +30,8 @@ pwd
 ###################
 # TEST EVALUATION #
 ###################
-# python run_script.py -g -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_online  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/vgg16_Adam_scratch/final/2 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
+python run_script.py -g -pe sing -pp pytorch_pilot_beta/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_online  --save_CAM_images --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/popular_architectures/inception_net_end-to-end/final/0 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
+# python run_script.py -g -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_online  --save_CAM_images --load_config --on_policy --pause_simulator --evaluation --checkpoint_path testing --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
 
 
 # python run_script.py -g -pe sing -pp pytorch_pilot_beta/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_vgg16_SGD  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/vgg16_SGD_scratch/final/0 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1

@@ -263,7 +263,10 @@ for tag in sorted(FLAGS.tags):
     print(command)
     subprocess.call(shlex.split(command))
     if FLAGS.blog_destination != "":
-      command="cp {0} /users/visics/kkelchte/blogs/kkelchte.github.io/imgs/{1}_{2}.jpg".format(fig_name, FLAGS.blog_destination, tag)
+      image_file="/users/visics/kkelchte/blogs/kkelchte.github.io/imgs/{0}_{1}.jpg".format(FLAGS.blog_destination, tag)
+      if not os.path.isdir(os.path.dirname(image_file)):
+        os.makedirs(os.path.dirname(image_file))
+      command="cp {0} {1}".format(fig_name, image_file)
       subprocess.call(shlex.split(command))
       print(command)
   else:

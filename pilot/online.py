@@ -88,8 +88,10 @@ def method(model, experience, replaybuffer, sumvar={}):
 
   # create CAM image and save in logfolder/CAM
   if model.FLAGS.save_CAM_images:
-    tools.save_CAM_images(image, model, label=label)
-
+    try:
+      tools.save_CAM_images(image, model, label=label)
+    except Exception as e:
+      print(e.args)
   if model.FLAGS.evaluate:
     return
   # save experience in buffer

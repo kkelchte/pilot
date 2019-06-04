@@ -1,18 +1,16 @@
 #!/usr/bin/python
-import model
-#from lxml import etree as ET
-import xml.etree.cElementTree as ET
-
-import numpy as np
-# import tensorflow as tf
-import torch
-
-import os,sys,time
-
 import matplotlib
 matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
+
+import arguments
+
+
+import xml.etree.cElementTree as ET
+import numpy as np
+import torch
+import argparse
+import os,sys,time
 
 
 import skimage.transform as sm
@@ -251,7 +249,6 @@ def save_annotated_images(image, label=None, model=None):
   image_index=len(os.listdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated'))
   plt.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/control_annotated/{0:010d}.jpg'.format(image_index))
 
-
 def save_CAM_images(image, model, label=None):
   """Save a CAM activation map of current image and save in logfolder/CAM
   """
@@ -353,226 +350,14 @@ def apply_heatmap_on_image(FLAGS, original_image, heatmap):
   
   # Apply heatmap on image
   if FLAGS.skew_input:
-    original_image = Image.fromarray((post_process(FLAGS, original_image)).astype(np.uint8))
+    original_image = Image.fromarray(((FLAGS, original_image)).astype(np.uint8))
   else:
-    original_image = Image.fromarray((post_process(FLAGS, original_image)*255).astype(np.uint8))
+    original_image = Image.fromarray(((FLAGS, original_image)*255).astype(np.uint8))
   heatmap_on_image = Image.new("RGBA", original_image.size)
   heatmap_on_image = Image.alpha_composite(heatmap_on_image, original_image.convert('RGBA'))
   heatmap_on_image = Image.alpha_composite(heatmap_on_image, heatmap)
   
   return heatmap_on_image  
-
-# ==============================
-#   Obtain Hidden State of LSTM 
-# ==============================
-def get_hidden_state(input_images, model, device='cpu', astype='tensor'):
-  """
-  A recurrent model is evaluated over the input images and the final hidden output and state is returned.
-  args:
-  input_images: ndarray of shape [T,C,H,W]
-  model:  model with LSTM net
-  device: 'cpu' or 'gpu'
-  returns tuple of torch tensors for cell and hidden state
-  EXTENSION: add device option...
-  """
-  # device = torch.device("cuda:0" if torch.cuda.is_available() and device=='gpu' else "cpu")
-  device = torch.device("cuda:0")
-  if not model.net.rnn: raise(ValueError("Network does not contain rnn part."))
-  # move model to device:
-  # stime=time.time()
-  # print("move model: {0}".format(time.time()-stime))
-  h_t,c_t = model.net.get_init_state(1)
-  # print("[tools] Obtaining hidden state after image sequence with length {0}".format(len(input_images)))
-  # for index in range(len(input_images)):
-  #   inputs=(torch.from_numpy(np.expand_dims(np.expand_dims(input_images[index],0),0)).type(torch.FloatTensor).to(device), 
-  #           (h_t.to(device), c_t.to(device)))
-  #   outputs, (h_t, c_t)=model.net.forward(inputs)
-  # print input_images.shape
-  # import pdb; pdb.set_trace()
-  if len(input_images) != 0:
-    # model.net.to(device)
-    inputs=(torch.from_numpy(np.expand_dims(input_images,0)).type(torch.FloatTensor).to(device),(h_t.to(device), c_t.to(device)))
-    outputs, (h_t,c_t) = model.net.forward(inputs)
-    # model.net.to(model.device)
-  
-  return (h_t.detach().cpu(), c_t.detach().cpu()) if astype=='tensor' else (h_t.detach().cpu().numpy(), c_t.detach().cpu().numpy())
-
-# ===========================
-#   Visualization Techniques
-# ===========================
-def visualize_saliency_of_output(FLAGS, model, input_images=[], filter_pos=-1, cnn_layer=-1):
-  """
-  Extract the salience map of the output control node(s) for a predefined set of visualization images.
-  You can define the input_images as a list, if nothing is defined it uses the predefined images.
-  It saves the images in FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps/....png'.
-  FLAGS: the settings defined in main.py
-  model: the loaded pilot-model object
-  input_images: one or more images in an numpy array
-  """
-  # Extraction of guided backpropagation saliency maps from output  
-  # Create saliency map with guided backpropagation
-  import matplotlib as mpl
-  mpl.use('Agg')
-  import matplotlib.pyplot as plt
-
-  inputs=torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.FloatTensor)
-  inputs.requires_grad=True  
-  if filter_pos != -1 or cnn_layer != -1:
-    raise NotImplementedError('cnn layer and filter position can not be defined yet')
-  else:
-    from guided_backprop import GuidedBackprop
-    BP = GuidedBackprop(model.net.network)
-    target = 1 if FLAGS.discrete else 0
-    gradient = BP.generate_gradients(inputs, target)
-    gradient = gradient - gradient.min()
-    gradient /= gradient.max()
-
-    plt.imshow(gradient.transpose(1,2,0))
-    plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
-
-
-# ==============================
-#   Calculate importance weights
-# ==============================
-def calculate_importance_weights(model, input_images=[], level='neuron'):
-  """
-  Importance weights are calculated in the same way as the memory away synapsys for the model provided.
-  For each image in input_images, the absolute value of the gradients are calculated 
-  for each part of the network with respect to the input and averaged over the images.
-  The level tag defines on which level of specificity the importance weight should be calculated.
-  Options are: 'neuron'(default), 'filter', 'layer'
-
-  The importance weights are solely estimated for convolutional and linear operations,
-  not for batch normalization.
-
-  Returns:
-  a list of importance weights in the shape corresponding to the level of specificity:
-  - neuron: same shape as the parameter (ChannelsxSizexSizexHiddenUnits)
-  - filter: 1D array with length HiddenUnits
-  - layer: 1 integer for each layer
-  """
-  print("[tools] calculate_importance_weights")
-  # collect importance / gradients in list
-  gradients=[0. for p in model.net.parameters()]
-  stime=time.time()
-  hidden_states=()
-  model.net.zero_grad()
-  for img_index in range(len(input_images)-model.FLAGS.n_frames): #loop over input images
-    if img_index%100==0: print( img_index)
-    # ensure no gradients are still in the network
-    if not 'LSTM' in model.FLAGS.network:
-      model.net.zero_grad()
-    # adjust input for nfc, 3dcnn, LSTM
-    if '3d' in model.FLAGS.network:
-      imgs=input_images[img_index:img_index+model.FLAGS.n_frames]
-      img=np.concatenate(imgs, axis=0)
-    elif 'nfc' in model.FLAGS.network:
-      img=np.asarray(input_images[img_index:img_index+model.FLAGS.n_frames])
-    elif 'LSTM' in model.FLAGS.network:
-      img=np.asarray(input_images[img_index:img_index+1])
-    else:
-      img=input_images[img_index]
-    
-    img=np.expand_dims(img,0)
-    inputs=torch.from_numpy(img).type(torch.float32).to(model.device)
-
-    if not 'LSTM' in model.FLAGS.network:
-      # forward pass of one image through the network
-      y_pred=model.net(inputs)
-      # backward pass from the 2-norm of the output
-      torch.norm(y_pred, 2, dim=1).backward()    
-    else:
-      if len(hidden_states) != 0:
-        h_t, c_t = (hidden_states[0],hidden_states[1])
-      else:
-        h_t, c_t = get_hidden_state([],model) 
-      inputs=(inputs,(h_t.to(model.device),c_t.to(model.device)))
-      y_pred, hidden_states=model.net(inputs)
-      torch.norm(y_pred, 2, dim=-1).backward(retain_graph=True)    
-    
-    for pindex, p in enumerate(model.net.parameters()):
-      try:
-        g=p.grad.data.clone().detach().cpu().numpy()
-        gradients[pindex]+=np.abs(g)/len(input_images)
-      except Exception as e:
-        print(e.args)
-        pass
-
-  # # In one track for time considerations:
-  # # ensure no gradients are still in the network
-  # model.net.zero_grad()
-  # # forward pass of one image through the network
-  # y_pred=model.net(torch.from_numpy(np.asarray(input_images)).type(torch.float32).to(model.device))
-  # # backward pass from the 2-norm of the output
-  # torch.sum(torch.norm(y_pred,2,dim=1)).backward()
-  # for pindex, p in enumerate(model.net.parameters()):
-  #     g=p.grad.data.clone().detach().cpu().numpy()
-  #     gradients[pindex]+=np.abs(g)/len(input_images)
-
-  print("[tools] duration {0}".format(time.time()-stime))
-  if level == 'neuron':
-    return gradients
-  elif level == 'filter':
-    raise NotImplementedError
-  else:
-    raise NotImplementedError
-
-def visualize_importance_weights(importance_weights, log_folder):
-  """
-  plot for each layer the percentage of non-zero importance weights ~ 'occupied space'
-  if histogram: plot a histogram over each layer's weights.
-  Note that importance weights of biases is not taken into account.
-  """
-  # import matplotlib as mpl
-  # mpl.use('Agg')
-  import matplotlib.pyplot as plt
-
-  freespace=[]
-  occupied=[]
-  for index, iw in enumerate(importance_weights):
-      # ignore the biases
-      if isinstance(iw, float) or len(iw.shape)==1: continue
-      iw=iw.flatten()
-      assert(len(iw[iw==0])+len(iw[iw!=0])==len(iw))
-      freespace.append(float(len(iw[iw==0]))/len(iw))
-      occupied.append(float(len(iw[iw!=0]))/len(iw))
-  
-
-  plt.bar(range(len(occupied)),100)
-  plt.bar(range(len(occupied)),[o*100 for o in occupied])
-  # for i,v in enumerate(occupied):
-  #     plt.text(i-0.25, 5, "{0:d}%".format(int(v*100)))
-  plt.xlabel('Layers')
-  plt.ylabel('Proportion')
-  plt.tight_layout()
-  plt.savefig(log_folder+'/occupancy.png')
-
-  plt.cla()
-  plt.bar(range(len(freespace)),100)
-  plt.bar(range(len(freespace)),[o*100 for o in freespace])
-  for i,v in enumerate(freespace):
-      plt.text(i-0.25, 5, "{0:d}%".format(int(v*100)))
-  plt.xlabel('Layers')
-  plt.ylabel('Proportion')
-  plt.tight_layout()
-  plt.savefig(log_folder+'/freespace.png')
-
-  if True:
-    # histogram for each layer
-    num_layers=sum([1 for iw in importance_weights if not isinstance(iw,float) and len(iw.shape) > 1])
-    f, axes = plt.subplots(num_layers, 1, figsize=(5,3*num_layers), sharex=True)
-    index=0
-    for iw in importance_weights:
-      try:
-        if not isinstance(iw,int) and len(iw.shape)==1: continue
-        axes[index].set_title('Layer {0}'.format(index))
-        axes[index].hist(iw.flatten(), bins=50)
-        index+=1
-      except:
-        pass
-
-    plt.tight_layout()
-    plt.savefig(log_folder+'/histogram_importance_weights.png')
 
 class GradCam():
   """
@@ -716,12 +501,423 @@ class GradCam():
                    input_image.shape[3]), Image.ANTIALIAS))
     return cam
 
+# ==============================
+#   Obtain Hidden State of LSTM 
+# ==============================
+def get_hidden_state(input_images, model, device='cpu', astype='tensor'):
+  """
+  A recurrent model is evaluated over the input images and the final hidden output and state is returned.
+  args:
+  input_images: ndarray of shape [T,C,H,W]
+  model:  model with LSTM net
+  device: 'cpu' or 'gpu'
+  returns tuple of torch tensors for cell and hidden state
+  EXTENSION: add device option...
+  """
+  # device = torch.device("cuda:0" if torch.cuda.is_available() and device=='gpu' else "cpu")
+  device = torch.device("cuda:0")
+  if not model.net.rnn: raise(ValueError("Network does not contain rnn part."))
+  # move model to device:
+  # stime=time.time()
+  # print("move model: {0}".format(time.time()-stime))
+  h_t,c_t = model.net.get_init_state(1)
+  # print("[tools] Obtaining hidden state after image sequence with length {0}".format(len(input_images)))
+  # for index in range(len(input_images)):
+  #   inputs=(torch.from_numpy(np.expand_dims(np.expand_dims(input_images[index],0),0)).type(torch.FloatTensor).to(device), 
+  #           (h_t.to(device), c_t.to(device)))
+  #   outputs, (h_t, c_t)=model.net.forward(inputs)
+  # print input_images.shape
+  # import pdb; pdb.set_trace()
+  if len(input_images) != 0:
+    # model.net.to(device)
+    inputs=(torch.from_numpy(np.expand_dims(input_images,0)).type(torch.FloatTensor).to(device),(h_t.to(device), c_t.to(device)))
+    outputs, (h_t,c_t) = model.net.forward(inputs)
+    # model.net.to(model.device)
+  
+  return (h_t.detach().cpu(), c_t.detach().cpu()) if astype=='tensor' else (h_t.detach().cpu().numpy(), c_t.detach().cpu().numpy())
+
+# ===========================
+#   Visualization Techniques
+# ===========================
+def visualize_saliency_of_output(FLAGS, model, input_images=[], filter_pos=-1, cnn_layer=-1):
+  """
+  Extract the salience map of the output control node(s) for a predefined set of visualization images.
+  You can define the input_images as a list, if nothing is defined it uses the predefined images.
+  It saves the images in FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps/....png'.
+  FLAGS: the settings defined in main.py
+  model: the loaded pilot-model object
+  input_images: one or more images in an numpy array
+  """
+  # Extraction of guided backpropagation saliency maps from output  
+  # Create saliency map with guided backpropagation
+  import matplotlib as mpl
+  mpl.use('Agg')
+  import matplotlib.pyplot as plt
+
+  inputs=torch.from_numpy(np.expand_dims(input_images[0],0)).type(torch.FloatTensor)
+  inputs.requires_grad=True  
+  if filter_pos != -1 or cnn_layer != -1:
+    raise NotImplementedError('cnn layer and filter position can not be defined yet')
+  else:
+    from guided_backprop import GuidedBackprop
+    BP = GuidedBackprop(model.net.network)
+    target = 1 if FLAGS.discrete else 0
+    gradient = BP.generate_gradients(inputs, target)
+    gradient = gradient - gradient.min()
+    gradient /= gradient.max()
+
+    plt.imshow(gradient.transpose(1,2,0))
+    plt.savefig(FLAGS.summary_dir+FLAGS.log_tag+'/saliency_maps.jpg',bbox_inches='tight')
+
+class NearestFeatures():
+  """
+      Class object which calculates features of source data and test data
+      Nearest source images can be retrieved for frames from test data
+  """
+  def __init__(self, model, source_dataset, target_dataset):
+    self.FLAGS=model.FLAGS
+    self.model=model
+    # settings
+    self.k=2
+    self.num_frames=10
+    # store datasets
+    self.source_dataset=source_dataset
+    self.target_dataset=target_dataset
+    # extract features
+    import time
+    stime=time.time()
+    self.extract_features(self.source_dataset)
+    print("[nearest] calculate source features {0:0.0f}".format(time.time()-stime))
+    stime=time.time()
+    self.extract_features(self.target_dataset)
+    print("[nearest] calculate target features {0:0.0f}".format(time.time()-stime))
+    
+    # create a graph
+    # self.create_graph()
+
+  def local_load_rgb(self, run, sample_index):
+    """
+        call load_rgb with extra arguments
+    """
+    return load_rgb(im_file=os.path.join(run['name'],'RGB', '{0:010d}.jpg'.format(run['num_imgs'][sample_index])), 
+                    im_size=self.model.input_size, 
+                    im_mode='CHW',
+                    im_norm='scaled' if self.FLAGS.scaled_input else 'none',
+                    im_means=self.FLAGS.normalize_means,
+                    im_stds=self.FLAGS.normalize_stds)
+
+  def extract_features(self, dataset):
+    """Extract features in batches and returns a pytorch tensor on cpu with features.
+    """
+    for run in dataset:
+      # For each frame extract features
+      features=torch.FloatTensor()
+      for frame_index in range(0,len(run['num_imgs']),self.FLAGS.batch_size):
+        if not self.FLAGS.load_data_in_ram:
+          frames = [self.local_load_rgb(run, sample_index) for sample_index in range(frame_index, min(frame_index+self.FLAGS.batch_size, len(run['num_imgs'])))]
+        else:
+          frames = run['imgs'][frame_index:min(frame_index+self.FLAGS.batch_size, len(run['num_imgs']))]
+        inputs=torch.from_numpy(np.asarray(frames)).type(torch.FloatTensor).to(self.model.device)
+        new_features = torch.squeeze(self.model.net.feature(inputs).flatten(start_dim=1, end_dim=-1)).cpu().detach()
+        if features.size() == 0:
+          features = newfeatures
+        else:
+          features = torch.cat((features, new_features), dim=0)
+      run['features']=features
+
+  def parse_image_indices(self, dataset):
+    """
+        Define self.num_frames from R runs with L images
+        Return list of run_index,sample_index tuples
+    """
+    total=np.sum([len(run['num_imgs']) for run in dataset])
+    skip_images=int(float(total)/self.num_frames)
+    image_index=0
+    run_index=0
+    indices=[]
+    while len(indices) < self.num_frames:
+      indices.append((image_index, run_index))
+      image_index += skip_images
+      if image_index >= len(dataset[run_index]['num_imgs']):
+        image_index-=len(dataset[run_index]['num_imgs'])
+        run_index+=1
+    # print("indices: {0}".format(indices))
+    return indices
+
+  def calculate_distances(self, reference, dataset):
+    """
+        Calculate the disctance to all frames in the dataset (loop over runs)
+        Return the closest K images from the dataset and the furthest image.
+    """
+    top_k=[]
+    bottom=[]
+    for run in dataset:
+      distances=(run['features']-reference).pow(2).sum(1).sqrt().detach().numpy()
+      
+      # merge a list with top_k images according to top_k_values scores
+      # with a new list of top_k scores
+      # print("old top k {0}".format([e for e,_ in top_k]))
+      top_k.extend([(distances[ci], run['imgs'][ci] if self.FLAGS.load_data_in_ram else self.local_load_rgb(run,ci)) for ci in np.argsort(distances)[0:self.k]])
+      # print("extended top k {0}".format([e for e,_ in top_k]))  
+      top_k=sorted(top_k,key=lambda f:f[0])[:self.k]
+      # print("new top k {0}".format([e for e,_ in top_k]))  
+
+      # print("old bottom {0}".format([e for e,_ in bottom]))
+      bottom.extend([(distances[np.argsort(distances)[-1]], run['imgs'][np.argsort(distances)[-1]] if self.FLAGS.load_data_in_ram else self.local_load_rgb(run,np.argsort(distances)[-1]))])
+      # print("extended bottom {0}".format([e for e,_ in bottom]))
+      bottom=list(reversed(sorted(bottom,key=lambda f:f[0])))[:1]
+      # print("new bottom {0}".format([e for e,_ in bottom]))
+
+    return [img for _, img in top_k], [img for _, img in bottom]
+
+  def create_graph(self, log_folder=''):
+    """Compute for self.num_frames images from the test domain the self.k nearest features in the source domain.
+    Display both images from the test and the k nearest as well as the furthest image from the source domain.
+    """  
+    # grad_cam = GradCam(self.model.net, target_layer=len(self.model.net.feature)-1, device=self.model.device)
+    
+    fig,ax=plt.subplots(self.num_frames, self.k+2,figsize=(20,40),squeeze=False)
+    indices=self.parse_image_indices(self.target_dataset)
+    for row_index, (target_frame_index, target_run_index) in enumerate(indices):
+      # calculate distances between the frame of the target dataset and all frames in the source dataset
+      # get the furthest and closest K images
+      top_images, bottom_images = self.calculate_distances(reference=self.target_dataset[target_run_index]['features'][target_frame_index],
+                                                    dataset=self.source_dataset)
+
+      # combine graph with first original image from target dataset
+      if self.FLAGS.load_data_in_ram:
+        target_image=target_dataset[target_run_index]['imgs'][target_frame_index]
+      else:
+        target_image=self.local_load_rgb(target_dataset[target_run_index], target_frame_index)
+      original=post_process(FLAGS,target_image)
+      ax[row_index,0].imshow(original)
+      ax[row_index,0].axis('off')
+
+      # add label and predicted control
+      label=target_dataset[target_run_index]['controls'][target_frame_index]
+      ctr,_,_ = self.model.predict(np.expand_dims(target_image,0))
+      if isinstance(ctr,list):
+        ctr=ctr[0]
+      ax[row_index,0].plot((original.shape[0]/2,original.shape[0]/2), (original.shape[1]/2-5,original.shape[1]/2+15), linewidth=3, markersize=12,color='w')
+      ax[row_index,0].plot((original.shape[0]/2,original.shape[0]/2-ctr*50), (original.shape[1]/2,original.shape[1]/2), linewidth=5, markersize=12,color='b')
+      ax[row_index,0].plot((original.shape[0]/2,original.shape[0]/2-label*50), (original.shape[1]/2+10,original.shape[1]/2+10), linewidth=5, markersize=12,color='g')
+      if row_index ==0: ax[row_index,0].set_title('original')
+
+      # add top k images
+      for index, image in enumerate(top_images):    
+        img=post_process(FLAGS, image)
+        ax[row_index,index+1].imshow(img)
+        ax[row_index,index+1].axis('off')
+        if row_index ==0: ax[row_index,index+1].set_title('Top '+str(index))
+      
+      # add furthest image
+      img=post_process(FLAGS, bottom_images[0])
+      ax[row_index,3].imshow(img)
+      ax[row_index,3].axis('off')
+      if row_index ==0: ax[row_index,3].set_title('Bottom')
+
+      # add gradCAM image
+      # prep_img=torch.from_numpy(np.expand_dims(target_image,0)).type(torch.float32).to(self.model.device)
+      # cam = grad_cam.generate_cam(prep_img, 0) if self.FLAGS.discrete else grad_cam.generate_ram(prep_img)
+      # ax[row_index,4]=apply_heatmap_on_image(self.FLAGS, original, cam)
+    
+    plt.savefig(log_folder+'/nearest_feature_image.png', bbox_inches='tight')
+# ==============================
+#   Calculate importance weights
+# ==============================
+def calculate_importance_weights(model, input_images=[], level='neuron'):
+  """
+  Importance weights are calculated in the same way as the memory away synapsys for the model provided.
+  For each image in input_images, the absolute value of the gradients are calculated 
+  for each part of the network with respect to the input and averaged over the images.
+  The level tag defines on which level of specificity the importance weight should be calculated.
+  Options are: 'neuron'(default), 'filter', 'layer'
+
+  The importance weights are solely estimated for convolutional and linear operations,
+  not for batch normalization.
+
+  Returns:
+  a list of importance weights in the shape corresponding to the level of specificity:
+  - neuron: same shape as the parameter (ChannelsxSizexSizexHiddenUnits)
+  - filter: 1D array with length HiddenUnits
+  - layer: 1 integer for each layer
+  """
+  print("[tools] calculate_importance_weights")
+  # collect importance / gradients in list
+  gradients=[0. for p in model.net.parameters()]
+  stime=time.time()
+  hidden_states=()
+  model.net.zero_grad()
+  for img_index in range(len(input_images)-model.FLAGS.n_frames): #loop over input images
+    if img_index%100==0: print( img_index)
+    # ensure no gradients are still in the network
+    if not 'LSTM' in model.FLAGS.network:
+      model.net.zero_grad()
+    # adjust input for nfc, 3dcnn, LSTM
+    if '3d' in model.FLAGS.network:
+      imgs=input_images[img_index:img_index+model.FLAGS.n_frames]
+      img=np.concatenate(imgs, axis=0)
+    elif 'nfc' in model.FLAGS.network:
+      img=np.asarray(input_images[img_index:img_index+model.FLAGS.n_frames])
+    elif 'LSTM' in model.FLAGS.network:
+      img=np.asarray(input_images[img_index:img_index+1])
+    else:
+      img=input_images[img_index]
+    
+    img=np.expand_dims(img,0)
+    inputs=torch.from_numpy(img).type(torch.float32).to(model.device)
+
+    if not 'LSTM' in model.FLAGS.network:
+      # forward pass of one image through the network
+      y_pred=model.net(inputs)
+      # backward pass from the 2-norm of the output
+      torch.norm(y_pred, 2, dim=1).backward()    
+    else:
+      if len(hidden_states) != 0:
+        h_t, c_t = (hidden_states[0],hidden_states[1])
+      else:
+        h_t, c_t = get_hidden_state([],model) 
+      inputs=(inputs,(h_t.to(model.device),c_t.to(model.device)))
+      y_pred, hidden_states=model.net(inputs)
+      torch.norm(y_pred, 2, dim=-1).backward(retain_graph=True)    
+    
+    for pindex, p in enumerate(model.net.parameters()):
+      try:
+        g=p.grad.data.clone().detach().cpu().numpy()
+        gradients[pindex]+=np.abs(g)/len(input_images)
+      except Exception as e:
+        print(e.args)
+        pass
+
+  # # In one track for time considerations:
+  # # ensure no gradients are still in the network
+  # model.net.zero_grad()
+  # # forward pass of one image through the network
+  # y_pred=model.net(torch.from_numpy(np.asarray(input_images)).type(torch.float32).to(model.device))
+  # # backward pass from the 2-norm of the output
+  # torch.sum(torch.norm(y_pred,2,dim=1)).backward()
+  # for pindex, p in enumerate(model.net.parameters()):
+  #     g=p.grad.data.clone().detach().cpu().numpy()
+  #     gradients[pindex]+=np.abs(g)/len(input_images)
+
+  print("[tools] duration {0}".format(time.time()-stime))
+  if level == 'neuron':
+    return gradients
+  elif level == 'filter':
+    raise NotImplementedError
+  else:
+    raise NotImplementedError
+
+def visualize_importance_weights(importance_weights, log_folder):
+  """
+  plot for each layer the percentage of non-zero importance weights ~ 'occupied space'
+  if histogram: plot a histogram over each layer's weights.
+  Note that importance weights of biases is not taken into account.
+  """
+  # import matplotlib as mpl
+  # mpl.use('Agg')
+  import matplotlib.pyplot as plt
+
+  freespace=[]
+  occupied=[]
+  for index, iw in enumerate(importance_weights):
+      # ignore the biases
+      if isinstance(iw, float) or len(iw.shape)==1: continue
+      iw=iw.flatten()
+      assert(len(iw[iw==0])+len(iw[iw!=0])==len(iw))
+      freespace.append(float(len(iw[iw==0]))/len(iw))
+      occupied.append(float(len(iw[iw!=0]))/len(iw))
+  
+
+  plt.bar(range(len(occupied)),100)
+  plt.bar(range(len(occupied)),[o*100 for o in occupied])
+  # for i,v in enumerate(occupied):
+  #     plt.text(i-0.25, 5, "{0:d}%".format(int(v*100)))
+  plt.xlabel('Layers')
+  plt.ylabel('Proportion')
+  plt.tight_layout()
+  plt.savefig(log_folder+'/occupancy.png')
+
+  plt.cla()
+  plt.bar(range(len(freespace)),100)
+  plt.bar(range(len(freespace)),[o*100 for o in freespace])
+  for i,v in enumerate(freespace):
+      plt.text(i-0.25, 5, "{0:d}%".format(int(v*100)))
+  plt.xlabel('Layers')
+  plt.ylabel('Proportion')
+  plt.tight_layout()
+  plt.savefig(log_folder+'/freespace.png')
+
+  if True:
+    # histogram for each layer
+    num_layers=sum([1 for iw in importance_weights if not isinstance(iw,float) and len(iw.shape) > 1])
+    f, axes = plt.subplots(num_layers, 1, figsize=(5,3*num_layers), sharex=True)
+    index=0
+    for iw in importance_weights:
+      try:
+        if not isinstance(iw,int) and len(iw.shape)==1: continue
+        axes[index].set_title('Layer {0}'.format(index))
+        axes[index].hist(iw.flatten(), bins=50)
+        index+=1
+      except:
+        pass
+
+    plt.tight_layout()
+    plt.savefig(log_folder+'/histogram_importance_weights.png')
 
 
 
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='Test tools.')
+  parser=arguments.add_arguments(parser)
+  try:
+    FLAGS, others = parser.parse_known_args()
+  except:
+    sys.exit(2)
+  
+  # Some testing settings:
+  FLAGS.checkpoint_path = 'chapter_neural_architectures/data_normalization/alex_scaled_input_normalized_output/final/1'
+  FLAGS.batch_size = 500
+  
+  if FLAGS.summary_dir[0] != '/': 
+      FLAGS.summary_dir = os.path.join(os.getenv('HOME'),FLAGS.summary_dir)
+  if len(FLAGS.checkpoint_path) != 0 and FLAGS.checkpoint_path[0] != '/': 
+      FLAGS.checkpoint_path = os.path.join(FLAGS.summary_dir, FLAGS.checkpoint_path) 
+  if not os.path.isdir(FLAGS.summary_dir+FLAGS.log_tag): 
+      os.makedirs(FLAGS.summary_dir+FLAGS.log_tag)
+  FLAGS=load_config(FLAGS, FLAGS.checkpoint_path)
 
+  # Load a model
+  from model import Model
+  mymodel = Model(FLAGS)
 
+  # Extract NearestFeatures
+  # if FLAGS.extract_nearest_features:
+  import data
+  import copy
 
+  import time
+
+  stime=time.time()
+  FLAGS.dataset = 'esatv3_expert/2500'
+  data.prepare_data(FLAGS, mymodel.input_size, datatypes=['train'])
+  source_dataset=copy.deepcopy(data.full_set['train'])
+  print("prepare source data duration: {0:0.0f}".format(time.time()-stime))
+  stime=time.time()
+  
+  # FLAGS.dataset = 'esatv3_expert/mini'
+  FLAGS.dataset = 'real_drone'
+  data.prepare_data(FLAGS, mymodel.input_size, datatypes=['train'])
+  target_dataset=copy.deepcopy(data.full_set['train'])
+  print("prepare target data duration: {0:0.0f}".format(time.time()-stime))
+  stime=time.time()
+  
+  feature_extractor=NearestFeatures(mymodel, source_dataset, target_dataset)
+  print("calculate features: {0:0.0f}".format(time.time()-stime))
+  stime=time.time()
+  feature_extractor.create_graph(FLAGS.summary_dir+FLAGS.log_tag)
+  print("create graph duration: {0:0.0f}".format(time.time()-stime))
+  
 # def get_endpoint_activations(inputs, model):
 # 	'''Run forward through the network for this batch and return all activations
 # 	of all intermediate endpoints

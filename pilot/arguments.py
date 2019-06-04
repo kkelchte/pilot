@@ -29,9 +29,7 @@ def add_arguments(parser):
   parser.add_argument("--loss_window_mean_threshold", default=0.1,type=float, help="detect plateau of mean and std of loss window is below threshold.")
   parser.add_argument("--loss_window_std_threshold", default=0.1,type=float, help="detect plateau of mean and std of loss window is below threshold.")
   parser.add_argument("--calculate_importance_weights",action='store_true',help="Calculate the importance weights at the end of training and save them as pickled object.")
-  parser.add_argument("--save_annotated_images",action='store_true',help="Export image with expert and student label on it in logfolder/control_annotated.")
-  parser.add_argument("--save_CAM_images",action='store_true',help="Export image with Class Activation Map logfolder/CAM.")
- 
+  
   # ==========================
   #   Offline Parameters
   # ==========================
@@ -58,6 +56,15 @@ def add_arguments(parser):
   parser.add_argument("--real", action='store_true', help="Define settings in case of interacting with the real (bebop) drone.")
   parser.add_argument("--random_learning_rate", action='store_true', help="Use sampled learning rate from UL(10**-2, 1)")
   parser.add_argument("--plot_depth", action='store_true', help="Specify whether the depth predictions is saved as images.")
+
+  # ================================
+  #   Visualization Parameters
+  # ================================  
+  parser.add_argument("--save_annotated_images",action='store_true',help="Export image with expert and student label on it in logfolder/control_annotated.")
+  parser.add_argument("--save_CAM_images",action='store_true',help="Export image with Class Activation Map logfolder/CAM.")
+  parser.add_argument("--extract_nearest_features",action='store_true',help="Find nearest frames in source dataset which fit test dataset.")
+  
+ 
 
   # ===========================
   #   Data Parameters
