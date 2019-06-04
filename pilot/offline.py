@@ -189,6 +189,30 @@ def run(_FLAGS, model):
       pickle.dump(importance_weights, f)
     tools.visualize_importance_weights(importance_weights, FLAGS.summary_dir+FLAGS.log_tag)
 
+  if FLAGS.extract_nearest_features:
+    stime=time.time()
+    # FLAGS.dataset = 'esatv3_expert/2500'
+    # data.prepare_data(FLAGS, model.input_size, datatypes=['train'])
+    source_dataset=copy.deepcopy(data.full_set['train'])
+    print("prepare source data duration: {0:0.0f}".format(time.time()-stime))
+    stime=time.time()
+    
+    # FLAGS.dataset = 'esatv3_expert/mini'
+    FLAGS.dataset = 'real_drone'
+    data.prepare_data(FLAGS, model.input_size, datatypes=['train'])
+    target_dataset=copy.deepcopy(data.full_set['train'])
+    print("prepare target data duration: {0:0.0f}".format(time.time()-stime))
+    stime=time.time()
+    
+    feature_extractor=tools.NearestFeatures(model, source_dataset, target_dataset)
+    print("calculate features: {0:0.0f}".format(time.time()-stime))
+    stime=time.time()
+    feature_extractor.create_graph(FLAGS.summary_dir+FLAGS.log_tag)
+    print("create graph duration: {0:0.0f}".format(time.time()-stime))
+    stime=time.time()
+    feature_extractor.calculate_differences(FLAGS.summary_dir+FLAGS.log_tag)
+    print("calculate difference duration: {0:0.0f}".format(time.time()-stime))
+
   # import pdb; pdb.set_trace()
   # if FLAGS.visualize_deep_dream_of_output:
   #   tools.deep_dream_of_extreme_control(FLAGS, model)

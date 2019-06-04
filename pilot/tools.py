@@ -644,7 +644,7 @@ class NearestFeatures():
     # print("indices: {0}".format(indices))
     return indices
 
-  def calculate_distances(self, reference, dataset):
+  def calculate_distances(self, reference, dataset, target=999):
     """
         Calculate the disctance to all frames in the dataset (loop over runs)
         Return the closest K images from the dataset and the furthest image.
@@ -657,7 +657,7 @@ class NearestFeatures():
       # merge a list with top_k images according to top_k_values scores
       # with a new list of top_k scores
       # print("old top k {0}".format([e for e,_ in top_k]))
-      top_k.extend([(distances[ci], run['imgs'][ci] if self.FLAGS.load_data_in_ram else self.local_load_rgb(run,ci)) for ci in np.argsort(distances)[0:self.k]])
+      top_k.extend([(distances[ci], run['imgs'][ci] if self.FLAGS.load_data_in_ram else self.local_load_rgb(run,ci), run['controls'][ci]) for ci in np.argsort(distances)[0:self.k]])
       # print("extended top k {0}".format([e for e,_ in top_k]))  
       top_k=sorted(top_k,key=lambda f:f[0])[:self.k]
       # print("new top k {0}".format([e for e,_ in top_k]))  
@@ -668,7 +668,27 @@ class NearestFeatures():
       bottom=list(reversed(sorted(bottom,key=lambda f:f[0])))[:1]
       # print("new bottom {0}".format([e for e,_ in bottom]))
 
-    return [img for _, img in top_k], [img for _, img in bottom]
+    difference=-1
+    if target != 999:
+      difference=(target - top_k[0][2])**2
+    
+  
+    return [img for val, img, ctr  in top_k], [img for _, img in bottom], difference
+
+  def calculate_differences(self, log_folder=''):
+    """
+        Calculate the control difference over all data.
+    """
+    differences=[]
+    for target_run_index in range(len(self.target_dataset)):
+      for target_frame_index, feature in enumerate(self.target_dataset[target_run_index]['features']):
+        _, _, difference = self.calculate_distances(reference=feature,
+                                                    dataset=self.source_dataset,
+                                                    target=self.target_dataset[target_run_index]['controls'][target_frame_index])
+        differences.append(difference)
+    with open(log_folder+'/nearest_feature_control_difference','w') as f:
+      print("Mean difference: {0}, Std difference: {1}".format(np.mean(differences), np.std(differences)))
+      f.write("{0}, {1}\n".format(np.mean(differences), np.std(differences)))
 
   def create_graph(self, log_folder=''):
     """Compute for self.num_frames images from the test domain the self.k nearest features in the source domain.
@@ -681,9 +701,10 @@ class NearestFeatures():
     for row_index, (target_frame_index, target_run_index) in enumerate(indices):
       # calculate distances between the frame of the target dataset and all frames in the source dataset
       # get the furthest and closest K images
-      top_images, bottom_images = self.calculate_distances(reference=self.target_dataset[target_run_index]['features'][target_frame_index],
-                                                    dataset=self.source_dataset)
-
+      top_images, bottom_images, _ = self.calculate_distances(reference=self.target_dataset[target_run_index]['features'][target_frame_index],
+                                                                      dataset=self.source_dataset,
+                                                                      target=self.target_dataset[target_run_index]['controls'][target_frame_index])
+      
       # combine graph with first original image from target dataset
       if self.FLAGS.load_data_in_ram:
         target_image=target_dataset[target_run_index]['imgs'][target_frame_index]
@@ -722,6 +743,7 @@ class NearestFeatures():
       # ax[row_index,4]=apply_heatmap_on_image(self.FLAGS, original, cam)
     
     plt.savefig(log_folder+'/nearest_feature_image.png', bbox_inches='tight')
+    
 # ==============================
 #   Calculate importance weights
 # ==============================
@@ -898,15 +920,16 @@ if __name__ == '__main__':
 
   import time
 
+  FLAGS.dataset = 'esatv3_expert/mini'
   stime=time.time()
-  FLAGS.dataset = 'esatv3_expert/2500'
+  # FLAGS.dataset = 'esatv3_expert/2500'
   data.prepare_data(FLAGS, mymodel.input_size, datatypes=['train'])
   source_dataset=copy.deepcopy(data.full_set['train'])
   print("prepare source data duration: {0:0.0f}".format(time.time()-stime))
   stime=time.time()
   
-  # FLAGS.dataset = 'esatv3_expert/mini'
-  FLAGS.dataset = 'real_drone'
+  FLAGS.dataset = 'esatv3_expert/mini'
+  # FLAGS.dataset = 'real_drone'
   data.prepare_data(FLAGS, mymodel.input_size, datatypes=['train'])
   target_dataset=copy.deepcopy(data.full_set['train'])
   print("prepare target data duration: {0:0.0f}".format(time.time()-stime))
@@ -914,8 +937,11 @@ if __name__ == '__main__':
   
   feature_extractor=NearestFeatures(mymodel, source_dataset, target_dataset)
   print("calculate features: {0:0.0f}".format(time.time()-stime))
+  # stime=time.time()
+  # feature_extractor.create_graph(FLAGS.summary_dir+FLAGS.log_tag)
+  # print("create graph duration: {0:0.0f}".format(time.time()-stime))
   stime=time.time()
-  feature_extractor.create_graph(FLAGS.summary_dir+FLAGS.log_tag)
+  feature_extractor.calculate_differences(FLAGS.summary_dir+FLAGS.log_tag)
   print("create graph duration: {0:0.0f}".format(time.time()-stime))
   
 # def get_endpoint_activations(inputs, model):
