@@ -19,7 +19,12 @@ class Net(nn.Module):
     self.default_feature_size = self.network.classifier[6].in_features
     if feature_extract:
       for param in self.network.parameters(): param.requires_grad = False
-    self.network.classifier[6]=nn.Linear(self.default_feature_size, output_size)
+    
+    self.network.classifier[6]=nn.Linear(self.network.classifier[6].in_features, output_size)
+    # modules = list(self.features.children())
+    # modules.append()
+    self.feature = self.network.features
+    self.classify = self.network.classifier
 
   def forward(self, x, train=False, verbose=False):
     if verbose: print( x.size())

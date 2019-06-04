@@ -45,7 +45,7 @@ The script has following functions:
 - load_set
 - load_set_hdf5
 """
-def prepare_data(_FLAGS, size, size_depth=(55,74)):
+def prepare_data(_FLAGS, size, size_depth=(55,74), datatypes=['train','validation','test']):
   global FLAGS, im_size, full_set, de_size, max_key, datasetdir
   
   '''Load lists of tuples refering to images from which random batches can be drawn'''
@@ -62,15 +62,17 @@ def prepare_data(_FLAGS, size, size_depth=(55,74)):
   # if FLAGS.data_root == "~/pilot_data": FLAGS.data_root=os.path.join(os.getenv('HOME'),'pilot_data')
   datasetdir = join(FLAGS.data_root, FLAGS.dataset)
   
-  if False:
-    print("WARNING ONLY TRAINING DATA LOADED")
-    train_set = load_set('train')
-    full_set={'train':train_set}
-  else:
-    train_set = load_set('train') #if not FLAGS.hdf5 else load_set_hdf5('train')
-    val_set=load_set('validation') #if not FLAGS.hdf5 else load_set_hdf5('val')
-    test_set=load_set('test')
-    full_set={'train':train_set, 'validation':val_set, 'test':test_set}
+  full_set={datatype:load_set(datatype) for datatype in datatypes}
+
+  # if False:
+  #   print("WARNING ONLY TRAINING DATA LOADED")
+  #   train_set = load_set('train')
+  #   full_set={'train':train_set}
+  # else:
+  #   train_set = load_set('train') #if not FLAGS.hdf5 else load_set_hdf5('train')
+  #   val_set=load_set('validation') #if not FLAGS.hdf5 else load_set_hdf5('val')
+  #   test_set=load_set('test')
+  #   full_set={'train':train_set, 'validation':val_set, 'test':test_set}
 
   # Calculating mean and standard deviation over channels
   # images=train_set[0]['imgs']

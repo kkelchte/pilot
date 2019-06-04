@@ -103,7 +103,6 @@ def load_config(FLAGS, modelfolder, file_name = "configuration"):
 
   return FLAGS
 
-
 def load_replaybuffer_from_checkpoint(FLAGS):
   """Go to checkpoint directory, look for my-model file, load it in with torch, return replaybuffer
   """
@@ -215,6 +214,17 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
 # ==============================
 #   Save annotated image
 # ==============================
+
+def post_process(FLAGS, image):
+  """Process image to displayable form"""
+  image_postprocess = image.transpose(1,2,0).astype(np.float32)
+  if FLAGS.scaled_input:
+    image_postprocess+=0.5
+  elif FLAGS.skew_input:
+    image_postprocess = image_postprocess.astype(np.uint8)
+  if '3d' in FLAGS.network: image_postprocess = image_postprocess[:,:,-3:]
+  return image_postprocess
+
 def save_annotated_images(image, label=None, model=None):
   """Save annotated image in logfolder/control_annotated 
   """
@@ -255,7 +265,9 @@ def save_CAM_images(image, model, label=None):
     os.makedirs(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM')
   
   # grad_cam = GradCam(model.net.network.to(torch.device('cpu')), target_layer=len(model.net.network.features)-1)
-  grad_cam = GradCam(model.net.network, target_layer=len(model.net.network.features)-1, device=model.device)
+  # grad_cam = GradCam(model.net.network, target_layer=len(model.net.network.features)-1, device=model.device)
+  grad_cam = GradCam(model.net, target_layer=len(model.net.feature)-1, device=model.device)
+  # self.feature 
   ctr,_,_ = model.predict(np.expand_dims(image,0))
 
   target_classes = [0]
@@ -288,7 +300,7 @@ def save_CAM_images(image, model, label=None):
     
     prep_img=torch.from_numpy(np.expand_dims(image,0)).type(torch.float32).to(model.device)
     # get CAM activation
-    cam = grad_cam.generate_cam(prep_img, target_class)
+    cam = grad_cam.generate_cam(prep_img, target_class) if model.FLAGS.discrete else grad_cam.generate_ram(prep_img)
     # specify hsv color map from matplotlib
     color_map = mpl_color_map.get_cmap('hsv')
     no_trans_heatmap = color_map(cam)
@@ -310,6 +322,8 @@ def save_CAM_images(image, model, label=None):
     image_index=len(os.listdir(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/CAM'))
     
     ax[class_index+1].imshow(heatmap_on_image)
+
+    # add control
     ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2), (heatmap_on_image.size[1]/2-5,heatmap_on_image.size[1]/2+15), linewidth=3, markersize=12,color='w')
     ax[class_index+1].plot((heatmap_on_image.size[0]/2,heatmap_on_image.size[0]/2-ctr[0]*50), (heatmap_on_image.size[1]/2,heatmap_on_image.size[1]/2), linewidth=5, markersize=12,color='b')
     if label != None:
@@ -322,6 +336,31 @@ def save_CAM_images(image, model, label=None):
   plt.close()
   plt.cla()
   plt.clf()
+
+def apply_heatmap_on_image(FLAGS, original_image, heatmap):
+  """Combine original image and Grad Cam map to image
+  """
+  from PIL import Image
+  import matplotlib.cm as mpl_color_map
+  # specify hsv color map from matplotlib
+  color_map = mpl_color_map.get_cmap('hsv')
+  no_trans_heatmap = color_map(heatmap)
+      
+  # Change alpha channel in colormap to make sure original image is displayed
+  heatmap = copy.copy(no_trans_heatmap)
+  heatmap[:, :, 3] = 0.4
+  heatmap = Image.fromarray((heatmap*255).astype(np.uint8))
+  
+  # Apply heatmap on image
+  if FLAGS.skew_input:
+    original_image = Image.fromarray((post_process(FLAGS, original_image)).astype(np.uint8))
+  else:
+    original_image = Image.fromarray((post_process(FLAGS, original_image)*255).astype(np.uint8))
+  heatmap_on_image = Image.new("RGBA", original_image.size)
+  heatmap_on_image = Image.alpha_composite(heatmap_on_image, original_image.convert('RGBA'))
+  heatmap_on_image = Image.alpha_composite(heatmap_on_image, heatmap)
+  
+  return heatmap_on_image  
 
 # ==============================
 #   Obtain Hidden State of LSTM 
@@ -478,8 +517,6 @@ def calculate_importance_weights(model, input_images=[], level='neuron'):
   else:
     raise NotImplementedError
 
-
-
 def visualize_importance_weights(importance_weights, log_folder):
   """
   plot for each layer the percentage of non-zero importance weights ~ 'occupied space'
@@ -537,10 +574,6 @@ def visualize_importance_weights(importance_weights, log_folder):
     plt.tight_layout()
     plt.savefig(log_folder+'/histogram_importance_weights.png')
 
-
-
-
-
 class GradCam():
   """
       Based on: Utku Ozbulak - github.com/utkuozbulak
@@ -548,7 +581,8 @@ class GradCam():
   """
   def __init__(self, model, target_layer, device):
     self.model = model
-    self.model.eval()
+    # self.model.eval()
+    self.model.network.eval()
     self.target_layer=target_layer
     self.device=device
 
@@ -560,7 +594,7 @@ class GradCam():
         Does a forward pass on convolutions, hooks the function at given layer
     """
     conv_output = None
-    for module_pos, module in self.model.features._modules.items():
+    for module_pos, module in self.model.feature._modules.items():
       x = module(x)  # Forward
       if int(module_pos) == self.target_layer:
         x.register_hook(self.save_gradient)
@@ -573,30 +607,33 @@ class GradCam():
     """
     # Forward pass on the convolutions
     conv_output, x = self.forward_pass_on_convolutions(x)
-    x = x.view(x.size(0), -1)  # Flatten
+    try:
+      x = self.model.classify(x)
+    except:
+      x = x.view(x.size(0), -1)  # Flatten
+      x = self.model.classify(x)
     # Forward pass on the classifier
-    x = self.model.classifier(x)
     return conv_output, x
 
-
-  def generate_cam(self, input_image, target_class=None):
+  def generate_ram(self,input_image):
     from PIL import Image
     # Full forward pass
     # conv_output is the output of convolutions at specified layer
     # model_output is the final output of the model (1, 1000)
     conv_output, model_output = self.forward_pass(input_image)
-    if target_class is None:
-      target_class = np.argmax(model_output.data.numpy())
     # Target for backprop
     one_hot_output = torch.FloatTensor(1, model_output.size()[-1]).zero_().to(self.device)
-    one_hot_output[0][target_class] = 1
+    one_hot_output[0][0] = 1
+    
     # Zero grads
-    self.model.features.zero_grad()
-    self.model.classifier.zero_grad()
+    self.model.network.zero_grad()
+    # self.model.classify.zero_grad()
+    
     # Backward pass with specified target
     model_output.backward(gradient=one_hot_output, retain_graph=True)
     # Get hooked gradients
     guided_gradients = self.gradients.data.cpu().detach().numpy()[0]
+    
     # Get convolution outputs
     target = conv_output.data.cpu().detach().numpy()[0]
     # Get weights from gradients
@@ -625,17 +662,58 @@ class GradCam():
     # ADJUSTMENT 3
     # cam = np.maximum(cam, 0)
     cam = np.tanh(cam)
-    # print( np.amin(cam), np.amax(cam))
     
     cam = (cam - np.min(cam)) / (np.max(cam) - np.min(cam))  # Normalize between 0-1
     cam = np.uint8(cam * 255)  # Scale between 0-255 to visualize
     cam = np.uint8(Image.fromarray(cam).resize((input_image.shape[2],
                    input_image.shape[3]), Image.ANTIALIAS))
-    # ^ I am extremely unhappy with this line. Originally resizing was done in cv2 which
-    # supports resizing numpy matrices, however, when I moved the repository to PIL, this
-    # option is out of the window. So, in order to use resizing with ANTIALIAS feature of PIL,
-    # I briefly convert matrix to PIL image and then back.
-    # If there is a more beautiful way, send a PR.
+    return cam
+
+  def generate_cam(self, input_image, target_class=None):
+    from PIL import Image
+    # Full forward pass
+    # conv_output is the output of convolutions at specified layer
+    # model_output is the final output of the model (1, 1000)
+    
+    conv_output, model_output = self.forward_pass(input_image)
+    if target_class is None:
+      target_class = np.argmax(model_output.data.numpy())
+    
+    # Target for backprop
+    one_hot_output = torch.FloatTensor(1, model_output.size()[-1]).zero_().to(self.device)
+    one_hot_output[0][target_class] = 1
+    
+    # Zero grads
+    self.model.network.zero_grad()
+    
+    # Backward pass with specified target
+    model_output.backward(gradient=one_hot_output, retain_graph=True)
+    # Get hooked gradients
+    guided_gradients = self.gradients.data.cpu().detach().numpy()[0]
+    # Get convolution outputs
+    target = conv_output.data.cpu().detach().numpy()[0]
+    
+    # Get weights from gradients
+    weights = np.mean(guided_gradients, axis=(1, 2))  # Take averages for each gradient
+    
+    # Create empty numpy array for cam
+    cam = np.ones(target.shape[1:], dtype=np.float32)
+
+    # use only the top 10% most important feature maps to create visualization
+    threshold=np.percentile(np.abs(weights), 10)
+    
+    # Multiply each weight with its conv output and then, sum
+    for i, w in enumerate(weights):
+      if w >= threshold: cam += w * target[i, :, :]
+      
+    # ADJUSTMENT 3
+    cam = np.maximum(cam, 0)
+    # cam = np.tanh(cam)
+    
+    cam = (cam - np.min(cam)) / (np.max(cam) - np.min(cam))  # Normalize between 0-1
+    cam = np.uint8(cam * 255)  # Scale between 0-255 to visualize
+    cam = np.uint8(Image.fromarray(cam).resize((input_image.shape[2],
+                   input_image.shape[3]), Image.ANTIALIAS))
     return cam
 
 

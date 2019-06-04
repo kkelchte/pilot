@@ -5,35 +5,35 @@ source .entrypoint_graph
 # source .entrypoint_graph_debug
 # source .entrypoint_xpra
 # source .entrypoint_xpra_no_build
+# roscd simulation_supervised/python
 roscd simulation_supervised/python
 pwd
-
 #############
 # COMMAND
 
-
 # Collect long corridor dataset USE SIMSUP_BETA FROM ENTROPOINT_GRAPH_DEBUG
-# for world in black blue bricks green osb purple red tiled woodfloor woodpallet ; do 
-# for world in black ; do 
-#   name='test_corridor_generator'
-#   pytorch_args="--owr -g --alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9 --yaw_or 1.57"
-#   script_args=" -ds --z_pos 1 -w corridor --random_seed 512 --number_of_runs 1 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
-#   world_args="--extension_config corridor_${world} --corridor_length 50 --corridor_bends 25 --texture Gazebo/Black"
-#   python run_script.py -t $name $pytorch_args $script_args $world_args
+# for settings in Black-black Blue-blue Bricks-bricks Green-green WoodPallet-woodpallet WoodFloor-woodfloor Tiled-tiled Red-red Purple-purple OSB-osb; do
+#   texture="$(echo $settings | cut -d '-' -f 1)"
+#   world="$(echo $settings | cut -d '-' -f 2)"
+#   echo "world $world texture $texture"
+#   pytorch_args="--owr --alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9 --yaw_or 1.57"
+#   script_args=" -ds --z_pos 1 -w corridor --random_seed 512 --number_of_runs 5 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
+#   world_args="--corridor_length 50 --corridor_bends 25 --extension_config corridor_${world} --texture Gazebo/${texture}"
+#   python run_script.py -t "varying_corridor/corridor_${world}" $pytorch_args $script_args $world_args
 # done
-
-
 
 
 
 ###################
 # TEST EVALUATION #
 ###################
-# python run_script.py -g -pe sing -pp pytorch_pilot_beta/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_vgg16_adam  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/vgg16_Adam_scratch/final/2 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
+# python run_script.py -g -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_online  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/vgg16_Adam_scratch/final/2 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
+
+
 # python run_script.py -g -pe sing -pp pytorch_pilot_beta/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_vgg16_SGD  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/vgg16_SGD_scratch/final/0 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
 # python run_script.py -pe sing -pp pytorch_pilot/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag testing  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_policy_learning/how_to_recover/res18_reference/final/1 --network alex_net --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --tensorboard --max_episodes 10000 --batch_size 32 --loss CrossEntropy --optimizer SGD --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --save_CAM_images --scaled_input --learning_rate 0.1
 
-python run_script.py -pe sing -pp pytorch_pilot_beta/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_on_opal  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/alex_SGD_pretrained/final/2 --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --normalized_output --max_episodes 10000 --batch_size 32 --loss CrossEntropy --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --pretrained --optimizer SGD --network vgg16_net --normalized_input --learning_rate 0.1
+# python run_script.py -pe sing -pp pytorch_pilot_beta/pilot --summary_dir tensorflow/log/  --data_root pilot_data/  --log_tag test_on_opal  --load_config --on_policy --pause_simulator --evaluation --checkpoint_path chapter_neural_architectures/optimizers/alex_SGD_pretrained/final/2 --dataset esatv3_expert_200K --discrete --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --normalized_output --max_episodes 10000 --batch_size 32 --loss CrossEntropy --clip 1 --weight_decay 0 --copy_dataset --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --pretrained --optimizer SGD --network vgg16_net --normalized_input --learning_rate 0.1
 
 # python run_script.py -pe sing -pp pytorch_pilot_beta/pilot --log_tag test_stochastic_policy --stochastic --network tinyv3_net --on_policy --pause_simulator --evaluation --checkpoint_path testing --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --scaled_input --learning_rate 0.1
 

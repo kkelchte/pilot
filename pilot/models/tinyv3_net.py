@@ -46,6 +46,8 @@ class Net(nn.Module):
     self.default_image_size=[3,128,128]
     self.default_feature_size=7*7*20
     self.network=TinyNet(output_size=output_size)
+    self.feature=self.network.features
+    self.classify=self.network.classifier
 
     
   def forward(self, x, train=False, verbose=False):

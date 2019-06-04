@@ -63,7 +63,6 @@ def main(_):
     FLAGS.continue_training = True
     FLAGS.checkpoint_path = FLAGS.log_tag
 
-
   if len(FLAGS.checkpoint_path) != 0 and FLAGS.checkpoint_path[0] != '/': 
     FLAGS.checkpoint_path = os.path.join(FLAGS.summary_dir, FLAGS.checkpoint_path) 
   

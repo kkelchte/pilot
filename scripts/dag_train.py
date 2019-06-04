@@ -80,8 +80,8 @@ for modelindex, model in enumerate(models):
 # command="python condor_offline.py -t {0}/report --dont_submit -pp pytorch_pilot/scripts -ps save_results_as_pdf.py --mother_dir {0} --home {1} --wall_time {2} --summary_dir {3}".format(FLAGS.log_tag, FLAGS.home, 10*60, FLAGS.summary_dir)
 command="python condor_offline.py -t {0}/report --dont_submit --rammem 3 --gpumem 0 -pp pytorch_pilot/scripts -ps parse_results_to_pdf.py --mother_dir {0} --home {1} --wall_time {2}".format(FLAGS.log_tag, FLAGS.home, 5*60)
 command=add_other_arguments(command, 
-                            skiplist=[],
-                            skipnextlist=['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith','--copy_dataset'],
+                            skiplist=['--copy_dataset'],
+                            skipnextlist=['-pp','--python_project','--gpumem','--rammem', '-ps','--mother_dir','--home','--wall_time','--endswith'],
                             others=others)
 save_call(command)
 
