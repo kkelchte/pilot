@@ -235,6 +235,8 @@ def generate_batch(data_type):
   - trgb: batch of corresponding control targets
   - auxb: batch with auxiliary info
   """
+  if data_type not in full_set.keys() or len(full_set[data_type]) == 0:
+    return 0, False, []
   data_set=full_set[data_type]
   
   # When there is that much data applied that you can get more than 100 minibatches out

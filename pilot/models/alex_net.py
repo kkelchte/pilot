@@ -18,7 +18,7 @@ class Net(nn.Module):
     self.network = models.alexnet(pretrained=pretrained)
     self.default_feature_size = self.network.classifier[6].in_features
     if feature_extract:
-      for param in self.network.parameters(): param.requires_grad = False
+      for param in self.network.features.parameters(): param.requires_grad = False
     
     self.network.classifier[6]=nn.Linear(self.network.classifier[6].in_features, output_size)
     # modules = list(self.features.children())

@@ -18,7 +18,9 @@ class Net(nn.Module):
 
     self.network = models.vgg16(pretrained=pretrained)
     if feature_extract:
-      for param in self.network.parameters(): param.requires_grad = False
+      # for param in self.network.parameters(): param.requires_grad = False
+      for param in self.network.features.parameters(): param.requires_grad = False
+
     self.network.classifier[6]=nn.Linear(4096, output_size)
 
   def forward(self, x, train=False, verbose=False):
