@@ -63,8 +63,6 @@ def add_arguments(parser):
   parser.add_argument("--save_annotated_images",action='store_true',help="Export image with expert and student label on it in logfolder/control_annotated.")
   parser.add_argument("--save_CAM_images",action='store_true',help="Export image with Class Activation Map logfolder/CAM.")
   parser.add_argument("--extract_nearest_features",action='store_true',help="Find nearest frames in source dataset which fit test dataset.")
-  
- 
 
   # ===========================
   #   Data Parameters
@@ -148,7 +146,17 @@ def add_arguments(parser):
   #   Rosinterface Parameters
   # ===========================
   parser.add_argument("--on_policy", action='store_true', help="Training/evaluating on_policy in simulation.")
-  parser.add_argument("--buffer_size", default=1000, type=int, help="Define the number of experiences saved in the buffer.")
+  parser.add_argument("--evaluate", action='store_true', help="Just evaluate the network without training in on-policy only.")
+
+  parser.add_argument("--buffer_size", default=100, type=int, help="Define the number of experiences saved in the buffer.")
+  parser.add_argument("--min_buffer_size", default=-1, type=int, help="Define the minimum amount of samples gathered in a prefill stage before training starts, if -1 buffer needs to be full before training starts.")
+  # parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
+  # parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
+  parser.add_argument("--max_batch_size", default=500, type=int, help="Define the max size of the batch (only if batch_size is -1).")
+  parser.add_argument("--export_buffer", action='store_true', help="Save the replaybuffer as dataset after each run.")
+    
+  parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
+  
   parser.add_argument("--ou_theta", default=0.05, type=float, help= "Theta is the pull back force of the OU Noise.")
   parser.add_argument("--noise", default='none', type=str, help="Define whether the noise is temporally correlated (ou), uniformly distributed (uni) or gaussian (gau).")
   # parser.add_argument("--sigma_z", default=0.0, type=float, help= "sigma_z is the amount of noise in the z direction.")
@@ -161,25 +169,16 @@ def add_arguments(parser):
   parser.add_argument("--epsilon",default=0, type=float, help="Apply epsilon-greedy policy for exploration.")
   parser.add_argument("--epsilon_decay", default=0.0, type=float, help="Decay the epsilon exploration over time with a slow decay rate of 1/10.")
   
-  # parser.add_argument("--prefill", action='store_true', help="Fill the replay buffer first with random (epsilon 1) flying behavior before training.")
-  parser.add_argument("--min_buffer_size", default=-1, type=int, help="Define the minimum amount of samples gathered in a prefill stage before training starts, if -1 buffer needs to be full before training starts.")
-  parser.add_argument("--gradient_steps", default=1, type=int, help="Define the number of batches or gradient steps are taken between 2 runs.")
-  # parser.add_argument("--empty_buffer", action='store_true', help="Empty buffer after each rollout.")
   
-  parser.add_argument("--max_batch_size", default=-1, type=int, help="Define the max size of the batch (only if batch_size is -1).")
+  parser.add_argument("--horizon", default=0, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
   parser.add_argument("--recovery_compensation", default=1, type=float, help="Define amount the neural network should compensate for the to-be-recovered movement.")
-
   # parser.add_argument("--dont_show_depth",action='store_true', help="Publish the predicted horizontal depth array to topic ./depth_prection so show_depth can visualize this in another node.")
-
   parser.add_argument("--field_of_view", default=104, type=int, help="The field of view of the camera cuts the depth scan in the range visible for the camera. Value should be even. Normal: 72 (-36:36), Wide-Angle: 120 (-60:60)")
   parser.add_argument("--smooth_scan", default=4, type=int, help="The 360degrees scan has a lot of noise and is therefore smoothed out over 4 neighboring scan readings")
 
   parser.add_argument("--pause_simulator", action='store_true', help="Pause simulator during frame processing, making discrete steps.")
-  parser.add_argument("--export_buffer", action='store_true', help="Save the replaybuffer as dataset after each run.")
-  parser.add_argument("--no_training", action='store_true', help="avoid saving to the replay buffer and taking gradient steps in on-policy setting or avoid taking backward pass in online setting.")
+  #parser.add_argument("--no_training", action='store_true', help="avoid saving to the replay buffer and taking gradient steps in on-policy setting or avoid taking backward pass in online setting.")
 
-  parser.add_argument("--horizon", default=0, type=int, help="Define the number steps back before collision, the collision label is applied to. ")
   parser.add_argument("--save_every_num_epochs", default=100, type=int, help="Define after how many epochs a model should be saved while training on_policy.")
-  parser.add_argument("--evaluate", action='store_true', help="Just evaluate the network without training in on-policy only.")
-
+  
   return parser

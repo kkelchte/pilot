@@ -73,7 +73,7 @@ parser.add_argument("--test_len", default=10, type=int, help="length of the test
 FLAGS, others = parser.parse_known_args()
 
 min_rgb={'default':100,'sandbox':10, 'canyon':100, 'forest':100, 'corridor': 100}
-max_rgb={'default':5000,'sandbox':2000, 'canyon':3000, 'forest': 3000, 'corridor': 500}
+max_rgb={'default':5000,'sandbox':2000, 'canyon':3000, 'forest': 3000, 'corridor': 2500}
 
 min_distance={'default':1,'sandbox':1, 'canyon':3, 'forest': 3, 'corridor': 0.5}
 

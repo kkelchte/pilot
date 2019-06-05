@@ -28,8 +28,8 @@ train(){
 ##########################################
 
 
-pretrain $chapter/$section/res18_reference_pretrained/learning_rates --dataset esatv3_expert/2500 --load_data_in_ram --rammem 5 --pretrained
-pretrain $chapter/$section/res18_recovery_sanity/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7
+# pretrain $chapter/$section/res18_reference_pretrained/learning_rates --dataset esatv3_expert/2500 --load_data_in_ram --rammem 5 --pretrained
+# pretrain $chapter/$section/res18_recovery_sanity_pretrained/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained
 
 # pretrain $chapter/$section/res18_recovery/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7
 # pretrain $chapter/$section/res18_recovery_pretrained/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained
@@ -42,7 +42,8 @@ pretrain $chapter/$section/res18_recovery_sanity/learning_rates --dataset esatv3
 # Set winning learning rate
 ##############################
 
-# train $chapter/$section/res18_reference/final --dataset esatv3_expert/2500 --load_data_in_ram --rammem 5 --learning_rate 0.1
+train $chapter/$section/res18_reference_pretrained/final --dataset esatv3_expert/2500 --load_data_in_ram --rammem 5 --learning_rate 0.01 --pretrained
+train $chapter/$section/res18_recovery_sanity_pretrained/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --learning_rate 0.01 --pretrained 
 
 # train $chapter/$section/res18_recovery/redo --dataset esatv3_recovery --load_data_in_ram --rammem 5 --learning_rate 0.1
 # train $chapter/$section/res18_recovery/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --learning_rate 0.001

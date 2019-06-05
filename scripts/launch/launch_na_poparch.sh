@@ -28,12 +28,12 @@ train(){
 
 # for AR in inception_net dense_net vgg16_net squeeze_net ; do
 # for AR in vgg16_net ; do
-for AR in inception_net ; do
+# for AR in inception_net ; do
   # pretrain $chapter/$section/${AR}_finetuned_2/learning_rates --network $AR --gpumem 6000 --feature_extract --optimizer SGD --scaled_input --pretrained --normalized_output
 
   # redo inception net without normalized output to reproduce old 'good' results.
-  pretrain $chapter/$section/${AR}_end-to-end_old/learning_rates --network $AR --gpumem 6000                  --optimizer SGD --scaled_input --pretrained
-done
+  # pretrain $chapter/$section/${AR}_end-to-end_old/learning_rates --network $AR --gpumem 6000                  --optimizer SGD --scaled_input --pretrained
+# done
 # for AR in res18_net alex_net ; do
 # for AR in alex_net ; do
 #   pretrain $chapter/$section/${AR}_finetuned_2/learning_rates --network $AR --gpumem 1900 --feature_extract --optimizer SGD --scaled_input --pretrained --normalized_output
@@ -48,27 +48,29 @@ done
 # Set winning learning rate
 #######################################
 
-# for AR in inception_net  vgg16_net squeeze_net ; do
-# for AR in inception_net ; do
+for AR in inception_net ; do
 #   train $chapter/$section/${AR}_finetuned/final --network $AR --gpumem_train 6000 --gpumem_eva 6000 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.001 --pretrained --normalized_output
 #   train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 6000 --gpumem_eva 6000                  --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
-# done
+  train $chapter/$section/${AR}_end-to-end_old/final --network $AR --gpumem_train 6000 --gpumem_eva 6000                  --optimizer SGD --scaled_input --learning_rate 0.1 --pretrained
+done
 # for AR in dense_net ; do
 #   train $chapter/$section/${AR}_finetuned/final --network $AR --gpumem_train 6000 --gpumem_eva 6000 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
 #   train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 6000 --gpumem_eva 6000                  --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
 # done
 # for AR in vgg16_net squeeze_net ; do
-#   train $chapter/$section/${AR}_finetuned/final --network $AR --gpumem_train 6000 --gpumem_eva 6000 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.1 --pretrained --normalized_output
+for AR in vgg16_net ; do
+  train $chapter/$section/${AR}_finetuned_2/final --network $AR --gpumem_train 6000 --gpumem_eva 6000 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.1 --pretrained --normalized_output
 #   train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 6000 --gpumem_eva 6000                  --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
-# done
+done
 # for AR in res18_net ; do
 #   train $chapter/$section/${AR}_finetuned/final --network $AR --gpumem_train 1900 --gpumem_eva 1900 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
 #   train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 1900 --gpumem_eva 1900                  --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
 # done
-# for AR in alex_net ; do
-#   train $chapter/$section/${AR}_finetuned/final --network $AR --gpumem_train 1900 --gpumem_eva 1900 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
-#   train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 1900 --gpumem_eva 1900                  --optimizer SGD --scaled_input --learning_rate 0.1 --pretrained --normalized_output
-# done
+for AR in alex_net ; do
+  train $chapter/$section/${AR}_finetuned_2/final --network $AR --gpumem_train 1900 --gpumem_eva 1900 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
+  # train $chapter/$section/${AR}_finetuned/final --network $AR --gpumem_train 1900 --gpumem_eva 1900 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
+  # train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 1900 --gpumem_eva 1900                  --optimizer SGD --scaled_input --learning_rate 0.1 --pretrained --normalized_output
+done
 
 # for AR in tinyv3_net ; do
 #   train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 1900 --gpumem_eva 1900 --optimizer SGD --scaled_input --learning_rate 0.1 --normalized_output

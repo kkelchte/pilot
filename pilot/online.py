@@ -102,17 +102,19 @@ def method(model, experience, replaybuffer, sumvar={}):
 
   if model.FLAGS.batch_size == -1:
     # perform a training step on data in replaybuffer 
-    data=replaybuffer.get_all_data(max_batch_size=500)
-
+    data=replaybuffer.get_all_data(max_batch_size=model.FLAGS.max_batch_size)
+  else:
+    raise(NotImplementedError("Online.py only works with batch size -1 by taking the full buffer in, current batch size is {0}".format(model.FLAGS.batch_size)))
+  
   # take gradient steps
-    for gs in range(model.FLAGS.gradient_steps):
-      if model.FLAGS.batch_size != -1:
-        data=replaybuffer.sample_batch(model.FLAGS.batch_size)
-      epoch, predictions, losses, hidden_states = model.train(data['state'],data['trgt'])
-      # add loss value to window
-      if gs==0: 
-        loss_window.append(np.mean(losses['imitation_learning']))
-        if len(loss_window)>model.FLAGS.loss_window_length: del loss_window[0]
+  for gs in range(model.FLAGS.gradient_steps):
+    if model.FLAGS.batch_size != -1:
+      data=replaybuffer.sample_batch(model.FLAGS.batch_size)
+    epoch, predictions, losses, hidden_states = model.train(data['state'],data['trgt'])
+    # add loss value to window
+    if gs==0: 
+      loss_window.append(np.mean(losses['imitation_learning']))
+      if len(loss_window)>model.FLAGS.loss_window_length: del loss_window[0]
 
   # calculate mean and standard deviation to detect plateau or peak
   interpret_loss_window(np.mean(loss_window), np.std(loss_window), model, data['state'])
