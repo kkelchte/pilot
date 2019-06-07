@@ -482,6 +482,8 @@ line_index+=1
 table_keys=['test_accuracy',
             'validation_accuracy',
             'validation_imitation_learning',
+            'imitation_learning',
+            'test_imitation_learning',
             'host']
 
 eva_folders=[f for f in log_folders if 'eva' in f]
@@ -511,7 +513,7 @@ for m in train_folders:
   table_row="{0}".format(os.path.basename(m).replace('_', ' '))
   for k in good_keys:
     try:
-      if k == 'validation_accuracy': # take last value
+      if k == 'validation_accuracy' or k=='imitation_learning' or k == 'test_imitation_learning': # take last value
         table_row+=" & {0}".format(results[m][k][-1])
         value=results[m][k][-1]
       elif isinstance(results[m][k], collections.Iterable):

@@ -1,4 +1,4 @@
-import time
+import time, copy
 import numpy as np
 import tools
 import sys

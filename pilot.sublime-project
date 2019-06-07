@@ -8,7 +8,7 @@
 			"path": "/esat/opal/kkelchte/docker_home/simsup_ws/src/teleop_twist_keyboard"
 		},
 		{
-			"path": "." 
+			"path": "."
 		},
 		{
 			"file_include_patterns":
@@ -52,6 +52,15 @@
 		},
 		{
 			"path": "/esat/opal/kkelchte/docker_home/tier"
+		},
+		{
+			"path": "/users/visics/kkelchte/thesis"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/tensorflow/neural_style_transfer"
+		},
+		{
+			"path": "/esat/opal/kkelchte/docker_home/tensorflow/task_free_continual_learning"
 		}
 	]
 }

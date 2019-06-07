@@ -144,8 +144,9 @@ def load_rgb(im_file="",im_object=[],im_size=[3,128,128], im_mode='CHW', im_norm
     img = np.swapaxes(img,1,2)
     img = np.swapaxes(img,0,1)
     scale_height = int(np.floor(img.shape[1]/im_size[1]))
+    if scale_height!=0: img = img[:,::scale_height,:]
     scale_width = int(np.floor(img.shape[2]/im_size[2]))
-    img = img[:,::scale_height,::scale_width]
+    if scale_width != 0: img = img[:,:,::scale_width]
     img=sm.resize(img,(3,im_size[1],im_size[2]),mode='constant').astype(np.float16)
     if im_norm=='normalized':
       for i in range(3): 
@@ -668,27 +669,32 @@ class NearestFeatures():
       bottom=list(reversed(sorted(bottom,key=lambda f:f[0])))[:1]
       # print("new bottom {0}".format([e for e,_ in bottom]))
 
-    difference=-1
+    result={}
     if target != 999:
-      difference=(target - top_k[0][2])**2
-    
-  
-    return [img for val, img, ctr  in top_k], [img for _, img in bottom], difference
+      def translate(x): return 0 if np.abs(x) < 0.3 else np.sign(x)
+      result['accuracy']=translate(top_k[0][2])==translate(target)
+      result['SE']=(top_k[0][2]-target)**2
+    return [img for val, img, ctr  in top_k], [img for _, img in bottom], result
 
   def calculate_differences(self, log_folder=''):
     """
         Calculate the control difference over all data.
     """
-    differences=[]
+    results={}
     for target_run_index in range(len(self.target_dataset)):
       for target_frame_index, feature in enumerate(self.target_dataset[target_run_index]['features']):
-        _, _, difference = self.calculate_distances(reference=feature,
+        _, _, result = self.calculate_distances(reference=feature,
                                                     dataset=self.source_dataset,
                                                     target=self.target_dataset[target_run_index]['controls'][target_frame_index])
-        differences.append(difference)
+        for k in result.keys():
+          results=save_append(results, k,result[k])
+    msg=""
+    for k in results.keys(): msg+="{0} : {1}\n".format(k, np.mean(results[k]))
+    # print("Mean difference: {0}, Std difference: {1}".format(np.mean(differences), np.std(differences)))
+    # f.write("{0}, {1}\n".format(np.mean(differences), np.std(differences)))
+    print("Results: \n"+msg)
     with open(log_folder+'/nearest_feature_control_difference','w') as f:
-      print("Mean difference: {0}, Std difference: {1}".format(np.mean(differences), np.std(differences)))
-      f.write("{0}, {1}\n".format(np.mean(differences), np.std(differences)))
+      f.write("Results: \n"+msg)
 
   def create_graph(self, log_folder=''):
     """Compute for self.num_frames images from the test domain the self.k nearest features in the source domain.
@@ -707,15 +713,15 @@ class NearestFeatures():
       
       # combine graph with first original image from target dataset
       if self.FLAGS.load_data_in_ram:
-        target_image=target_dataset[target_run_index]['imgs'][target_frame_index]
+        target_image=self.target_dataset[target_run_index]['imgs'][target_frame_index]
       else:
-        target_image=self.local_load_rgb(target_dataset[target_run_index], target_frame_index)
-      original=post_process(FLAGS,target_image)
+        target_image=self.local_load_rgb(self.target_dataset[target_run_index], target_frame_index)
+      original=post_process(self.FLAGS,target_image)
       ax[row_index,0].imshow(original)
       ax[row_index,0].axis('off')
 
       # add label and predicted control
-      label=target_dataset[target_run_index]['controls'][target_frame_index]
+      label=self.target_dataset[target_run_index]['controls'][target_frame_index]
       ctr,_,_ = self.model.predict(np.expand_dims(target_image,0))
       if isinstance(ctr,list):
         ctr=ctr[0]
@@ -726,13 +732,13 @@ class NearestFeatures():
 
       # add top k images
       for index, image in enumerate(top_images):    
-        img=post_process(FLAGS, image)
+        img=post_process(self.FLAGS, image)
         ax[row_index,index+1].imshow(img)
         ax[row_index,index+1].axis('off')
         if row_index ==0: ax[row_index,index+1].set_title('Top '+str(index))
       
       # add furthest image
-      img=post_process(FLAGS, bottom_images[0])
+      img=post_process(self.FLAGS, bottom_images[0])
       ax[row_index,3].imshow(img)
       ax[row_index,3].axis('off')
       if row_index ==0: ax[row_index,3].set_title('Bottom')
@@ -898,7 +904,8 @@ if __name__ == '__main__':
     sys.exit(2)
   
   # Some testing settings:
-  FLAGS.checkpoint_path = 'chapter_neural_architectures/data_normalization/alex_scaled_input_normalized_output/final/1'
+  # FLAGS.checkpoint_path = 'chapter_neural_architectures/data_normalization/alex_scaled_input_normalized_output/final/1'
+  FLAGS.checkpoint_path = 'chapter_domain_shift/variation/res18_reference/final/1'
   FLAGS.batch_size = 500
   
   if FLAGS.summary_dir[0] != '/': 
@@ -920,16 +927,16 @@ if __name__ == '__main__':
 
   import time
 
-  FLAGS.dataset = 'esatv3_expert/mini'
-  stime=time.time()
   # FLAGS.dataset = 'esatv3_expert/2500'
+  stime=time.time()
+  FLAGS.dataset = 'esatv3_expert/2500'
   data.prepare_data(FLAGS, mymodel.input_size, datatypes=['train'])
   source_dataset=copy.deepcopy(data.full_set['train'])
   print("prepare source data duration: {0:0.0f}".format(time.time()-stime))
   stime=time.time()
   
-  FLAGS.dataset = 'esatv3_expert/mini'
-  # FLAGS.dataset = 'real_drone'
+  # FLAGS.dataset = 'esatv3_expert/mini'
+  FLAGS.dataset = 'real_drone'
   data.prepare_data(FLAGS, mymodel.input_size, datatypes=['train'])
   target_dataset=copy.deepcopy(data.full_set['train'])
   print("prepare target data duration: {0:0.0f}".format(time.time()-stime))
@@ -937,9 +944,9 @@ if __name__ == '__main__':
   
   feature_extractor=NearestFeatures(mymodel, source_dataset, target_dataset)
   print("calculate features: {0:0.0f}".format(time.time()-stime))
-  # stime=time.time()
-  # feature_extractor.create_graph(FLAGS.summary_dir+FLAGS.log_tag)
-  # print("create graph duration: {0:0.0f}".format(time.time()-stime))
+  stime=time.time()
+  feature_extractor.create_graph(FLAGS.summary_dir+FLAGS.log_tag)
+  print("create graph duration: {0:0.0f}".format(time.time()-stime))
   stime=time.time()
   feature_extractor.calculate_differences(FLAGS.summary_dir+FLAGS.log_tag)
   print("create graph duration: {0:0.0f}".format(time.time()-stime))
