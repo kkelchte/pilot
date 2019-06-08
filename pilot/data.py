@@ -45,7 +45,7 @@ The script has following functions:
 - load_set
 - load_set_hdf5
 """
-def prepare_data(_FLAGS, size, size_depth=(55,74), datatypes=['train','validation','test']):
+def prepare_data(_FLAGS, size=(3,128,128), size_depth=(55,74), datatypes=['train','validation','test']):
   global FLAGS, im_size, full_set, de_size, max_key, datasetdir
   
   '''Load lists of tuples refering to images from which random batches can be drawn'''

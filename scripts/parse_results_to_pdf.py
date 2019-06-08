@@ -483,6 +483,7 @@ table_keys=['test_accuracy',
             'validation_accuracy',
             'validation_imitation_learning',
             'imitation_learning',
+            'test_loss',
             'test_imitation_learning',
             'host']
 

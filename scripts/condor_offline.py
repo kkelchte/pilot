@@ -236,7 +236,10 @@ executable.write("export LD_LIBRARY_PATH=/esat/opal/kkelchte/local/cuda-9.1/lib6
 
 # if FLAGS.python3:
 executable.write("source /users/visics/kkelchte/env3/bin/activate \n")
-executable.write("export PYTHONPATH=/users/visics/kkelchte/env3/lib/python3.7/site-packages:{0}/tensorflow/pytorch-cnn-visualizations/src:{0}/tensorflow/{1}:{0}/tensorflow/{1}/models\n".format(FLAGS.home, FLAGS.python_project))
+if FLAGS.python_project == "pytorch_pilot_beta/pilot":
+  executable.write("export PYTHONPATH=/users/visics/kkelchte/env3/lib/python3.7/site-packages:{0}/tensorflow/pytorch-cnn-visualizations/src:{0}/tensorflow/{1}:{0}/tensorflow/{1}/models\n".format(FLAGS.home, FLAGS.python_project))
+else:
+  executable.write("export PYTHONPATH=/users/visics/kkelchte/env3/lib/python3.7/site-packages:{0}/tensorflow/pytorch-cnn-visualizations/src:{0}/tensorflow/{1}:{0}/tensorflow/pytorch_pilot/pilot:{0}/tensorflow/pytorch_pilot/pilot/models\n".format(FLAGS.home, FLAGS.python_project))
 # else:
 #   executable.write("source /users/visics/kkelchte/tensorflow_1.8/bin/activate \n")
 #   executable.write("export PYTHONPATH=/users/visics/kkelchte/tensorflow_1.8/lib/python2.7/site-packages:{0}/tensorflow/pytorch-cnn-visualizations/src:{0}/tensorflow/{1}:{0}/tensorflow/{1}/models\n".format(FLAGS.home, FLAGS.python_project))

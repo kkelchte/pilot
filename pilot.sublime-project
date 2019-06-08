@@ -54,7 +54,15 @@
 			"path": "/esat/opal/kkelchte/docker_home/tier"
 		},
 		{
-			"path": "/users/visics/kkelchte/thesis"
+			"path": "/users/visics/kkelchte/thesis",
+			"file_include_patterns":
+			[
+				"*.tex",
+				"*.pdf",
+				"*.png",
+				"*.jpg",
+				"*.bib"
+			],
 		},
 		{
 			"path": "/esat/opal/kkelchte/docker_home/tensorflow/neural_style_transfer"
