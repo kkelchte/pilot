@@ -250,7 +250,7 @@ for folder_index, folder in enumerate(sorted(log_folders)):
     raw_log.add_sheet(data)
     # open(folder+'/'+file+'.xls','wb').write(data.xls)
   if raw_log.size != 0:
-    open(folder+'/log.xls','wb').write(raw_log.xls)
+    open('{0}/log_{1}.xls'.format(folder, os.path.basename(folder)),'wb').write(raw_log.xls)
 
 
   # parse current condor host from events.file.name
@@ -665,7 +665,7 @@ if not FLAGS.dont_mail:
   # Step 5: send it with mailx
   mailcommand="mailx -s {0} -a {1} ".format(log_root+FLAGS.mother_dir, log_root+FLAGS.mother_dir+'/report/report.pdf')
   for f in log_folders: 
-    if os.path.isfile(f+'/log.xls'): mailcommand+=" -a {0}/log.xls".format(f)
+    if os.path.isfile('{0}/log_{1}.xls'.format(f, os.path.basename(f))): mailcommand+=" -a {0}/log_{1}.xls".format(f,os.path.basename(f))
   p_msg = subprocess.Popen(shlex.split("echo {0} : {1} is finished.".format(time.strftime("%Y-%m-%d_%I:%M:%S"), log_root+FLAGS.mother_dir)), stdout=subprocess.PIPE)
   p_mail = subprocess.Popen(shlex.split(mailcommand+" klaas.kelchtermans@esat.kuleuven.be"),stdin=p_msg.stdout, stdout=subprocess.PIPE)
   print(p_mail.communicate())

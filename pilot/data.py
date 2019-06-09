@@ -182,34 +182,32 @@ def load_run_info(run_dict, index_list, set_list, checklist, subsample):
           assert len(img) != 0, '[data] Loading image failed: {}'.format(img_file)
           imgs.append(img)
       # Add depth links if files exist
-      depth_list = [] 
-      try:
-        depths_jpg=listdir(join(run_dir,FLAGS.depth_directory))
-        if len(depths_jpg)==0: 
-          raise OSError('Depth folder is empty') 
-      except OSError as e:
-        # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
-        pass
-      else:
-        num_depths=sorted([int(de[0:-4]) for de in depths_jpg[::subsample]])
-        smallest_depth = num_depths.pop(0)
-        for ni in num_imgs: #link the indices of rgb images with the smallest depth bigger than current index
-          while(ni > smallest_depth):
-            try:
-              smallest_depth = num_depths.pop(0)
-            except IndexError:
-              break
-          depth_list.append(smallest_depth)
-        num_imgs = num_imgs[:len(depth_list)]
-        control_list = control_list[:len(depth_list)]
-        # print("{}".format(num_imgs))
-        # print("{}".format(control_list))
-        # print("{}".format(depth_list))
-        assert len(num_imgs) == len(depth_list), "Length of input(images,control,depth) is not equal"
+      depth_list = []
+      if FLAGS.auxiliary_depth: # only load depth list and images if they are used.
+        try:
+          depths_jpg=listdir(join(run_dir,FLAGS.depth_directory))
+          if len(depths_jpg)==0: 
+            raise OSError('Depth folder is empty') 
+        except OSError as e:
+          # print('Failed to find Depth directory of: {0}. \n {1}'.format(run_dir, e))
+          pass
+        else:
+          num_depths=sorted([int(de[0:-4]) for de in depths_jpg[::subsample]])
+          smallest_depth = num_depths.pop(0)
+          for ni in num_imgs: #link the indices of rgb images with the smallest depth bigger than current index
+            while(ni > smallest_depth):
+              try:
+                smallest_depth = num_depths.pop(0)
+              except IndexError:
+                break
+            depth_list.append(smallest_depth)
+          num_imgs = num_imgs[:len(depth_list)]
+          control_list = control_list[:len(depth_list)]
+          assert len(num_imgs) == len(depth_list), "Length of input(images,control,depth) is not equal"
 
       # Load depth in RAM and preprocess
       depths=[]
-      if FLAGS.load_data_in_ram and False:
+      if FLAGS.load_data_in_ram:
         for num in depth_list:
           depth_file = join(run_dir,'Depth', '{0:010d}.jpg'.format(num))
           de = tools.load_depth(im_file=depth_file,im_size=de_size, im_norm='none', min_depth=FLAGS.min_depth, max_depth=FLAGS.max_depth)
