@@ -113,14 +113,19 @@ def method(model, experience, replaybuffer, sumvar={}):
     epoch, predictions, losses, hidden_states = model.train(data['state'],data['trgt'])
     # add loss value to window
     if gs==0: 
-      loss_window.append(np.mean(losses['imitation_learning']))
+      # loss window only on recent buffer
+      loss_window.append(np.mean(losses['imitation_learning'][-model.FLAGS.train_every_N_steps:]))
+      # loss_window.append(np.mean(losses['imitation_learning']))
       if len(loss_window)>model.FLAGS.loss_window_length: del loss_window[0]
 
   # calculate mean and standard deviation to detect plateau or peak
-  interpret_loss_window(np.mean(loss_window), np.std(loss_window), model, data['state'])
+  # interpret_loss_window(np.mean(loss_window), np.std(loss_window), model, data['state'])
+  # importance weights only on hard data
+  interpret_loss_window(np.mean(loss_window), np.std(loss_window), model, data['state'][:-model.FLAGS.train_every_N_steps])
   
   # update hard buffer
-  replaybuffer.update(model.FLAGS.buffer_update_rule, losses['total'], model.FLAGS.train_every_N_steps)
+  # replaybuffer.update(model.FLAGS.buffer_update_rule, losses['total'], model.FLAGS.train_every_N_steps)
+  replaybuffer.update(model.FLAGS.buffer_update_rule, losses['imitation_learning'], model.FLAGS.train_every_N_steps)
   
   # save some values for logging
   for k in losses.keys():
