@@ -54,9 +54,18 @@ train $chapter/$section/res18_reference_pretrained/final --dataset esatv3_expert
 # train $chapter/$section/res18_noise/uni/final --dataset esatv3_expert_stochastic/uni --load_data_in_ram --rammem 7 --learning_rate 0.1
 
 ##############################
-# Create stochastic datasets
+# Create datasets
 ##############################
 
+# recovery
+# name="data_collection/recovery_expert"
+# pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9"
+# script_args=" --recovery -ds --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
+# condor_args="--wall_time $((2*10*60+30*60)) --use_greenlist --cpus 16"
+# python condor_online.py -t $name $pytorch_args $script_args $condor_args
+
+
+# stochastic
 # cd ..
 # for sigma in 9 5 1 ; do
 #   name="data_collection/stochastic_expert/gau/$sigma"
@@ -80,6 +89,7 @@ train $chapter/$section/res18_reference_pretrained/final --dataset esatv3_expert
 #   python condor_online.py -t $name $pytorch_args $script_args $condor_args
 # done
 # cd launch
+
 
 
 

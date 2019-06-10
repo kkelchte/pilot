@@ -1,8 +1,8 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-# source .entrypoint_graph
-source .entrypoint_graph_debug
+source .entrypoint_graph
+# source .entrypoint_graph_debug
 # source .entrypoint_xpra
 # source .entrypoint_xpra_no_build
 # roscd simulation_supervised/python
@@ -15,16 +15,22 @@ pwd
 
 # for settings in Black-black-default Blue-blue-default Bricks-bricks-default Green-green-default WoodPallet-woodpallet-default WoodFloor-woodfloor-default Tiled-tiled-default Red-red-default Purple-purple-default OSB-osb-default; do
 # for settings in Black-black-default Blue-blue-default Bricks-bricks-default Green-green-default WoodPallet-woodpallet-diffuse WoodFloor-woodfloor-diffuse Tiled-tiled-spot Red-red-default Purple-purple-default OSB-osb-diffuse; do
-for settings in Bricks-bricks-default Green-green-default WoodPallet-woodpallet-diffuse Tiled-tiled-diffuse Red-red-default Purple-purple-default ; do
-  texture="$(echo $settings | cut -d '-' -f 1)"
-  world="$(echo $settings | cut -d '-' -f 2)"
-  light="$(echo $settings | cut -d '-' -f 3)"
-  echo "world $world texture $texture"
-  pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9 --yaw_or 1.57"
-  script_args=" -ds --z_pos 1 -w corridor --random_seed 512 --number_of_runs 5 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
-  world_args="--corridor_length 50 --corridor_bends 25 --extension_config corridor_${world} --texture Gazebo/${texture} --lights ${light}_light"
-  python run_script.py -t "varying_corridor/corridor_${world}" $pytorch_args $script_args $world_args
-done
+# for settings in Bricks-bricks-default Green-green-default WoodPallet-woodpallet-diffuse Tiled-tiled-diffuse Red-red-default Purple-purple-default ; do
+#   texture="$(echo $settings | cut -d '-' -f 1)"
+#   world="$(echo $settings | cut -d '-' -f 2)"
+#   light="$(echo $settings | cut -d '-' -f 3)"
+#   echo "world $world texture $texture"
+#   pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9 --yaw_or 1.57"
+#   script_args=" -ds --z_pos 1 -w corridor --random_seed 512 --number_of_runs 5 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
+#   world_args="--corridor_length 50 --corridor_bends 25 --extension_config corridor_${world} --texture Gazebo/${texture} --lights ${light}_light"
+#   python run_script.py -t "varying_corridor/corridor_${world}" $pytorch_args $script_args $world_args
+# done
+
+
+name="test"
+pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9"
+script_args="--recovery -ds --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
+python run_script.py -t $name $pytorch_args $script_args
 
 
 

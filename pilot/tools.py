@@ -171,6 +171,7 @@ def load_rgb(im_file="",im_object=[],im_size=[3,128,128], im_mode='CHW', im_norm
 
   return img
 
+
 # ===========================
 #   Load Depth image
 # ===========================
@@ -198,16 +199,14 @@ def load_depth(im_file="",im_size=[128,128], im_norm='none', im_mean=0, im_std=1
   img[img<10]=0
   # scale to expected range between 0 and 5m
   img=img * (1/255. * 5.)
+  mark=(img==0)  
   # clip to minimum and maximum depth
   img=np.minimum(np.maximum(img, min_depth),max_depth)
   # scale to range 0:1
   img/=5.
-  if im_norm=='normalized':
-    for i in range(3): 
-      img[:,:,i]-=im_means[i]
-      img[:,:,i]/=im_stds[i]
-  if im_norm=='scaled':
-    img -= 0.5
+  # everything at 0 put at -1 so it is marked out in loss
+  img[mark]=-1
+
   return img
 
 # ==============================

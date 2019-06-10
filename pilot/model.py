@@ -15,6 +15,25 @@ import torch.nn as nn
 
 import time
 
+# ===========================
+#   Loss for Auxiliary Depth
+# ===========================
+
+class MaskedMSELoss(nn.Module):
+  """Code from https://github.com/fangchangma/sparse-to-dense.pytorch/blob/master/criteria.py
+  Take MSE loss but mask out the Nan's (which are supposed to be negative)
+  """
+  def __init__(self):
+    super(MaskedMSELoss, self).__init__()
+
+  def forward(self, pred, target):
+    assert pred.dim() == target.dim(), "inconsistent dimensions"
+    valid_mask = (target>0).detach()
+    diff = target - pred
+    self.loss = (diff.masked_fill_(valid_mask, 0)**2).mean(dim=(1,2)).unsqueeze(1)
+    return self.loss
+
+
 """
 Build basic NN model
 
@@ -56,6 +75,12 @@ class Model(object):
     # load on GPU
     # self.device = torch.device( "cpu")
     self.net.to(self.device)
+
+    if FLAGS.auxiliary_depth:
+      self.auxiliary_net = auxiliary_decoder.UpProj(self.net.default_feature_size[-1])
+      self.auxiliary_net.to(self.device)
+      self.auxiliary_criterion=MaskedMSELoss()
+    
     # to get a complexity idea, count number of weights in the network
     count=0
     for p in self.net.parameters():
@@ -92,6 +117,20 @@ class Model(object):
     if not self.FLAGS.pretrained or self.FLAGS.continue_training or self.FLAGS.checkpoint_path != '':
       self.initialize_network()
 
+  # def add_auxiliary_depth(self,feature_size):
+  #   """Add auxiliary depth prediction task.
+  #   Input: torch.Sequential() which returns the features
+  #   Output: torch.Sequential() in depth prediction shape
+  #   """
+
+  #   auxiliary_depth=nn.Sequential(
+  #       nn.Linear(np.prod(feature_size), 512),
+  #       nn.ReLU(inplace=True),
+  #       nn.Linear(512, output_size, bias=False)
+  #     )
+  #   import pdb; pdb.set_trace()
+  #   # return auxiliary_depth
+
   def initialize_network(self):
     """Initialize all parameters of the network conform the FLAGS configuration
     """
@@ -124,6 +163,10 @@ class Model(object):
         self.epoch = checkpoint['epoch']
         print("[model]: loaded model from {0} at epoch: {1}".format(self.FLAGS.checkpoint_path, self.epoch))
       
+      if self.FLAGS.auxiliary_depth and 'auxiliary_net' in checkpoint.keys():
+        self.auxiliary_net = self.auxiliary_net.load_state_dict(checkpoint['auxiliary_net'])
+        print("[model]: loaded auxiliary_net from {0} at epoch: {1}".format(self.FLAGS.checkpoint_path, self.epoch))
+
       if not 'scratch' in self.FLAGS.checkpoint_path and checkpoint['optimizer'] == self.FLAGS.optimizer:
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         print("[model]: loaded optimizer parameters from {0}".format(self.FLAGS.checkpoint_path))
@@ -139,6 +182,8 @@ class Model(object):
     checkpoint={'epoch': self.epoch,
         'network': self.FLAGS.network,
         'model_state_dict': self.net.state_dict()}
+    if self.FLAGS.auxiliary_depth:
+      checkpoint['auxiliary_net']= self.auxiliary_net.state_dict()
     if save_optimizer:
       checkpoint['optimizer']= self.FLAGS.optimizer
       checkpoint['optimizer_state_dict']=self.optimizer.state_dict()
@@ -233,7 +278,7 @@ class Model(object):
     result=(torch.argmax(predictions.data,1).cpu()==targets).sum().item()/float(len(targets))
     return result
 
-  def predict(self, inputs, targets=[], lstm_info=()):
+  def predict(self, inputs, targets=[], lstm_info=(), depth_targets=[]):
     '''run forward pass and return prediction with loss if target is given
     inputs=batch of RGB images (Batch x Channel x Height x Width)
     targets = supervised target control (Batch x Action dim)
@@ -291,7 +336,7 @@ class Model(object):
 
     return predictions, losses, hidden_states
 
-  def train(self, inputs, targets, actions=[], collisions=[], lstm_info=()):
+  def train(self, inputs, targets, actions=[], collisions=[], lstm_info=(), depth_targets=[]):
     '''take backward pass from loss and apply gradient step
     inputs: batch of images [B,C,H,W] or [B,T,C,H,W]
     targets: batch of control labels [B,O] or [B,T,O]
@@ -307,8 +352,9 @@ class Model(object):
     losses={'total':0}
     if not isinstance(inputs, tuple):
       inputs=torch.from_numpy(inputs).type(torch.FloatTensor).to(self.device)
-
     predictions = self.net.forward(inputs, train=True)
+
+    # Prepare hidden states in case of LSTM
     hidden_states=()
     if isinstance(predictions,tuple):
       h_t, c_t=predictions[1]
@@ -319,23 +365,34 @@ class Model(object):
       # Assumption: pytorch view (X,Y,3) --> (X*Y,3) arranges in the same way as pytorch (X,Y).flatten
       targets=np.expand_dims(targets.flatten(),axis=-1)
     
+    # Modify targets according to loss and discrete/continuous output
     if self.FLAGS.discrete:
       targets = self.discretize(targets) if not self.FLAGS.loss=='CrossEntropy' else self.continuous_to_bins(targets, as_tensor=True)
     else:
       targets = torch.from_numpy(targets).type(torch.FloatTensor)
     
+    # Define imitation learning loss according to discrete / stochastic
     if self.FLAGS.stochastic and not self.FLAGS.discrete:
       losses['imitation_learning']=self.criterion(predictions[:,0:self.FLAGS.action_dim], targets.to(self.device))/(10**-5+predictions[:,self.FLAGS.action_dim:]**2) + torch.log(10**-5+predictions[:,self.FLAGS.action_dim:]**2)
     else:
       losses['imitation_learning']=self.criterion(predictions, targets.to(self.device))
     losses['total']+=self.FLAGS.il_weight*losses['imitation_learning']
     
+    # Add auxiliary task
+    if self.FLAGS.auxiliary_depth and len(depth_targets)!=0:
+      depth_predictions=self.auxiliary_net(self.net.feature(inputs))
+      losses['depth']=self.auxiliary_criterion(depth_predictions, torch.from_numpy(depth_targets).type(torch.float32).to(self.device))
+      losses['total']+=self.FLAGS.auxiliary_lambda*losses['depth']
+
+    # Define continual learning regularization
     if self.FLAGS.continual_learning and len(self.omegas) != 0 and len(self.star_variables)!=0:
       losses['continual']=0
       for pindex, p in enumerate(self.net.parameters()):
         losses['continual']+=self.FLAGS.continual_learning_lambda/2.*torch.sum(self.omegas[pindex]*(p-self.star_variables[pindex])**2)
       losses['total']+=losses['continual']
 
+
+    # Add collision reinforcement learning step
     if len(actions) == len(collisions) == len(inputs) and self.FLAGS.il_weight != 1:
       # 1. from logits to probabilities with softmax for each output in batch
       probabilities=self.softmax(predictions)

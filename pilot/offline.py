@@ -61,12 +61,13 @@ def run_episode(mode, sumvar, model):
       else:
         inputs = np.array([_['img'] for _ in batch])
       targets = np.array([_['ctr'] for _ in batch])
+      depths = np.array([_['depth'] for _ in batch])
       
       if mode=='train':
-        epoch, predictions, losses, hidden_states = model.train(inputs, targets)
+        epoch, predictions, losses, hidden_states = model.train(inputs, targets, depth_targets=depths)
         for k in losses.keys(): tools.save_append(results, k, losses[k])
       elif mode=='validation' or mode=='test':
-        predictions, losses, hidden_states = model.predict(inputs, targets)
+        predictions, losses, hidden_states = model.predict(inputs, targets, depth_targets=depths)
         for k in losses.keys(): tools.save_append(results, k, losses[k])
     else:
       print('Failed to run {}.'.format(mode))

@@ -15,6 +15,7 @@ class Net(nn.Module):
   def __init__(self, output_size = 10, pretrained=False, feature_extract=False, **kwargs):
     super(Net, self).__init__()
     self.default_image_size=[3,224,224]
+    self.default_feature_size=[7,7,512]
 
     self.network = models.resnet18(pretrained=pretrained)
 
