@@ -4,7 +4,7 @@ section=online
 pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
  --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --pretrained"
 
- 
+
 
 echo "####### chapter: $chapter #######"
 echo "####### section: $section #######"
@@ -25,39 +25,18 @@ train(){
 }
 
 #######################################
-# Pretrain for different learning rates
+# Train online and evaluate online
 #######################################
 
-# dataset=esatv3_expert/2500
-# pretrain $chapter/$section/$dataset/reference/learning_rates --rammem 7 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset $dataset --load_data_in_ram --gpumem 1800 
-# pretrain $chapter/$section/$dataset/hardbuffer/learning_rates --rammem 7 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --load_data_in_ram --gpumem 1800 
-# pretrain $chapter/$section/$dataset/continual/std_0002/learning_rates --rammem 7 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --load_data_in_ram --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.03 --loss_window_std_threshold 0.0002 --continual_learning_lambda 1
-# pretrain $chapter/$section/$dataset/continual/std_0003/learning_rates --rammem 7 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --load_data_in_ram --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.03 --loss_window_std_threshold 0.0003 --continual_learning_lambda 1
 
-dataset=long_corridor
-pretrain $chapter/$section/$dataset/reference/learning_rates --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset $dataset --gpumem 1800 
-pretrain $chapter/$section/$dataset/hardbuffer/learning_rates --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --gpumem 1800 
-pretrain $chapter/$section/$dataset/continual/std_004/learning_rates --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.02 --loss_window_std_threshold 0.004 --continual_learning_lambda 1
-pretrain $chapter/$section/$dataset/continual/std_003/learning_rates --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.02 --loss_window_std_threshold 0.003 --continual_learning_lambda 1
-pretrain $chapter/$section/$dataset/continual/std_002/learning_rates --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.02 --loss_window_std_threshold 0.002 --continual_learning_lambda 1
+pretrain $chapter/$section/esatv3_expert/recovery_reference/reference --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 
+pretrain $chapter/$section/esatv3_expert/recovery_reference/hardbuffer --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 
+pretrain $chapter/$section/esatv3_expert/recovery_reference/continual/0003std --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.005 --loss_window_std_threshold 0.003 --continual_learning_lambda 1 --loss_window_length 10
 
-#######################################
-# Set winning learning rate
-#######################################
 
-dataset=esatv3_expert/2500
-train $chapter/$section/$dataset/reference/final --rammem 7 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset $dataset --load_data_in_ram --gpumem 1800 --learning_rate 0.001
-train $chapter/$section/$dataset/hardbuffer/final --rammem 7 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --load_data_in_ram --gpumem 1800 --learning_rate 0.001
-train $chapter/$section/$dataset/continual/std_0002/final --rammem 7 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --load_data_in_ram --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.03 --loss_window_std_threshold 0.0002 --continual_learning_lambda 1 --learning_rate 0.001 
-train $chapter/$section/$dataset/continual/std_0003/final --rammem 7 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --load_data_in_ram --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.03 --loss_window_std_threshold 0.0003 --continual_learning_lambda 1 --learning_rate 0.001
-
-# dataset=long_corridor
-# train $chapter/$section/$dataset/reference/final --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset $dataset --gpumem 1800 
-# train $chapter/$section/$dataset/hardbuffer/final --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --gpumem 1800 
-# train $chapter/$section/$dataset/continual/std_004/final --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.02 --loss_window_std_threshold 0.004 --continual_learning_lambda 1
-# train $chapter/$section/$dataset/continual/std_003/final --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.02 --loss_window_std_threshold 0.003 --continual_learning_lambda 1
-# train $chapter/$section/$dataset/continual/std_002/final --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset $dataset --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.02 --loss_window_std_threshold 0.002 --continual_learning_lambda 1
-
+pretrain $chapter/$section/long_corridor/reference --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset long_corridor --gpumem 1800 
+pretrain $chapter/$section/long_corridor/hardbuffer --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset long_corridor --gpumem 1800 
+pretrain $chapter/$section/long_corridor/continual/std_004 --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset long_corridor --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.005 --loss_window_std_threshold 0.005 --continual_learning_lambda 1 --loss_window_length 10
 
 
 

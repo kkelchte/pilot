@@ -318,6 +318,8 @@ def generate_batch(data_type):
           if '3d' in FLAGS.network: max_index-= FLAGS.n_frames
         elif 'nfc' in FLAGS.network or '3d' in FLAGS.network:
           max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames
+        elif 'features' in data_set[run_ind].keys():
+          max_index=len(data_set[run_ind]['num_imgs'])-FLAGS.n_frames
         else:
           max_index=len(data_set[run_ind]['num_imgs'])
 
