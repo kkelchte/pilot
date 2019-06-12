@@ -117,19 +117,7 @@ class Model(object):
     if not self.FLAGS.pretrained or self.FLAGS.continue_training or self.FLAGS.checkpoint_path != '':
       self.initialize_network()
 
-  # def add_auxiliary_depth(self,feature_size):
-  #   """Add auxiliary depth prediction task.
-  #   Input: torch.Sequential() which returns the features
-  #   Output: torch.Sequential() in depth prediction shape
-  #   """
 
-  #   auxiliary_depth=nn.Sequential(
-  #       nn.Linear(np.prod(feature_size), 512),
-  #       nn.ReLU(inplace=True),
-  #       nn.Linear(512, output_size, bias=False)
-  #     )
-  #   import pdb; pdb.set_trace()
-  #   # return auxiliary_depth
 
   def initialize_network(self):
     """Initialize all parameters of the network conform the FLAGS configuration
@@ -164,7 +152,7 @@ class Model(object):
         print("[model]: loaded model from {0} at epoch: {1}".format(self.FLAGS.checkpoint_path, self.epoch))
       
       if self.FLAGS.auxiliary_depth and 'auxiliary_net' in checkpoint.keys():
-        self.auxiliary_net = self.auxiliary_net.load_state_dict(checkpoint['auxiliary_net'])
+        self.auxiliary_net.load_state_dict(checkpoint['auxiliary_net'])
         print("[model]: loaded auxiliary_net from {0} at epoch: {1}".format(self.FLAGS.checkpoint_path, self.epoch))
 
       if not 'scratch' in self.FLAGS.checkpoint_path and checkpoint['optimizer'] == self.FLAGS.optimizer:

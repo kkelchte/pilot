@@ -501,6 +501,26 @@ class GradCam():
                    input_image.shape[3]), Image.ANTIALIAS))
     return cam
 
+def save_auxiliary_prediction(input_images, model):
+  """Save for each input image the depth prection
+  """
+  fig, ax=plt.subplots(len(input_images),2, figsize=(10,len(input_images)*10))
+  model.net.eval()
+  model.auxiliary_net.eval()
+  for index, image in enumerate(input_images):
+    ax[index,0].imshow(post_process(model.FLAGS,image))
+    ax[index,0].axis('off')
+    inputs=torch.from_numpy(np.asarray(image)).unsqueeze(0).type(torch.FloatTensor).to(model.device)
+    feature=model.net.feature(inputs)
+    result=model.auxiliary_net(feature).cpu().detach().numpy()
+    ax[index,1].imshow(result[0,:,:])
+    ax[index,1].axis('off')
+  fig.savefig(model.FLAGS.summary_dir+model.FLAGS.log_tag+'/auxiliary_predictions.png', bbox_inches='tight')
+  plt.close()
+  plt.cla()
+  plt.clf()
+
+
 # ==============================
 #   Obtain Hidden State of LSTM 
 # ==============================

@@ -101,6 +101,7 @@ def add_arguments(parser):
   parser.add_argument("--n_frames",default=2,type=int,help="Specify the amount of frames concatenated in case of n_fc  or 3D-CNN.")
   parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
   parser.add_argument("--auxiliary_lambda", default=1, type=float, help="Weight the lifelonglearning regularization term in the overall loss.")
+  parser.add_argument("--save_auxiliary_prediction", action='store_true',help="Store an example auxiliary image.")
   
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
   parser.add_argument("--stochastic", action='store_true', help="Sample action from predictions from a gaussian (continuous control) or binomial (discrete control) distribution rather than taking the argmax.")

@@ -224,7 +224,7 @@ for folder_index, folder in enumerate(sorted(log_folders)):
       continue
     headers=[]
     for line in log_file:
-      if len(line.split(',')) > 2:
+      if len(line.split(',')) >= 2:
         for term in line.split(','):
           try:
             if len(term.split(":")) == 2:
@@ -485,6 +485,7 @@ table_keys=['test_accuracy',
             'validation_imitation_learning',
             'imitation_learning',
             'test_loss',
+            'validation_loss',
             'test_imitation_learning',
             'host']
 
@@ -515,8 +516,8 @@ for m in train_folders:
   table_row="{0}".format(os.path.basename(m).replace('_', ' '))
   for k in good_keys:
     try:
-      if k in ['validation_accuracy','validation_imitation_learning','imitation_learning']: # take last value
-        table_row+=" & {0}".format(results[m][k][-1])
+      if k in ['validation_accuracy','validation_imitation_learning','imitation_learning','validation_loss']: # take last value
+        table_row+=" & {0:0.4f}".format(results[m][k][-1])
         value=results[m][k][-1]
       elif isinstance(results[m][k], collections.Iterable):
         if type(results[m][k][-1]) in [float,int,bool]: #multiple floats --> take mean

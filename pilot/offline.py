@@ -190,6 +190,10 @@ def run(_FLAGS, model):
       pickle.dump(importance_weights, f)
     tools.visualize_importance_weights(importance_weights, FLAGS.summary_dir+FLAGS.log_tag)
 
+  if FLAGS.save_auxiliary_prediction and FLAGS.load_data_in_ram:
+    # method assumes data is loaded in RAM.
+    tools.save_auxiliary_prediction([data.full_set['test'][0]['imgs'][index] for index in np.random.choice(range(len(data.full_set['test'][0]['imgs'])), 5)], model)
+
   if FLAGS.extract_nearest_features:
     stime=time.time()
     # FLAGS.dataset = 'esatv3_expert/2500'
@@ -213,6 +217,7 @@ def run(_FLAGS, model):
     stime=time.time()
     feature_extractor.calculate_differences(FLAGS.summary_dir+FLAGS.log_tag)
     print("calculate difference duration: {0:0.0f}".format(time.time()-stime))
+
 
   # import pdb; pdb.set_trace()
   # if FLAGS.visualize_deep_dream_of_output:

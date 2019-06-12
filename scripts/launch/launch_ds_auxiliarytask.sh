@@ -2,7 +2,7 @@
 chapter=chapter_domain_shift
 section=auxiliarydepth2
 pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
- --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0"
+ --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0"
 
 echo "####### chapter: $chapter #######"
 echo "####### section: $section #######"
@@ -27,8 +27,9 @@ train(){
 # Pretrain for different learning rates
 ##########################################
 
-pretrain $chapter/$section/reference/learning_rates --dataset esatv3_expert/transferred_reference --rammem 7 --pretrained --load_data_in_ram  --gpumem 1900
-pretrain $chapter/$section/auxiliarydepth/learning_rates --dataset esatv3_expert/transferred_reference --rammem 12 --pretrained --load_data_in_ram --auxiliary_depth --gpumem 5000
+# pretrain $chapter/$section/reference/learning_rates --dataset esatv3_expert/transferred_reference --rammem 7 --pretrained --load_data_in_ram  --gpumem 1900 --max_episodes 10000
+# pretrain $chapter/$section/auxiliarydepth/learning_rates --dataset esatv3_expert/transferred_reference --rammem 12 --pretrained --load_data_in_ram --auxiliary_depth --gpumem 5000 --max_episodes 10000
+pretrain $chapter/$section/auxiliarydepth_long/learning_rates --dataset esatv3_expert/transferred_reference --rammem 12 --pretrained --load_data_in_ram --auxiliary_depth --gpumem 5000 --extract_nearest_features --auxiliary_lambda 10  --max_episodes 20000 --save_auxiliary_prediction
 
 
 ##############################
