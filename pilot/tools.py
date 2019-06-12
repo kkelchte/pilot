@@ -504,7 +504,7 @@ class GradCam():
 def save_auxiliary_prediction(input_images, model):
   """Save for each input image the depth prection
   """
-  fig, ax=plt.subplots(len(input_images),2, figsize=(10,len(input_images)*10))
+  fig, ax=plt.subplots(len(input_images),2, figsize=(10,len(input_images)*5))
   model.net.eval()
   model.auxiliary_net.eval()
   for index, image in enumerate(input_images):
