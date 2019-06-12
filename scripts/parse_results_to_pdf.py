@@ -414,6 +414,7 @@ table_keys=['Distance_current_test_esatv3',
             'test_accuracy',
             'validation_accuracy',
             'validation_imitation_learning',
+            'test_imitation_learning',
             'host']
 
 
@@ -514,7 +515,7 @@ for m in train_folders:
   table_row="{0}".format(os.path.basename(m).replace('_', ' '))
   for k in good_keys:
     try:
-      if k == 'validation_accuracy' or k=='imitation_learning' or k == 'test_imitation_learning': # take last value
+      if k in ['validation_accuracy','validation_imitation_learning','imitation_learning']: # take last value
         table_row+=" & {0}".format(results[m][k][-1])
         value=results[m][k][-1]
       elif isinstance(results[m][k], collections.Iterable):

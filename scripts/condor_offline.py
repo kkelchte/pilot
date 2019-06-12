@@ -115,7 +115,7 @@ condor_submit.write("RequestDisk      = {0}G \n".format(FLAGS.diskmem))
 condor_submit.write("match_list_length = 4 \n")
 condor_submit.write("Rank = Mips \n")
 
-blacklist=" "
+blacklist=" && (machine != \"vladimir.esat.kuleuven.be\")"
 # clear blacklist on 10/05/19
 # blacklist=" && (machine != \"andromeda.esat.kuleuven.be\") \
 # 		 	&& (machine != \"kochab.esat.kuleuven.be\") "
@@ -275,6 +275,7 @@ executable.write("if [ $retVal -ne 0 ]; then \n")
 executable.write("    echo Error \n")
 executable.write("    exit $retVal \n")
 executable.write("fi \n")
+executable.write("cat $_CONDOR_JOB_AD | grep Last \n")
 executable.write("echo \"[condor_script] done: $(date +%F_%H:%M)\"\n")
 
 if FLAGS.evaluate_after: # DEPRECATED create default run_script call for evaluating with reuse_default canyons on turtle with 20 runs
