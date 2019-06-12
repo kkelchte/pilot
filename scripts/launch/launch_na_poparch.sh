@@ -74,6 +74,15 @@ train(){
 #   train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 1900 --gpumem_eva 1900 --optimizer SGD --scaled_input --learning_rate 0.1 --normalized_output
 # done
 
+#######################################
+# Combine results
+#######################################
+
+# LOGFOLDERS="$(for AR in alex dense vgg16 inception res18 squeeze ; do printf " chapter_neural_architectures/popular_architectures/${AR}_net_finetuned/final/0"; done)"
+# LEGEND="AlexNet DenseNet VGG Inception ResNet SqueezeNet"
+# python combine_results.py --tags validation_accuracy --title Feature_extraction --log_folders $LOGFOLDERS --legend_names $LEGEND --headless
+
+
 sleep 3
 condor_q
 echo "cd /esat/opal/kkelchte/docker_home/tensorflow/log/$chapter/$section"

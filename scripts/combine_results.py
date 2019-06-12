@@ -11,13 +11,7 @@ import argparse
 import xml.etree.cElementTree as ET
 
 
-import matplotlib as mpl
-# mpl.use('Agg')
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 
-import tablib
 
 """
 Parse results from all subfolders of mother_dir
@@ -99,8 +93,23 @@ parser.add_argument('--tags', default=[],nargs='+', help="Select certain tag wit
 parser.add_argument('--subsample', default=1, type=int, help='To avoid cluttered images, subsample data making graph more smooth.')
 parser.add_argument('--cutend', default=-1, type=int, help='Cut list of data earlier to cut the convergence tail.')
 parser.add_argument('--title', default='', type=str, help='Define title of graph.')
+parser.add_argument("--headless", action='store_true', help="Use matplotlib in backend agg and do not display figure.")
+
 
 FLAGS, others = parser.parse_known_args()
+
+if FLAGS.headless:
+  import matplotlib as mpl
+  mpl.use('Agg')
+else:
+  import matplotlib as mpl
+
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+import tablib
+
 
 if len(FLAGS.mother_dir) == len(FLAGS.log_folders) == 0:
   print("Missing log folder instructions. Please specify mother_dir / startswith / endswith argument.")
@@ -259,15 +268,17 @@ for tag in sorted(FLAGS.tags):
       fig_name=union_folder+'/'+tag+'.jpg'  
     
     plt.savefig(fig_name,bbox_inches='tight')
-    command="display {0}".format(fig_name)
-    print(command)
-    subprocess.call(shlex.split(command))
-    if FLAGS.blog_destination != "":
-      image_file="/users/visics/kkelchte/blogs/kkelchte.github.io/imgs/{0}_{1}.jpg".format(FLAGS.blog_destination, tag)
-      if not os.path.isdir(os.path.dirname(image_file)):
-        os.makedirs(os.path.dirname(image_file))
-      command="cp {0} {1}".format(fig_name, image_file)
-      subprocess.call(shlex.split(command))
+    print("saved figure {0}".format(fig_name))
+    if not FLAGS.headless:
+      command="display {0}".format(fig_name)
       print(command)
+      subprocess.call(shlex.split(command))
+      if FLAGS.blog_destination != "":
+        image_file="/users/visics/kkelchte/blogs/kkelchte.github.io/imgs/{0}_{1}.jpg".format(FLAGS.blog_destination, tag)
+        if not os.path.isdir(os.path.dirname(image_file)):
+          os.makedirs(os.path.dirname(image_file))
+        command="cp {0} {1}".format(fig_name, image_file)
+        subprocess.call(shlex.split(command))
+        print(command)
   else:
     print("all failed for tag {}".format(tag))

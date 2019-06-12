@@ -40,6 +40,14 @@
 #------------------------------------------------------------
 
 
+for d in chapter_neural_architectures/popular_architectures/alex_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/alex_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/dense_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/dense_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/inception_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/inception_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/res18_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/res18_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/squeeze_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/squeeze_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/tinyv3_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/vgg16_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/vgg16_net_finetuned/final/0 ; do 
+  echo $d; 
+  pytorch_args='--dataset esatv3_expert/200K --calculate_importance_weights'
+  condor_args="--wall_time $((24*3600)) --rammem 6 --gpumem 3000"
+  python dag_train.py -t $d --learning_rates 0.1 $condor_args $pytorch_args
+done
+
+
 # pytorch_args="--pause_simulator --on_policy --alpha 1 --tensorboard --turn_speed 0.8 --speed 0.8 --stochastic"
 # dag_args="--number_of_recorders 12 --destination esatv3_expert_stochastic --val_len 1 --test_len 1 --min_rgb 2400 --max_rgb 2600"
 # condor_args="--wall_time_rec $((10*10*60+3600)) --rammem 6"

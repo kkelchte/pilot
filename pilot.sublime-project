@@ -58,6 +58,7 @@
 			"file_include_patterns":
 			[
 				"*.tex",
+				"*.svg",
 				"*.pdf",
 				"*.png",
 				"*.jpg",
