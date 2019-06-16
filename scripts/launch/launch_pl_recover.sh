@@ -1,8 +1,11 @@
 #!/bin/bash
 chapter=chapter_policy_learning
-section=how_to_recover
+section=how_to_recover_normalized
 pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
- --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1.0 --weight_decay 0"
+ --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1.0 --weight_decay 0 --normalized_output"
+
+# Difference is prbably due to action normalization (!)
+
 
 echo "####### chapter: $chapter #######"
 echo "####### section: $section #######"
@@ -29,30 +32,58 @@ train(){
 
 
 pretrain $chapter/$section/res18_reference/learning_rates --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5
-pretrain $chapter/$section/res18_reference_pretrained/learning_rates --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --pretrained
-
 pretrain $chapter/$section/res18_recovery/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7
-pretrain $chapter/$section/res18_recovery_pretrained/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained
+for noise in gau ou uni ; do
+  pretrain $chapter/$section/res18_noise/$noise/learning_rates --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7
+done
 
+pretrain $chapter/$section/res18_reference_pretrained/learning_rates --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --pretrained
+pretrain $chapter/$section/res18_recovery_pretrained/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained
 for noise in gau ou uni ; do
   pretrain $chapter/$section/res18_noise_pretrained/$noise/learning_rates --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --pretrained
-  pretrain $chapter/$section/res18_noise/$noise/learning_rates --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7
 done
 
 ##############################
 # Set winning learning rate
 ##############################
 
-# train $chapter/$section/res18_reference/final --dataset esatv3_expert/2500 --load_data_in_ram --rammem 5 --learning_rate 0.001 
-# train $chapter/$section/res18_reference_pretrained/final --dataset esatv3_expert/2500 --load_data_in_ram --rammem 5 --pretrained --learning_rate 0.01
+# train $chapter/$section/res18_reference/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --learning_rate ???
+# train $chapter/$section/res18_recovery/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --learning_rate ???
+# for noise in gau ou uni ; do
+#   train $chapter/$section/res18_noise/$noise/final --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --learning_rate ???
+# done
 
-# train $chapter/$section/res18_recovery/redo --dataset esatv3_recovery --load_data_in_ram --rammem 5 --learning_rate 0.1
-# train $chapter/$section/res18_recovery/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --learning_rate 0.001
+# train $chapter/$section/res18_reference_pretrained/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --pretrained --learning_rate ???
+# train $chapter/$section/res18_recovery_pretrained/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained --learning_rate ???
+# for noise in gau ou uni ; do
+#   train $chapter/$section/res18_noise_pretrained/$noise/final --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --pretrained --learning_rate ???
+# done
 
-# train $chapter/$section/res18_noise/gau/final --dataset esatv3_expert_stochastic/gau --load_data_in_ram --rammem 7 --learning_rate 0.1 --python_project pytorch_pilot_beta/pilot
-# train $chapter/$section/res18_noise/ou/final --dataset esatv3_expert_stochastic/ou --load_data_in_ram --rammem 7 --learning_rate 0.1
-# train $chapter/$section/res18_noise/uni/final --dataset esatv3_expert_stochastic/uni --load_data_in_ram --rammem 7 --learning_rate 0.1
 
+##############################
+# DAGGER
+##############################
+
+# for seed in 0 1 2 ; do
+#   name="$chapter/$section/DAGGER/$seed"
+#   local_pytorch_args="--load_config --checkpoint_path $chapter/$section/res18_reference/final/0"
+#   script_args="--evaluation --pause_simulator -ds --z_pos 1 -w esatv3 --random_seed $((seed*32+512)) --number_of_runs 1 --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
+#   condor_args="--wall_time $((24*60)) --use_greenlist --cpus 16"
+#   python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
+# done
+
+##############################
+# ON-POLICY
+##############################
+
+# Should be able to make this more 'offline' --> implement at online.py
+for seed in 0 1 2 ; do
+  name="$chapter/$section/on-policy/$seed"
+  local_pytorch_args="--on-policy --min_buffer_size 100 --buffer_size 100"
+  script_args="--pause_simulator --z_pos 1 -w esatv3 --random_seed $((seed*32+512)) --number_of_runs 100 --final_evaluation_runs 5 --python_project pytorch_pilot/pilot"
+  condor_args="--wall_time $((2*24*60)) --use_greenlist --cpus 16 --gpumem 5000"
+  python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
+done
 ##############################
 # Create datasets
 ##############################
@@ -60,7 +91,7 @@ done
 # recovery
 # name="data_collection/recovery_expert"
 # pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9"
-# script_args=" --recovery -ds --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
+# script_args=" --recovery -ds --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
 # condor_args="--wall_time $((2*10*60+30*60)) --use_greenlist --cpus 16"
 # python condor_online.py -t $name $pytorch_args $script_args $condor_args
 

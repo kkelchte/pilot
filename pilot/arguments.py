@@ -99,14 +99,15 @@ def add_arguments(parser):
   parser.add_argument("--feature_extract", action='store_true',help="In case of feature extract, the model feature extraction part of the network won't be trained.")
   # parser.add_argument("--n_fc", action='store_true',help="In case of True, prelogit features are concatenated before feeding to the fully connected layers.")
   parser.add_argument("--n_frames",default=2,type=int,help="Specify the amount of frames concatenated in case of n_fc  or 3D-CNN.")
-  parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
-  parser.add_argument("--auxiliary_lambda", default=1, type=float, help="Weight the lifelonglearning regularization term in the overall loss.")
-  parser.add_argument("--save_auxiliary_prediction", action='store_true',help="Store an example auxiliary image.")
   
   parser.add_argument("--discrete", action='store_true',help="Specify whether the output action space is discrete.")
   parser.add_argument("--stochastic", action='store_true', help="Sample action from predictions from a gaussian (continuous control) or binomial (discrete control) distribution rather than taking the argmax.")
   # parser.add_argument("--beta_distribution", action='store_true', help="For contiuous stochastic control, sample from beta instead of gaussian distribution.")
   parser.add_argument("--action_quantity",default=3, type=int, help="Define the number of actions in the output layer.")
+  
+  parser.add_argument("--auxiliary_depth", action='store_true',help="Specify whether a depth map is predicted.")
+  parser.add_argument("--auxiliary_lambda", default=1, type=float, help="Weight the lifelonglearning regularization term in the overall loss.")
+  parser.add_argument("--save_auxiliary_prediction", action='store_true',help="Store an example auxiliary image.")
   
   # INITIALIZATION
   parser.add_argument("--checkpoint_path",default='', type=str, help="Specify the directory of the checkpoint of the earlier trained model.")

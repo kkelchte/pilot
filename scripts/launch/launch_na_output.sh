@@ -1,8 +1,8 @@
 #!/bin/bash
 chapter=chapter_neural_architectures
-section=output
+section=output_pretrained
 pytorch_args="--dataset esatv3_expert_200K --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --normalized_output\
- --max_episodes 10000 --batch_size 32 --clip 1 --scaled_input --optimizer SGD"
+ --max_episodes 10000 --batch_size 32 --clip 1 --scaled_input --optimizer SGD --pretrained"
 
 echo "####### chapter: $chapter #######"
 echo "####### section: $section #######"
@@ -38,12 +38,13 @@ train(){
 # Set winning learning rate
 #######################################
 
-# train $chapter/$section/res18_discrete/final --network res18_net --discrete --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
+train $chapter/$section/res18_discrete/final --network res18_net --discrete --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
+train $chapter/$section/res18_discrete_stochastic/final --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
+train $chapter/$section/res18_discrete_MSE/final --network res18_net --discrete --weight_decay 0 --loss MSE --learning_rate 0.1
 
-# train $chapter/$section/res18_discrete_stochastic/final --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
-# train $chapter/$section/res18_continuous/final --network res18_net  --weight_decay 0 --loss MSE --learning_rate 0.1
+train $chapter/$section/res18_continuous/final --network res18_net  --weight_decay 0 --loss MSE --learning_rate 0.1
 # train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic  --weight_decay 0 --loss MSE --learning_rate 0.01
-# train $chapter/$section/res18_continuous_stochastic_wd001/final --network res18_net --stochastic --weight_decay 0.001 --loss MSE --learning_rate 0.01
+train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic --weight_decay 0.001 --loss MSE --learning_rate 0.01
 #MAYBE
 # train $chapter/$section/res18_continuous_stochastic_wd00001/final --network res18_net --stochastic --weight_decay 0.00001 --loss MSE --learning_rate 0.01
 # train $chapter/$section/res18_continuous_stochastic_wd0001/final --network res18_net --stochastic --weight_decay 0.0001 --loss MSE --learning_rate 0.01
