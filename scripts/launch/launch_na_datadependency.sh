@@ -26,45 +26,45 @@ train(){
 # Pretrain for different learning rates
 #######################################
 
-pretrain $chapter/$section/200K/learning_rates --dataset esatv3_expert_200K --weight_decay 0
-pretrain $chapter/$section/100K/learning_rates --dataset esatv3_expert_100K --weight_decay 0
-pretrain $chapter/$section/50K/learning_rates --dataset esatv3_expert_50K --weight_decay 0
-pretrain $chapter/$section/20K/learning_rates --dataset esatv3_expert_20K --weight_decay 0
-pretrain $chapter/$section/10K/learning_rates --dataset esatv3_expert_10K --weight_decay 0
+# pretrain $chapter/$section/200K/learning_rates --dataset esatv3_expert_200K --weight_decay 0
+# pretrain $chapter/$section/100K/learning_rates --dataset esatv3_expert_100K --weight_decay 0
+# pretrain $chapter/$section/50K/learning_rates --dataset esatv3_expert_50K --weight_decay 0
+# pretrain $chapter/$section/20K/learning_rates --dataset esatv3_expert_20K --weight_decay 0
+# pretrain $chapter/$section/10K/learning_rates --dataset esatv3_expert_10K --weight_decay 0
 
-pretrain $chapter/$section/200K_pretrained/learning_rates --dataset esatv3_expert_200K --weight_decay 0 --pretrained
-pretrain $chapter/$section/100K_pretrained/learning_rates --dataset esatv3_expert_100K --weight_decay 0 --pretrained
-pretrain $chapter/$section/50K_pretrained/learning_rates --dataset esatv3_expert_50K --weight_decay 0 --pretrained
-pretrain $chapter/$section/20K_pretrained/learning_rates --dataset esatv3_expert_20K --weight_decay 0 --pretrained
-pretrain $chapter/$section/10K_pretrained/learning_rates --dataset esatv3_expert_10K --weight_decay 0 --pretrained
+# pretrain $chapter/$section/200K_pretrained/learning_rates --dataset esatv3_expert_200K --weight_decay 0 --pretrained
+# pretrain $chapter/$section/100K_pretrained/learning_rates --dataset esatv3_expert_100K --weight_decay 0 --pretrained
+# pretrain $chapter/$section/50K_pretrained/learning_rates --dataset esatv3_expert_50K --weight_decay 0 --pretrained
+# pretrain $chapter/$section/20K_pretrained/learning_rates --dataset esatv3_expert_20K --weight_decay 0 --pretrained
+# pretrain $chapter/$section/10K_pretrained/learning_rates --dataset esatv3_expert_10K --weight_decay 0 --pretrained
 
-pretrain $chapter/$section/200K_wd00001/learning_rates --dataset esatv3_expert_200K --weight_decay 0.0001
-pretrain $chapter/$section/100K_wd00001/learning_rates --dataset esatv3_expert_100K --weight_decay 0.0001
-pretrain $chapter/$section/50K_wd00001/learning_rates --dataset esatv3_expert_50K --weight_decay 0.0001
-pretrain $chapter/$section/20K_wd00001/learning_rates --dataset esatv3_expert_20K --weight_decay 0.0001
-pretrain $chapter/$section/10K_wd00001/learning_rates --dataset esatv3_expert_10K --weight_decay 0.0001
+# pretrain $chapter/$section/200K_wd00001/learning_rates --dataset esatv3_expert_200K --weight_decay 0.0001
+# pretrain $chapter/$section/100K_wd00001/learning_rates --dataset esatv3_expert_100K --weight_decay 0.0001
+# pretrain $chapter/$section/50K_wd00001/learning_rates --dataset esatv3_expert_50K --weight_decay 0.0001
+# pretrain $chapter/$section/20K_wd00001/learning_rates --dataset esatv3_expert_20K --weight_decay 0.0001
+# pretrain $chapter/$section/10K_wd00001/learning_rates --dataset esatv3_expert_10K --weight_decay 0.0001
 
 
 #######################################
 # Set winning learning rate
 #######################################
-# train $chapter/$section/200K/final --dataset esatv3_expert_200K --weight_decay 0 --learning_rate ???
-# train $chapter/$section/100K/final --dataset esatv3_expert_100K --weight_decay 0 --learning_rate ???
-# train $chapter/$section/50K/final --dataset esatv3_expert_50K --weight_decay 0 --learning_rate ???
-# train $chapter/$section/20K/final --dataset esatv3_expert_20K --weight_decay 0 --learning_rate ???
-# train $chapter/$section/10K/final --dataset esatv3_expert_10K --weight_decay 0 --learning_rate ???
+train $chapter/$section/200K/final --dataset esatv3_expert_200K --weight_decay 0 --learning_rate 0.1
+train $chapter/$section/100K/final --dataset esatv3_expert_100K --weight_decay 0 --learning_rate 0.1
+train $chapter/$section/50K/final --dataset esatv3_expert_50K --weight_decay 0 --learning_rate 0.1
+train $chapter/$section/20K/final --dataset esatv3_expert_20K --weight_decay 0 --learning_rate 0.1
+train $chapter/$section/10K/final --dataset esatv3_expert_10K --weight_decay 0 --learning_rate 0.01
 
-# train $chapter/$section/200K_pretrained/final --dataset esatv3_expert_200K --weight_decay 0 --pretrained --learning_rate ???
-# train $chapter/$section/100K_pretrained/final --dataset esatv3_expert_100K --weight_decay 0 --pretrained --learning_rate ???
-# train $chapter/$section/50K_pretrained/final --dataset esatv3_expert_50K --weight_decay 0 --pretrained --learning_rate ???
-# train $chapter/$section/20K_pretrained/final --dataset esatv3_expert_20K --weight_decay 0 --pretrained --learning_rate ???
-# train $chapter/$section/10K_pretrained/final --dataset esatv3_expert_10K --weight_decay 0 --pretrained --learning_rate ???
+train $chapter/$section/200K_pretrained/final --dataset esatv3_expert_200K --weight_decay 0 --pretrained --learning_rate 0.01
+train $chapter/$section/100K_pretrained/final --dataset esatv3_expert_100K --weight_decay 0 --pretrained --learning_rate 0.01
+train $chapter/$section/50K_pretrained/final --dataset esatv3_expert_50K --weight_decay 0 --pretrained --learning_rate 0.01
+train $chapter/$section/20K_pretrained/final --dataset esatv3_expert_20K --weight_decay 0 --pretrained --learning_rate 0.01
+train $chapter/$section/10K_pretrained/final --dataset esatv3_expert_10K --weight_decay 0 --pretrained --learning_rate 0.1
 
-# train $chapter/$section/200K_wd00001/final --dataset esatv3_expert_200K --weight_decay 0.0001 --learning_rate ???
-# train $chapter/$section/100K_wd00001/final --dataset esatv3_expert_100K --weight_decay 0.0001 --learning_rate ???
-# train $chapter/$section/50K_wd00001/final --dataset esatv3_expert_50K --weight_decay 0.0001 --learning_rate ???
-# train $chapter/$section/20K_wd00001/final --dataset esatv3_expert_20K --weight_decay 0.0001 --learning_rate ???
-# train $chapter/$section/10K_wd00001/final --dataset esatv3_expert_10K --weight_decay 0.0001 --learning_rate ???
+train $chapter/$section/200K_wd00001/final --dataset esatv3_expert_200K --weight_decay 0.0001 --learning_rate 0.01
+train $chapter/$section/100K_wd00001/final --dataset esatv3_expert_100K --weight_decay 0.0001 --learning_rate 0.1
+train $chapter/$section/50K_wd00001/final --dataset esatv3_expert_50K --weight_decay 0.0001 --learning_rate 0.01
+train $chapter/$section/20K_wd00001/final --dataset esatv3_expert_20K --weight_decay 0.0001 --learning_rate 0.1
+train $chapter/$section/10K_wd00001/final --dataset esatv3_expert_10K --weight_decay 0.0001 --learning_rate 0.01
 
 #######################################
 # Combine results
