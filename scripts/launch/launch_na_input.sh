@@ -26,21 +26,23 @@ train(){
 # Pretrain for different learning rates
 #######################################
 
-pretrain $chapter/$section/tiny_reference/learning_rates --network tinyv3_net
-for nf in 2 3 4 5 ; do
-  pretrain $chapter/$section/tiny_concat/$nf/learning_rates --network tinyv3_3d_net --n_frames $nf
-  pretrain $chapter/$section/tiny_siamese/$nf/learning_rates --network tinyv3_nfc_net --n_frames $nf
-done
+# pretrain $chapter/$section/tiny_reference/learning_rates --network tinyv3_net
+# for nf in 2 3 4 5 ; do
+#   pretrain $chapter/$section/tiny_concat/$nf/learning_rates --network tinyv3_3d_net --n_frames $nf
+#   pretrain $chapter/$section/tiny_siamese/$nf/learning_rates --network tinyv3_nfc_net --n_frames $nf
+# done
 
 #######################################
 # Set winning learning rate
 #######################################
 
-# train $chapter/$section/tiny_reference/final --network tinyv3_net  --learning_rate ??
-# for nf in 2 3 4 5 ; do
-#   train $chapter/$section/tiny_concat/$nf/final --network tinyv3_3d_net --n_frames $nf --learning_rate ??
-#   train $chapter/$section/tiny_siamese/$nf/final --network tinyv3_nfc_net --n_frames $nf --learning_rate ??
-# done
+train $chapter/$section/tiny_reference/final --network tinyv3_net  --learning_rate 0.1
+for nf in 2 3 4 5 ; do
+  train $chapter/$section/tiny_concat/$nf/final --network tinyv3_3d_net --n_frames $nf --learning_rate 0.1
+  train $chapter/$section/tiny_siamese/$nf/final --network tinyv3_nfc_net --n_frames $nf --learning_rate 0.1
+done
+
+
 
 #######################################
 # Combine results
