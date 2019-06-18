@@ -40,11 +40,14 @@
 #------------------------------------------------------------
 
 
-for d in chapter_neural_architectures/popular_architectures/alex_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/alex_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/dense_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/dense_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/inception_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/inception_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/res18_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/res18_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/squeeze_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/squeeze_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/tinyv3_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/vgg16_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/vgg16_net_finetuned/final/0 ; do 
-  echo $d; 
-  pytorch_args='--dataset esatv3_expert/200K --calculate_importance_weights'
+# for d in chapter_neural_architectures/popular_architectures/alex_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/alex_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/dense_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/dense_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/inception_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/inception_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/res18_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/res18_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/squeeze_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/squeeze_net_finetuned/final/0 chapter_neural_architectures/popular_architectures/tinyv3_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/vgg16_net_end-to-end/final/0 chapter_neural_architectures/popular_architectures/vgg16_net_finetuned/final/0 ; do 
+  
+for d in alex_net_end-to-end alex_net_finetuned dense_net_end-to-end dense_net_finetuned inception_net_end-to-end inception_net_finetuned res18_net_end-to-end res18_net_finetuned squeeze_net_end-to-end squeeze_net_finetuned tinyv3_net_end-to-end vgg16_net_end-to-end vgg16_net_finetuned ; do
+  echo $d
+  name="chapter_neural_architectures/popular_architectures/$d/importanceweights"
+  pytorch_args="--dataset esatv3_expert/200K --calculate_importance_weights --checkpoint_path chapter_neural_architectures/popular_architectures/$d/final/0 --load_config"
   condor_args="--wall_time $((24*3600)) --rammem 6 --gpumem 3000"
-  python dag_train.py -t $d --learning_rates 0.1 $condor_args $pytorch_args
+  python dag_train.py -t $name --learning_rates 0.1 $condor_args $pytorch_args
 done
 
 

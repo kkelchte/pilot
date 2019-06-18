@@ -284,7 +284,7 @@ class Model(object):
     hidden_states=()
     if isinstance(predictions,tuple):
       h_t, c_t=predictions[1]
-      predictions=predictions[0].view(inputs[0].size()[0]*inputs[0].size()[1],self.FLAGS.action_quantity)
+      predictions=predictions[0].view(inputs[0].size()[0]*inputs[0].size()[1],self.FLAGS.action_quantity if self.FLAGS.discrete else self.action_dim)
       hidden_states=(h_t.cpu().detach().numpy(),
                     c_t.cpu().detach().numpy())
     losses={}
