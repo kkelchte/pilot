@@ -347,7 +347,6 @@ def generate_batch(data_type):
         count_controls[ctr_index]+=1
 
     # import pdb; pdb.set_trace()
-
     minimum_run_dir_length=min([len(data_set[bi[1]]['num_imgs'])  if not '3d' in FLAGS.network else len(data_set[bi[1]]['num_imgs'])-FLAGS.n_frames for bi in batch_indices])
     # -------------------------------------------------------------------------------------------------------------------------------------
     # STEP 2: LOAD DATA IN BATCH[]
