@@ -47,42 +47,42 @@ train(){
 # Set winning learning rate
 ##############################
 
-train $chapter/$section/res18_reference/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --learning_rate 0.01
-train $chapter/$section/res18_recovery/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --learning_rate 0.1
-for noise in gau ou uni ; do
-  train $chapter/$section/res18_noise/$noise/final --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --learning_rate 0.1
-done
+# train $chapter/$section/res18_reference/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --learning_rate 0.01
+# train $chapter/$section/res18_recovery/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --learning_rate 0.1
+# for noise in gau ou uni ; do
+#   train $chapter/$section/res18_noise/$noise/final --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --learning_rate 0.1
+# done
 
-train $chapter/$section/res18_reference_pretrained/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --pretrained --learning_rate 0.01
-train $chapter/$section/res18_recovery_pretrained/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained --learning_rate 0.01
-for noise in gau ou uni ; do
-  train $chapter/$section/res18_noise_pretrained/$noise/final --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --pretrained --learning_rate 0.1
-done
+# train $chapter/$section/res18_reference_pretrained/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --pretrained --learning_rate 0.01
+# train $chapter/$section/res18_recovery_pretrained/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained --learning_rate 0.01
+# for noise in gau ou uni ; do
+#   train $chapter/$section/res18_noise_pretrained/$noise/final --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --pretrained --learning_rate 0.1
+# done
 
 ##############################
 # DAGGER
 ##############################
 
-# for seed in 0 1 2 ; do
-#   name="$chapter/$section/DAGGER/$seed"
-#   local_pytorch_args="--load_config --checkpoint_path $chapter/$section/res18_reference/final/0"
-#   script_args="--evaluation --pause_simulator -ds --z_pos 1 -w esatv3 --random_seed $((seed*32+512)) --number_of_runs 1 --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
-#   condor_args="--wall_time $((24*60)) --use_greenlist --cpus 16"
-#   python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
-# done
+for seed in 0 1 2 ; do
+  name="$chapter/$section/DAGGER/$seed"
+  local_pytorch_args="--load_config --checkpoint_path $chapter/$section/res18_reference/final/0"
+  script_args="--evaluation --pause_simulator -ds --z_pos 1 -w esatv3 --random_seed $((seed*32+512)) --number_of_runs 1 --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
+  condor_args="--wall_time $((24*60)) --use_greenlist --cpus 16"
+  python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
+done
 
 ##############################
 # ON-POLICY
 ##############################
 
 # Should be able to make this more 'offline' --> implement at online.py
-# for seed in 0 1 2 ; do
-#   name="$chapter/$section/on-policy/$seed"
-#   local_pytorch_args="--on-policy --min_buffer_size 100 --buffer_size 100"
-#   script_args="--pause_simulator --z_pos 1 -w esatv3 --random_seed $((seed*32+512)) --number_of_runs 100 --final_evaluation_runs 5 --python_project pytorch_pilot/pilot"
-#   condor_args="--wall_time $((2*24*60)) --use_greenlist --cpus 16 --gpumem 5000"
-#   python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
-# done
+for seed in 0 1 2 ; do
+  name="$chapter/$section/on-policy/$seed"
+  local_pytorch_args="--on-policy --min_buffer_size 1000 --buffer_size 10000"
+  script_args="--pause_simulator --z_pos 1 -w esatv3 --random_seed $((seed*32+512)) --number_of_runs 100 --final_evaluation_runs 5 --python_project pytorch_pilot/pilot"
+  condor_args="--wall_time $((2*24*60)) --use_greenlist --cpus 16 --gpumem 5000"
+  python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
+done
 ##############################
 # Create datasets
 ##############################

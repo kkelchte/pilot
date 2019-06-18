@@ -9,7 +9,7 @@ echo "####### section: $section #######"
 
 pretrain(){
   cd ..
-  condor_args_pretraining="--wall_time $((24*60*60)) --rammem 7 --gpumem 1800 --copy_dataset"
+  condor_args_pretraining="--wall_time $((24*60*60)) --rammem 7 --copy_dataset"
   python dag_train.py $pytorch_args $condor_args_pretraining -t $*
   cd launch
 }
@@ -26,23 +26,18 @@ train(){
 # Pretrain for different learning rates
 #######################################
 
-pretrain $chapter/$section/tiny_reference/learning_rates --network tinyv3_net  --subsample 10  --batch_size 32
-pretrain $chapter/$section/tiny_LSTM_concat/learning_rates --network tiny_3d_LSTM_net --subsample 10  --batch_size 32
+# pretrain $chapter/$section/tiny_reference/learning_rates --network tinyv3_net  --subsample 10  --batch_size 32 --gpumem 1800
+pretrain $chapter/$section/tiny_LSTM_concat/learning_rates --network tiny_3d_LSTM_net --subsample 10  --batch_size 32 --gpumem 1800
 
-pretrain $chapter/$section/tiny_LSTM_WBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 10  --batch_size 32
-pretrain $chapter/$section/tiny_LSTM_FBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 10  
-pretrain $chapter/$section/tiny_LSTM_SBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 10  --batch_size 32 --sliding_tbptt
+pretrain $chapter/$section/tiny_LSTM_WBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 10  --batch_size 32 --gpumem 1800
+pretrain $chapter/$section/tiny_LSTM_FBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 10 --gpumem 1800  
+pretrain $chapter/$section/tiny_LSTM_SBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 10  --batch_size 32 --sliding_tbptt --gpumem 1800
 
 
 #######################################
 # Set winning learning rate
 #######################################
 
-# train $chapter/$section/tiny_reference/final --network tinyv3_net  --learning_rate ??
-# for nf in 2 3 4 5 ; do
-#   train $chapter/$section/tiny_concat/$nf/final --network tinyv3_3d_net --n_frames $nf --learning_rate ??
-#   train $chapter/$section/tiny_siamese/$nf/final --network tinyv3_nfc_net --n_frames $nf --learning_rate ??
-# done
 
 #######################################
 # Combine results
