@@ -62,7 +62,7 @@ train(){
 ##############################
 # DAGGER
 ##############################
-
+cd ..
 for seed in 0 1 2 ; do
   name="$chapter/$section/DAGGER/$seed"
   local_pytorch_args="--load_config --checkpoint_path $chapter/$section/res18_reference/final/0"
@@ -70,11 +70,11 @@ for seed in 0 1 2 ; do
   condor_args="--wall_time $((24*60)) --use_greenlist --cpus 16"
   python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
 done
-
+cd launch
 ##############################
 # ON-POLICY
 ##############################
-
+cd ..
 # Should be able to make this more 'offline' --> implement at online.py
 for seed in 0 1 2 ; do
   name="$chapter/$section/on-policy/$seed"
@@ -83,6 +83,7 @@ for seed in 0 1 2 ; do
   condor_args="--wall_time $((2*24*60)) --use_greenlist --cpus 16 --gpumem 5000"
   python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
 done
+cd launch
 ##############################
 # Create datasets
 ##############################

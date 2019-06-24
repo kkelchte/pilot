@@ -1,12 +1,13 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-source .entrypoint_graph
+# source .entrypoint_graph
 # source .entrypoint_graph_debug
-# source .entrypoint_xpra
+source .entrypoint_xpra
 # source .entrypoint_xpra_no_build
 # roscd simulation_supervised/python
 roscd simulation_supervised/python
+
 pwd
 #############
 # COMMAND
@@ -27,10 +28,10 @@ pwd
 # done
 
 
-name="test"
-pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9"
-script_args="--recovery -ds --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
-python run_script.py -t $name $pytorch_args $script_args
+# name="test"
+# pytorch_args="--alpha 1 --pause_simulator --speed 0.8 --turn_speed 0.8 --action_bound 0.9"
+# script_args="--recovery -ds --z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot_beta/pilot"
+# python run_script.py -t $name $pytorch_args $script_args
 
 
 
@@ -67,7 +68,7 @@ run_simulation(){
   name="$1"
   model="$2"
   pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --pause_simulator"
-  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 3 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
+  script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 --evaluation --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
   python run_script.py -t $name $script_args $pytorch_args
 }
 
@@ -75,14 +76,11 @@ run_simulation(){
 
 
 # DONE
-# # - Alex (Scaled)
-# run_simulation testing log_neural_architectures/alex_net/esatv3_expert_200K/scaled_input/1/seed_0
-# See how well this net does in the end  
-# model="variance_neural_architecture_results/alex_net_normalized_output/0"
-# name="opal_long_hours/end"
-# pytorch_args="--on_policy --tensorboard --checkpoint_path $model --load_config --continue_training --pause_simulator"
-# script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 1 --evaluation --final_evaluation_runs 0"
-# python run_script.py -t $name $script_args $pytorch_args
+for i in 0 1 2 ; do
+	name="chapter_neural_architectures/output_pretrained/res18_continuous/final/${i}_opal_eva"
+	model="chapter_neural_architectures/output_pretrained/res18_continuous/final/$i"
+	run_simulation $name $model
+done
 
 # RECOVERY
 # name="esatv3_recovery"

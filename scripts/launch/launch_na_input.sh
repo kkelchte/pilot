@@ -36,11 +36,11 @@ train(){
 # Set winning learning rate
 #######################################
 
-train $chapter/$section/tiny_reference/final --network tinyv3_net  --learning_rate 0.1
-for nf in 2 3 4 5 ; do
-  train $chapter/$section/tiny_concat/$nf/final --network tinyv3_3d_net --n_frames $nf --learning_rate 0.1
-  train $chapter/$section/tiny_siamese/$nf/final --network tinyv3_nfc_net --n_frames $nf --learning_rate 0.1
-done
+# train $chapter/$section/tiny_reference/final --network tinyv3_net  --learning_rate 0.1
+# for nf in 2 3 4 5 ; do
+#   train $chapter/$section/tiny_concat/$nf/final --network tinyv3_3d_net --n_frames $nf --learning_rate 0.1
+#   train $chapter/$section/tiny_siamese/$nf/final --network tinyv3_nfc_net --n_frames $nf --learning_rate 0.1
+# done
 
 
 
@@ -48,13 +48,13 @@ done
 # Combine results
 #######################################
 
-# LOGFOLDERS="$(for AR in res18_discrete res18_discrete_stochastic ; do printf " chapter_neural_architectures/output/${AR}/final/0"; done)"
-# LEGEND="Discrete Discrete_stochastic"
-# python combine_results.py --tags validation_accuracy --title Discrete --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
+# LOGFOLDERS="$(for AR in tiny_reference tiny_concat/2 tiny_concat/3 tiny_concat/4 tiny_concat/5 ; do printf " chapter_neural_architectures/input/${AR}/final/0"; done)"
+# LEGEND="Reference 2_frames 3_frames 4_frames 5_frames"
+# python combine_results.py --headless --tags validation_imitation_learning --title Concatenate_Frames --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
 
-# LOGFOLDERS="$(for AR in res18_continuous res18_continuous_stochastic_wd001 ; do printf " chapter_neural_architectures/output/${AR}/final/0"; done)"
-# LEGEND="Continuous Continuous_stochastic"
-# python combine_results.py --tags validation_imitation_learning --title Continuous --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
+# LOGFOLDERS="$(for AR in tiny_reference tiny_siamese/2 tiny_siamese/3 tiny_siamese/4 tiny_siamese/5 ; do printf " chapter_neural_architectures/input/${AR}/final/0"; done)"
+# LEGEND="Reference  2_frames 3_frames 4_frames 5_frames"
+# python combine_results.py --headless --tags validation_imitation_learning --title Siamese_Networks --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
 
 
 sleep 3

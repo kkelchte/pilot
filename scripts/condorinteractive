@@ -7,7 +7,7 @@ RequestMemory   = 7G
 +RequestWallTime = 2*3600
 Request_GPUS    = 1
 
-Requirements = ( machineowner == "Visics" )  &&  (CUDAGlobalMemoryMb >= 5800)  &&  (CUDACapability >= 3.5)
+Requirements = ( machineowner == "Visics" )  &&  (CUDAGlobalMemoryMb >= 1900)  &&  (CUDACapability >= 3.5)
 
 # If you want X11 forwarding, uncomment this
 #Requirements = ( HasX11 == True )

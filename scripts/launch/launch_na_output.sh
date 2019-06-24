@@ -38,13 +38,13 @@ train(){
 # Set winning learning rate
 #######################################
 
-train $chapter/$section/res18_discrete/final --network res18_net --discrete --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
-train $chapter/$section/res18_discrete_stochastic/final --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
-train $chapter/$section/res18_discrete_MSE/final --network res18_net --discrete --weight_decay 0 --loss MSE --learning_rate 0.1
+# train $chapter/$section/res18_discrete/final --network res18_net --discrete --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
+# train $chapter/$section/res18_discrete_stochastic/final --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
+# train $chapter/$section/res18_discrete_MSE/final --network res18_net --discrete --weight_decay 0 --loss MSE --learning_rate 0.1
 
-train $chapter/$section/res18_continuous/final --network res18_net  --weight_decay 0 --loss MSE --learning_rate 0.1
-# train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic  --weight_decay 0 --loss MSE --learning_rate 0.01
-train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic --weight_decay 0.001 --loss MSE --learning_rate 0.01
+train $chapter/$section/res18_continuous/final_redo --network res18_net  --weight_decay 0 --loss MSE --learning_rate 0.1
+# # train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic  --weight_decay 0 --loss MSE --learning_rate 0.01
+# train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic --weight_decay 0.001 --loss MSE --learning_rate 0.01
 #MAYBE
 # train $chapter/$section/res18_continuous_stochastic_wd00001/final --network res18_net --stochastic --weight_decay 0.00001 --loss MSE --learning_rate 0.01
 # train $chapter/$section/res18_continuous_stochastic_wd0001/final --network res18_net --stochastic --weight_decay 0.0001 --loss MSE --learning_rate 0.01
@@ -53,13 +53,13 @@ train $chapter/$section/res18_continuous_stochastic/final --network res18_net --
 # Combine results
 #######################################
 
-# LOGFOLDERS="$(for AR in res18_discrete res18_discrete_stochastic ; do printf " chapter_neural_architectures/output/${AR}/final/0"; done)"
+# LOGFOLDERS="$(for AR in res18_discrete res18_discrete_stochastic ; do printf " chapter_neural_architectures/output_pretrained/${AR}/final/0"; done)"
 # LEGEND="Discrete Discrete_stochastic"
-# python combine_results.py --tags validation_accuracy --title Discrete --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
+# python combine_results.py --headless --tags validation_accuracy --title Discrete --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
 
-# LOGFOLDERS="$(for AR in res18_continuous res18_continuous_stochastic_wd001 ; do printf " chapter_neural_architectures/output/${AR}/final/0"; done)"
-# LEGEND="Continuous Continuous_stochastic"
-# python combine_results.py --tags validation_imitation_learning --title Continuous --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
+# LOGFOLDERS="$(for AR in res18_discrete_MSE res18_continuous res18_continuous_stochastic ; do printf " chapter_neural_architectures/output_pretrained/${AR}/final/0"; done)"
+# LEGEND="Discrete Continuous Continuous_stochastic"
+# python combine_results.py --headless --tags validation_imitation_learning --title Continuous --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
 
 
 sleep 3
