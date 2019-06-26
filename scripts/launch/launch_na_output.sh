@@ -1,6 +1,6 @@
 #!/bin/bash
 chapter=chapter_neural_architectures
-section=output_pretrained
+section=output
 pytorch_args="--dataset esatv3_expert_200K --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --normalized_output\
  --max_episodes 10000 --batch_size 32 --clip 1 --scaled_input --optimizer SGD --pretrained"
 
@@ -28,6 +28,8 @@ train(){
 
 # pretrain $chapter/$section/res18_discrete/learning_rates --network res18_net --discrete --weight_decay 0 --loss CrossEntropy
 # pretrain $chapter/$section/res18_discrete_stochastic/learning_rates --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy
+# pretrain $chapter/$section/res18_discrete_MSE/learning_rates --network res18_net --discrete --weight_decay 0 --loss MSE
+
 # pretrain $chapter/$section/res18_continuous/learning_rates --network res18_net  --weight_decay 0 --loss MSE
 # pretrain $chapter/$section/res18_continuous_stochastic/learning_rates --network res18_net --stochastic  --weight_decay 0 --loss MSE
 # pretrain $chapter/$section/res18_continuous_stochastic_wd00001/learning_rates --network res18_net --stochastic --weight_decay 0.00001 --loss MSE
@@ -40,9 +42,9 @@ train(){
 
 # train $chapter/$section/res18_discrete/final --network res18_net --discrete --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
 # train $chapter/$section/res18_discrete_stochastic/final --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
-# train $chapter/$section/res18_discrete_MSE/final --network res18_net --discrete --weight_decay 0 --loss MSE --learning_rate 0.1
+train $chapter/$section/res18_discrete_MSE/final --network res18_net --discrete --weight_decay 0 --loss MSE --learning_rate 0.01
 
-train $chapter/$section/res18_continuous/final_redo --network res18_net  --weight_decay 0 --loss MSE --learning_rate 0.1
+# train $chapter/$section/res18_continuous/final_redo --network res18_net  --weight_decay 0 --loss MSE --learning_rate 0.1
 # # train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic  --weight_decay 0 --loss MSE --learning_rate 0.01
 # train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic --weight_decay 0.001 --loss MSE --learning_rate 0.01
 #MAYBE
@@ -59,6 +61,10 @@ train $chapter/$section/res18_continuous/final_redo --network res18_net  --weigh
 
 # LOGFOLDERS="$(for AR in res18_discrete_MSE res18_continuous res18_continuous_stochastic ; do printf " chapter_neural_architectures/output_pretrained/${AR}/final/0"; done)"
 # LEGEND="Discrete Continuous Continuous_stochastic"
+# python combine_results.py --headless --tags validation_imitation_learning --title Continuous --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
+
+# LOGFOLDERS="$(for AR in res18_continuous res18_continuous_stochastic ; do printf " chapter_neural_architectures/output_pretrained/${AR}/final/0"; done)"
+# LEGEND="Continuous Continuous_stochastic"
 # python combine_results.py --headless --tags validation_imitation_learning --title Continuous --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
 
 

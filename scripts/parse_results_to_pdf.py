@@ -230,8 +230,8 @@ for folder_index, folder in enumerate(sorted(log_folders)):
             if len(term.split(":")) == 2:
               save_append(results[folder], term.split(':')[0].strip(), term.split(':')[1].strip())
               if term.split(':')[0].strip() not in headers: headers.append(term.split(':')[0].strip())
-              if file=='nn_ready':
-                run_keys.append(term.split(':')[0].strip())
+              # if file=='nn_ready':
+              #   run_keys.append(term.split(':')[0].strip())
           except:
             print("[{0}] failed to parse {1} term: {2}".format(os.path.basename(folder), log_file, term))
     # save data in csv
@@ -367,7 +367,7 @@ for key in sorted(all_keys):
       # print e
       pass
   if not all_fail:
-    plt.xlabel("Run" if key in run_keys else "Epoch")
+    plt.xlabel("Epoch")
     plt.ylabel(key)
     plt.legend(handles=legend)
     fig_name=log_root+FLAGS.mother_dir+'/report/'+key+'.png'

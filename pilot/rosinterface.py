@@ -52,8 +52,7 @@ class PilotNode(object):
     self.FLAGS=FLAGS
     # Initialize fields
     self.logfolder = logfolder    
-    self.model = model
-    self.epoch = model.epoch 
+    self.model = model 
     self.ready=False 
     self.finished=True
     self.training=False
@@ -139,7 +138,6 @@ class PilotNode(object):
       self.pause_physics_client=rospy.ServiceProxy('/gazebo/pause_physics',Emptyservice)
       self.unpause_physics_client=rospy.ServiceProxy('/gazebo/unpause_physics',Emptyservice)
     
-
     # write nn_ready to indicate to run_script initialization is finished.
     f=open(os.path.join(self.logfolder,'nn_ready'),'a')
     f.write("{0}: start {1}".format(time.strftime('%H.%M.%S'),self.FLAGS.log_tag))
@@ -466,7 +464,7 @@ class PilotNode(object):
     
     # call ONLINE METHOD to collect data in buffer and train model
     # if not self.FLAGS.evaluate and not self.finished and len(trgt) != 0 and not self.FLAGS.no_training:
-    if not self.finished:
+    if not self.finished and len(trgt) != 0:
       experience={'state':im,
                   'action':float(action),
                   'speed':msg.linear.x,
@@ -489,7 +487,7 @@ class PilotNode(object):
           # self.replay_buffer.add(experience)
 
       if not self.FLAGS.evaluate:        
-        if self.epoch > self.FLAGS.max_episodes:
+        if self.model.epoch > self.FLAGS.max_episodes:
           self.overtake_pub.publish(Empty())
           self.model.save(self.logfolder, replaybuffer=self.replay_buffer)
           try:
@@ -568,6 +566,12 @@ class PilotNode(object):
     if len(self.confidences)!=0:
       result_string='{0}, confidence: {1:0.3f}, confidence_std: {2:0.3f}'.format(result_string, np.mean(self.confidences), np.mean(self.confidences))
       sumvar['confidence']=np.mean(self.confidences)
+
+    if not self.FLAGS.evaluate:
+      result_string='{0}, buffer_size: {1}, epoch: {2}'.format(result_string, self.replay_buffer.size(), self.model.epoch)
+      sumvar['buffer_size']=self.replay_buffer.size()
+
+
 
     
     if len(self.time_ctr_send) > 10 and len(self.time_im_received) > 10:

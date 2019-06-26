@@ -55,6 +55,7 @@ parser.add_argument("-t", "--log_tag", default='testing', type=str, help="log_ta
 parser.add_argument("--number_of_models", default=10, type=int, help="Define the number of models trained simultaneously over condor.")
 parser.add_argument("--model_names", default=[],nargs='+', help="Define the names of the models trained simultaneously over condor.")
 parser.add_argument("--random_numbers", default=[],nargs='+', help="Define the seeds for all models.")
+parser.add_argument('--learning_rates', default=[],nargs='+', help="Seeds to use over different models.")
 parser.add_argument("--summary_dir", default='tensorflow/log/', type=str, help="Choose the directory to which tensorflow should save the summaries relative to $HOME.")
 parser.add_argument("--home", default='/esat/opal/kkelchte/docker_home', type=str, help="Absolute path to source of code on Opal.")
 parser.add_argument("--wall_time_train", default=3*60*60, type=int, help="Maximum time job is allowed to train.")
@@ -85,6 +86,9 @@ for modelindex, model in enumerate(models):
   if len(FLAGS.random_numbers) != 0:
     command="{0} --random_seed {1}".format(command, FLAGS.random_numbers[modelindex%len(FLAGS.random_numbers)])
     skipnextlist.append('--random_seed')
+  if len(FLAGS.learning_rates) != 0:
+    command="{0} --learning_rate {1}".format(command, FLAGS.learning_rates[modelindex%len(FLAGS.learning_rates)])
+    skipnextlist.append('--learning_rate')
   if FLAGS.gpumem_train != -1:
     command="{0} --gpumem {1}".format(command, FLAGS.gpumem_train)
     skipnextlist.append('--gpumem')

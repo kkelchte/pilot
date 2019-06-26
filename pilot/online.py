@@ -92,14 +92,16 @@ def method(model, experience, replaybuffer, sumvar={}):
       tools.save_CAM_images(image, model, label=label)
     except Exception as e:
       print(e.args)
+
   if model.FLAGS.evaluate:
     return
   # save experience in buffer
   replaybuffer.add(experience)
 
   # if len(replaybuffer) < FLAGS.buffer_size or (len(replaybuffer) < FLAGS.min_buffer_size and FLAGS.min_buffer_size != -1): return
-  if replaybuffer.size() < model.FLAGS.buffer_size or (replaybuffer.size() < model.FLAGS.min_buffer_size and model.FLAGS.min_buffer_size != -1): return
+  if (replaybuffer.size() < model.FLAGS.buffer_size and model.FLAGS.min_buffer_size == -1) or (replaybuffer.size() < model.FLAGS.min_buffer_size): return
 
+  print('training...')
   if model.FLAGS.batch_size == -1:
     # perform a training step on data in replaybuffer 
     data=replaybuffer.get_all_data(max_batch_size=model.FLAGS.max_batch_size)
