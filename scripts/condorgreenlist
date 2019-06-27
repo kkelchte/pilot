@@ -1,0 +1,13 @@
+###########################
+# Submit an interactive job
+###########################
+
+Universe         = vanilla
+RequestCpus      = 16 
+Request_GPUs     = 1 
+RequestMemory    = 7G 
+RequestDisk      = 50G 
+Requirements =  has_avx2 && (HasSingularity) && (CUDAGlobalMemoryMb >= 1900) && (CUDACapability >= 3.5)  && ( (machine == "asahi.esat.kuleuven.be")                 || (machine == "bandai.esat.kuleuven.be")                 || (machine == "ena.esat.kuleuven.be")                 || (machine == "chokai.esat.kuleuven.be")                 || (machine == "daisen.esat.kuleuven.be")                 || (machine == "fuji.esat.kuleuven.be")                 || (machine == "hoo.esat.kuleuven.be")                 || (machine == "vauxite.esat.kuleuven.be")                 || (machine == "iwaki.esat.kuleuven.be")                 || (machine == "goryu.esat.kuleuven.be") ) 
++RequestWalltime = 3*3600
+
+Queue

@@ -139,6 +139,9 @@ def load_rgb(im_file="",im_object=[],im_size=[3,128,128], im_mode='CHW', im_norm
     img = im_object
   else:
     raise IOError("tools: load_rgb: no im_file or im_object provided.")
+  if len(img.shape) == 2:
+    img=np.expand_dims(np.asarray(img), -1)
+  
   # for pytorch: swap channels from last to first dimension
   if im_mode != 'HWC':
     img = np.swapaxes(img,1,2)

@@ -31,10 +31,10 @@ train(){
 # pretrain $chapter/$section/tiny_LSTM_FBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900  --time_length -1
 # pretrain $chapter/$section/tiny_LSTM_SBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 10  --batch_size 5 --gpumem 1800 --time_length 20 --sliding_tbptt
 
-pretrain $chapter/$section/tiny_reference/learning_rates --network tinyv3_3d_net --subsample 10  --batch_size 5 --gpumem 1800 --time_length 20
-pretrain $chapter/$section/tiny_LSTM_WBPTT/learning_rates --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 1800 --time_length 20 
-pretrain $chapter/$section/tiny_LSTM_FBPTT/learning_rates --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900  --time_length -1
-pretrain $chapter/$section/tiny_LSTM_SBPTT/learning_rates --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 1800 --time_length 20 --sliding_tbptt
+# pretrain $chapter/$section/tiny_reference/learning_rates --network tinyv3_3d_net --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20
+# pretrain $chapter/$section/tiny_LSTM_WBPTT/learning_rates --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20 
+# pretrain $chapter/$section/tiny_LSTM_FBPTT/learning_rates --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900  --time_length -1
+# pretrain $chapter/$section/tiny_LSTM_SBPTT/learning_rates --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20 --sliding_tbptt
 
 #######################################
 # Set winning learning rate
@@ -45,6 +45,10 @@ pretrain $chapter/$section/tiny_LSTM_SBPTT/learning_rates --network tiny_3d_LSTM
 # train $chapter/$section/tiny_LSTM_FBPTT/final --network tinyv3_LSTM_net  --subsample 10  --batch_size 5 --gpumem_train 3900  --time_length -1 --learning_rate 0.0001
 # train $chapter/$section/tiny_LSTM_SBPTT/final --network tinyv3_LSTM_net  --subsample 10  --batch_size 5 --gpumem_train 1800 --time_length 20 --sliding_tbptt --learning_rate 0.0001
 
+train $chapter/$section/tiny_reference/final --network tinyv3_3d_net --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20 --learning_rate 0.1
+train $chapter/$section/tiny_LSTM_WBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20  --learning_rate 0.01
+train $chapter/$section/tiny_LSTM_FBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900  --time_length -1 --learning_rate 
+train $chapter/$section/tiny_LSTM_SBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20 --sliding_tbptt --learning_rate 0.0001
 
 #######################################
 # Combine results

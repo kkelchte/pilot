@@ -19,9 +19,9 @@ script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 100000 --fin
 
 # First model, no policy mixing, ou noise in yaw
 # name="testing --owr"
-# specific_args="--max_episodes 10 --noise ou --sigma_yaw 0.1 --min_buffer_size 50 --buffer_size 1000 --gradient_steps 3 "
+# specific_args="--max_episodes 1000 --noise ou --sigma_yaw 0.1 --min_buffer_size 32 --buffer_size 1000 --gradient_steps 3 --batch_size 32"
 # python run_script.py -t $name $script_args $defaut_args $specific_args
 
 name="chapter_policy_learning/on_policy_training"
-specific_args="--max_episodes 100000 --noise ou --sigma_yaw 0.1 --min_buffer_size 100 --buffer_size 1000 --gradient_steps 3 "
+specific_args="--max_episodes 100000 --noise ou --sigma_yaw 0.1 --min_buffer_size 100 --buffer_size 10000 --gradient_steps 10 --batch_size 32"
 python run_script.py -t $name $script_args $defaut_args $specific_args

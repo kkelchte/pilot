@@ -31,13 +31,6 @@ pretrain $chapter/$section/res18_reference_data/learning_rates --dataset esatv3_
 pretrain $chapter/$section/res18_randomized_data/learning_rates --dataset esatv3_expert/randomized --rammem 7 --pretrained
 
 
-##############################
-# Set winning learning rate
-##############################
-
-# train $chapter/$section/res18_reference_data/final --dataset esatv3_expert_200K --rammem 5 --pretrained --copy_dataset --learning_rate
-# train $chapter/$section/res18_randomized_data/final --dataset esatv3_expert/randomized --rammem 5 --pretrained --copy_dataset --learning_rate 0.01
-
 
 sleep 3
 condor_q

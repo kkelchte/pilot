@@ -50,7 +50,8 @@ def interpret_loss_window(loss_window_mean, loss_window_std, model, x):
   if model.FLAGS.continual_learning \
     and loss_window_mean < model.FLAGS.loss_window_mean_threshold \
     and loss_window_std < model.FLAGS.loss_window_std_threshold \
-    and not on_plateau:
+    and not on_plateau \
+    and len(loss_window) == model.FLAGS.loss_window_length:
 
     last_loss_window_mean=loss_window_mean
     last_loss_window_std=loss_window_std
@@ -105,8 +106,8 @@ def method(model, experience, replaybuffer, sumvar={}):
   if model.FLAGS.batch_size == -1:
     # perform a training step on data in replaybuffer 
     data=replaybuffer.get_all_data(max_batch_size=model.FLAGS.max_batch_size)
-  else:
-    raise(NotImplementedError("Online.py only works with batch size -1 by taking the full buffer in, current batch size is {0}".format(model.FLAGS.batch_size)))
+  # else:
+  #   raise(NotImplementedError("Online.py only works with batch size -1 by taking the full buffer in, current batch size is {0}".format(model.FLAGS.batch_size)))
   
   # take gradient steps
   for gs in range(model.FLAGS.gradient_steps):

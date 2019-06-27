@@ -29,14 +29,15 @@ train(){
 #######################################
 
 
-pretrain $chapter/$section/esatv3_expert/recovery_reference/reference --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 
-pretrain $chapter/$section/esatv3_expert/recovery_reference/hardbuffer --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 
-pretrain $chapter/$section/esatv3_expert/recovery_reference/continual/0003std --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.005 --loss_window_std_threshold 0.003 --continual_learning_lambda 1 --loss_window_length 10
+# pretrain $chapter/$section/esatv3_expert/recovery_reference/reference --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 
+# pretrain $chapter/$section/esatv3_expert/recovery_reference/hardbuffer --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 
+# pretrain $chapter/$section/esatv3_expert/recovery_reference/continual/0003std --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.005 --loss_window_std_threshold 0.003 --continual_learning_lambda 1 --loss_window_length 10
+pretrain $chapter/$section/esatv3_expert/recovery_reference/continual/0003std_redo --learning_rate 0.001 --rammem 10 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset esatv3_expert/recovery_reference --load_data_in_ram --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.005 --loss_window_std_threshold 0.003 --continual_learning_lambda 1 --loss_window_length 10 --python_project pytorch_pilot_beta/pilot
 
 
-pretrain $chapter/$section/long_corridor/reference --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset long_corridor --gpumem 1800 
-pretrain $chapter/$section/long_corridor/hardbuffer --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset long_corridor --gpumem 1800 
-pretrain $chapter/$section/long_corridor/continual/std_004 --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset long_corridor --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.005 --loss_window_std_threshold 0.005 --continual_learning_lambda 1 --loss_window_length 10
+# pretrain $chapter/$section/long_corridor/reference --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule nothing --dataset long_corridor --gpumem 1800 
+# pretrain $chapter/$section/long_corridor/hardbuffer --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset long_corridor --gpumem 1800 
+# pretrain $chapter/$section/long_corridor/continual/std_004 --learning_rate 0.001 --rammem 4 --online --min_buffer_size 32 --buffer_size 32 --gradient_steps 3 --buffer_update_rule hard --dataset long_corridor --gpumem 1800 --continual_learning --loss_window_mean_threshold 0.005 --loss_window_std_threshold 0.005 --continual_learning_lambda 1 --loss_window_length 10
 
 
 

@@ -21,6 +21,8 @@ import skimage.transform as sm
 
 import argparse
 
+import arguments
+
 # import matplotlib.pyplot as plt
 
 # import h5py
@@ -434,8 +436,8 @@ def generate_batch(data_type):
                 sample_dict['features']=np.asarray(data_set[run_ind]['features'][frame_ind])
               batch.append(sample_dict)
             checklist.append(True)
-          except IndexError as e:
-            print('batch_loaded')
+          except IndexError as err:
+            print("error: {0}".format(err))
       try:
         threads = [threading.Thread(target=load_image_and_target, args=(batch_indices, batch, checklist)) for i in range(FLAGS.num_threads)]
         for t in threads: t.start()
@@ -542,39 +544,14 @@ def get_all_inputs(data_type):
 #### FOR TESTING ONLY
   
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='Test reading in the offline data.')
 
-  parser.add_argument("--dataset", default="esatv3_expert_5K", type=str, help="pick the dataset in data_root from which your movies can be found.")
-  parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
-  parser.add_argument("--control_file", default="control_info.txt",type=str, help="Define text file with logged control info.")
-  parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
-  parser.add_argument("--action_bound", default=1, type=float, help="Bound the action space between -b and b")
-  parser.add_argument("--auxiliary_depth", action='store_true', help="Define wether network is trained with auxiliary depth prediction.")
-  # parser.add_argument("--n_fc", action='store_true', help="Define wether network uses 3 concatenated consecutive frames.")
-  parser.add_argument("--hdf5", action='store_true', help="Define wether dataset is hdf5 type. [not working in singularity]")
-  parser.add_argument("--load_data_in_ram", action='store_true', help="Define wether dataset is loaded into RAM.")
-  parser.add_argument("--min_depth", default=0.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
-  parser.add_argument("--max_depth", default=5.0, type=float, help="clip depth loss with weigths to focus on correct depth range.")
+  parser = argparse.ArgumentParser(description='Main pilot that can train or evaluate online or offline from a dataset.')
+  parser=arguments.add_arguments(parser)
+  try:
+    FLAGS, others = parser.parse_known_args()
+  except:
+    sys.exit(2)
   
-  parser.add_argument("--subsample", default=1, type=int, help="Subsample data over time: e.g. subsample 2 to get from 20fps to 10fps.")
-  parser.add_argument("--normalized_output", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
-  parser.add_argument("--scaled_input", action='store_true', help="Shift data from range 0,1 to -0.5,0.5")
-  parser.add_argument("--normalized_input", action='store_true', help="Scale the input to 0 mean and 1 std.")
-  parser.add_argument('--normalize_means', default=[0.42, 0.46, 0.5],nargs='+', help="Means used for scaling the input around 0")
-  parser.add_argument('--normalize_stds', default=[0.218, 0.239, 0.2575],nargs='+', help="Stds used for scaling the input around 0")
-  parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
-
-  parser.add_argument("--network",default='tiny_nfc_net',type=str, help="Define the type of network: depth_q_net, coll_q_net.")
-  parser.add_argument("--random_seed", default=123, type=int, help="Set the random seed to get similar examples.")
-  parser.add_argument("--batch_size",default=1,type=int,help="Define the size of minibatches.")
-  parser.add_argument("--time_length", default=10, type=int, help="In case of LSTM network, how long in time is network unrolled for training.")
-  
-  parser.add_argument("--sliding_tbptt", action='store_true', help="In case of LSTM network, slide over batches of data rather than sample randomly.")
-  parser.add_argument("--n_frames",default=5,type=int,help="Specify the amount of frames concatenated in case of n_fc like mobile_nfc.")
-  
-
-
-  FLAGS=parser.parse_args()  
 
   prepare_data(FLAGS, (3,128,128))
 
