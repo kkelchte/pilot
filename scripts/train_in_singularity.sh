@@ -1,9 +1,9 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 cd /esat/opal/kkelchte/docker_home
-source .entrypoint_graph
+# source .entrypoint_graph
 # source .entrypoint_graph_debug
-# source .entrypoint_xpra
+source .entrypoint_xpra
 # source .entrypoint_xpra_no_build
 # roscd simulation_supervised/python
 roscd simulation_supervised/python
@@ -22,6 +22,6 @@ script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 100000 --fin
 # specific_args="--max_episodes 1000 --noise ou --sigma_yaw 0.1 --min_buffer_size 32 --buffer_size 1000 --gradient_steps 3 --batch_size 32"
 # python run_script.py -t $name $script_args $defaut_args $specific_args
 
-name="chapter_policy_learning/on_policy_training"
-specific_args="--max_episodes 100000 --noise ou --sigma_yaw 0.1 --min_buffer_size 100 --buffer_size 10000 --gradient_steps 10 --batch_size 32"
+name="chapter_policy_learning/on_policy_training/large"
+specific_args="--max_episodes 100000 --noise ou --sigma_yaw 0.1 --min_buffer_size 1000 --buffer_size 10000 --gradient_steps 1000 --batch_size 32 --train_every_N_steps 100"
 python run_script.py -t $name $script_args $defaut_args $specific_args

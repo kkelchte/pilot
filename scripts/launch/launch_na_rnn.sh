@@ -45,23 +45,18 @@ train(){
 # train $chapter/$section/tiny_LSTM_FBPTT/final --network tinyv3_LSTM_net  --subsample 10  --batch_size 5 --gpumem_train 3900  --time_length -1 --learning_rate 0.0001
 # train $chapter/$section/tiny_LSTM_SBPTT/final --network tinyv3_LSTM_net  --subsample 10  --batch_size 5 --gpumem_train 1800 --time_length 20 --sliding_tbptt --learning_rate 0.0001
 
-train $chapter/$section/tiny_reference/final --network tinyv3_3d_net --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20 --learning_rate 0.1
-train $chapter/$section/tiny_LSTM_WBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20  --learning_rate 0.01
-train $chapter/$section/tiny_LSTM_FBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900  --time_length -1 --learning_rate 
-train $chapter/$section/tiny_LSTM_SBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem 3900 --time_length 20 --sliding_tbptt --learning_rate 0.0001
+# train $chapter/$section/tiny_reference/final --network tinyv3_3d_net --subsample 10  --batch_size 5 --gpumem_train 3900 --time_length 20 --learning_rate 0.1
+# train $chapter/$section/tiny_LSTM_WBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem_train 3900 --time_length 20  --learning_rate 0.01
+# train $chapter/$section/tiny_LSTM_FBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem_train 3900  --time_length -1 --learning_rate 0.01
+# train $chapter/$section/tiny_LSTM_SBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem_train 3900 --time_length 20 --sliding_tbptt --learning_rate 0.0001
 
 #######################################
 # Combine results
 #######################################
 
-# LOGFOLDERS="$(for AR in res18_discrete res18_discrete_stochastic ; do printf " chapter_neural_architectures/output/${AR}/final/0"; done)"
-# LEGEND="Discrete Discrete_stochastic"
-# python combine_results.py --tags validation_accuracy --title Discrete --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
-
-# LOGFOLDERS="$(for AR in res18_continuous res18_continuous_stochastic_wd001 ; do printf " chapter_neural_architectures/output/${AR}/final/0"; done)"
-# LEGEND="Continuous Continuous_stochastic"
-# python combine_results.py --tags validation_imitation_learning --title Continuous --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
-
+LOGFOLDERS="chapter_neural_architectures/rnn_concat/tiny_reference/final/0 chapter_neural_architectures/rnn_concat/tiny_LSTM_FBPTT/learning_rates/lr_001 chapter_neural_architectures/rnn_concat/tiny_LSTM_SBPTT/final/0 chapter_neural_architectures/rnn_concat/tiny_LSTM_WBPTT/final/0"
+LEGEND="Reference FBPTT SBPTT WBPTT"
+python combine_results.py --tags validation_imitation_learning --title LSTM --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
 
 sleep 3
 condor_q

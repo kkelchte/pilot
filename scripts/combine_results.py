@@ -254,7 +254,7 @@ for tag in sorted(FLAGS.tags):
       plt.ylim((0.5,1))
       # plt.ylim((0.7,1))
     
-    # plt.ylim((0.,0.6))
+    # plt.ylim((0.05,0.5))
 
     plt.legend(handles=legend)
     if FLAGS.mother_dir!='':
