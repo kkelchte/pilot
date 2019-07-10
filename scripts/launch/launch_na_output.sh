@@ -40,9 +40,9 @@ train(){
 # Set winning learning rate
 #######################################
 
-# train $chapter/$section/res18_discrete/final --network res18_net --discrete --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
-# train $chapter/$section/res18_discrete_stochastic/final --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy --learning_rate 0.1
-train $chapter/$section/res18_discrete_MSE/final --network res18_net --discrete --weight_decay 0 --loss MSE --learning_rate 0.01
+train $chapter/$section/res18_discrete/final --network res18_net --discrete --weight_decay 0 --loss CrossEntropy --learning_rate 0.01
+train $chapter/$section/res18_discrete_stochastic/final_001 --network res18_net --discrete --stochastic  --weight_decay 0 --loss CrossEntropy --learning_rate 0.01
+# train $chapter/$section/res18_discrete_MSE/final --network res18_net --discrete --weight_decay 0 --loss MSE --learning_rate 0.01
 
 # train $chapter/$section/res18_continuous/final_redo --network res18_net  --weight_decay 0 --loss MSE --learning_rate 0.1
 # # train $chapter/$section/res18_continuous_stochastic/final --network res18_net --stochastic  --weight_decay 0 --loss MSE --learning_rate 0.01

@@ -37,7 +37,7 @@ train(){
 # for AR in res18_net alex_net ; do
 # for AR in alex_net ; do
 #   pretrain $chapter/$section/${AR}_finetuned_2/learning_rates --network $AR --gpumem 1900 --feature_extract --optimizer SGD --scaled_input --pretrained --normalized_output
-#   # pretrain $chapter/$section/${AR}_end-to-end/learning_rates --network $AR --gpumem 1900                  --optimizer SGD --scaled_input --pretrained --normalized_output
+  # pretrain $chapter/$section/${AR}_end-to-end/learning_rates --network $AR --gpumem 1900                  --optimizer SGD --scaled_input --pretrained --normalized_output
 # done
 
 # for AR in tinyv3_net ; do
@@ -63,7 +63,7 @@ train(){
 # done
 # for AR in res18_net ; do
 #   train $chapter/$section/${AR}_finetuned/final --network $AR --gpumem_train 1900 --gpumem_eva 1900 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
-#   train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 1900 --gpumem_eva 1900                  --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
+  # train $chapter/$section/${AR}_end-to-end/final --network $AR --gpumem_train 1900 --gpumem_eva 1900                  --optimizer SGD --scaled_input --learning_rate 0.1 --pretrained --normalized_output
 # done
 # for AR in alex_net ; do
   # train $chapter/$section/${AR}_finetuned/final --network $AR --gpumem_train 1900 --gpumem_eva 1900 --feature_extract --optimizer SGD --scaled_input --learning_rate 0.01 --pretrained --normalized_output
