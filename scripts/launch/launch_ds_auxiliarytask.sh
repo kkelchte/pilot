@@ -1,8 +1,8 @@
 #!/bin/bash
 chapter=chapter_domain_shift
-section=auxiliarydepth2
+section=normalized_output/auxiliarydepth
 pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
- --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0"
+ --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --normalized_output"
 
 echo "####### chapter: $chapter #######"
 echo "####### section: $section #######"

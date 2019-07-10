@@ -1,8 +1,8 @@
 #!/bin/bash
 chapter=chapter_domain_shift
-section=styletransfer
+section=normalized_output/styletransfer
 pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
- --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0"
+ --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --normalized_output"
 
 echo "####### chapter: $chapter #######"
 echo "####### section: $section #######"

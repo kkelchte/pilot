@@ -563,8 +563,6 @@ report.insert(line_index, "\n")
 line_index+=1
 
 # specific on-policy performance table
-
-
 table_keys=['Distance_current_test_esatv3',
             'test_success',
             'run_imitation_loss',
@@ -598,13 +596,15 @@ for m in eva_folders:
   table_row="{0}".format(os.path.basename(m).replace('_', ' '))
   for k in good_keys:
     try:
-      if k == 'validation_accuracy': # take last value
-        table_row+=" & {0}".format(results[m][k][-1])
-        value=results[m][k][-1]
-      elif isinstance(results[m][k], collections.Iterable):
+      # if k == 'validation_accuracy': # take last value
+      #   table_row+=" & {0}".format(results[m][k][-1])
+      #   value=results[m][k][-1]
+      #   save_append(total_vals, k, value)
+      if isinstance(results[m][k], collections.Iterable):
         if type(results[m][k][-1]) in [float,int,bool]: #multiple floats --> take mean
-          table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, np.mean(results[m][k]), np.std(results[m][k]))
-          value=np.mean(results[m][k])
+          value=np.median(results[m][k])
+          table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, value, np.std(results[m][k]))
+          # for v in results[m][k]: save_append(total_vals, k, v)
         else: #multiple strings
           value=results[m][k][0]
           table_row="{0} & {1} ".format(table_row, value)
@@ -631,7 +631,7 @@ for m in eva_folders:
 table_row="total"
 for k in good_keys:
   try:
-    table_row+=" & {0:0.3f} ({1:0.3f})".format(np.mean(total_vals[k]),np.std(total_vals[k]))
+    table_row+=" & {0:0.3f} ({1:0.3f})".format(np.mean(total_vals[k]), np.std(total_vals[k]))
   except KeyError:
     table_row+="&"
 table_row+="\\\\ \n"

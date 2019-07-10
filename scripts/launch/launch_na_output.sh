@@ -1,6 +1,6 @@
 #!/bin/bash
 chapter=chapter_neural_architectures
-section=output
+section=output_pretrained
 pytorch_args="--dataset esatv3_expert_200K --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --normalized_output\
  --max_episodes 10000 --batch_size 32 --clip 1 --scaled_input --optimizer SGD --pretrained"
 

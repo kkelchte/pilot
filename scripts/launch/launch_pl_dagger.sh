@@ -30,20 +30,26 @@ train(){
   
 # First iteration
 # for i in 0 1 2 ; do
-# for i in 1 2 ; do
-#   train $chapter/$section/baseline_${i}/learning_rates --load_config --checkpoint_path chapter_policy_learning/how_to_recover_normalized/res18_reference_pretrained/final/${i} --dataset esatv3_expert/dagger_reference --load_data_in_ram --rammem 7 --max_episodes 15000
-# #   train $chapter/$section/model_$i/learning_rates --load_config --checkpoint_path chapter_policy_learning/how_to_recover_normalized/res18_reference_pretrained/final/${i} --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/reference/${i}_eva --load_data_in_ram --rammem 7 --max_episodes 15000
+  # train $chapter/$section/baseline_${i}/learning_rates --load_config --checkpoint_path chapter_policy_learning/how_to_recover_normalized/res18_reference_pretrained/final/${i} --dataset esatv3_expert/dagger_reference --load_data_in_ram --rammem 7 --max_episodes 15000
+  # train $chapter/$section/model_$i/learning_rates --load_config --checkpoint_path chapter_policy_learning/how_to_recover_normalized/res18_reference_pretrained/final/${i} --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/reference/${i}_eva --load_data_in_ram --rammem 7 --max_episodes 15000
 # done
 
-# Second iteration
-# train $chapter/$section/model_0/learning_rates2 --load_config --checkpoint_path $chapter/$section/model_0/learning_rates/4 --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/record --load_data_in_ram --rammem 7 --max_episodes 20000
-# train $chapter/$section/model_1/learning_rates2 --load_config --checkpoint_path $chapter/$section/model_1/learning_rates/0 --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/record --load_data_in_ram --rammem 7 --max_episodes 20000
+# # Second iteration
+# train $chapter/$section/model_0/learning_rates2 --load_config --checkpoint_path $chapter/$section/model_0/learning_rates/0 --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/record --load_data_in_ram --rammem 7 --max_episodes 20000
+# train $chapter/$section/model_1/learning_rates2 --load_config --checkpoint_path $chapter/$section/model_1/learning_rates/1 --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/record --load_data_in_ram --rammem 7 --max_episodes 20000
 # train $chapter/$section/model_2/learning_rates2 --load_config --checkpoint_path $chapter/$section/model_2/learning_rates/4 --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_2/record --load_data_in_ram --rammem 7 --max_episodes 20000
-# Adjusted dataset to add run for baseline
 
-train $chapter/$section/baseline_0/learning_rates2 --load_config --checkpoint_path $chapter/$section/baseline_0/learning_rates/4 --dataset esatv3_expert/dagger_reference --load_data_in_ram --rammem 7 --max_episodes 20000
-train $chapter/$section/baseline_1/learning_rates2 --load_config --checkpoint_path $chapter/$section/baseline_1/learning_rates/2 --dataset esatv3_expert/dagger_reference --load_data_in_ram --rammem 7 --max_episodes 20000
-train $chapter/$section/baseline_2/learning_rates2 --load_config --checkpoint_path $chapter/$section/baseline_2/learning_rates/3 --dataset esatv3_expert/dagger_reference --load_data_in_ram --rammem 7 --max_episodes 20000
+# Adjusted dataset to add run for baseline
+# train $chapter/$section/baseline_0/learning_rates2 --load_config --checkpoint_path $chapter/$section/baseline_0/learning_rates/4 --dataset esatv3_expert/dagger_reference --load_data_in_ram --rammem 7 --max_episodes 20000
+# train $chapter/$section/baseline_1/learning_rates2 --load_config --checkpoint_path $chapter/$section/baseline_1/learning_rates/2 --dataset esatv3_expert/dagger_reference --load_data_in_ram --rammem 7 --max_episodes 20000
+# train $chapter/$section/baseline_2/learning_rates2 --load_config --checkpoint_path $chapter/$section/baseline_2/learning_rates/3 --dataset esatv3_expert/dagger_reference --load_data_in_ram --rammem 7 --max_episodes 20000
+
+
+# Third iteration
+train $chapter/$section/model_0/learning_rates3 --load_config --checkpoint_path $chapter/$section/model_0/learning_rates2/2 --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/record2 --load_data_in_ram --rammem 9 --max_episodes 25000
+train $chapter/$section/model_1/learning_rates3 --load_config --checkpoint_path $chapter/$section/model_1/learning_rates2/4 --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/record2 --load_data_in_ram --rammem 9 --max_episodes 25000
+train $chapter/$section/model_2/learning_rates3 --load_config --checkpoint_path $chapter/$section/model_2/learning_rates2/4 --dataset chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_2/record2 --load_data_in_ram --rammem 9 --max_episodes 25000
+
 
 sleep 3
 condor_q

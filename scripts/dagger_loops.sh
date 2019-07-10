@@ -1,7 +1,7 @@
 #!/bin/bash
 # This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
 # cd /esat/opal/kkelchte/docker_home
-source .entrypoint_graph
+# source .entrypoint_graph
 # source .entrypoint_graph_debug
 # source .entrypoint_xpra
 # source .entrypoint_xpra_no_build
@@ -34,11 +34,16 @@ run_simulation(){
 # iteration 1
 ###############
 
-# run_simulation chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/record chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/learning_rates/4
-# run_simulation chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/record chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/learning_rates/0
+# run_simulation chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/record chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/learning_rates/0
+# run_simulation chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/record chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/learning_rates/1
 # run_simulation chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_2/record chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_2/learning_rates/4
 
 
 ###############
 # iteration 2
 ###############
+
+run_simulation chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/record2 chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_0/learning_rates2/2
+run_simulation chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/record2 chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_1/learning_rates2/4
+run_simulation chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_2/record2 chapter_policy_learning/how_to_recover_normalized/dagger_opal/model_2/learning_rates2/4
+
