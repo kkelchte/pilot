@@ -1,6 +1,6 @@
 #!/bin/bash
 chapter=chapter_domain_shift
-section=normalized_output/styletransfer
+section=normalized_output_scratch/styletransfer
 pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
  --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --normalized_output"
 
@@ -27,15 +27,9 @@ train(){
 # Pretrain for different learning rates
 ##########################################
 
-pretrain $chapter/$section/reference/learning_rates --dataset esatv3_expert/transferred_reference --rammem 7 --pretrained --load_data_in_ram
-pretrain $chapter/$section/transferred_augmented/learning_rates --dataset esatv3_expert/transferred --rammem 12 --pretrained --load_data_in_ram
-pretrain $chapter/$section/transferred/learning_rates --dataset esat_transferred --rammem 7 --pretrained --load_data_in_ram
-
-
-##############################
-# Set winning learning rate
-##############################
-
+pretrain $chapter/$section/reference/learning_rates --dataset esatv3_expert/transferred_reference --rammem 7 --load_data_in_ram --extract_nearest_features
+pretrain $chapter/$section/transferred_augmented/learning_rates --dataset esatv3_expert/transferred --rammem 12 --load_data_in_ram --extract_nearest_features
+pretrain $chapter/$section/transferred/learning_rates --dataset esat_transferred --rammem 7 --load_data_in_ram --extract_nearest_features
 
 sleep 3
 condor_q

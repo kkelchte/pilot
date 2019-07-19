@@ -60,7 +60,7 @@ def main(_):
     print("[main.py]: found previous checkpoint from which training is continued: {0}".format(FLAGS.log_tag))
     FLAGS.load_config = True
     FLAGS.scratch = False
-    FLAGS.continue_training = True
+    FLAGS.continue_training = True # ensures that optimizers parameters are loaded as well.
     FLAGS.checkpoint_path = FLAGS.log_tag
 
   if len(FLAGS.checkpoint_path) != 0 and FLAGS.checkpoint_path[0] != '/': 

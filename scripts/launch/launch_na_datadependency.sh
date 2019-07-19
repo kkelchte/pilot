@@ -46,6 +46,9 @@ train(){
 # pretrain $chapter/$section/20K_wd00001/learning_rates --dataset esatv3_expert_20K --weight_decay 0.0001
 # pretrain $chapter/$section/10K_wd00001/learning_rates --dataset esatv3_expert_10K --weight_decay 0.0001
 
+# pretrain $chapter/$section/5K_wd00001/final --dataset esatv3_expert_5K --weight_decay 0.0001 --load_data_in_ram
+# pretrain $chapter/$section/2500_wd00001/final --dataset esatv3_expert/2500 --weight_decay 0.0001 --load_data_in_ram
+
 
 #######################################
 # Set winning learning rate
@@ -55,8 +58,11 @@ train(){
 # train $chapter/$section/50K/final --dataset esatv3_expert_50K --weight_decay 0 --learning_rate 0.1
 # train $chapter/$section/20K/final --dataset esatv3_expert_20K --weight_decay 0 --learning_rate 0.1
 # train $chapter/$section/10K/final --dataset esatv3_expert_10K --weight_decay 0 --learning_rate 0.01
-train $chapter/$section/5K/final --dataset esatv3_expert_5K --weight_decay 0 --learning_rate 0.1 --load_data_in_ram
-train $chapter/$section/2500/final --dataset esatv3_expert/2500 --weight_decay 0 --load_data_in_ram --learning_rate 0.001
+# train $chapter/$section/5K/final --dataset esatv3_expert_5K --weight_decay 0 --learning_rate 0.1 --load_data_in_ram
+# train $chapter/$section/2500/final --dataset esatv3_expert/2500 --weight_decay 0 --learning_rate 0.001 --load_data_in_ram 
+
+train $chapter/$section/5K_wd00001/final --dataset esatv3_expert_5K --weight_decay 0.0001 --load_data_in_ram --learning_rate 0.1 
+train $chapter/$section/2500_wd00001/final --dataset esatv3_expert/2500 --weight_decay 0.0001 --load_data_in_ram --learning_rate 0.001
 
 
 # train $chapter/$section/200K_pretrained/final --dataset esatv3_expert_200K --weight_decay 0 --pretrained --learning_rate 0.01
@@ -75,9 +81,9 @@ train $chapter/$section/2500/final --dataset esatv3_expert/2500 --weight_decay 0
 # Combine results
 #######################################
 
-# LOGFOLDERS="$(for AR in 200K 100K 50K 20K 10K ; do printf " chapter_neural_architectures/data_dependency/${AR}/final/0"; done)"
-# LEGEND="200K 100K 50K 20K 10K"
-# python combine_results.py --headless --tags train_imitation_learning validation_imitation_learning --title data_dependency --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
+LOGFOLDERS="$(for AR in 200K 100K 50K 20K 10K 5K 2500 ; do printf " chapter_neural_architectures/data_dependency/${AR}/final/0"; done)"
+LEGEND="200K 100K 50K 20K 10K 5K 2500"
+python combine_results.py --headless --tags train_imitation_learning validation_imitation_learning --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
 
 
 sleep 3

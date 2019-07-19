@@ -1,6 +1,6 @@
 #!/bin/bash
 chapter=chapter_domain_shift
-section=normalized_output/randomization
+section=normalized_output_scratch/randomization
 pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
  --max_episodes 10000 --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --normalized_output"
 
@@ -27,8 +27,8 @@ train(){
 # Pretrain for different learning rates
 ##########################################
 
-pretrain $chapter/$section/res18_reference_data/learning_rates --dataset esatv3_expert/transferred_reference --rammem 7 --pretrained --load_data_in_ram
-pretrain $chapter/$section/res18_randomized_data/learning_rates --dataset esatv3_expert/randomized --rammem 7 --pretrained
+pretrain $chapter/$section/res18_reference_data/learning_rates --dataset esatv3_expert/transferred_reference --rammem 7 --load_data_in_ram --extract_nearest_features
+pretrain $chapter/$section/res18_randomized_data/learning_rates --dataset esatv3_expert/randomized --rammem 7 --extract_nearest_features
 
 
 

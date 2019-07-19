@@ -1,6 +1,6 @@
 #!/bin/bash
 chapter=chapter_neural_architectures
-section=rnn_sub5
+section=rnn_nosub
 pytorch_args="--dataset esatv3_expert/200K --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --normalized_output\
  --max_episodes 30000 --clip 1 --scaled_input --optimizer SGD --loss MSE --weight_decay 0"
 
@@ -26,6 +26,10 @@ train(){
 # Pretrain for different learning rates
 #######################################
 
+pretrain $chapter/$section/tiny_reference/learning_rates --network tinyv3_net  --batch_size 5 --gpumem 1800
+pretrain $chapter/$section/tiny_LSTM_WBPTT/learning_rates --network tinyv3_LSTM_net  --batch_size 5 --gpumem 1800 --time_length 20 
+
+
 # pretrain $chapter/$section/tiny_reference/learning_rates --network tinyv3_net  --subsample 5  --batch_size 5 --gpumem 1800
 # pretrain $chapter/$section/tiny_LSTM_WBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 5  --batch_size 5 --gpumem 1800 --time_length 20 
 # pretrain $chapter/$section/tiny_LSTM_FBPTT/learning_rates --network tinyv3_LSTM_net  --subsample 5  --batch_size 5 --gpumem 3900  --time_length -1
@@ -43,7 +47,7 @@ train(){
 # train $chapter/$section/tiny_reference/final --network tinyv3_net  --subsample 5  --batch_size 5 --gpumem_train 1800 --learning_rate 0.1
 # train $chapter/$section/tiny_LSTM_WBPTT/final --network tinyv3_LSTM_net  --subsample 5  --batch_size 5 --gpumem_train 1800 --time_length 20  --learning_rate 0.1
 # train $chapter/$section/tiny_LSTM_SBPTT/final --network tinyv3_LSTM_net  --subsample 5  --batch_size 5 --gpumem_train 1800 --time_length 20 --sliding_tbptt --learning_rate 0.0001
-train $chapter/$section/tiny_LSTM_FBPTT/final --network tinyv3_LSTM_net  --subsample 5  --batch_size 5 --gpumem_train 3900  --time_length -1 --learning_rate 0.01
+# train $chapter/$section/tiny_LSTM_FBPTT/final --network tinyv3_LSTM_net  --subsample 5  --batch_size 5 --gpumem_train 3900  --time_length -1 --learning_rate 0.01
 
 # train $chapter/$section/tiny_reference/final --network tinyv3_3d_net --subsample 10  --batch_size 5 --gpumem_train 3900 --time_length 20 --learning_rate 0.1
 # train $chapter/$section/tiny_LSTM_WBPTT/final --network tiny_3d_LSTM_net  --subsample 10  --batch_size 5 --gpumem_train 3900 --time_length 20  --learning_rate 0.01
@@ -54,9 +58,9 @@ train $chapter/$section/tiny_LSTM_FBPTT/final --network tinyv3_LSTM_net  --subsa
 # Combine results
 #######################################
 
-# LOGFOLDERS="chapter_neural_architectures/rnn_concat/tiny_reference/final/0 chapter_neural_architectures/rnn_concat/tiny_LSTM_FBPTT/learning_rates/lr_001 chapter_neural_architectures/rnn_concat/tiny_LSTM_SBPTT/final/0 chapter_neural_architectures/rnn_concat/tiny_LSTM_WBPTT/final/0"
-# LEGEND="Reference FBPTT SBPTT WBPTT"
-# python combine_results.py --tags validation_imitation_learning --title LSTM --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
+# LOGFOLDERS="chapter_neural_architectures/rnn_sub5/tiny_reference/final/0 chapter_neural_architectures/rnn_sub5/tiny_LSTM_FBPTT/final/0 chapter_neural_architectures/rnn_sub5/tiny_LSTM_SBPTT/final/0 chapter_neural_architectures/rnn_sub5/tiny_LSTM_WBPTT/final/0"
+# LEGEND="Reference F-BPTT S-BPTT W-BPTT"
+# python combine_results.py --headless --tags train_imitation_learning --log_folders $LOGFOLDERS --legend_names $LEGEND --subsample 3
 
 sleep 3
 condor_q

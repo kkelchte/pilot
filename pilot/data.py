@@ -161,6 +161,16 @@ def load_run_info(run_dict, index_list, set_list, checklist, subsample):
           corresponding_imgs.append(ni)
         return corresponding_imgs, control_list
       num_imgs, control_list = sync_control()
+      
+      # KK: Hack 15/07/2019 to debug control shift
+      # Hypothesis: frames are saved with previous control for normal create dataset
+      #           and saved with two controls before for datasets using agent instead of expert directly
+      # Solution: having a wrongly synced control and image num list: 
+      #     shift the control:
+      if FLAGS.shift_control_indices !=0:
+        control_list = control_list[FLAGS.shift_control_indices:]
+        # remove last rgb image frame as there is no corresponding control for this frame number
+        num_imgs = num_imgs[:-FLAGS.shift_control_indices]
       assert len(num_imgs) == len(control_list), "Length of number of images {0} is not equal to number of control {1}".format(len(num_imgs),len(control_list))
       
       # Load images in RAM and preprocess

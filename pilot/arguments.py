@@ -73,6 +73,7 @@ def add_arguments(parser):
   parser.add_argument("--data_root", default="pilot_data/",type=str, help="Define the root folder of the different datasets.")
   parser.add_argument("--num_threads", default=4, type=int, help="The number of threads for loading one minibatch.")
   parser.add_argument("--control_file", default='control_info.txt', type=str, help="Define the name of the file with the action labels.")
+  parser.add_argument("--shift_control_indices", default=0, type=int, help="Shift control backward as it might correspond to the previous frame.")
   parser.add_argument("--depth_directory", default='Depth', type=str, help="Define the name of the directory containing the depth images: Depth or Depth_predicted.")
   parser.add_argument("--subsample", default=1, type=int, help="Subsample data over time: e.g. subsample 2 to get from 20fps to 10fps.")
   parser.add_argument("--normalized_output", action='store_true', help="Try to fill a batch with different actions [-1, 0, 1].")
@@ -88,7 +89,6 @@ def add_arguments(parser):
   parser.add_argument("--init_state_subsample", default=1, type=int, help="Calculate init state on subsampled data sequence.")
   parser.add_argument("--only_init_state", action='store_true', help="Don't calculate the cell state by each time window applying the init state.")
   
-
   # ===========================
   #   Model Parameters
   # ===========================

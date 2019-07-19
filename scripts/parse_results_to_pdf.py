@@ -601,8 +601,9 @@ for m in eva_folders:
       #   value=results[m][k][-1]
       #   save_append(total_vals, k, value)
       if isinstance(results[m][k], collections.Iterable):
-        if type(results[m][k][-1]) in [float,int,bool]: #multiple floats --> take mean
+        if type(results[m][k][-1]) in [float,int,bool]: #multiple floats --> take median
           value=np.median(results[m][k])
+          # print('median=',value)
           table_row="{0} & {1:0.3f} ({2:0.3f}) ".format(table_row, value, np.std(results[m][k]))
           # for v in results[m][k]: save_append(total_vals, k, v)
         else: #multiple strings

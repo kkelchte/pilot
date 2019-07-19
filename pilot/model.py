@@ -155,7 +155,7 @@ class Model(object):
         self.auxiliary_net.load_state_dict(checkpoint['auxiliary_net'])
         print("[model]: loaded auxiliary_net from {0} at epoch: {1}".format(self.FLAGS.checkpoint_path, self.epoch))
 
-      if not 'scratch' in self.FLAGS.checkpoint_path and checkpoint['optimizer'] == self.FLAGS.optimizer:
+      if not 'scratch' in self.FLAGS.checkpoint_path and checkpoint['optimizer'] == self.FLAGS.optimizer and self.FLAGS.continue_training:
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         print("[model]: loaded optimizer parameters from {0}".format(self.FLAGS.checkpoint_path))
 

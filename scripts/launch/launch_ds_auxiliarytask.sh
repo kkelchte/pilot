@@ -1,6 +1,6 @@
 #!/bin/bash
 chapter=chapter_domain_shift
-section=normalized_output/auxiliarydepth
+section=normalized_output_scratch/auxiliarydepth
 pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
  --batch_size 32 --loss MSE --optimizer SGD --clip 1 --weight_decay 0 --normalized_output"
 
@@ -27,7 +27,7 @@ train(){
 # Pretrain for different learning rates
 ##########################################
 
-pretrain $chapter/$section/auxiliarydepth_long/learning_rates --dataset esatv3_expert/transferred_reference --rammem 12 --pretrained --load_data_in_ram --auxiliary_depth --gpumem 5000 --extract_nearest_features --auxiliary_lambda 10  --max_episodes 20000 --save_auxiliary_prediction
+pretrain $chapter/$section/auxiliarydepth_long/learning_rates --dataset esatv3_expert/transferred_reference --rammem 12 --load_data_in_ram --auxiliary_depth --gpumem 5000 --extract_nearest_features --auxiliary_lambda 10  --max_episodes 20000 --save_auxiliary_prediction
 
 
 

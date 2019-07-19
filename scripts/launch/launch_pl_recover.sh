@@ -1,10 +1,10 @@
 #!/bin/bash
 chapter=chapter_policy_learning
-section=how_to_recover_normalized
-pytorch_args="--network res18_net --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
+section=recover
+pytorch_args="--network tinyv3_nfc_net --n_frames 2 --turn_speed 0.8 --speed 0.8 --action_bound 0.9 --scaled_input\
  --batch_size 32 --loss MSE --optimizer SGD --clip 1.0 --weight_decay 0 --normalized_output"
 
-# Difference is prbably due to action normalization (!)
+
 
 
 echo "####### chapter: $chapter #######"
@@ -20,7 +20,7 @@ pretrain(){
 train(){
   cd ..
   script_args="--z_pos 1 -w esatv3 --random_seed 512 --number_of_runs 5 "
-  condor_args="--wall_time_train $((24*60*60)) --wall_time_eva $((3*3600)) --rammem 7 --gpumem_train 1800 --gpumem_eva 1800"
+  condor_args="--wall_time_train $((24*60*60)) --wall_time_eva $((3*3600)) --rammem 7 --gpumem_train 1800 --gpumem_eva 1800  --python_project pytorch_pilot_beta/pilot"
   dag_args="--model_names $(seq 0 2) --random_numbers $(seq 56431 56441)"
   python dag_train_and_evaluate.py $pytorch_args $condor_args $dag_args $script_args -t $*
   cd launch
@@ -31,33 +31,25 @@ train(){
 ##########################################
 
 
-# pretrain $chapter/$section/res18_reference/learning_rates --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --max_episodes 10000
-# pretrain $chapter/$section/res18_recovery/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7 --max_episodes 10000
+for i in 2 3 4 5 10 20; do
+pretrain $chapter/$section/reference_shifted_$i/learning_rates --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 7 --max_episodes 10000 --shift_control_indices $i --python_project pytorch_pilot_beta/pilot
+done
+# pretrain $chapter/$section/recovery/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 15 --max_episodes 10000
 # for noise in gau ou uni ; do
-#   pretrain $chapter/$section/res18_noise/$noise/learning_rates --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --max_episodes 10000
+#   pretrain $chapter/$section/noise_shifted_2/$noise/learning_rates --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --max_episodes 10000 --shift_control_indices 2 --python_project pytorch_pilot_beta/pilot
 # done
-
-# pretrain $chapter/$section/res18_reference_pretrained/learning_rates --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --pretrained --max_episodes 10000
-# pretrain $chapter/$section/res18_recovery_pretrained/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained --max_episodes 10000
-#for noise in gau ou uni ; do
-#  pretrain $chapter/$section/res18_noise_pretrained/${noise}_long/learning_rates --dataset esatv3_expert_stochastic/${noise} --load_data_in_ram --rammem 7 --pretrained --max_episodes 20000
-#done
 
 ##############################
 # Set winning learning rate
 ##############################
-
-# train $chapter/$section/res18_reference/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --learning_rate 0.01
-# train $chapter/$section/res18_recovery/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --learning_rate 0.1
-#for noise in gau ou uni ; do
-#  train $chapter/$section/res18_noise/$noise/final --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --learning_rate 0.1
-#done
-
-# train $chapter/$section/res18_reference_pretrained/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 5 --pretrained --learning_rate 0.01
-# train $chapter/$section/res18_recovery_pretrained/final --dataset esatv3_recovery --load_data_in_ram --rammem 7 --pretrained --learning_rate 0.01
-for noise in gau ou uni ; do
-  train $chapter/$section/res18_noise_pretrained/${noise}_long/final --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --pretrained --learning_rate 0.1 --max_episodes 20000
+for i in 2 3 4 5 10 20; do
+train $chapter/$section/reference_shifted_$i/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 7 --max_episodes 10000 --shift_control_indices $i --python_project pytorch_pilot_beta/pilot --learning_rate 0.001
 done
+# train $chapter/$section/reference_shifted_1/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001 --shift_control_indices 1
+# train $chapter/$section/recovery_shifted/final --dataset esatv3_recovery --load_data_in_ram --rammem 15 --max_episodes 10000 --learning_rate 0.01
+#train $chapter/$section/noise_shifted_2/uni/final --dataset esatv3_expert_stochastic/uni --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001 --shift_control_indices 2
+#train $chapter/$section/noise_shifted_2/gau/final --dataset esatv3_expert_stochastic/gau --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.01 --shift_control_indices 2
+#train $chapter/$section/noise_shifted_2/ou/final --dataset esatv3_expert_stochastic/ou --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001 --shift_control_indices 2
 
 ##############################
 # DAGGER
