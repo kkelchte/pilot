@@ -29,24 +29,30 @@ train(){
 
 
 # First iteration
-for i in 0 1 2 ; do
-  train $chapter/$section/baseline_${i}/iteration1 --load_config --checkpoint_path chapter_policy_learning/recover/reference/final/${i} --dataset esatv3_expert/dagger_12K --load_data_in_ram --rammem 7 --max_episodes 15000
-  train $chapter/$section/model_$i/iteration1 --load_config --checkpoint_path chapter_policy_learning/recover/reference/final/${i} --control_file supervised_info.txt --dataset chapter_policy_learning/dagger/reference/${i}_eva --load_data_in_ram --rammem 7 --max_episodes 15000
-done
+# for i in 0 1 2 ; do
+  # train $chapter/$section/baseline_${i}/iteration1 --load_config --checkpoint_path chapter_policy_learning/recover/reference/final/${i} --dataset esatv3_expert/dagger_12K --load_data_in_ram --rammem 7 --max_episodes 15000
+  # train $chapter/$section/model_$i/iteration1 --load_config --checkpoint_path chapter_policy_learning/recover/reference/final/${i} --dataset chapter_policy_learning/DAGGER/reference/${i}_eva --load_data_in_ram --rammem 7 --max_episodes 15000
+# done
 
 # # Second iteration
-# for i in 0 1 2 ; do
-#   train $chapter/$section/model_${i}/iteration2 --load_config --checkpoint_path $chapter/$section/model_${i}/iteration1/0 --control_file supervised_info.txt  --dataset chapter_policy_learning/dagger/model_${i}/record --load_data_in_ram --rammem 7 --max_episodes 20000
-#   train $chapter/$section/baseline_${i}/iteration2 --load_config --checkpoint_path $chapter/$section/baseline_${i}/iteration1/0 --dataset esatv3_expert/dagger_15K --load_data_in_ram --rammem 7 --max_episodes 20000
-# done
+# train $chapter/$section/model_0/iteration2 --load_config --checkpoint_path $chapter/$section/model_0/iteration1/lr_000001  --dataset chapter_policy_learning/DAGGER/model_0/record1 --load_data_in_ram --rammem 7 --max_episodes 20000
+# train $chapter/$section/model_1/iteration2 --load_config --checkpoint_path $chapter/$section/model_1/iteration1/lr_0001  --dataset chapter_policy_learning/DAGGER/model_1/record1 --load_data_in_ram --rammem 7 --max_episodes 20000
+# train $chapter/$section/model_2/iteration2 --load_config --checkpoint_path $chapter/$section/model_2/iteration1/lr_00001  --dataset chapter_policy_learning/DAGGER/model_2/record1 --load_data_in_ram --rammem 7 --max_episodes 20000
+
+# train $chapter/$section/baseline_0/iteration2 --load_config --checkpoint_path $chapter/$section/baseline_0/iteration1/lr_0001 --dataset esatv3_expert/dagger_15K --load_data_in_ram --rammem 7 --max_episodes 20000
+# train $chapter/$section/baseline_1/iteration2 --load_config --checkpoint_path $chapter/$section/baseline_1/iteration1/lr_0001 --dataset esatv3_expert/dagger_15K --load_data_in_ram --rammem 7 --max_episodes 20000
+# train $chapter/$section/baseline_2/iteration2 --load_config --checkpoint_path $chapter/$section/baseline_2/iteration1/lr_0001 --dataset esatv3_expert/dagger_15K --load_data_in_ram --rammem 7 --max_episodes 20000
 
 
 
 # Third iteration
-# for i in 0 1 2 ; do
-#   train $chapter/$section/model_${i}/iteration3 --load_config --checkpoint_path $chapter/$section/model_${i}/iteration2/0 --control_file supervised_info.txt  --dataset chapter_policy_learning/dagger/model_${i}/record_2 --load_data_in_ram --rammem 7 --max_episodes 25000
-#   train $chapter/$section/baseline_${i}/iteration3 --load_config --checkpoint_path $chapter/$section/baseline_${i}/iteration2/0 --dataset esatv3_expert/dagger_17K --load_data_in_ram --rammem 7 --max_episodes 25000
-# done
+train $chapter/$section/model_0/iteration3 --load_config --checkpoint_path $chapter/$section/model_0/iteration2/lr_000001 --dataset chapter_policy_learning/DAGGER/model_0/record2 --load_data_in_ram --rammem 7 --max_episodes 25000
+train $chapter/$section/model_1/iteration3 --load_config --checkpoint_path $chapter/$section/model_1/iteration2/lr_00001 --dataset chapter_policy_learning/DAGGER/model_1/record2 --load_data_in_ram --rammem 7 --max_episodes 25000
+train $chapter/$section/model_2/iteration3 --load_config --checkpoint_path $chapter/$section/model_2/iteration2/lr_0001 --dataset chapter_policy_learning/DAGGER/model_2/record2 --load_data_in_ram --rammem 7 --max_episodes 25000
+
+train $chapter/$section/baseline_0/iteration3 --load_config --checkpoint_path $chapter/$section/baseline_0/iteration2/lr_01 --dataset esatv3_expert/dagger_17K --load_data_in_ram --rammem 7 --max_episodes 25000
+train $chapter/$section/baseline_1/iteration3 --load_config --checkpoint_path $chapter/$section/baseline_1/iteration2/lr_001 --dataset esatv3_expert/dagger_17K --load_data_in_ram --rammem 7 --max_episodes 25000
+train $chapter/$section/baseline_2/iteration3 --load_config --checkpoint_path $chapter/$section/baseline_2/iteration2/lr_01 --dataset esatv3_expert/dagger_17K --load_data_in_ram --rammem 7 --max_episodes 25000
 
 
 sleep 3

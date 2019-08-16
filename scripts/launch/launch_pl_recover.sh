@@ -30,52 +30,22 @@ train(){
 # Pretrain for different learning rates
 ##########################################
 
-
-for i in 2 3 4 5 10 20; do
-pretrain $chapter/$section/reference_shifted_$i/learning_rates --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 7 --max_episodes 10000 --shift_control_indices $i --python_project pytorch_pilot_beta/pilot
+pretrain $chapter/$section/recovery/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 15 --max_episodes 10000
+for noise in gau ou uni ; do
+  pretrain $chapter/$section/noise/$noise/learning_rates --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --max_episodes 10000 --python_project pytorch_pilot_beta/lot
 done
-# pretrain $chapter/$section/recovery/learning_rates --dataset esatv3_recovery --load_data_in_ram --rammem 15 --max_episodes 10000
-# for noise in gau ou uni ; do
-#   pretrain $chapter/$section/noise_shifted_2/$noise/learning_rates --dataset esatv3_expert_stochastic/$noise --load_data_in_ram --rammem 7 --max_episodes 10000 --shift_control_indices 2 --python_project pytorch_pilot_beta/pilot
-# done
 
 ##############################
 # Set winning learning rate
 ##############################
-for i in 2 3 4 5 10 20; do
-train $chapter/$section/reference_shifted_$i/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 7 --max_episodes 10000 --shift_control_indices $i --python_project pytorch_pilot_beta/pilot --learning_rate 0.001
-done
-# train $chapter/$section/reference_shifted_1/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001 --shift_control_indices 1
-# train $chapter/$section/recovery_shifted/final --dataset esatv3_recovery --load_data_in_ram --rammem 15 --max_episodes 10000 --learning_rate 0.01
-#train $chapter/$section/noise_shifted_2/uni/final --dataset esatv3_expert_stochastic/uni --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001 --shift_control_indices 2
-#train $chapter/$section/noise_shifted_2/gau/final --dataset esatv3_expert_stochastic/gau --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.01 --shift_control_indices 2
-#train $chapter/$section/noise_shifted_2/ou/final --dataset esatv3_expert_stochastic/ou --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001 --shift_control_indices 2
 
-##############################
-# DAGGER
-##############################
-# cd ..
-# for seed in 0 1 2 ; do
-#   name="$chapter/$section/DAGGER/$seed"
-#   local_pytorch_args="--load_config --checkpoint_path $chapter/$section/res18_reference/final/0"
-#   script_args="--evaluation --pause_simulator -ds --z_pos 1 -w esatv3 --random_seed $((seed*32+512)) --number_of_runs 1 --final_evaluation_runs 0 --python_project pytorch_pilot/pilot"
-#   condor_args="--wall_time $((24*60)) --use_greenlist --cpus 16"
-#   python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
-# done
-# cd launch
-##############################
-# ON-POLICY
-##############################
-# cd ..
-# # Should be able to make this more 'offline' --> implement at online.py
-# for seed in 0 1 2 ; do
-#   name="$chapter/$section/on-policy/$seed"
-#   local_pytorch_args="--on-policy --min_buffer_size 1000 --buffer_size 10000"
-#   script_args="--pause_simulator --z_pos 1 -w esatv3 --random_seed $((seed*32+512)) --number_of_runs 100 --final_evaluation_runs 5 --python_project pytorch_pilot/pilot"
-#   condor_args="--wall_time $((2*24*60)) --use_greenlist --cpus 16 --gpumem 5000"
-#   python condor_online.py -t $name $pytorch_args $local_pytorch_args $script_args $condor_args
-# done
-# cd launch
+#train $chapter/$section/reference/final --dataset esatv3_expert/recovery_reference --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001
+#train $chapter/$section/recovery/final --dataset esatv3_recovery --load_data_in_ram --rammem 15 --max_episodes 10000 --learning_rate 0.01
+#train $chapter/$section/noise/uni/final --dataset esatv3_expert_stochastic/uni --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001
+#train $chapter/$section/noise/gau/final --dataset esatv3_expert_stochastic/gau --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.01
+#train $chapter/$section/noise/ou/final --dataset esatv3_expert_stochastic/ou --load_data_in_ram --rammem 7 --max_episodes 10000 --learning_rate 0.001
+
+
 ##############################
 # Create datasets
 ##############################

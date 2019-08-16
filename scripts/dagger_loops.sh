@@ -1,5 +1,6 @@
 #!/bin/bash
-# This scripts evaluate the model in log/testing 2 times in canyon and saves result in log/testing_online
+# This scripts evaluate the model in log/testing and store data in pilot_data/...
+# launch file from singularity image with source tensorflow/pytorch_pilot_beta/scripts/dagger_loops.sh
 # cd /esat/opal/kkelchte/docker_home
 # source .entrypoint_graph
 # source .entrypoint_graph_debug
@@ -25,8 +26,8 @@ run_simulation(){
 # iteration 0
 ###############
 
-# for i in 1 2 ; do
-#   run_simulation chapter_policy_learning/dagger/reference/${i}_eva chapter_policy_learning/recover/reference/final/${i}
+# for i in 0 1 2 ; do
+#   run_simulation chapter_policy_learning/DAGGER/reference/${i}_eva chapter_policy_learning/recover/reference/final/${i}
 # done
 
 
@@ -34,19 +35,17 @@ run_simulation(){
 # iteration 1
 ###############
 
-# for i in 0 1 2 ; do
-#   run_simulation chapter_policy_learning/dagger/model_${i}/record chapter_policy_learning/dagger/model_${i}/iteration1/0
-# done
+# run_simulation chapter_policy_learning/DAGGER/model_0/record1 chapter_policy_learning/DAGGER/model_0/iteration1/lr_000001
+# run_simulation chapter_policy_learning/DAGGER/model_1/record1 chapter_policy_learning/DAGGER/model_1/iteration1/lr_0001
+# run_simulation chapter_policy_learning/DAGGER/model_2/record1 chapter_policy_learning/DAGGER/model_2/iteration1/lr_00001
 
 ###############
 # iteration 2
 ###############
 
-# for i in 0 1 2 ; do
-#   run_simulation chapter_policy_learning/dagger/model_${i}/record_2 chapter_policy_learning/dagger/model_${i}/iteration2/0
-# done
-# Add train/val/test set.txt to data folder:
-# for i in 0 1 2 ; do echo $i; cp -r model_$i/record/*.txt model_$i/record_2/; echo $PWD/model_$i/record_2/00000_esatv3 >> model_$i/record_2/train_set.txt; done
+run_simulation chapter_policy_learning/DAGGER/model_0/record2 chapter_policy_learning/DAGGER/model_0/iteration2/lr_000001
+run_simulation chapter_policy_learning/DAGGER/model_1/record2 chapter_policy_learning/DAGGER/model_1/iteration2/lr_00001
+run_simulation chapter_policy_learning/DAGGER/model_2/record2 chapter_policy_learning/DAGGER/model_2/iteration2/lr_0001
 
 
 cd
